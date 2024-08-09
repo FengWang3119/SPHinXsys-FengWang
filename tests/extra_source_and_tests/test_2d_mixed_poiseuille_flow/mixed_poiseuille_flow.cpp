@@ -12,6 +12,8 @@
 #include "pressure_boundary.h"
 #include "sphinxsys.h"
 
+#include "k-epsilon_turbulent_model.cpp"
+
 using namespace SPH;
 //----------------------------------------------------------------------
 //	Basic geometry parameters and numerical setup.
@@ -26,7 +28,7 @@ BoundingBox system_domain_bounds(Vec2d(-BW, -BW), Vec2d(DL + BW, DH + BW));
 //	Material parameters.
 //----------------------------------------------------------------------
 Real Inlet_pressure = 0.2;
-Real Outlet_pressure = 0.1;
+Real Outlet_pressure = 0.0;
 Real rho0_f = 1000.0;
 Real Re = 50.0;
 Real mu_f = sqrt(rho0_f * pow(0.5 * DH, 3.0) * fabs(Inlet_pressure - Outlet_pressure) / (Re * DL));
@@ -188,10 +190,17 @@ int main(int ac, char *av[])
     InteractionDynamics<NablaWVComplex> kernel_summation(water_block_inner, water_block_contact);
     InteractionWithUpdate<SpatialTemporalFreeSurfaceIndicationComplex> boundary_indicator(water_block_inner, water_block_contact);
 
-    Dynamics1Level<fluid_dynamics::Integration1stHalfWithWallRiemann> pressure_relaxation(water_block_inner, water_block_contact);
+    InteractionWithUpdate<LinearGradientCorrectionMatrixComplex> corrected_configuration_fluid(water_block_inner, water_block_contact);
+
+    //Dynamics1Level<fluid_dynamics::Integration1stHalfWithWallRiemann> pressure_relaxation(water_block_inner, water_block_contact);
+    Dynamics1Level<fluid_dynamics::Integration1stHalfCorrectionWithWallRiemann> pressure_relaxation(water_block_inner, water_block_contact);
+    
+
     Dynamics1Level<fluid_dynamics::Integration2ndHalfWithWallRiemann> density_relaxation(water_block_inner, water_block_contact);
     InteractionWithUpdate<fluid_dynamics::ViscousForceWithWall> viscous_acceleration(water_block_inner, water_block_contact);
-    InteractionWithUpdate<fluid_dynamics::TransportVelocityCorrectionComplex<BulkParticles>> transport_velocity_correction(water_block_inner, water_block_contact);
+    //InteractionWithUpdate<fluid_dynamics::TransportVelocityCorrectionComplex<BulkParticles>> transport_velocity_correction(water_block_inner, water_block_contact);
+    InteractionWithUpdate<fluid_dynamics::TransportVelocityCorrectionCorrectedComplex<BulkParticles>> transport_velocity_correction(water_block_inner, water_block_contact);
+
 
     ReduceDynamics<fluid_dynamics::AdvectionTimeStepSize> get_fluid_advection_time_step_size(water_block, U_f);
     ReduceDynamics<fluid_dynamics::AcousticTimeStepSize> get_fluid_time_step_size(water_block);
@@ -204,6 +213,8 @@ int main(int ac, char *av[])
     fluid_dynamics::NonPrescribedPressureBidirectionalBuffer left_emitter_inflow_injection(left_emitter, in_outlet_particle_buffer);
     BodyAlignedBoxByCell right_emitter(water_block, makeShared<AlignedBoxShape>(xAxis, Transform(Rotation2d(Pi), Vec2d(right_bidirectional_translation)), bidirectional_buffer_halfsize));
     fluid_dynamics::BidirectionalBuffer<RightInflowPressure> right_emitter_inflow_injection(right_emitter, in_outlet_particle_buffer);
+
+    //InteractionWithUpdate<fluid_dynamics::TransportVelocityCorrectionCorrectedComplex<fluid_dynamics::NotIncludeBufferParticles>> transport_velocity_correction(water_block_inner, water_block_contact);
 
     InteractionWithUpdate<fluid_dynamics::DensitySummationPressureComplex> update_fluid_density(water_block_inner, water_block_contact);
     SimpleDynamics<fluid_dynamics::PressureCondition<LeftInflowPressure>> left_inflow_pressure_condition(left_emitter);
@@ -252,6 +263,9 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     body_states_recording.writeToFile();
     write_centerline_velocity.writeToFile(number_of_iterations);
+
+    body_states_recording.addToWrite<Vecd>(water_block,"ZeroGradientResidue"); // output for debug
+    body_states_recording.addToWrite<Matd>(water_block,"LinearGradientCorrectionMatrix"); // output for debug
     //----------------------------------------------------------------------
     //	Main loop starts here.
     //----------------------------------------------------------------------
@@ -264,6 +278,9 @@ int main(int ac, char *av[])
             time_instance = TickCount::now();
             Real Dt = get_fluid_advection_time_step_size.exec();
             update_fluid_density.exec();
+
+            corrected_configuration_fluid.exec();
+
             viscous_acceleration.exec();
             transport_velocity_correction.exec();
             interval_computing_time_step += TickCount::now() - time_instance;

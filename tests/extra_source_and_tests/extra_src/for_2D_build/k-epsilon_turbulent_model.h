@@ -679,6 +679,36 @@ template <class ParticleScope>
 using TVC_NoLimiter_withLinearGradientCorrection =
     BaseTransportVelocityCorrectionComplex<SingleResolution, NoLimiter, LinearGradientCorrection, ParticleScope>;
 //=================================================================================================//
+template <int INDICATOR>
+class IndicatedBufferParticles : public WithinScope
+{
+    StdLargeVec<int> &buffer_particle_indicator_;
+	StdLargeVec<Vecd> &pos_;
+	StdLargeVec<int> &indicator_;
+
+  public:
+    explicit IndicatedBufferParticles(BaseParticles *base_particles)
+        : WithinScope(),
+          buffer_particle_indicator_(*base_particles->getVariableDataByName<int>("BufferParticleIndicator")),
+		  pos_(*base_particles->template getVariableDataByName<Vecd>("Position")),
+		  indicator_(*base_particles->getVariableDataByName<int>("Indicator")){};
+    bool operator()(size_t index_i)
+    {
+		bool if_apply_TVC = false;
+		if(indicator_[index_i] == INDICATOR)
+		{
+			if_apply_TVC = true;
+		}
+		if(buffer_particle_indicator_[index_i] == 1 && pos_[index_i][0] > 0.002)
+		{
+			if_apply_TVC = false;
+		}
+		return if_apply_TVC;
+    };
+};
+using NotIncludeBufferParticles = IndicatedBufferParticles<0>;
+//=================================================================================================//
+
 
 //*********************TESTING MODULES*********************
 //=================================================================================================//
