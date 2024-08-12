@@ -1272,6 +1272,49 @@ if(1)
 		limiter_tvc_[index_i] = SMIN(slope_ * squared_norm * h_ref_ * h_ref_, Real(1) ) ;
 	}
 //=================================================================================================//
+
+//=================================================================================================//
+NablaWV_Advection<Inner<>>::
+    NablaWV_Advection(BaseInnerRelation &inner_relation)
+    : NablaWV_Advection<DataDelegateInner>(inner_relation), Vol_(*particles_->getVariableDataByName<Real>("VolumetricMeasure")) {}
+//=================================================================================================//
+void NablaWV_Advection<Inner<>>::interaction(size_t index_i, Real dt)
+{
+	if(indicator_[index_i]==0)
+	{
+    kernel_grad_sum_advection_[index_i] = Vecd::Zero();
+    const Neighborhood &inner_neighborhood = inner_configuration_[index_i];
+    for (size_t n = 0; n != inner_neighborhood.current_size_; ++n)
+    {
+        size_t index_j = inner_neighborhood.j_[n];
+        //kernel_grad_sum_advection_[index_i] += inner_neighborhood.dW_ij_[n] * Vol_[index_j] * inner_neighborhood.e_ij_[n];
+        kernel_grad_sum_advection_[index_i] -= (1.0 + 1.0) *
+                             inner_neighborhood.dW_ij_[n] * Vol_[index_j] * inner_neighborhood.e_ij_[n];
+	}
+	}
+}
+//=================================================================================================//
+void NablaWV_Advection<Contact<>>::interaction(size_t index_i, Real dt)
+{
+	if(indicator_[index_i]==0)
+	{
+    for (size_t k = 0; k < contact_configuration_.size(); ++k)
+    {
+        StdLargeVec<Real> &Vol_k = *(contact_Vol_[k]);
+        Neighborhood &contact_neighborhood = (*contact_configuration_[k])[index_i];
+        for (size_t n = 0; n != contact_neighborhood.current_size_; ++n)
+        {
+            size_t index_j = contact_neighborhood.j_[n];
+            //kernel_grad_sum_advection_[index_i] += contact_neighborhood.dW_ij_[n] * Vol_k[index_j] * contact_neighborhood.e_ij_[n];
+			kernel_grad_sum_advection_[index_i] -= 2.0 * 1.0 * contact_neighborhood.dW_ij_[n] *
+                                 Vol_k[index_j] * contact_neighborhood.e_ij_[n];
+        }
+    }
+	}
+}
+
+
+
 //*********************TESTING MODULES*********************
 //=================================================================================================//
 

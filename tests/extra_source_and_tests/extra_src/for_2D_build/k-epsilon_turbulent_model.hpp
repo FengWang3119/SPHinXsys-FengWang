@@ -225,6 +225,14 @@ TurbulentLinearGradientCorrectionMatrix(BaseRelationType &base_relation)
 
 
 //=================================================================================================//
+template <class DataDelegationType>
+template <class BaseRelationType>
+NablaWV_Advection<DataDelegationType>::NablaWV_Advection(BaseRelationType &base_relation)
+    : LocalDynamics(base_relation.getSPHBody()), DataDelegationType(base_relation),
+      kernel_grad_sum_advection_(*this->particles_->template registerSharedVariable<Vecd>("KernelGradSumAdvection")),
+	  indicator_(*this->particles_->template getVariableDataByName<int>("Indicator"))
+ {}
+
 
 }
 //=================================================================================================//

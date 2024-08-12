@@ -708,7 +708,56 @@ class IndicatedBufferParticles : public WithinScope
 };
 using NotIncludeBufferParticles = IndicatedBufferParticles<0>;
 //=================================================================================================//
+template <typename... InteractionTypes>
+class NablaWV_Advection;
 
+template <class DataDelegationType>
+class NablaWV_Advection<DataDelegationType>
+    : public LocalDynamics, public DataDelegationType
+{
+  public:
+    template <class BaseRelationType>
+    explicit NablaWV_Advection(BaseRelationType &base_relation);
+    virtual ~NablaWV_Advection(){};
+
+  protected:
+    StdLargeVec<Vecd> &kernel_grad_sum_advection_;
+	StdLargeVec<int> &indicator_;
+};
+
+template <>
+class NablaWV_Advection<Inner<>>
+    : public NablaWV_Advection<DataDelegateInner>
+{
+  public:
+    explicit NablaWV_Advection(BaseInnerRelation &inner_relation);
+    virtual ~NablaWV_Advection(){};
+    void interaction(size_t index_i, Real dt = 0.0);
+
+  protected:
+    StdLargeVec<Real> &Vol_;
+};
+
+template <>
+class NablaWV_Advection<Contact<>>
+    : public NablaWV_Advection<DataDelegateContact>
+{
+  public:
+    explicit NablaWV_Advection(BaseContactRelation &contact_relation)
+        : NablaWV_Advection<DataDelegateContact>(contact_relation)
+    {
+        for (size_t k = 0; k < contact_configuration_.size(); ++k)
+        {
+            contact_Vol_.push_back(contact_particles_[k]->getVariableDataByName<Real>("VolumetricMeasure"));
+        }
+    };
+    virtual ~NablaWV_Advection(){};
+    void interaction(size_t index_i, Real dt = 0.0);
+
+    StdVec<StdLargeVec<Real> *> contact_Vol_;
+};
+
+using NablaWVComplexAdvection = ComplexInteraction<NablaWV_Advection<Inner<>, Contact<>>>;
 
 //*********************TESTING MODULES*********************
 //=================================================================================================//

@@ -188,7 +188,10 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     SimpleDynamics<NormalDirectionFromBodyShape> wall_boundary_normal_direction(wall_boundary);
     InteractionDynamics<NablaWVComplex> kernel_summation(water_block_inner, water_block_contact);
+
     InteractionWithUpdate<SpatialTemporalFreeSurfaceIndicationComplex> boundary_indicator(water_block_inner, water_block_contact);
+
+    InteractionDynamics<fluid_dynamics::NablaWVComplexAdvection> kernel_grad_summation_advection(water_block_inner, water_block_contact);
 
     InteractionWithUpdate<LinearGradientCorrectionMatrixComplex> corrected_configuration_fluid(water_block_inner, water_block_contact);
 
@@ -198,8 +201,8 @@ int main(int ac, char *av[])
 
     Dynamics1Level<fluid_dynamics::Integration2ndHalfWithWallRiemann> density_relaxation(water_block_inner, water_block_contact);
     InteractionWithUpdate<fluid_dynamics::ViscousForceWithWall> viscous_acceleration(water_block_inner, water_block_contact);
-    //InteractionWithUpdate<fluid_dynamics::TransportVelocityCorrectionComplex<BulkParticles>> transport_velocity_correction(water_block_inner, water_block_contact);
-    InteractionWithUpdate<fluid_dynamics::TransportVelocityCorrectionCorrectedComplex<BulkParticles>> transport_velocity_correction(water_block_inner, water_block_contact);
+    InteractionWithUpdate<fluid_dynamics::TransportVelocityCorrectionComplex<BulkParticles>> transport_velocity_correction(water_block_inner, water_block_contact);
+    //InteractionWithUpdate<fluid_dynamics::TransportVelocityCorrectionCorrectedComplex<BulkParticles>> transport_velocity_correction(water_block_inner, water_block_contact);
 
 
     ReduceDynamics<fluid_dynamics::AdvectionTimeStepSize> get_fluid_advection_time_step_size(water_block, U_f);
@@ -229,6 +232,8 @@ int main(int ac, char *av[])
     body_states_recording.addToWrite<int>(water_block, "Indicator");
     body_states_recording.addToWrite<Real>(water_block, "Density");
     body_states_recording.addToWrite<int>(water_block, "BufferParticleIndicator");
+    body_states_recording.addToWrite<Vecd>(water_block, "KernelSummation");
+    body_states_recording.addToWrite<Vecd>(water_block, "KernelGradSumAdvection");
     RegressionTestDynamicTimeWarping<ObservedQuantityRecording<Vecd>> write_centerline_velocity("Velocity", velocity_observer_contact);
     //----------------------------------------------------------------------
     //	Prepare the simulation with cell linked list, configuration
@@ -282,6 +287,9 @@ int main(int ac, char *av[])
             corrected_configuration_fluid.exec();
 
             viscous_acceleration.exec();
+            
+            kernel_grad_summation_advection.exec();
+
             transport_velocity_correction.exec();
             interval_computing_time_step += TickCount::now() - time_instance;
 
