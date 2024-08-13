@@ -332,6 +332,9 @@ int main(int ac, char *av[])
             water_block_complex.updateConfiguration();
             interval_updating_configuration += TickCount::now() - time_instance;
             boundary_indicator.exec();
+
+            kernel_grad_summation_advection.exec();
+
             left_emitter_inflow_injection.tag_buffer_particles.exec();
             right_emitter_inflow_injection.tag_buffer_particles.exec();
         }
