@@ -231,7 +231,9 @@ NablaWV_Advection<DataDelegationType>::NablaWV_Advection(BaseRelationType &base_
     : LocalDynamics(base_relation.getSPHBody()), DataDelegationType(base_relation),
       kernel_grad_sum_advection_(*this->particles_->template registerSharedVariable<Vecd>("KernelGradSumAdvection")),
 	  indicator_(*this->particles_->template getVariableDataByName<int>("Indicator"))
- {}
+ {
+	//this->particles_->template addVariableToSort<Vecd>("KernelGradSumAdvection");
+ }
 
 
 }

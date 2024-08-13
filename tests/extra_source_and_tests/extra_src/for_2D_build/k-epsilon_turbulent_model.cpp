@@ -1280,9 +1280,10 @@ NablaWV_Advection<Inner<>>::
 //=================================================================================================//
 void NablaWV_Advection<Inner<>>::interaction(size_t index_i, Real dt)
 {
+	kernel_grad_sum_advection_[index_i] = Vecd::Zero();
 	if(indicator_[index_i]==0)
 	{
-    kernel_grad_sum_advection_[index_i] = Vecd::Zero();
+    //kernel_grad_sum_advection_[index_i] = Vecd::Zero();
     const Neighborhood &inner_neighborhood = inner_configuration_[index_i];
     for (size_t n = 0; n != inner_neighborhood.current_size_; ++n)
     {
