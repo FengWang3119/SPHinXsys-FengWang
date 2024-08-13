@@ -232,7 +232,7 @@ NablaWV_Advection<DataDelegationType>::NablaWV_Advection(BaseRelationType &base_
       kernel_grad_sum_advection_(*this->particles_->template registerSharedVariable<Vecd>("KernelGradSumAdvection")),
 	  indicator_(*this->particles_->template getVariableDataByName<int>("Indicator"))
  {
-	//this->particles_->template addVariableToSort<Vecd>("KernelGradSumAdvection");
+	this->particles_->template addVariableToSort<Vecd>("KernelGradSumAdvection");
  }
 
 
