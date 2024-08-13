@@ -12,6 +12,6 @@ FreeSurfaceIndication<DataDelegationType>::FreeSurfaceIndication(BaseRelationTyp
       indicator_(*this->particles_->template registerSharedVariable<int>("Indicator")),
       pos_div_(*this->particles_->template registerSharedVariable<Real>("PositionDivergence")),
       Vol_(*this->particles_->template getVariableDataByName<Real>("VolumetricMeasure")),
-      threshold_by_dimensions_(0.75 * Dimensions) {}
+      threshold_by_dimensions_(0.85 * Dimensions) {}
 //=================================================================================================//
 } // namespace SPH
