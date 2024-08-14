@@ -219,9 +219,9 @@ int main(int ac, char *av[])
 
     //InteractionWithUpdate<fluid_dynamics::TransportVelocityCorrectionCorrectedComplex<fluid_dynamics::NotIncludeBufferParticles>> transport_velocity_correction(water_block_inner, water_block_contact);
 
-    //InteractionWithUpdate<fluid_dynamics::DensitySummationPressureComplex> update_fluid_density(water_block_inner, water_block_contact);
+    InteractionWithUpdate<fluid_dynamics::DensitySummationPressureComplex> update_fluid_density(water_block_inner, water_block_contact);
     
-    InteractionWithUpdate<fluid_dynamics::DensitySummationFreeStreamComplex> update_fluid_density(water_block_inner, water_block_contact);
+    //InteractionWithUpdate<fluid_dynamics::DensitySummationFreeStreamComplex> update_fluid_density(water_block_inner, water_block_contact);
     
     
     SimpleDynamics<fluid_dynamics::PressureCondition<LeftInflowPressure>> left_inflow_pressure_condition(left_emitter);
