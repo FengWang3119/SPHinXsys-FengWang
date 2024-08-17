@@ -28,7 +28,7 @@ BoundingBox system_domain_bounds(Vec2d(-BW, -BW), Vec2d(DL + BW, DH + BW));
 //	Material parameters.
 //----------------------------------------------------------------------
 Real Inlet_pressure = 0.2;
-Real Outlet_pressure = 0.0;
+Real Outlet_pressure = 0.1;
 Real rho0_f = 1000.0;
 Real Re = 50.0;
 Real mu_f = sqrt(rho0_f * pow(0.5 * DH, 3.0) * fabs(Inlet_pressure - Outlet_pressure) / (Re * DL));
