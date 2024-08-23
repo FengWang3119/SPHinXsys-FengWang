@@ -234,6 +234,7 @@ int main(int ac, char *av[])
     body_states_recording.addToWrite<int>(water_block, "BufferParticleIndicator");
     body_states_recording.addToWrite<Vecd>(water_block, "KernelSummation");
     body_states_recording.addToWrite<Vecd>(water_block, "KernelGradSumAdvection");
+    body_states_recording.addToWrite<Real>(water_block, "PositionDivergence");
     RegressionTestDynamicTimeWarping<ObservedQuantityRecording<Vecd>> write_centerline_velocity("Velocity", velocity_observer_contact);
     //----------------------------------------------------------------------
     //	Prepare the simulation with cell linked list, configuration
