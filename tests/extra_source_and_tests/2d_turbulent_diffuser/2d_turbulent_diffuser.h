@@ -26,7 +26,7 @@ Real extend_out = 3.0 * DH;
 Real DL1 = 3.0 * DH + extend_in;
 Real DL2 = 3.0 * DH + extend_out;
 Real DL3 = 21.0 * DH;
-Real incline_angle = 10.0 * (2.0 * Pi / 360.0);
+Real incline_angle = 0.0 * (2.0 * Pi / 360.0);
 Vec2d point_A(0.0, DH);
 Vec2d point_B(DL1, DH);
 Vec2d point_C(DL1 + DL3, DH + DL3 * tan(incline_angle));
