@@ -47,6 +47,8 @@ Real weight_vel_grad_sub_nearwall = 0.1;
 bool is_always_lattice_arrange_fluid = false;
 //** Empirical parameter for initial stability*
 Real turbulent_module_activate_time = 2.5;
+//** Empirical parameter for initial stability, initial time-decaying ACC*
+Real duration_initial_acceleration = 1.0;
 //** Intial values for K, Epsilon and Mu_t *
 StdVec<Real> initial_turbu_values = {0.000180001, 3.326679e-5, 1.0e-3};
 
@@ -128,7 +130,7 @@ BoundingBox system_domain_bounds(left_bottom_point + Vec2d(-2.0 * BW, -2.0 * BW)
 int screen_output_interval = 100;
 Real end_time = 10.0;                /**< End time. */
 Real Output_Time = end_time / 200.0; /**< Time stamps for output of body states. */
-Real cutoff_time = end_time * 0.6;   //** cutoff_time should be a integral and the same as the PY script */
+Real cutoff_time = end_time * 0.0;   //** cutoff_time should be a integral and the same as the PY script */
 //----------------------------------------------------------------------
 // Observation with offset model.
 //----------------------------------------------------------------------
@@ -334,7 +336,7 @@ class TimeDependentAcceleration : public Gravity
 
   public:
     explicit TimeDependentAcceleration(Vecd gravity_vector)
-        : Gravity(gravity_vector), t_ref_(2.0), u_ref_(U_inlet), du_ave_dt_(0) {}
+        : Gravity(gravity_vector), t_ref_(duration_initial_acceleration), u_ref_(U_inlet), du_ave_dt_(0) {}
 
     virtual Vecd InducedAcceleration(const Vecd &position) override
     {
