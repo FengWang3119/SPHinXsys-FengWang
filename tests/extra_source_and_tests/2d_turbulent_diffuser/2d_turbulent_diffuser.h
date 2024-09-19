@@ -26,6 +26,7 @@ Real extend_out = 3.0 * DH;
 Real DL1 = 3.0 * DH + extend_in;
 Real DL2 = 3.0 * DH + extend_out;
 Real DL3 = 21.0 * DH;
+Real DL_total = DL1 + DL2 + DL3;
 Real incline_angle = 0.0 * (2.0 * Pi / 360.0);
 Vec2d point_A(0.0, DH);
 Vec2d point_B(DL1, DH);
@@ -48,7 +49,7 @@ bool is_always_lattice_arrange_fluid = false;
 //** Empirical parameter for initial stability*
 Real turbulent_module_activate_time = 2.5;
 //** Empirical parameter for initial stability, initial time-decaying ACC*
-Real duration_initial_acceleration = 1.0;
+Real duration_initial_acceleration = 2.0;
 //** Intial values for K, Epsilon and Mu_t *
 StdVec<Real> initial_turbu_values = {0.000180001, 3.326679e-5, 1.0e-3};
 
@@ -128,54 +129,31 @@ BoundingBox system_domain_bounds(left_bottom_point + Vec2d(-2.0 * BW, -2.0 * BW)
 // Output and time average control.
 //----------------------------------------------------------------------
 int screen_output_interval = 100;
-Real end_time = 10.0;                /**< End time. */
-Real Output_Time = end_time / 200.0; /**< Time stamps for output of body states. */
-Real cutoff_time = end_time * 0.0;   //** cutoff_time should be a integral and the same as the PY script */
+Real end_time = 6.0;               /**< End time. */
+Real Output_Time = end_time / 4.0; /**< Time stamps for output of body states. */
+Real cutoff_time = 4.0;            //** cutoff_time should be a integral and the same as the PY script */
 //----------------------------------------------------------------------
 // Observation with offset model.
 //----------------------------------------------------------------------
 // ** By kernel weight. *
-int number_observe_line = 7;
+int number_observe_line = 1;
 Real observer_offset_distance = 1.8 * resolution_ref;
-Vec2d unit_direction_observe(0.0, -1.0); //** From end to start to ensure observe accuracy on the inclined wall */
+Vec2d unit_direction_observe(0.0, 1.0); //** From end to start to ensure observe accuracy on the inclined wall */
 // ** Determine the observing start point. *
-Real observe_start_x[7] = {
-    point_B[0] - 5.87 * DH,
-    point_B[0] + 2.59 * DH,
-    point_B[0] + 5.98 * DH,
-    point_B[0] + 13.56 * DH,
-    point_B[0] + 16.93 * DH,
-    point_B[0] + 20.32 * DH,
-    point_B[0] + 23.71 * DH};
+Real observe_start_x[1] = {
+    0.95 * DL_total};
 Real observe_start_y = 0.0 + offset_distance;
 // ** Determine the length of the observing line and other information. *
-Real observe_line_length[7] = {0.0};
-Real observe_end_y[7] = {0.0};
-int num_observer_points[7] = {0};
+Real observe_line_length[1] = {0.0};
+Real observe_end_y[1] = {0.0};
+int num_observer_points[1] = {0};
 void getObservingLineLengthAndEndPoints()
 {
     for (int i = 0; i < number_observe_line; ++i)
     {
-        if (observe_start_x[i] < point_B[0])
-        {
-            observe_end_y[i] = observe_start_y + DH_C;
-            observe_line_length[i] = DH_C;
-            num_observer_points[i] = std::round(observe_line_length[i] / resolution_ref);
-        }
-        else if (observe_start_x[i] >= point_B[0] && observe_start_x[i] < point_C[0])
-        {
-            Real x_diff = observe_start_x[i] - point_B[0];
-            Real y_diff = x_diff * tan(incline_angle);
-            observe_end_y[i] = y_diff + point_B[1] - offset_distance;
-            observe_line_length[i] = observe_end_y[i] - observe_start_y;
-            num_observer_points[i] = std::round(observe_line_length[i] / resolution_ref);
-        }
-        else if (observe_start_x[i] >= point_C[0])
-        {
-            observe_end_y[i] = point_D[1] - offset_distance;
-            observe_line_length[i] = point_D[1] - 2.0 * offset_distance;
-            num_observer_points[i] = std::round(observe_line_length[i] / resolution_ref);
-        }
+        observe_end_y[i] = observe_start_y + DH_C;
+        observe_line_length[i] = DH_C;
+        num_observer_points[i] = std::round(observe_line_length[i] / resolution_ref);
     }
 }
 
@@ -185,7 +163,7 @@ void getPositionsOfMultipleObserveLines()
     getObservingLineLengthAndEndPoints();
     for (int k = 0; k < number_observe_line; ++k)
     {
-        Vecd pos_observe_start(observe_start_x[k], observe_end_y[k]);
+        Vecd pos_observe_start(observe_start_x[k], observe_start_y);
         int num_observer_point = num_observer_points[k];
         Real observe_spacing = observe_line_length[k] / num_observer_point;
         for (int i = 0; i < num_observer_point; ++i)
@@ -315,8 +293,8 @@ struct InflowVelocity
         Real run_time = GlobalStaticVariables::physical_time_;
         Real u_ave = run_time < t_ref_ ? 0.5 * u_ref_ * (1.0 - cos(Pi * run_time / t_ref_)) : u_ref_;
         //target_velocity[0] = 1.5 * u_ave * SMAX(0.0, 1.0 - position[1] * position[1] / halfsize_[1] / halfsize_[1]);
-        //target_velocity[0] = 1.5 * u_ave * (1.0 - position[1] * position[1] / half_channel_height / half_channel_height);
-        target_velocity[0] = u_ave;
+        target_velocity[0] = 1.5 * u_ave * (1.0 - position[1] * position[1] / half_channel_height / half_channel_height);
+        //target_velocity[0] = u_ave;
         if (position[1] > half_channel_height)
         {
             std::cout << "Particles out of domain, wrong inlet velocity." << std::endl;
