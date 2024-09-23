@@ -19,10 +19,10 @@ using namespace SPH;
 //	Basic geometry parameters and numerical setup.
 //----------------------------------------------------------------------
 Real DH = 2.0; /**< Channel height. */
-Real num_fluid_cross_section = 100.0;
+Real num_fluid_cross_section = 20.0;
 Real extend_in = 2.0;
 Real extend_out = 4.0;
-Real extend_compensate_relaxation = 1.0;
+Real extend_compensate_relaxation = 0.0;
 Real DL1 = 1.0 + extend_in;
 Real DL2 = 1.5;
 Real DL3 = 1.0;
@@ -56,8 +56,8 @@ Real turbulent_module_activate_time = 2.5;
 //** Intial values for K, Epsilon and Mu_t *
 StdVec<Real> initial_turbu_values = {0.000180001, 3.326679e-5, 1.0e-3};
 
-//Real y_p_constant = DH / 2.0 / num_fluid_cross_section; //** For the first try *
-Real y_p_constant = 0.025;
+Real y_p_constant = DH / 2.0 / num_fluid_cross_section; //** For the first try *
+//Real y_p_constant = 0.025;
 Real resolution_ref_temp = (DH - 2.0 * y_p_constant) / (num_fluid_cross_section - 1.0); /**< Initial reference particle spacing. */
 Real resolution_ref = round(resolution_ref_temp * 1.0e8) / 1.0e8;
 Real offset_distance = y_p_constant - resolution_ref / 2.0; //** Basically offset distance is large than or equal to 0 *
@@ -251,8 +251,6 @@ std::vector<Vecd> createWaterBlockShape()
     water_block_shape.push_back(Vecd(point_C[0] + offset_distance, point_C[1]));
     water_block_shape.push_back(point_C);
     water_block_shape.push_back(point_D);
-    water_block_shape.push_back(point_E);
-    water_block_shape.push_back(point_F);
     water_block_shape.push_back(point_G);
     water_block_shape.push_back(Vecd(-DL_sponge - offset_distance - extend_compensate_relaxation, 0.0));
 
@@ -280,8 +278,6 @@ std::vector<Vecd> createOuterWallShape()
     water_block_shape.push_back(Vecd(point_C[0] + offset_distance + BW, point_C[1]));
     water_block_shape.push_back(point_C);
     water_block_shape.push_back(point_D);
-    water_block_shape.push_back(point_E);
-    water_block_shape.push_back(point_F);
     water_block_shape.push_back(point_G);
     water_block_shape.push_back(Vecd(-DL_sponge - offset_distance - BW, 0.0));
 
@@ -299,8 +295,6 @@ std::vector<Vecd> createInnerWallShape()
     water_block_shape.push_back(Vecd(point_C[0] + offset_distance + 2.0 * BW, point_C[1]));
     water_block_shape.push_back(point_C);
     water_block_shape.push_back(point_D);
-    water_block_shape.push_back(point_E);
-    water_block_shape.push_back(point_F);
     water_block_shape.push_back(point_G);
     water_block_shape.push_back(Vecd(-DL_sponge - offset_distance - 2.0 * BW, 0.0));
 
