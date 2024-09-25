@@ -20,24 +20,18 @@ using namespace SPH;
 //----------------------------------------------------------------------
 Real DH = 2.0; /**< Channel height. */
 Real num_fluid_cross_section = 20.0;
-Real extend_in = 2.0;
-Real extend_out = 4.0;
+Real extend_in = 0.0;
+Real extend_out = 0.0;
 Real extend_compensate_relaxation = 0.0;
-Real DL1 = 1.0 + extend_in;
-Real DL2 = 1.5;
-Real DL3 = 1.0;
-Real DL4 = 1.5;
-Real DL5 = 1.0 + extend_out;
-Real DL = DL1 + DL2 + DL3 + DL4 + DL5;
-Real incline_angle = 30.0 * (2.0 * Pi / 360.0);
-Real DH1 = DL2 * tan(incline_angle);
-Vec2d point_A(0.0, DH);
-Vec2d point_B(DL, DH);
-Vec2d point_C(DL, 0.0);
-Vec2d point_D(DL - DL5, 0.0);
-Vec2d point_E(DL - DL5 - DL4, DH1);
-Vec2d point_F(DL1 + DL2, DH1);
-Vec2d point_G(DL1, 0.0);
+Real DH1 = 3.0 * DH;
+Real DL1 = 3.0 * DH;
+Real DL2 = 3.0 * DH;
+Vec2d point_A(DL1, DH);
+Vec2d point_B(point_A[0], point_A[1] + DH1);
+Vec2d point_C(point_B[0] + DL2, point_B[1]);
+Vec2d point_D(point_C[0], point_C[1] - 2.0 * DH1 - DH);
+Vec2d point_E(point_B[0], point_D[1]);
+Vec2d point_F(point_A[0], point_E[1] + DH1);
 //----------------------------------------------------------------------
 //	Unique parameters for turbulence.
 //----------------------------------------------------------------------
@@ -50,7 +44,7 @@ int is_AMRD = 1;
 bool is_constrain_normal_velocity_in_P_region = true;
 //** Weight for correcting the velocity  gradient in the sub near wall region  *
 Real weight_vel_grad_sub_nearwall = 0.1;
-bool is_always_lattice_arrange_fluid = false;
+bool is_always_lattice_arrange_fluid = true;
 //** Tag for Source Term Linearisation *
 bool is_source_term_linearisation = false;
 //** Empirical parameter for initial stability*
@@ -104,10 +98,10 @@ Vec2d left_buffer_halfsize = Vec2d(0.5 * BW, 0.5 * DH_C + BW);
 Vec2d left_buffer_translation = Vec2d(-DL_sponge, 0.0) + left_buffer_halfsize + Vecd(0.0, offset_distance - BW);
 
 Real outlet_buffer_length = BW;
-Real outlet_buffer_height = DH_C + 2.0 * BW;
+Real outlet_buffer_height = point_C[1] - point_D[1] + 2.0 * BW;
 
 Real outlet_disposer_rotation_angel = 0.0; //** By default, counter-clockwise is positive *
-Vec2d outlet_buffer_center_translation = (point_B + point_C) / 2.0 + Vecd(-1.0, 0.0) * outlet_buffer_length / 2.0;
+Vec2d outlet_buffer_center_translation = (point_C + point_D) / 2.0 + Vecd(-1.0, 0.0) * outlet_buffer_length / 2.0;
 
 Real outlet_emitter_rotation_angel = Pi + outlet_disposer_rotation_angel; //** By default, counter-clockwise is positive *
 
@@ -125,18 +119,16 @@ Vec2d right_buffer_translation = outlet_buffer_center_translation;
 //----------------------------------------------------------------------
 //	Domain bounds of the system.
 //----------------------------------------------------------------------
-Real DL_domain = DL;
-Real DH_domain = DH;
-Vec2d left_bottom_point(-DL_sponge - offset_distance - extend_compensate_relaxation, 0.0);
-Vec2d right_up_point(DL_domain, DH_domain);
+Vec2d left_bottom_point(-DL_sponge - offset_distance - extend_compensate_relaxation, point_E[1]);
+Vec2d right_up_point(point_C[0], point_C[1]);
 BoundingBox system_domain_bounds(left_bottom_point + Vec2d(-2.0 * BW, -2.0 * BW), right_up_point + Vec2d(2.0 * BW, 2.0 * BW));
 //----------------------------------------------------------------------
 // Output and time average control.
 //----------------------------------------------------------------------
 int screen_output_interval = 100;
-Real end_time = 100.0;              /**< End time. */
-Real Output_Time = end_time / 40.0; /**< Time stamps for output of body states. */
-Real cutoff_time = 50.0;            //** cutoff_time should be a integral and the same as the PY script */
+Real end_time = 100.0;               /**< End time. */
+Real Output_Time = end_time / 200.0; /**< Time stamps for output of body states. */
+Real cutoff_time = 50.0;             //** cutoff_time should be a integral and the same as the PY script */
 //----------------------------------------------------------------------
 // Observation with offset model.
 //----------------------------------------------------------------------
@@ -240,22 +232,24 @@ void output_number_observe_points_on_lines()
 //----------------------------------------------------------------------
 //	Cases-dependent geometries
 //----------------------------------------------------------------------
-
+void createCommonGeometry(std::vector<Vecd> &block_shape, Real extend_fluid, Real extend_wall)
+{
+    block_shape.push_back(Vecd(-DL_sponge - offset_distance - extend_fluid - extend_wall, 0.0));
+    block_shape.push_back(Vecd(-DL_sponge - offset_distance - extend_fluid - extend_wall, DH));
+    block_shape.push_back(point_A);
+    block_shape.push_back(point_B);
+    block_shape.push_back(point_C);
+    block_shape.push_back(Vecd(point_C[0] + offset_distance + extend_wall, point_C[1]));
+    block_shape.push_back(Vecd(point_D[0] + offset_distance + extend_wall, point_D[1]));
+    block_shape.push_back(point_D);
+    block_shape.push_back(point_E);
+    block_shape.push_back(point_F);
+    block_shape.push_back(Vecd(-DL_sponge - offset_distance - extend_fluid - extend_wall, 0.0));
+}
 std::vector<Vecd> createWaterBlockShape()
 {
     std::vector<Vecd> water_block_shape;
-
-    water_block_shape.push_back(Vecd(-DL_sponge - offset_distance - extend_compensate_relaxation, 0.0));
-    water_block_shape.push_back(Vecd(-DL_sponge - offset_distance - extend_compensate_relaxation, DH));
-    water_block_shape.push_back(point_A);
-    water_block_shape.push_back(point_B);
-    water_block_shape.push_back(Vecd(point_B[0] + offset_distance, point_B[1]));
-    water_block_shape.push_back(Vecd(point_C[0] + offset_distance, point_C[1]));
-    water_block_shape.push_back(point_C);
-    water_block_shape.push_back(point_D);
-    water_block_shape.push_back(point_G);
-    water_block_shape.push_back(Vecd(-DL_sponge - offset_distance - extend_compensate_relaxation, 0.0));
-
+    createCommonGeometry(water_block_shape, extend_compensate_relaxation, 0.0);
     return water_block_shape;
 }
 class WaterBlock : public ComplexShape
@@ -270,37 +264,15 @@ class WaterBlock : public ComplexShape
 
 std::vector<Vecd> createOuterWallShape()
 {
-    std::vector<Vecd> water_block_shape;
-
-    water_block_shape.push_back(Vecd(-DL_sponge - offset_distance - BW, 0.0));
-    water_block_shape.push_back(Vecd(-DL_sponge - offset_distance - BW, DH));
-    water_block_shape.push_back(point_A);
-    water_block_shape.push_back(point_B);
-    water_block_shape.push_back(Vecd(point_B[0] + offset_distance + BW, point_B[1]));
-    water_block_shape.push_back(Vecd(point_C[0] + offset_distance + BW, point_C[1]));
-    water_block_shape.push_back(point_C);
-    water_block_shape.push_back(point_D);
-    water_block_shape.push_back(point_G);
-    water_block_shape.push_back(Vecd(-DL_sponge - offset_distance - BW, 0.0));
-
-    return water_block_shape;
+    std::vector<Vecd> outer_block_shape;
+    createCommonGeometry(outer_block_shape, 0.0, BW);
+    return outer_block_shape;
 }
 std::vector<Vecd> createInnerWallShape()
 {
-    std::vector<Vecd> water_block_shape;
-
-    water_block_shape.push_back(Vecd(-DL_sponge - offset_distance - 2.0 * BW, 0.0));
-    water_block_shape.push_back(Vecd(-DL_sponge - offset_distance - 2.0 * BW, DH));
-    water_block_shape.push_back(point_A);
-    water_block_shape.push_back(point_B);
-    water_block_shape.push_back(Vecd(point_B[0] + offset_distance + 2.0 * BW, point_B[1]));
-    water_block_shape.push_back(Vecd(point_C[0] + offset_distance + 2.0 * BW, point_C[1]));
-    water_block_shape.push_back(point_C);
-    water_block_shape.push_back(point_D);
-    water_block_shape.push_back(point_G);
-    water_block_shape.push_back(Vecd(-DL_sponge - offset_distance - 2.0 * BW, 0.0));
-
-    return water_block_shape;
+    std::vector<Vecd> inner_block_shape;
+    createCommonGeometry(inner_block_shape, 0.0, 2.0 * BW);
+    return inner_block_shape;
 }
 
 /**
@@ -365,9 +337,16 @@ class TimeDependentAcceleration : public Gravity
 
     virtual Vecd InducedAcceleration(const Vecd &position) override
     {
-        Real run_time_ = GlobalStaticVariables::physical_time_;
-        du_ave_dt_ = 0.5 * u_ref_ * (Pi / t_ref_) * sin(Pi * run_time_ / t_ref_);
-        return run_time_ < t_ref_ ? Vecd(du_ave_dt_, 0.0) : global_acceleration_;
+        if (position[1] < point_A[1] && position[1] > point_F[1])
+        {
+            Real run_time_ = GlobalStaticVariables::physical_time_;
+            du_ave_dt_ = 0.5 * u_ref_ * (Pi / t_ref_) * sin(Pi * run_time_ / t_ref_);
+            return run_time_ < t_ref_ ? Vecd(du_ave_dt_, 0.0) : global_acceleration_;
+        }
+        else
+        {
+            return global_acceleration_;
+        }
     }
 };
 
