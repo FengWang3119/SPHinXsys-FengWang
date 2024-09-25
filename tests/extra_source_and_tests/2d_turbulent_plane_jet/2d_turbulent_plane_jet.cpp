@@ -252,8 +252,8 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------------------------------------
     int num_output_file = 0;
     //Real start_time_turbulence = 70.0;
-    std::cout << "Press any key to start";
-    std::cin.get();
+    //std::cout << "Press any key to start";
+    //std::cin.get();
     while (GlobalStaticVariables::physical_time_ < end_time)
     {
         Real integration_time = 0.0;
