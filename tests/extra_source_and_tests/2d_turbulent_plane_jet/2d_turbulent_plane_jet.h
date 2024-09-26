@@ -19,7 +19,7 @@ using namespace SPH;
 //	Basic geometry parameters and numerical setup.
 //----------------------------------------------------------------------
 Real DH = 2.0; /**< Channel height. */
-Real num_fluid_cross_section = 20.0;
+Real num_fluid_cross_section = 10.0;
 Real extend_in = 0.0;
 Real extend_out = 0.0;
 Real extend_compensate_relaxation = 0.0;
@@ -40,15 +40,15 @@ Real characteristic_length = DH; /**<It needs characteristic Length to calculate
 int type_turbulent_inlet = 0;
 Real relaxation_rate_turbulent_inlet = 0.8;
 //** Tag for AMRD *
-int is_AMRD = 1;
-bool is_constrain_normal_velocity_in_P_region = true;
+int is_AMRD = 0;
+bool is_constrain_normal_velocity_in_P_region = false;
 //** Weight for correcting the velocity  gradient in the sub near wall region  *
 Real weight_vel_grad_sub_nearwall = 0.1;
 bool is_always_lattice_arrange_fluid = false;
 //** Tag for Source Term Linearisation *
 bool is_source_term_linearisation = false;
 //** Empirical parameter for initial stability*
-Real turbulent_module_activate_time = 100.0;
+Real turbulent_module_activate_time = 2.5;
 //** Intial values for K, Epsilon and Mu_t *
 StdVec<Real> initial_turbu_values = {0.000180001, 3.326679e-5, 1.0e-3};
 
@@ -126,9 +126,9 @@ BoundingBox system_domain_bounds(left_bottom_point + Vec2d(-2.0 * BW, -2.0 * BW)
 // Output and time average control.
 //----------------------------------------------------------------------
 int screen_output_interval = 100;
-Real end_time = 100.0;              /**< End time. */
-Real Output_Time = end_time / 40.0; /**< Time stamps for output of body states. */
-Real cutoff_time = 50.0;            //** cutoff_time should be a integral and the same as the PY script */
+Real end_time = 200.0;               /**< End time. */
+Real Output_Time = end_time / 200.0; /**< Time stamps for output of body states. */
+Real cutoff_time = 50.0;             //** cutoff_time should be a integral and the same as the PY script */
 //----------------------------------------------------------------------
 // Observation with offset model.
 //----------------------------------------------------------------------
