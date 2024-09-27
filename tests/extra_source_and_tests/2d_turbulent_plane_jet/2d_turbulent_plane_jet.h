@@ -25,13 +25,19 @@ Real extend_out = 0.0;
 Real extend_compensate_relaxation = 0.0;
 Real DH1 = 20.0 * DH;
 Real DL1 = 10.0 * DH;
-Real DL2 = 50.0 * DH;
+Real DL2 = 25.0 * DH;
 Vec2d point_A(DL1, DH);
 Vec2d point_B(point_A[0], point_A[1] + DH1);
 Vec2d point_C(point_B[0] + DL2, point_B[1]);
 Vec2d point_D(point_C[0], point_C[1] - 2.0 * DH1 - DH);
 Vec2d point_E(point_B[0], point_D[1]);
 Vec2d point_F(point_A[0], point_E[1] + DH1);
+
+Real reduced_length = DH1 * 2.0 / 3.0;
+Vec2d point_G(point_B[0], point_B[1] - reduced_length);
+Vec2d point_H(point_C[0], point_C[1] - reduced_length);
+Vec2d point_I(point_D[0], point_D[1] + reduced_length);
+Vec2d point_J(point_E[0], point_E[1] + reduced_length);
 //----------------------------------------------------------------------
 //	Unique parameters for turbulence.
 //----------------------------------------------------------------------
@@ -115,7 +121,30 @@ Vec2d right_buffer_translation = outlet_buffer_center_translation;
 
 //Vec2d disposer_halfsize = Vec2d(0.75 * DH, 0.5 * BW);
 //Vec2d disposer_translation = Vec2d(DL_domain + 0.25 * DH, DH_domain ) - disposer_halfsize;
+//----------------------------------------------------------------------
+// Up buffer
+//----------------------------------------------------------------------
+Real up_buffer_length = BW;
+Real up_buffer_height = point_H[0] - point_G[0];
+Vec2d up_buffer_center_translation = (point_G + point_H) / 2.0 + Vecd(0.0, 1.0) * resolution_ref / 2.0 + Vecd(0.0, -1.0) * up_buffer_length / 2.0 + Vecd(-1.0, 0.0) * 4.0 * outlet_buffer_length;
 
+Real up_emitter_rotation_angel = -Pi / 2.0;
+Real up_disposer_rotation_angel = Pi / 2.0;
+
+Vec2d up_buffer_translation = up_buffer_center_translation;
+Vec2d up_buffer_halfsize = Vec2d(0.5 * up_buffer_length, 0.5 * up_buffer_height);
+//----------------------------------------------------------------------
+// Down buffer
+//----------------------------------------------------------------------
+Real down_buffer_length = BW;
+Real down_buffer_height = point_I[0] - point_J[0];
+Vec2d down_buffer_center_translation = (point_I + point_J) / 2.0 + Vecd(0.0, -1.0) * resolution_ref / 2.0 + Vecd(0.0, 1.0) * down_buffer_length / 2.0 + Vecd(-1.0, 0.0) * 4.0 * outlet_buffer_length;
+
+Real down_emitter_rotation_angel = Pi / 2.0;
+Real down_disposer_rotation_angel = -Pi / 2.0;
+
+Vec2d down_buffer_translation = down_buffer_center_translation;
+Vec2d down_buffer_halfsize = Vec2d(0.5 * down_buffer_length, 0.5 * down_buffer_height);
 //----------------------------------------------------------------------
 //	Domain bounds of the system.
 //----------------------------------------------------------------------
@@ -126,9 +155,9 @@ BoundingBox system_domain_bounds(left_bottom_point + Vec2d(-2.0 * BW, -2.0 * BW)
 // Output and time average control.
 //----------------------------------------------------------------------
 int screen_output_interval = 100;
-Real end_time = 200.0;               /**< End time. */
-Real Output_Time = end_time / 200.0; /**< Time stamps for output of body states. */
-Real cutoff_time = 50.0;             //** cutoff_time should be a integral and the same as the PY script */
+Real end_time = 200.0;                   /**< End time. */
+Real Output_Time = end_time / 2000000.0; /**< Time stamps for output of body states. */
+Real cutoff_time = 50.0;                 //** cutoff_time should be a integral and the same as the PY script */
 //----------------------------------------------------------------------
 // Observation with offset model.
 //----------------------------------------------------------------------
@@ -246,10 +275,22 @@ void createCommonGeometry(std::vector<Vecd> &block_shape, Real extend_fluid, Rea
     block_shape.push_back(point_F);
     block_shape.push_back(Vecd(-DL_sponge - offset_distance - extend_fluid - extend_wall, 0.0));
 }
+
 std::vector<Vecd> createWaterBlockShape()
 {
     std::vector<Vecd> water_block_shape;
-    createCommonGeometry(water_block_shape, extend_compensate_relaxation, 0.0);
+    //createCommonGeometry(water_block_shape, extend_compensate_relaxation, 0.0);
+    water_block_shape.push_back(Vecd(-DL_sponge - offset_distance - extend_compensate_relaxation, 0.0));
+    water_block_shape.push_back(Vecd(-DL_sponge - offset_distance - extend_compensate_relaxation, DH));
+    water_block_shape.push_back(point_A);
+    water_block_shape.push_back(point_G);
+    water_block_shape.push_back(point_H);
+    water_block_shape.push_back(Vecd(point_H[0] + offset_distance, point_H[1]));
+    water_block_shape.push_back(Vecd(point_I[0] + offset_distance, point_I[1]));
+    water_block_shape.push_back(point_I);
+    water_block_shape.push_back(point_J);
+    water_block_shape.push_back(point_F);
+    water_block_shape.push_back(Vecd(-DL_sponge - offset_distance - extend_compensate_relaxation, 0.0));
     return water_block_shape;
 }
 class WaterBlock : public ComplexShape

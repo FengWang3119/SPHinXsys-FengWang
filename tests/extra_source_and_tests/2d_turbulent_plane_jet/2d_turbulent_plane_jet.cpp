@@ -192,9 +192,25 @@ int main(int ac, char *av[])
     //SimpleDynamics<fluid_dynamics::PressureCondition<RightOutflowPressure>> right_outflow_pressure_condition(right_emitter);
     SimpleDynamics<fluid_dynamics::PressureConditionCorrection<RightOutflowPressure>> right_outflow_pressure_condition(right_emitter);
 
+    //----------------------------------------------------------------------
+    // Up buffer
+    //----------------------------------------------------------------------
+    BodyAlignedBoxByCell up_emitter(water_block, makeShared<AlignedBoxShape>(xAxis, Transform(Rotation2d(up_emitter_rotation_angel), Vec2d(up_buffer_translation)), up_buffer_halfsize));
+    fluid_dynamics::NonPrescribedPressureBidirectionalBuffer up_emitter_inflow_injection(up_emitter, inlet_particle_buffer);
+    BodyAlignedBoxByCell up_disposer(water_block, makeShared<AlignedBoxShape>(xAxis, Transform(Rotation2d(up_disposer_rotation_angel), Vec2d(up_buffer_translation)), up_buffer_halfsize));
+    SimpleDynamics<fluid_dynamics::DisposerOutflowDeletion> up_disposer_outflow_deletion(up_disposer);
+    //----------------------------------------------------------------------
+    // Down buffer
+    //----------------------------------------------------------------------
+    BodyAlignedBoxByCell down_emitter(water_block, makeShared<AlignedBoxShape>(xAxis, Transform(Rotation2d(down_emitter_rotation_angel), Vec2d(down_buffer_translation)), down_buffer_halfsize));
+    fluid_dynamics::NonPrescribedPressureBidirectionalBuffer down_emitter_inflow_injection(down_emitter, inlet_particle_buffer);
+    BodyAlignedBoxByCell down_disposer(water_block, makeShared<AlignedBoxShape>(xAxis, Transform(Rotation2d(down_disposer_rotation_angel), Vec2d(down_buffer_translation)), down_buffer_halfsize));
+    SimpleDynamics<fluid_dynamics::DisposerOutflowDeletion> down_disposer_outflow_deletion(down_disposer);
+    //----------------------------------------------------------------------
+
     /** Temporary treatment for Pressure outlet module  */
-    InteractionWithUpdate<fluid_dynamics::DensitySummationPressureComplex> update_fluid_density_pressure(water_block_inner, water_wall_contact);
-    //InteractionWithUpdate<fluid_dynamics::DensitySummationFreeStreamComplex> update_density_by_summation(water_block_inner, water_wall_contact);
+    //InteractionWithUpdate<fluid_dynamics::DensitySummationPressureComplex> update_fluid_density_pressure(water_block_inner, water_wall_contact);
+    InteractionWithUpdate<fluid_dynamics::DensitySummationFreeStreamComplex> update_density_by_summation(water_block_inner, water_wall_contact);
 
     /** Choose one, ordinary or turbulent. Time step size without considering sound wave speed. */
     ReduceDynamics<fluid_dynamics::TurbulentAdvectionTimeStepSize> get_turbulent_fluid_advection_time_step_size(water_block, U_f);
@@ -234,6 +250,8 @@ int main(int ac, char *av[])
     /** Tag in/outlet buffer particles */
     left_emitter_inflow_injection.tag_buffer_particles.exec();
     right_emitter_inflow_injection.tag_buffer_particles.exec();
+    up_emitter_inflow_injection.tag_buffer_particles.exec();
+    down_emitter_inflow_injection.tag_buffer_particles.exec();
 
     /** Output the start states of bodies. */
     body_states_recording.writeToFile();
@@ -267,8 +285,8 @@ int main(int ac, char *av[])
 
             //inlet_outlet_surface_particle_indicator.exec();
 
-            //update_density_by_summation.exec();
-            update_fluid_density_pressure.exec();
+            update_density_by_summation.exec();
+            //update_fluid_density_pressure.exec();
 
             corrected_configuration_fluid.exec();
             corrected_configuration_fluid_only_inner.exec();
@@ -350,6 +368,9 @@ int main(int ac, char *av[])
             left_emitter_inflow_injection.injection.exec();
             right_emitter_inflow_injection.injection.exec();
 
+            up_emitter_inflow_injection.injection.exec();
+            down_emitter_inflow_injection.injection.exec();
+
             left_disposer_outflow_deletion.exec();
             right_disposer_outflow_deletion.exec();
 
@@ -363,6 +384,8 @@ int main(int ac, char *av[])
             /** Tag in/outlet buffer particles that suffer pressure condition*/
             left_emitter_inflow_injection.tag_buffer_particles.exec();
             right_emitter_inflow_injection.tag_buffer_particles.exec();
+            up_emitter_inflow_injection.tag_buffer_particles.exec();
+            down_emitter_inflow_injection.tag_buffer_particles.exec();
 
             if (GlobalStaticVariables::physical_time_ > cutoff_time)
             {
