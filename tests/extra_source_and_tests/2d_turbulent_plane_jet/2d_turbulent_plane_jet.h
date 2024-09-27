@@ -126,9 +126,9 @@ BoundingBox system_domain_bounds(left_bottom_point + Vec2d(-2.0 * BW, -2.0 * BW)
 // Output and time average control.
 //----------------------------------------------------------------------
 int screen_output_interval = 100;
-Real end_time = 200.0;               /**< End time. */
-Real Output_Time = end_time / 200.0; /**< Time stamps for output of body states. */
-Real cutoff_time = 50.0;             //** cutoff_time should be a integral and the same as the PY script */
+Real end_time = 1000.0;               /**< End time. */
+Real Output_Time = end_time / 1000.0; /**< Time stamps for output of body states. */
+Real cutoff_time = 50.0;              //** cutoff_time should be a integral and the same as the PY script */
 //----------------------------------------------------------------------
 // Observation with offset model.
 //----------------------------------------------------------------------
