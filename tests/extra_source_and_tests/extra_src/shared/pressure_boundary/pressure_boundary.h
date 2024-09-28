@@ -57,9 +57,9 @@ class PressureBoundaryCondition : public BaseFlowBoundaryCondition
         //vel_[index_i] += 2.0 * kernel_sum_[index_i] * target_pressure_(p_[index_i]) / rho_[index_i] * dt;
         vel_[index_i] += 2.0 * kernel_correction_(index_i) * kernel_sum_[index_i] * target_pressure_(p_[index_i]) / rho_[index_i] * dt;
 
-        Vecd frame_velocity = Vecd::Zero();
-        frame_velocity[alignment_axis_] = transform_.xformBaseVecToFrame(vel_[index_i])[alignment_axis_];
-        vel_[index_i] = transform_.xformFrameVecToBase(frame_velocity);
+        //Vecd frame_velocity = Vecd::Zero();
+        //frame_velocity[alignment_axis_] = transform_.xformBaseVecToFrame(vel_[index_i])[alignment_axis_];
+        //vel_[index_i] = transform_.xformFrameVecToBase(frame_velocity);
     };
 
   protected:
