@@ -1,3 +1,8 @@
+// This branch is terminated since adding freestream or in/outlet buffer at up and down side has no physical meanings.
+// After discussion, the only way seems to do the whole domain simulation.
+// The existing multi-resolution is also not feasible because of the vortex in the up and down regions.
+// We move to SPH17-5
+
 /**
  * @file 	2d_turbulent_channel_PBC.h
  * @brief 	This is the case file for the test of flow passing by a cylinder.
