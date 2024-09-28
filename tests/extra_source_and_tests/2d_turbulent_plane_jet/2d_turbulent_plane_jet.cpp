@@ -192,6 +192,10 @@ int main(int ac, char *av[])
     //SimpleDynamics<fluid_dynamics::PressureCondition<RightOutflowPressure>> right_outflow_pressure_condition(right_emitter);
     SimpleDynamics<fluid_dynamics::PressureConditionCorrection<RightOutflowPressure>> right_outflow_pressure_condition(right_emitter);
 
+    /** Outlet damper  */
+    BodyRegionByCell damping_buffer(water_block, makeShared<MultiPolygonShape>(createDampingBufferShape()));
+    SimpleDynamics<fluid_dynamics::DampingBoundaryCondition> damping_outlet(damping_buffer);
+
     /** Temporary treatment for Pressure outlet module  */
     InteractionWithUpdate<fluid_dynamics::DensitySummationPressureComplex> update_fluid_density_pressure(water_block_inner, water_wall_contact);
     //InteractionWithUpdate<fluid_dynamics::DensitySummationFreeStreamComplex> update_density_by_summation(water_block_inner, water_wall_contact);
@@ -332,11 +336,14 @@ int main(int ac, char *av[])
                 integration_time += dt;
                 GlobalStaticVariables::physical_time_ += dt;
                 inner_itr++;
-                //std::cout << "num_output_file=" << num_output_file << std::endl;
-                //if (GlobalStaticVariables::physical_time_ >9.3)
-                //{
-                //body_states_recording.writeToFile();
-                //}
+
+                if (dt < 1.0e-6)
+                {
+                    std::cout << "too small dt, please check. "
+                              << "num_output_file=" << num_output_file << std::endl;
+                    body_states_recording.writeToFile();
+                    num_output_file++;
+                }
             }
             if (number_of_iterations % screen_output_interval == 0)
             {
@@ -345,6 +352,8 @@ int main(int ac, char *av[])
                           << "	Dt = " << Dt << "	dt = " << dt << "\n";
             }
             number_of_iterations++;
+
+            //damping_outlet.exec(Dt);
 
             /** inflow injection*/
             left_emitter_inflow_injection.injection.exec();

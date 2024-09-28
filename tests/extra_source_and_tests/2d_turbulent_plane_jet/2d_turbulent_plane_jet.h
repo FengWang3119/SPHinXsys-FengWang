@@ -290,7 +290,24 @@ class WallBoundary : public ComplexShape
         subtract<ExtrudeShape<MultiPolygonShape>>(-offset_distance, inner_dummy_boundary, "InnerDummyBoundary");
     }
 };
-
+//----------------------------------------------------------------------
+//	outlet damper
+//----------------------------------------------------------------------
+Real damper_length = BW;
+Vec2d point_G = point_C + Vec2d(-1.0, 0.0) * damper_length;
+Vec2d point_H = point_D + Vec2d(-1.0, 0.0) * damper_length;
+MultiPolygon createDampingBufferShape()
+{
+    std::vector<Vecd> pnts;
+    pnts.push_back(point_G);
+    pnts.push_back(point_C);
+    pnts.push_back(point_D);
+    pnts.push_back(point_H);
+    pnts.push_back(point_G);
+    MultiPolygon multi_polygon;
+    multi_polygon.addAPolygon(pnts, ShapeBooleanOps::add);
+    return multi_polygon;
+}
 //----------------------------------------------------------------------
 //	Inflow velocity
 //----------------------------------------------------------------------
