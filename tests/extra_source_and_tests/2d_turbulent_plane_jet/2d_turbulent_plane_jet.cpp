@@ -353,7 +353,7 @@ int main(int ac, char *av[])
             }
             number_of_iterations++;
 
-            //damping_outlet.exec(Dt);
+            damping_outlet.exec(Dt);
 
             /** inflow injection*/
             left_emitter_inflow_injection.injection.exec();
