@@ -230,60 +230,6 @@ class E_TurtbulentModelInner : public BaseTurtbulentModel<Base, DataDelegateInne
     StdLargeVec<int> &is_near_wall_P1_;
 };
 //=================================================================================================//
-/**
-	 * @class kOmegaSST_TurtbulentModelInner
-	 * @brief  kOmegaSST_TurtbulentModelInner
-	 */
-class kOmegaSST_kTransportEquationInner : public BaseTurtbulentModel<Base, DataDelegateInner>
-{
-  public:
-    explicit kOmegaSST_kTransportEquationInner(BaseInnerRelation &inner_relation, const StdVec<Real> &initial_values, int is_extr_visc_dissipa = 0);
-    virtual ~kOmegaSST_kTransportEquationInner(){};
-
-    inline void interaction(size_t index_i, Real dt = 0.0);
-    void update(size_t index_i, Real dt = 0.0);
-
-  protected:
-    StdLargeVec<Real> &dk_dt_;
-    StdLargeVec<Real> &dk_dt_without_dissipation_;
-    StdLargeVec<Real> &k_production_;
-
-    StdLargeVec<int> &is_near_wall_P1_; //** This is used to specially treat near wall region  *
-    StdLargeVec<Matd> &velocity_gradient_;
-    StdLargeVec<Real> &turbu_k_;
-    StdLargeVec<Real> &turbu_epsilon_;
-    StdLargeVec<Real> &turbu_mu_;
-    StdLargeVec<Matd> &turbu_strain_rate_;
-    StdLargeVec<int> &is_extra_viscous_dissipation_;
-    //** for test */
-    StdLargeVec<int> &turbu_indicator_;
-    StdLargeVec<Real> &k_diffusion_, &vel_x_;
-};
-//=================================================================================================//
-/**
-	 * @class kOmegaSST_TurtbulentModelInner
-	 * @brief  kOmegaSST_TurtbulentModelInner
-	 */
-class kOmegaSST_omegaTransportEquationInner : public BaseTurtbulentModel<Base, DataDelegateInner>
-{
-  public:
-    explicit kOmegaSST_omegaTransportEquationInner(BaseInnerRelation &inner_relation);
-    virtual ~kOmegaSST_omegaTransportEquationInner(){};
-
-    inline void interaction(size_t index_i, Real dt = 0.0);
-    void update(size_t index_i, Real dt = 0.0);
-
-  protected:
-    StdLargeVec<Real> &depsilon_dt_, &depsilon_dt_without_disspation_;
-    StdLargeVec<Real> &ep_production, &ep_dissipation_, &ep_diffusion_;
-
-    StdLargeVec<Real> &turbu_mu_;
-    StdLargeVec<Real> &turbu_k_;
-    StdLargeVec<Real> &turbu_epsilon_;
-    StdLargeVec<Real> &k_production_;
-    StdLargeVec<int> &is_near_wall_P1_;
-};
-//=================================================================================================//
 
 template <typename... InteractionTypes>
 class TKEnergyForce;
