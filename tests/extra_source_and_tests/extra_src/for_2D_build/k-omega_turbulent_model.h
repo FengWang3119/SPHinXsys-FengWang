@@ -139,6 +139,7 @@ class BaseTurtbulentModel<Base, DataDelegationType>
     StdLargeVec<Real> &turbu_epsilon_;
     StdLargeVec<Real> &turbu_mu_;
     StdLargeVec<Matd> &turbu_strain_rate_; //** temporary naming to distinguish the regular strain rate *
+    StdLargeVec<Real> &turbu_omega_;
 
     Real mu_, smoothing_length_, particle_spacing_min_;
     StdLargeVec<Real> &rho_, &Vol_;
@@ -222,7 +223,7 @@ class kOmegaSST_kTransportEquationInner : public BaseTurtbulentModel<Base, DataD
     StdLargeVec<int> &is_near_wall_P1_; //** This is used to specially treat near wall region  *
     StdLargeVec<Matd> &velocity_gradient_;
     StdLargeVec<Real> &turbu_k_;
-    StdLargeVec<Real> &turbu_epsilon_;
+    StdLargeVec<Real> &turbu_omega_;
     StdLargeVec<Real> &turbu_mu_;
     StdLargeVec<Matd> &turbu_strain_rate_;
     StdLargeVec<int> &is_extra_viscous_dissipation_;
@@ -245,12 +246,12 @@ class kOmegaSST_omegaTransportEquationInner : public BaseTurtbulentModel<Base, D
     void update(size_t index_i, Real dt = 0.0);
 
   protected:
-    StdLargeVec<Real> &depsilon_dt_, &depsilon_dt_without_disspation_;
-    StdLargeVec<Real> &ep_production, &ep_dissipation_, &ep_diffusion_;
+    StdLargeVec<Real> &domega_dt_, &domega_dt_without_disspation_;
+    StdLargeVec<Real> &omega_production_, &omega_dissipation_, &omega_diffusion_;
 
     StdLargeVec<Real> &turbu_mu_;
     StdLargeVec<Real> &turbu_k_;
-    StdLargeVec<Real> &turbu_epsilon_;
+    StdLargeVec<Real> &turbu_omega_;
     StdLargeVec<Real> &k_production_;
     StdLargeVec<int> &is_near_wall_P1_;
 };

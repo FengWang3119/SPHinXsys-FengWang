@@ -1288,7 +1288,7 @@ kOmegaSST_kTransportEquationInner::kOmegaSST_kTransportEquationInner(BaseInnerRe
       is_near_wall_P1_(*particles_->getVariableDataByName<int>("IsNearWallP1")),
       velocity_gradient_(*particles_->getVariableDataByName<Matd>("TurbulentVelocityGradient")),
       turbu_k_(*particles_->getVariableDataByName<Real>("TurbulenceKineticEnergy")),
-      turbu_epsilon_(*particles_->getVariableDataByName<Real>("TurbulentDissipation")),
+      turbu_omega_(*particles_->getVariableDataByName<Real>("TurbulentSpecificDissipation")),
       turbu_mu_(*particles_->getVariableDataByName<Real>("TurbulentViscosity")),
       turbu_strain_rate_(*particles_->getVariableDataByName<Matd>("TurbulentStrainRate")),
       is_extra_viscous_dissipation_(*particles_->registerSharedVariable<int>("TurbulentExtraViscousDissipation")),
@@ -1318,7 +1318,7 @@ kOmegaSST_kTransportEquationInner::kOmegaSST_kTransportEquationInner(BaseInnerRe
 
     //** Obtain Initial values for transport equations *
     std::fill(turbu_k_.begin(), turbu_k_.end(), initial_values[0]);
-    std::fill(turbu_epsilon_.begin(), turbu_epsilon_.end(), initial_values[1]);
+    std::fill(turbu_omega_.begin(), turbu_omega_.end(), initial_values[1]);
     std::fill(turbu_mu_.begin(), turbu_mu_.end(), initial_values[2]);
 
     //** for test */
@@ -1377,11 +1377,7 @@ void kOmegaSST_kTransportEquationInner::interaction(size_t index_i, Real dt)
         k_production_[index_i] = k_production_matrix.sum();
 
     k_production = k_production_[index_i];
-    k_dissipation = turbu_epsilon_[index_i];
-
-    //** Linearize the source term *
-    //k_production = k_production_prior_[index_i];
-    //k_dissipation = ( turbu_epsilon_prior_[index_i] / turbu_k_prior_[index_i] ) * turbu_k_[index_i];
+    k_dissipation = turbu_omega_[index_i];
 
     dk_dt_[index_i] = k_production - k_dissipation + k_lap;
     dk_dt_without_dissipation_[index_i] = k_production + k_lap;
@@ -1395,40 +1391,32 @@ void kOmegaSST_kTransportEquationInner::interaction(size_t index_i, Real dt)
 void kOmegaSST_kTransportEquationInner::update(size_t index_i, Real dt)
 {
     turbu_k_[index_i] += dk_dt_[index_i] * dt;
-    //** If use source term linearisation *
-    //Real denominator = 1.0 + turbu_epsilon_[index_i] * dt / turbu_k_[index_i];
-    //turbu_k_[index_i] +=  dk_dt_without_dissipation_[index_i] * dt;
-    //turbu_k_[index_i] /=  denominator ;
 }
 //=================================================================================================//
 kOmegaSST_omegaTransportEquationInner::kOmegaSST_omegaTransportEquationInner(BaseInnerRelation &inner_relation)
     : BaseTurtbulentModel<Base, DataDelegateInner>(inner_relation),
-      depsilon_dt_(*particles_->registerSharedVariable<Real>("ChangeRateOfTDR")),
-      depsilon_dt_without_disspation_(*particles_->registerSharedVariable<Real>("ChangeRateOfTDRWithoutDissp")),
-      ep_production(*particles_->registerSharedVariable<Real>("Ep_Production")),
-      ep_dissipation_(*particles_->registerSharedVariable<Real>("Ep_Dissipation_")),
-      ep_diffusion_(*particles_->registerSharedVariable<Real>("Ep_Diffusion_")),
+      domega_dt_(*particles_->registerSharedVariable<Real>("ChangeRateOfTDR")),
+      domega_dt_without_disspation_(*particles_->registerSharedVariable<Real>("ChangeRateOfTDRWithoutDissp")),
+      omega_production_(*particles_->registerSharedVariable<Real>("omega_Production")),
+      omega_dissipation_(*particles_->registerSharedVariable<Real>("omega_Dissipation")),
+      omega_diffusion_(*particles_->registerSharedVariable<Real>("omega_Diffusion")),
       turbu_mu_(*particles_->getVariableDataByName<Real>("TurbulentViscosity")),
       turbu_k_(*particles_->getVariableDataByName<Real>("TurbulenceKineticEnergy")),
-      turbu_epsilon_(*particles_->getVariableDataByName<Real>("TurbulentDissipation")),
+      turbu_omega_(*particles_->getVariableDataByName<Real>("TurbulentSpecificDissipation")),
       k_production_(*particles_->getVariableDataByName<Real>("K_Production")),
       is_near_wall_P1_(*particles_->getVariableDataByName<int>("IsNearWallP1"))
 {
-    //particles_->registerSharedVariable(depsilon_dt_, "ChangeRateOfTDR");
     particles_->addVariableToSort<Real>("ChangeRateOfTDR");
     particles_->addVariableToWrite<Real>("ChangeRateOfTDR");
 
-    //particles_->registerSharedVariable(ep_production, "Ep_Production");
-    particles_->addVariableToSort<Real>("Ep_Production");
-    particles_->addVariableToWrite<Real>("Ep_Production");
+    particles_->addVariableToSort<Real>("omega_Production");
+    particles_->addVariableToWrite<Real>("omega_Production");
 
-    //particles_->registerSharedVariable(ep_dissipation_, "Ep_Dissipation_");
-    particles_->addVariableToSort<Real>("Ep_Dissipation_");
-    particles_->addVariableToWrite<Real>("Ep_Dissipation_");
+    particles_->addVariableToSort<Real>("omega_Dissipation");
+    particles_->addVariableToWrite<Real>("omega_Dissipation");
 
-    //particles_->registerSharedVariable(ep_diffusion_, "Ep_Diffusion_");
-    particles_->addVariableToSort<Real>("Ep_Diffusion_");
-    particles_->addVariableToWrite<Real>("Ep_Diffusion_");
+    particles_->addVariableToSort<Real>("omega_Diffusion");
+    particles_->addVariableToWrite<Real>("omega_Diffusion");
 }
 //=================================================================================================//
 void kOmegaSST_omegaTransportEquationInner::
@@ -1437,52 +1425,44 @@ void kOmegaSST_omegaTransportEquationInner::
     Real rho_i = rho_[index_i];
     //Real turbu_mu_i = turbu_mu_[index_i];
     Real turbu_k_i = turbu_k_[index_i];
-    Real turbu_epsilon_i = turbu_epsilon_[index_i];
+    Real turbu_omega_i = turbu_omega_[index_i];
 
     Real mu_eff_i = turbu_mu_[index_i] / sigma_E_ + mu_;
 
-    depsilon_dt_[index_i] = 0.0;
-    depsilon_dt_without_disspation_[index_i] = 0.0;
-    Real epsilon_production(0.0);
-    Real epsilon_derivative(0.0);
-    Real epsilon_lap(0.0);
-    Real epsilon_dissipation(0.0);
+    domega_dt_[index_i] = 0.0;
+    domega_dt_without_disspation_[index_i] = 0.0;
+    Real omega_production(0.0);
+    Real omega_derivative(0.0);
+    Real omega_lap(0.0);
+    Real omega_dissipation(0.0);
     const Neighborhood &inner_neighborhood = inner_configuration_[index_i];
     for (size_t n = 0; n != inner_neighborhood.current_size_; ++n)
     {
         size_t index_j = inner_neighborhood.j_[n];
         Real mu_eff_j = turbu_mu_[index_j] / sigma_E_ + mu_;
         Real mu_harmo = 2 * mu_eff_i * mu_eff_j / (mu_eff_i + mu_eff_j);
-        epsilon_derivative = (turbu_epsilon_i - turbu_epsilon_[index_j]) / (inner_neighborhood.r_ij_[n] + 0.01 * smoothing_length_);
-        epsilon_lap += 2.0 * mu_harmo * epsilon_derivative * inner_neighborhood.dW_ij_[n] * this->Vol_[index_j] / rho_i;
+        omega_derivative = (turbu_omega_i - turbu_omega_[index_j]) / (inner_neighborhood.r_ij_[n] + 0.01 * smoothing_length_);
+        omega_lap += 2.0 * mu_harmo * omega_derivative * inner_neighborhood.dW_ij_[n] * this->Vol_[index_j] / rho_i;
     }
 
-    epsilon_production = C_l_ * turbu_epsilon_i * k_production_[index_i] / turbu_k_i;
-    epsilon_dissipation = C_2_ * turbu_epsilon_i * turbu_epsilon_i / turbu_k_i;
+    omega_production = C_l_ * turbu_omega_i * k_production_[index_i] / turbu_k_i;
+    omega_dissipation = C_2_ * turbu_omega_i * turbu_omega_i / turbu_k_i;
 
-    //** Linearize the source term *
-    //epsilon_production = C_l_ * turbu_epsilon_prior_[index_i] * k_production_prior_[index_i] / turbu_k_prior_[index_i];
-    //epsilon_dissipation = (C_2_ * turbu_epsilon_prior_[index_i] / turbu_k_prior_[index_i]) * turbu_epsilon_i;
-
-    depsilon_dt_[index_i] = epsilon_production - epsilon_dissipation + epsilon_lap;
-    depsilon_dt_without_disspation_[index_i] = epsilon_production + epsilon_lap;
+    domega_dt_[index_i] = omega_production - omega_dissipation + omega_lap;
+    domega_dt_without_disspation_[index_i] = omega_production + omega_lap;
 
     //** for test */
-    ep_production[index_i] = epsilon_production;
-    ep_dissipation_[index_i] = epsilon_dissipation;
-    ep_diffusion_[index_i] = epsilon_lap;
+    omega_production_[index_i] = omega_production;
+    omega_dissipation_[index_i] = omega_dissipation;
+    omega_diffusion_[index_i] = omega_lap;
 }
 //=================================================================================================//
 void kOmegaSST_omegaTransportEquationInner::update(size_t index_i, Real dt)
 {
-    //** The near wall epsilon value is updated in wall function part *
+    //** The near wall omega value is updated in wall function part *
     if (is_near_wall_P1_[index_i] != 1)
     {
-        turbu_epsilon_[index_i] += depsilon_dt_[index_i] * dt;
-        //** If use source term linearisation *
-        //Real denominator = 1.0 + C_2_ * turbu_epsilon_[index_i] * dt / turbu_k_[index_i];
-        //turbu_epsilon_[index_i] += depsilon_dt_without_disspation_[index_i] * dt;
-        //turbu_epsilon_[index_i] /= denominator;
+        turbu_omega_[index_i] += domega_dt_[index_i] * dt;
     }
 }
 //=================================================================================================//
