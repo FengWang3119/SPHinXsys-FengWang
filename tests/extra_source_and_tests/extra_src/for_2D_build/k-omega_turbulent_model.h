@@ -31,6 +31,10 @@ class BaseTurbuClosureCoeff
     //** Start time for laminar law *
     Real start_time_laminar_;
     Real y_star_threshold_laminar_;
+
+    //** Closure coefficients for Omega *
+    Real sigma_k_1_, sigma_k_2_;
+    Real sigma_omega_1_, sigma_omega_2_;
 };
 //=================================================================================================//
 class WallFunction : public BaseTurbuClosureCoeff
@@ -206,11 +210,11 @@ class E_TurtbulentModelInner : public BaseTurtbulentModel<Base, DataDelegateInne
 	 * @class kOmegaSST_TurtbulentModelInner
 	 * @brief  kOmegaSST_TurtbulentModelInner
 	 */
-class kOmegaSST_kTransportEquationInner : public BaseTurtbulentModel<Base, DataDelegateInner>
+class kOmega_kTransportEquationInner : public BaseTurtbulentModel<Base, DataDelegateInner>
 {
   public:
-    explicit kOmegaSST_kTransportEquationInner(BaseInnerRelation &inner_relation, const StdVec<Real> &initial_values, int is_extr_visc_dissipa = 0);
-    virtual ~kOmegaSST_kTransportEquationInner(){};
+    explicit kOmega_kTransportEquationInner(BaseInnerRelation &inner_relation, const StdVec<Real> &initial_values, int is_extr_visc_dissipa = 0);
+    virtual ~kOmega_kTransportEquationInner(){};
 
     inline void interaction(size_t index_i, Real dt = 0.0);
     void update(size_t index_i, Real dt = 0.0);
@@ -227,6 +231,8 @@ class kOmegaSST_kTransportEquationInner : public BaseTurtbulentModel<Base, DataD
     StdLargeVec<Real> &turbu_mu_;
     StdLargeVec<Matd> &turbu_strain_rate_;
     StdLargeVec<int> &is_extra_viscous_dissipation_;
+    StdLargeVec<Real> &omega_sigma_k_;
+
     //** for test */
     StdLargeVec<int> &turbu_indicator_;
     StdLargeVec<Real> &k_diffusion_, &vel_x_;
@@ -236,11 +242,11 @@ class kOmegaSST_kTransportEquationInner : public BaseTurtbulentModel<Base, DataD
 	 * @class kOmegaSST_TurtbulentModelInner
 	 * @brief  kOmegaSST_TurtbulentModelInner
 	 */
-class kOmegaSST_omegaTransportEquationInner : public BaseTurtbulentModel<Base, DataDelegateInner>
+class kOmega_omegaTransportEquationInner : public BaseTurtbulentModel<Base, DataDelegateInner>
 {
   public:
-    explicit kOmegaSST_omegaTransportEquationInner(BaseInnerRelation &inner_relation);
-    virtual ~kOmegaSST_omegaTransportEquationInner(){};
+    explicit kOmega_omegaTransportEquationInner(BaseInnerRelation &inner_relation);
+    virtual ~kOmega_omegaTransportEquationInner(){};
 
     inline void interaction(size_t index_i, Real dt = 0.0);
     void update(size_t index_i, Real dt = 0.0);

@@ -10,7 +10,8 @@ using TurbuIntegration2ndHalfWithWallDissipativeRieman = ComplexInteraction<Inte
 BaseTurbuClosureCoeff::BaseTurbuClosureCoeff()
     : Karman_(0.41), turbu_const_E_(9.8), C_mu_(0.09), turbulent_intensity_(5.0e-2),
       sigma_k_(1.0), C_l_(1.44), C_2_(1.92), sigma_E_(1.3), turbulent_length_ratio_for_epsilon_inlet_(0.07),
-      start_time_laminar_(0.0), y_star_threshold_laminar_(11.225)
+      start_time_laminar_(0.0), y_star_threshold_laminar_(11.225),
+      sigma_k_1_(2.0), sigma_k_2_(1.0), sigma_omega_1_(2.0), sigma_omega_2_(1.168)
 {
     C_mu_25_ = pow(C_mu_, 0.25);
     C_mu_75_ = pow(C_mu_, 0.75);
@@ -1280,7 +1281,7 @@ void GetLimiterOfTransportVelocityCorrection::update(size_t index_i, Real dt)
     limiter_tvc_[index_i] = SMIN(slope_ * squared_norm * h_ref_ * h_ref_, Real(1));
 }
 //=================================================================================================//
-kOmegaSST_kTransportEquationInner::kOmegaSST_kTransportEquationInner(BaseInnerRelation &inner_relation, const StdVec<Real> &initial_values, int is_extr_visc_dissipa)
+kOmega_kTransportEquationInner::kOmega_kTransportEquationInner(BaseInnerRelation &inner_relation, const StdVec<Real> &initial_values, int is_extr_visc_dissipa)
     : BaseTurtbulentModel<Base, DataDelegateInner>(inner_relation),
       dk_dt_(*particles_->registerSharedVariable<Real>("ChangeRateOfTKE")),
       dk_dt_without_dissipation_(*particles_->registerSharedVariable<Real>("ChangeRateOfTKEWithoutDissipation")),
@@ -1292,6 +1293,7 @@ kOmegaSST_kTransportEquationInner::kOmegaSST_kTransportEquationInner(BaseInnerRe
       turbu_mu_(*particles_->getVariableDataByName<Real>("TurbulentViscosity")),
       turbu_strain_rate_(*particles_->getVariableDataByName<Matd>("TurbulentStrainRate")),
       is_extra_viscous_dissipation_(*particles_->registerSharedVariable<int>("TurbulentExtraViscousDissipation")),
+      omega_sigma_k_(*particles_->registerSharedVariable<Real>("TurbulentSigmaK")),
       turbu_indicator_(*particles_->registerSharedVariable<int>("TurbulentIndicator")),
       k_diffusion_(*particles_->registerSharedVariable<Real>("K_Diffusion")),
       vel_x_(*particles_->registerSharedVariable<Real>("Velocity_X"))
@@ -1339,7 +1341,7 @@ kOmegaSST_kTransportEquationInner::kOmegaSST_kTransportEquationInner(BaseInnerRe
     std::fill(is_extra_viscous_dissipation_.begin(), is_extra_viscous_dissipation_.end(), is_extr_visc_dissipa);
 }
 //=================================================================================================//
-void kOmegaSST_kTransportEquationInner::interaction(size_t index_i, Real dt)
+void kOmega_kTransportEquationInner::interaction(size_t index_i, Real dt)
 {
     //Vecd vel_i = vel_[index_i];
     Real rho_i = rho_[index_i];
@@ -1350,6 +1352,7 @@ void kOmegaSST_kTransportEquationInner::interaction(size_t index_i, Real dt)
 
     dk_dt_[index_i] = 0.0;
     dk_dt_without_dissipation_[index_i] = 0.0;
+    omega_sigma_k_[index_i] = 0.0;
     Real k_derivative(0.0);
     Real k_lap(0.0);
     Matd strain_rate = Matd::Zero();
@@ -1388,12 +1391,12 @@ void kOmegaSST_kTransportEquationInner::interaction(size_t index_i, Real dt)
     turbu_strain_rate_[index_i] = strain_rate;
 }
 //=================================================================================================//
-void kOmegaSST_kTransportEquationInner::update(size_t index_i, Real dt)
+void kOmega_kTransportEquationInner::update(size_t index_i, Real dt)
 {
     turbu_k_[index_i] += dk_dt_[index_i] * dt;
 }
 //=================================================================================================//
-kOmegaSST_omegaTransportEquationInner::kOmegaSST_omegaTransportEquationInner(BaseInnerRelation &inner_relation)
+kOmega_omegaTransportEquationInner::kOmega_omegaTransportEquationInner(BaseInnerRelation &inner_relation)
     : BaseTurtbulentModel<Base, DataDelegateInner>(inner_relation),
       domega_dt_(*particles_->registerSharedVariable<Real>("ChangeRateOfTDR")),
       domega_dt_without_disspation_(*particles_->registerSharedVariable<Real>("ChangeRateOfTDRWithoutDissp")),
@@ -1419,7 +1422,7 @@ kOmegaSST_omegaTransportEquationInner::kOmegaSST_omegaTransportEquationInner(Bas
     particles_->addVariableToWrite<Real>("omega_Diffusion");
 }
 //=================================================================================================//
-void kOmegaSST_omegaTransportEquationInner::
+void kOmega_omegaTransportEquationInner::
     interaction(size_t index_i, Real dt)
 {
     Real rho_i = rho_[index_i];
@@ -1457,7 +1460,7 @@ void kOmegaSST_omegaTransportEquationInner::
     omega_diffusion_[index_i] = omega_lap;
 }
 //=================================================================================================//
-void kOmegaSST_omegaTransportEquationInner::update(size_t index_i, Real dt)
+void kOmega_omegaTransportEquationInner::update(size_t index_i, Real dt)
 {
     //** The near wall omega value is updated in wall function part *
     if (is_near_wall_P1_[index_i] != 1)
