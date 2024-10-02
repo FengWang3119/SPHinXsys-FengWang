@@ -33,8 +33,8 @@ class BaseTurbuClosureCoeff
     Real y_star_threshold_laminar_;
 
     //** Closure coefficients for Omega *
-    Real sigma_k_1_, sigma_k_2_;
-    Real sigma_omega_1_, sigma_omega_2_;
+    Real std_kw_sigma_k_;
+    Real std_kw_sigma_omega_;
 };
 //=================================================================================================//
 class WallFunction : public BaseTurbuClosureCoeff
@@ -231,7 +231,6 @@ class kOmega_kTransportEquationInner : public BaseTurtbulentModel<Base, DataDele
     StdLargeVec<Real> &turbu_mu_;
     StdLargeVec<Matd> &turbu_strain_rate_;
     StdLargeVec<int> &is_extra_viscous_dissipation_;
-    StdLargeVec<Real> &omega_sigma_k_;
 
     //** for test */
     StdLargeVec<int> &turbu_indicator_;
@@ -260,6 +259,7 @@ class kOmega_omegaTransportEquationInner : public BaseTurtbulentModel<Base, Data
     StdLargeVec<Real> &turbu_omega_;
     StdLargeVec<Real> &k_production_;
     StdLargeVec<int> &is_near_wall_P1_;
+    StdLargeVec<Real> &std_kw_alpha_;
 };
 //=================================================================================================//
 
