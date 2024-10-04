@@ -194,7 +194,10 @@ int main(int ac, char *av[])
 
     /** Outlet damper  */
     BodyRegionByCell damping_buffer(water_block, makeShared<MultiPolygonShape>(createDampingBufferShape()));
+    //SimpleDynamics<fluid_dynamics::TurbulentDampingBoundaryCondition> damping_outlet(damping_buffer);
     SimpleDynamics<fluid_dynamics::DampingBoundaryCondition> damping_outlet(damping_buffer);
+
+    InteractionWithUpdate<fluid_dynamics::TurbulentDeleteOverlapParticle> delete_overlap_particle(water_block_inner);
 
     /** Temporary treatment for Pressure outlet module  */
     InteractionWithUpdate<fluid_dynamics::DensitySummationPressureComplex> update_fluid_density_pressure(water_block_inner, water_wall_contact);
@@ -361,6 +364,8 @@ int main(int ac, char *av[])
 
             left_disposer_outflow_deletion.exec();
             right_disposer_outflow_deletion.exec();
+
+            delete_overlap_particle.exec();
 
             /** Update cell linked list and configuration. */
             water_block.updateCellLinkedListWithParticleSort(100);

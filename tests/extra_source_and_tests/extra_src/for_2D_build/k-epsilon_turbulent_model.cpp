@@ -1293,6 +1293,64 @@ void GetLimiterOfTransportVelocityCorrection::update(size_t index_i, Real dt)
     Real squared_norm = zero_gradient_residue_[index_i].squaredNorm();
     limiter_tvc_[index_i] = SMIN(slope_ * squared_norm * h_ref_ * h_ref_, Real(1));
 }
+
+//=================================================================================================//
+TurbulentDampingBoundaryCondition::TurbulentDampingBoundaryCondition(BodyRegionByCell &body_part)
+    : BaseFlowBoundaryCondition(body_part), strength_(5.0),
+      damping_zone_bounds_(body_part.getBodyPartShape().getBounds()),
+      turbu_mu_(*particles_->getVariableDataByName<Real>("TurbulentViscosity")){};
+//=================================================================================================//
+void TurbulentDampingBoundaryCondition::update(size_t index_i, Real dt)
+{
+    //if (GlobalStaticVariables::physical_time_ > 2.0)
+    //{
+    //Real damping_factor = (pos_[index_i][0] - damping_zone_bounds_.first_[0]) /
+    //(damping_zone_bounds_.second_[0] - damping_zone_bounds_.first_[0]);
+    //vel_[index_i] *= (1.0 - dt * strength_ * damping_factor * damping_factor);
+    //Real damping_ratio = (1.0 - dt * strength_ * damping_factor * damping_factor);
+    //std::cout << "damping_ratio=" << damping_ratio << std::endl;
+    Real lambda = 0.5;
+    //Vecd vel_target(0.135, 0);
+    Real turbu_mu_target = 0.01;
+    //vel_[index_i] = -lambda * (vel_[index_i] - vel_target) + vel_target;
+    Real turbu_mu_0 = turbu_mu_[index_i];
+    turbu_mu_[index_i] = lambda * (turbu_mu_0 - turbu_mu_target) + turbu_mu_target;
+    //}
+}
+//=================================================================================================//
+TurbulentDeleteOverlapParticle::TurbulentDeleteOverlapParticle(BaseInnerRelation &inner_relation)
+    : LocalDynamics(inner_relation.getSPHBody()), DataDelegateInner(inner_relation),
+      indicator_(*particles_->getVariableDataByName<int>("Indicator")),
+      turbu_delete_indicator_(*particles_->registerSharedVariable<int>("DeleteIndicator")),
+      fluid_particle_spacing_(inner_relation.getSPHBody().sph_adaptation_->ReferenceSpacing()) {}
+//=================================================================================================//
+void TurbulentDeleteOverlapParticle::
+    interaction(size_t index_i, Real dt)
+{
+    turbu_delete_indicator_[index_i] = 0;
+    if (indicator_[index_i] == 1)
+    {
+        const Neighborhood &inner_neighborhood = inner_configuration_[index_i];
+        for (size_t n = 0; n != inner_neighborhood.current_size_; ++n)
+        {
+            size_t index_j = inner_neighborhood.j_[n];
+            Real r_ij = inner_neighborhood.r_ij_[n];
+            if (r_ij < fluid_particle_spacing_ / 4.0 && turbu_delete_indicator_[index_j] != 1)
+            {
+                turbu_delete_indicator_[index_i] = 1;
+                return;
+            }
+        }
+    }
+}
+//=================================================================================================//
+void TurbulentDeleteOverlapParticle::update(size_t index_i, Real dt)
+{
+    if (turbu_delete_indicator_[index_i] == 1)
+    {
+        particles_->switchToBufferParticle(index_i);
+    }
+}
 //=================================================================================================//
 //*********************TESTING MODULES*********************
 //=================================================================================================//

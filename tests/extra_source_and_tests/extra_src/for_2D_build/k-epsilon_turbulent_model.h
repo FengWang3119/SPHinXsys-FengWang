@@ -737,6 +737,34 @@ template <class ParticleScope>
 using TVC_ModifiedLimited_withoutLinearGradientCorrection =
     BaseTransportVelocityCorrectionComplex<SingleResolution, ModifiedTruncatedLinear, NoKernelCorrection, ParticleScope>;
 //=================================================================================================//
+class TurbulentDampingBoundaryCondition : public BaseFlowBoundaryCondition
+{
+  public:
+    explicit TurbulentDampingBoundaryCondition(BodyRegionByCell &body_part);
+    virtual ~TurbulentDampingBoundaryCondition(){};
+    void update(size_t index_particle_i, Real dt = 0.0);
+
+  protected:
+    /** default value is 0.1 suggests reaching  target inflow velocity in about 10 time steps */
+    Real strength_;
+    BoundingBox damping_zone_bounds_;
+    StdLargeVec<Real> &turbu_mu_;
+};
+//=================================================================================================//
+class TurbulentDeleteOverlapParticle : public LocalDynamics, public DataDelegateInner
+{
+  public:
+    explicit TurbulentDeleteOverlapParticle(BaseInnerRelation &inner_relation);
+    virtual ~TurbulentDeleteOverlapParticle(){};
+
+    inline void interaction(size_t index_i, Real dt = 0.0);
+    void update(size_t index_i, Real dt = 0.0);
+
+  protected:
+    StdLargeVec<int> &indicator_;
+    StdLargeVec<int> &turbu_delete_indicator_;
+    Real fluid_particle_spacing_;
+};
 //*********************TESTING MODULES*********************
 //=================================================================================================//
 /** Note this is a temporary treatment *

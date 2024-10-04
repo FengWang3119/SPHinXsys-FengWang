@@ -23,9 +23,9 @@ Real num_fluid_cross_section = 10.0;
 Real extend_in = 0.0;
 Real extend_out = 0.0;
 Real extend_compensate_relaxation = 0.0;
-Real DH1 = 7.4 * DH;
-Real DL1 = 15.14 * DH;
-Real DL2 = 15.56 * DH;
+Real DH1 = 15.0 * DH;
+Real DL1 = 15.1 * DH;
+Real DL2 = 50.0 * DH;
 Vec2d point_A(DL1, DH);
 Vec2d point_B(point_A[0], point_A[1] + DH1);
 Vec2d point_C(point_B[0] + DL2, point_B[1]);
@@ -126,8 +126,8 @@ BoundingBox system_domain_bounds(left_bottom_point + Vec2d(-2.0 * BW, -2.0 * BW)
 // Output and time average control.
 //----------------------------------------------------------------------
 int screen_output_interval = 100;
-Real end_time = 200.0;               /**< End time. */
-Real Output_Time = end_time / 200.0; /**< Time stamps for output of body states. */
+Real end_time = 400.0;               /**< End time. */
+Real Output_Time = end_time / 400.0; /**< Time stamps for output of body states. */
 Real cutoff_time = 50.0;             //** cutoff_time should be a integral and the same as the PY script */
 //----------------------------------------------------------------------
 // Observation with offset model.
