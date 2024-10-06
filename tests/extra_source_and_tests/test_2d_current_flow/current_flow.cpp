@@ -15,10 +15,10 @@ using namespace SPH;
 //----------------------------------------------------------------------
 //	Basic geometry parameters and numerical setup.
 //----------------------------------------------------------------------
-Real DL = 10.0;                        /**< Reference length. */
-Real DH = 0.5;                        /**< Reference and the height of main channel. */
-Real resolution_ref = 0.015;           /**< Initial reference particle spacing. */
-Real BW = resolution_ref * 4;         
+Real DL = 10.0;              /**< Reference length. */
+Real DH = 0.5;               /**< Reference and the height of main channel. */
+Real resolution_ref = 0.015; /**< Initial reference particle spacing. */
+Real BW = resolution_ref * 4;
 Real DL_sponge = resolution_ref * 20; /**< Reference size of the emitter buffer to impose inflow condition. */
 //----------------------------------------------------------------------
 //	Global parameters on the fluid properties
@@ -34,7 +34,7 @@ Real emitter_time = 1; /**< Free stream time. */
 Real U_f = 2.0 * sqrt(0.5 * gravity_g);
 /** Reference sound speed needs to consider the flow speed in the narrow channels. */
 Real c_f = 10.0 * U_f;
-Real mu_f = 1.0e-6;
+Real mu_f = 1.0e-3;
 
 Vec2d emitter_buffer_halfsize = Vec2d(0.5 * BW, 0.75 * DH);
 Vec2d emitter_buffer_translation = Vec2d(-DL_sponge, 0.0) + emitter_buffer_halfsize;
@@ -45,7 +45,7 @@ Vec2d disposer_buffer_translation = Vec2d(DL, 1.5 * DH) - disposer_buffer_halfsi
 //	define geometry of SPH bodies
 //----------------------------------------------------------------------
 std::vector<Vecd> water_block_shape{
-    Vecd(-DL_sponge, 0.0), Vecd(-DL_sponge, DH), Vecd(DL,  DH), Vecd(DL, 0.0), Vecd(-DL_sponge, 0.0)};
+    Vecd(-DL_sponge, 0.0), Vecd(-DL_sponge, DH), Vecd(DL, DH), Vecd(DL, 0.0), Vecd(-DL_sponge, 0.0)};
 /** the bottom wall polygon. */
 std::vector<Vecd> bottom_wall_shape{
     Vecd(-DL_sponge, -BW), Vecd(-DL_sponge, 0.0), Vecd(DL, 0.0), Vecd(DL, -BW), Vecd(-DL_sponge, -BW)};
@@ -111,20 +111,19 @@ struct OutletPressure
 class WaveCalculator
 {
   private:
-    Real gravity_;         
-    Real water_depth_;  
-    Real wave_angular_freq_; 
+    Real gravity_;
+    Real water_depth_;
+    Real wave_angular_freq_;
     Real wave_amplitude_;
     Real wave_phase_;
-    Real free_surface_height_; 
+    Real free_surface_height_;
     Real wave_number_;
-
 
     void computeWaveNumber()
     {
-        int max_iterations = 20; 
-        Real tolerance = 1.0e-6; 
-        Real wave_number = 1.0; 
+        int max_iterations = 20;
+        Real tolerance = 1.0e-6;
+        Real wave_number = 1.0;
         for (int i = 1; i <= max_iterations; ++i)
         {
             Real term1 = tanh(wave_number * water_depth_);
@@ -144,7 +143,6 @@ class WaveCalculator
         wave_number_ = wave_number;
     }
 
-
   public:
     WaveCalculator(Real gravity, Real water_depth, Real wave_angular_freq, Real wave_amplitude, Real wave_phase)
         : gravity_(gravity), water_depth_(water_depth), wave_angular_freq_(wave_angular_freq),
@@ -155,16 +153,16 @@ class WaveCalculator
 
     Real computeFreeSurfaceHeight(Real time, Real position_x = 0.0)
     {
-        free_surface_height_ = wave_amplitude_ * cos(- wave_angular_freq_ * time + wave_phase_ + wave_number_ * position_x);
+        free_surface_height_ = wave_amplitude_ * cos(-wave_angular_freq_ * time + wave_phase_ + wave_number_ * position_x);
         return free_surface_height_;
     }
 
     Vecd computeEmitterVelocity(Real time, Real position_y, Real position_x = 0.0)
     {
         Vecd emitter_velocity = Vecd::Zero();
-        emitter_velocity[0] = (gravity_ * wave_amplitude_ * wave_number_ / wave_angular_freq_) * 
-                                (cosh(wave_number_ * (position_y + water_depth_)) / cosh(wave_number_ * water_depth_)) * 
-                                cos(-wave_angular_freq_ * time + wave_phase_ + wave_number_ * position_x);
+        emitter_velocity[0] = (gravity_ * wave_amplitude_ * wave_number_ / wave_angular_freq_) *
+                              (cosh(wave_number_ * (position_y + water_depth_)) / cosh(wave_number_ * water_depth_)) *
+                              cos(-wave_angular_freq_ * time + wave_phase_ + wave_number_ * position_x);
         return emitter_velocity;
     }
 };
@@ -219,7 +217,7 @@ struct EmitterVelocity
 //----------------------------------------------------------------------
 class EmitterBasedAcceleration : public Gravity
 {
-    Real target_time_;  
+    Real target_time_;
 
   public:
     EmitterBasedAcceleration(Vecd target_velocity, Real target_time)
@@ -227,7 +225,7 @@ class EmitterBasedAcceleration : public Gravity
 
     Vecd InducedAcceleration(const Vecd &position, Real physical_time) const
     {
-        Real time_factor = physical_time / target_time_; 
+        Real time_factor = physical_time / target_time_;
         Vecd acceleration = Vecd::Zero();
 
         if (time_factor < 1.0)
@@ -236,7 +234,7 @@ class EmitterBasedAcceleration : public Gravity
 
             Vecd base_acceleration = time_dependent_factor * Gravity::InducedAcceleration();
 
-            // Real normalized_y = position[1] / DH;  
+            // Real normalized_y = position[1] / DH;
 
             // Real interpolated_acceleration_x = 0.3 * base_acceleration[0] +
             //                                    (base_acceleration[0] - 0.3 * base_acceleration[0]) * normalized_y;
@@ -271,13 +269,13 @@ class CustomDampingBoundaryCondition : public fluid_dynamics::BaseFlowBoundaryCo
         // Real damping_factor = (pos_[index_particle_i][0] - damping_zone_bounds_.first_[0]) /
         //                       (damping_zone_bounds_.second_[0] - damping_zone_bounds_.first_[0]);
 
-        vel_[index_particle_i][0] = 0.0; 
+        vel_[index_particle_i][0] = 0.0;
         vel_[index_particle_i][1] = 0.0;
     }
 
   protected:
-    Real strength_;                   
-    BoundingBox damping_zone_bounds_; 
+    Real strength_;
+    BoundingBox damping_zone_bounds_;
 };
 
 //-----------------------------------------------------------------------------------------------------------
@@ -298,7 +296,7 @@ int main(int ac, char *av[])
     water_block.defineMaterial<WeaklyCompressibleFluid>(rho0_f, c_f, mu_f);
     ParticleBuffer<ReserveSizeFactor> emitter_disposer_buffer_particle(0.5);
     water_block.generateParticlesWithReserve<BaseParticles, Lattice>(emitter_disposer_buffer_particle);
-    
+
     SolidBody wall_boundary(sph_system, makeShared<WallBoundary>("WallBoundary"));
     wall_boundary.defineMaterial<Solid>();
     wall_boundary.generateParticles<BaseParticles, Lattice>();
@@ -334,7 +332,7 @@ int main(int ac, char *av[])
     //InteractionWithUpdate<fluid_dynamics::DensitySummationFreeStreamComplex> update_density_by_summation(water_block_inner, water_wall_contact);
     InteractionWithUpdate<fluid_dynamics::ViscousForceWithWall> viscous_force(water_block_inner, water_wall_contact);
     InteractionWithUpdate<fluid_dynamics::TransportVelocityCorrectionComplex<BulkParticles>> transport_velocity_correction(water_block_inner, water_wall_contact);
-    
+
     ReduceDynamics<fluid_dynamics::AdvectionViscousTimeStep> get_fluid_advection_time_step_size(water_block, U_f);
     ReduceDynamics<fluid_dynamics::AcousticTimeStep> get_fluid_time_step_size(water_block);
 
@@ -344,14 +342,14 @@ int main(int ac, char *av[])
     BodyAlignedBoxByCell emitter_buffer(water_block, makeShared<AlignedBoxShape>(xAxis, Transform(Vec2d(emitter_buffer_translation)), emitter_buffer_halfsize));
     fluid_dynamics::BidirectionalBuffer<NonPrescribedPressure> emitter_bidirectional_buffer(emitter_buffer, emitter_disposer_buffer_particle);
     SimpleDynamics<fluid_dynamics::InflowVelocityCondition<EmitterVelocity>> emitter_velocity_condition(emitter_buffer);
-    
+
     BodyAlignedBoxByCell disposer_buffer(water_block, makeShared<AlignedBoxShape>(xAxis, Transform(Vec2d(disposer_buffer_translation)), disposer_buffer_halfsize));
     SimpleDynamics<fluid_dynamics::DisposerOutflowDeletion> disposer_condition(disposer_buffer);
-    
+
     //fluid_dynamics::BidirectionalBuffer<OutletPressure> disposer_bidirectional_buffer(disposer_buffer, emitter_disposer_buffer_particle);
     //fluid_dynamics::BidirectionalBuffer<OutletPressure> disposer_bidirectional_buffer(disposer_buffer, emitter_disposer_buffer_particle);
     //SimpleDynamics<fluid_dynamics::PressureCondition<OutletPressure>> disposer_pressure_condition(disposer_buffer);
-    
+
     //InteractionWithUpdate<fluid_dynamics::DensitySummationPressureComplex> update_density_by_summation(water_block_inner, water_wall_contact);
     //SimpleDynamics<fluid_dynamics::PressureCondition<NonPrescribedPressure>> emitter_pressure_condition(emitter_buffer);
     //SimpleDynamics<fluid_dynamics::PressureCondition<OutletPressure>> disposer_pressure_condition(disposer_buffer);
@@ -362,8 +360,8 @@ int main(int ac, char *av[])
     //	and regression tests of the simulation.
     //----------------------------------------------------------------------
     BodyStatesRecordingToVtp write_body_states(sph_system);
-    write_body_states.addToWrite<Real>(water_block, "Pressure"); // output for debug
-    write_body_states.addToWrite<int>(water_block, "Indicator"); // output for debug
+    write_body_states.addToWrite<Real>(water_block, "Pressure");               // output for debug
+    write_body_states.addToWrite<int>(water_block, "Indicator");               // output for debug
     write_body_states.addToWrite<int>(water_block, "BufferParticleIndicator"); // output for debug
     ReducedQuantityRecording<TotalKineticEnergy> write_water_kinetic_energy(water_block);
     //----------------------------------------------------------------------
@@ -384,7 +382,7 @@ int main(int ac, char *av[])
     int screen_output_interval = 100;
     Real end_time = 100.0;
     Real output_interval = 0.1; /**< Time stamps for output of body states. */
-    Real dt = 0.0;                           /**< Default acoustic time step sizes. */
+    Real dt = 0.0;              /**< Default acoustic time step sizes. */
     //----------------------------------------------------------------------
     //	Statistics for CPU time
     //----------------------------------------------------------------------
