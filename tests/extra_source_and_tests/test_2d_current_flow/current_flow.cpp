@@ -34,7 +34,7 @@ Real emitter_time = 1; /**< Free stream time. */
 Real U_f = 2.0 * sqrt(0.5 * gravity_g);
 /** Reference sound speed needs to consider the flow speed in the narrow channels. */
 Real c_f = 10.0 * U_f;
-Real mu_f = 1.0e-3;
+Real mu_f = 1.0e-6;
 
 Vec2d emitter_buffer_halfsize = Vec2d(0.5 * BW, 0.75 * DH);
 Vec2d emitter_buffer_translation = Vec2d(-DL_sponge, 0.0) + emitter_buffer_halfsize;
