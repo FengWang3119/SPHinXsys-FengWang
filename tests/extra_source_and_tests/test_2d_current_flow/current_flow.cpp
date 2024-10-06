@@ -323,7 +323,7 @@ int main(int ac, char *av[])
     SimpleDynamics<GravityForce<EmitterBasedAcceleration>> apply_emitter_acceleration(water_block, emitter_acceleration);
     //InteractionWithUpdate<LinearGradientCorrectionMatrixComplex> water_block_corrected_configuration(ConstructorArgs(water_block_inner, 0.5), water_wall_contact);
     SimpleDynamics<NormalDirectionFromBodyShape> wall_boundary_normal_direction(wall_boundary);
-    InteractionDynamics<NablaWVComplex> kernel_summation(water_block_inner, water_wall_contact);
+    //InteractionDynamics<NablaWVComplex> kernel_summation(water_block_inner, water_wall_contact);
     InteractionWithUpdate<SpatialTemporalFreeSurfaceIndicationComplex> boundary_particle_indicator(water_block_inner, water_wall_contact);
 
     Dynamics1Level<fluid_dynamics::Integration1stHalfWithWallRiemann> pressure_relaxation(water_block_inner, water_wall_contact);
@@ -344,7 +344,8 @@ int main(int ac, char *av[])
     SimpleDynamics<fluid_dynamics::InflowVelocityCondition<EmitterVelocity>> emitter_velocity_condition(emitter_buffer);
 
     BodyAlignedBoxByCell disposer_buffer(water_block, makeShared<AlignedBoxShape>(xAxis, Transform(Vec2d(disposer_buffer_translation)), disposer_buffer_halfsize));
-    SimpleDynamics<fluid_dynamics::DisposerOutflowDeletion> disposer_condition(disposer_buffer);
+    fluid_dynamics::BidirectionalBuffer<NonPrescribedPressure> disposer_bidirectional_buffer(disposer_buffer, emitter_disposer_buffer_particle);
+    SimpleDynamics<fluid_dynamics::InflowVelocityCondition<EmitterVelocity>> disposer_velocity_condition(disposer_buffer);
 
     //fluid_dynamics::BidirectionalBuffer<OutletPressure> disposer_bidirectional_buffer(disposer_buffer, emitter_disposer_buffer_particle);
     //fluid_dynamics::BidirectionalBuffer<OutletPressure> disposer_bidirectional_buffer(disposer_buffer, emitter_disposer_buffer_particle);
@@ -372,7 +373,7 @@ int main(int ac, char *av[])
     sph_system.initializeSystemConfigurations();
     boundary_particle_indicator.exec();
     emitter_bidirectional_buffer.tag_buffer_particles.exec();
-    //disposer_bidirectional_buffer.tag_buffer_particles.exec();
+    disposer_bidirectional_buffer.tag_buffer_particles.exec();
     wall_boundary_normal_direction.exec();
     //----------------------------------------------------------------------
     //	Setup computing and initial conditions.
@@ -421,6 +422,7 @@ int main(int ac, char *av[])
                 //disposer_pressure_condition.exec(dt);
                 density_relaxation.exec(dt);
                 emitter_velocity_condition.exec(dt);
+                disposer_velocity_condition.exec(dt);
                 relaxation_time += dt;
                 integration_time += dt;
                 physical_time += dt;
@@ -440,9 +442,9 @@ int main(int ac, char *av[])
             emitter_bidirectional_buffer.injection.exec();
             //disposer_bidirectional_buffer.injection.exec();
 
-            emitter_bidirectional_buffer.deletion.exec();
-            //disposer_bidirectional_buffer.deletion.exec();
-            disposer_condition.exec();
+            //emitter_bidirectional_buffer.deletion.exec();
+            disposer_bidirectional_buffer.deletion.exec();
+            //disposer_condition.exec();
             if (number_of_iterations % 100 == 0 && number_of_iterations != 1)
             {
                 particle_sorting.exec();
@@ -452,7 +454,7 @@ int main(int ac, char *av[])
             water_block_complex.updateConfiguration();
             boundary_particle_indicator.exec();
             emitter_bidirectional_buffer.tag_buffer_particles.exec();
-            //disposer_bidirectional_buffer.tag_buffer_particles.exec();
+            disposer_bidirectional_buffer.tag_buffer_particles.exec();
         }
 
         TickCount t2 = TickCount::now();
