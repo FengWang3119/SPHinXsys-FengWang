@@ -212,6 +212,49 @@ struct EmitterVelocity
         return target_velocity;
     }
 };
+
+struct DisposerVelocity
+{
+    Real u_ref_, t_ref_;
+    AlignedBoxShape &aligned_box_;
+    Vecd halfsize_;
+    WaveCalculator wave_calculator;
+
+    template <class BoundaryConditionType>
+    DisposerVelocity(BoundaryConditionType &boundary_condition)
+        : u_ref_(emitter_velocity), t_ref_(emitter_time),
+          aligned_box_(boundary_condition.getAlignedBox()),
+          halfsize_(aligned_box_.HalfSize()),
+          wave_calculator(gravity_g, DH, wave_angular_freq, wave_amplitude, wave_phase) {}
+
+    Vecd operator()(Vecd &position, Vecd &velocity, Real current_time)
+    {
+        Vecd target_velocity = Vecd::Zero();
+
+        // Real current_free_surface_height = 0.0;
+
+        // current_free_surface_height = DH - wave_calculator.computeFreeSurfaceHeight(current_time);
+        // if (position[1] + halfsize_[1] > current_free_surface_height)
+        // {
+        //     target_velocity[0] = 0.0;
+        //     target_velocity[1] = 0.0;
+        // }
+        // else
+        // {
+        //     target_velocity = wave_calculator.computeEmitterVelocity(current_time, position[1] + halfsize_[1]);
+        // }
+        Real u_ave = current_time < t_ref_ ? 0.5 * u_ref_ * (1.0 - cos(Pi * current_time / t_ref_)) : u_ref_;
+
+        //Real normalized_y = (position[1] + halfsize_[1]) / (halfsize_[1] / 0.75);
+
+        //target_velocity[0] = 0.3 * u_ave + (u_ave - 0.3 * u_ave) * normalized_y;
+        target_velocity[0] = - u_ave;
+
+        target_velocity[1] = 0.0;
+
+        return target_velocity;
+    }
+};
 //----------------------------------------------------------------------
 //	Define time dependent acceleration in x-direction
 //----------------------------------------------------------------------
@@ -343,9 +386,9 @@ int main(int ac, char *av[])
     fluid_dynamics::BidirectionalBuffer<NonPrescribedPressure> emitter_bidirectional_buffer(emitter_buffer, emitter_disposer_buffer_particle);
     SimpleDynamics<fluid_dynamics::InflowVelocityCondition<EmitterVelocity>> emitter_velocity_condition(emitter_buffer);
 
-    BodyAlignedBoxByCell disposer_buffer(water_block, makeShared<AlignedBoxShape>(xAxis, Transform(Vec2d(disposer_buffer_translation)), disposer_buffer_halfsize));
+    BodyAlignedBoxByCell disposer_buffer(water_block, makeShared<AlignedBoxShape>(xAxis, Transform(Rotation2d(Pi), Vec2d(disposer_buffer_translation)), disposer_buffer_halfsize));
     fluid_dynamics::BidirectionalBuffer<NonPrescribedPressure> disposer_bidirectional_buffer(disposer_buffer, emitter_disposer_buffer_particle);
-    SimpleDynamics<fluid_dynamics::InflowVelocityCondition<EmitterVelocity>> disposer_velocity_condition(disposer_buffer);
+    SimpleDynamics<fluid_dynamics::InflowVelocityCondition<DisposerVelocity>> disposer_velocity_condition(disposer_buffer);
 
     //fluid_dynamics::BidirectionalBuffer<OutletPressure> disposer_bidirectional_buffer(disposer_buffer, emitter_disposer_buffer_particle);
     //fluid_dynamics::BidirectionalBuffer<OutletPressure> disposer_bidirectional_buffer(disposer_buffer, emitter_disposer_buffer_particle);
@@ -440,9 +483,9 @@ int main(int ac, char *av[])
 
             //damping_wave.exec(Dt);
             emitter_bidirectional_buffer.injection.exec();
-            //disposer_bidirectional_buffer.injection.exec();
+            disposer_bidirectional_buffer.injection.exec();
 
-            //emitter_bidirectional_buffer.deletion.exec();
+            emitter_bidirectional_buffer.deletion.exec();
             disposer_bidirectional_buffer.deletion.exec();
             //disposer_condition.exec();
             if (number_of_iterations % 100 == 0 && number_of_iterations != 1)
