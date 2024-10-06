@@ -48,7 +48,7 @@ std::vector<Vecd> water_block_shape{
     Vecd(-DL_sponge, 0.0), Vecd(-DL_sponge, DH), Vecd(DL, DH), Vecd(DL, 0.0), Vecd(-DL_sponge, 0.0)};
 /** the bottom wall polygon. */
 std::vector<Vecd> bottom_wall_shape{
-    Vecd(-DL_sponge, -BW), Vecd(-DL_sponge, 0.0), Vecd(DL, 0.0), Vecd(DL, -BW), Vecd(-DL_sponge, -BW)};
+    Vecd(-DL_sponge - 2.0 * BW, -BW), Vecd(-DL_sponge - 2.0 * BW, 0.0), Vecd(DL + 2.0 * BW, 0.0), Vecd(DL + 2.0 * BW, -BW), Vecd(-DL_sponge - 2.0 * BW, -BW)};
 
 MultiPolygon createDampingBufferShape()
 {
@@ -286,7 +286,7 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     //	Build up the environment of a SPHSystem with global controls.
     //----------------------------------------------------------------------
-    BoundingBox system_domain_bounds(Vec2d(-DL_sponge, -DH - BW), Vec2d(DL, DH));
+    BoundingBox system_domain_bounds(Vec2d(-DL_sponge - 2.0 * BW, -DH - BW), Vec2d(DL + 2.0 * BW, DH + 2.0 * BW));
     SPHSystem sph_system(system_domain_bounds, resolution_ref);
     sph_system.handleCommandlineOptions(ac, av)->setIOEnvironment();
     //----------------------------------------------------------------------
