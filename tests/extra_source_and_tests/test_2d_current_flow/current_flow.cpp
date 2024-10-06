@@ -286,7 +286,7 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     //	Build up the environment of a SPHSystem with global controls.
     //----------------------------------------------------------------------
-    BoundingBox system_domain_bounds(Vec2d(-DL_sponge - 2.0 * BW, -DH - BW), Vec2d(DL + 2.0 * BW, DH + 2.0 * BW));
+    BoundingBox system_domain_bounds(Vec2d(-DL_sponge - 2.0 * BW, -DH - BW), Vec2d(DL + 2.0 * BW, DH));
     SPHSystem sph_system(system_domain_bounds, resolution_ref);
     sph_system.handleCommandlineOptions(ac, av)->setIOEnvironment();
     //----------------------------------------------------------------------
