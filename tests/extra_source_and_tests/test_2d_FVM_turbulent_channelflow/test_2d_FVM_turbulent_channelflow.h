@@ -8,7 +8,7 @@
 #ifndef FVM_TURBULENT_CHANNEL_FLOW_H
 #define FVM_TURBULENT_CHANNEL_FLOW_H             
 #include "common_weakly_compressible_FVM_classes.h"
-#include "TurbulenceModel.h"
+#include "turbulence_model.h"
 #include "rans_dynamics.hpp"
 using namespace SPH;
 using namespace std;
@@ -72,8 +72,8 @@ class TCFInitialCondition
             mu_t_(this->particles_->template registerStateVariable<Real>("TurblunetViscosity")),
             rho_(this->particles_->template getVariableDataByName<Real>("Density")), 
             p_(this->particles_->template getVariableDataByName<Real>("Pressure")),
-            mom_(this->particles_->template getVariableDataByName<Vecd>("Momentum")),
-            mass_(this->particles_->template getVariableDataByName<Real>("Mass"))
+            mass_(this->particles_->template getVariableDataByName<Real>("Mass")),
+            mom_(this->particles_->template getVariableDataByName<Vecd>("Momentum"))
         {};
 
     void update(size_t index_i, Real dt)
@@ -90,7 +90,7 @@ class TCFInitialCondition
     }
 protected:
   Real C_mu_;
-  Real *mu_t_, *Vol_, *K_, *Eps_, *rho_, *p_, *mass_;
+  Real *Vol_, *K_, *Eps_, *mu_t_, *rho_, *p_, *mass_;
   Vecd *mom_;
 };
 //----------------------------------------------------------------------
@@ -101,12 +101,11 @@ class TCFBoundaryConditionSetup : public BoundaryConditionSetupInFVM
 public:
 
     TCFBoundaryConditionSetup(BaseInnerRelationInFVM& inner_relation, GhostCreationFromMesh& ghost_creation)
-        :BoundaryConditionSetupInFVM(inner_relation, ghost_creation),
-        fluid_(DynamicCast<WeaklyCompressibleFluid>(this, particles_->getBaseMaterial())), 
+        :BoundaryConditionSetupInFVM(inner_relation, ghost_creation), 
         K_(this->particles_->template getVariableDataByName<Real>("TKE")),
         Eps_(this->particles_->template getVariableDataByName<Real>("Dissipation")),
         mu_t_(this->particles_->template getVariableDataByName<Real>("TurblunetViscosity")),
-        //Tau_wall_(*this->particles_->template getVariableDataByName<Real>("WallShearStress")),
+        fluid_(DynamicCast<WeaklyCompressibleFluid>(this, particles_->getBaseMaterial())),
         C_mu_(0.09){};
     virtual ~TCFBoundaryConditionSetup() {};
 
@@ -153,7 +152,7 @@ public:
         
     }
 protected:
-    Real *Eps_, *K_, *mu_t_;
+    Real *K_, *Eps_, *mu_t_;
     Fluid& fluid_;
     Real C_mu_;
 };

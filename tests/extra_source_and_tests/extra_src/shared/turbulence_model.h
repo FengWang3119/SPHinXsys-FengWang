@@ -21,12 +21,10 @@ namespace SPH
             protected:
             Vecd *mom_, *dmom_dt_;
             Real *dmass_dt_;
-            Real *K_prod_p_, *K_prod_, *Eps_p_, *Eps_sum_, *K_adv_, *K_lap_;
-            Real *Eps_adv_, *Eps_lap_, *Eps_prodscalar_, *Eps_scalar_;
-            Real Cmu_, sigmak_;
-            Real sigmaeps_, C1eps_, C2eps_;
-            Real *Tau_wall_;
-            Real *K_, *Eps_, *mu_t_;
+            Real *K_prod_p_, *K_prod_, *Eps_p_, *K_adv_, *K_lap_;
+            Real *Eps_adv_, *Eps_lap_, *Eps_prod_, *Eps_destruction_, *Tau_wall_;
+            Real C_mu_, sigma_k_;
+            Real sigma_eps_, C1_eps_, C2_eps_, *K_, *Eps_, *mu_t_;
             GhostCreationFromMesh& ghost_creator_;
         };
         //=================================================================================================//
@@ -38,33 +36,17 @@ namespace SPH
             
 
         protected:
-          Vecd *wallnormal_;
-          Real *walladjacentcellflag_, *yp_;
-          StdLargeVec<Real> walladjacentindex_,  wallghostindex_;
-          StdLargeVec<Vecd> walleij_;
+          Vecd *wall_normal_;
+          Real *wall_adjacent_cell_flag_, *yp_, *corner_cell_flag_, *boundary_type_;
+          StdLargeVec<Real> wall_adjacent_index_,  wall_ghost_index_;
+          StdLargeVec<Vecd> wall_eij_;
           Real ymax_;
           SPHBody &bounds_;
 
            void walladjacentcellyp();
            void update(size_t index_i, Real dt);
-        };
+        };       
         //=================================================================================================//
-        /*
-        class WallAdjacentCells : public BaseTurbulence
-        {
-         public:
-           explicit WallAdjacentCells(BaseInnerRelation &inner_relation, GhostCreationFromMesh &ghost_creator);
-           virtual ~WallAdjacentCells(){};
-
-         protected:
-           StdLargeVec<Real> walladjacentindex_, &walladjacentcellflag_, wallghostindex_, &wallfacearea_;
-           StdLargeVec<Vecd> walleij_;
-
-           void walladjacentcellyp();
-        };
-        */ 
-        //=================================================================================================//
-        /*
         class StdWallFunctionFVM : public BaseTurbulence
         {
          public:
@@ -73,24 +55,10 @@ namespace SPH
            void nearwallquantities(size_t index_i);
 
          protected:
-           StdLargeVec<Real> &walladjacentcellflag_, &yp_;
-           StdLargeVec<Vecd> &wallnormal_;
-           Real vonkar_, E_;
-        };*/ 
-        //=================================================================================================//
-        class StdWallFunctionFVM : public WallAdjacentCells
-        {
-         public:
-           explicit StdWallFunctionFVM(BaseInnerRelation &inner_relation, GhostCreationFromMesh &ghost_creator);
-           virtual ~StdWallFunctionFVM(){};
-           void nearwallquantities(size_t index_i);
-
-         protected:
-           //StdLargeVec<Real> &walladjacentcellflag_, &yp_;
-           //StdLargeVec<Vecd> &wallnormal_;
-           Real vonkar_, E_;
-           Real *ystar_;
+           Real *y_star_, *yp_;
+           Vecd *wall_normal_;
            Matd *vel_gradient_mat_;
+           Real von_kar_, E_;
         };
         //=================================================================================================//
 
@@ -103,8 +71,7 @@ namespace SPH
             void update(size_t index_i, Real dt = 0.0);
 
             protected:
-            Real *dK_dt_, *walladjacentcellflag_, *strain_rate_;
-            Matd *vel_gradient_mat_;
+            Real *dK_dt_, *wall_adjacent_cell_flag_, *strain_rate_, *corner_cell_flag_, *boundary_type_;
             Real *dudx_, *dudy_, *dvdx_, *dvdy_;
         };
         //=================================================================================================//
@@ -117,7 +84,7 @@ namespace SPH
             void update(size_t index_i, Real dt = 0.0);
 
             protected:
-            Real *dEps_dt_, *walladjacentcellflag_;
+            Real *dEps_dt_, *wall_adjacent_cell_flag_;
         };
         //=================================================================================================//
         
