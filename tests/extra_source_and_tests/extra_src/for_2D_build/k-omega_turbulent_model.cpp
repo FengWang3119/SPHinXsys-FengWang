@@ -11,7 +11,7 @@ BaseTurbuClosureCoeff::BaseTurbuClosureCoeff()
     : Karman_(0.41), turbu_const_E_(9.8), C_mu_(0.09), turbulent_intensity_(5.0e-2),
       sigma_k_(1.0), C_l_(1.44), C_2_(1.92), sigma_E_(1.3), turbulent_length_ratio_for_epsilon_inlet_(0.07),
       start_time_laminar_(0.0), y_star_threshold_laminar_(11.225),
-      std_kw_sigma_k_(2.0), std_kw_sigma_omega_(2.0)
+      std_kw_sigma_k_(2.0), std_kw_sigma_omega_(2.0), std_kw_beta_star_(0.09), std_kw_sigma_star_(0.6)
 {
     C_mu_25_ = pow(C_mu_, 0.25);
     C_mu_75_ = pow(C_mu_, 0.75);
@@ -662,11 +662,12 @@ Real TurbulentAdvectionTimeStepSize::outputResult(Real reduced_value)
     return advectionCFL_ * smoothing_length_min_ / (SMAX(speed_max, speed_ref_turbu_) + TinyReal);
 }
 //=================================================================================================//
-InflowTurbulentCondition::InflowTurbulentCondition(BodyPartByCell &body_part, Real CharacteristicLength, Real relaxation_rate, int type_turbu_inlet) : BaseFlowBoundaryCondition(body_part), type_turbu_inlet_(type_turbu_inlet),
-                                                                                                                                                       relaxation_rate_(relaxation_rate),
-                                                                                                                                                       CharacteristicLength_(CharacteristicLength),
-                                                                                                                                                       turbu_k_(*particles_->getVariableDataByName<Real>("TurbulenceKineticEnergy")),
-                                                                                                                                                       turbu_epsilon_(*particles_->getVariableDataByName<Real>("TurbulentDissipation"))
+InflowTurbulentCondition::InflowTurbulentCondition(BodyPartByCell &body_part, Real CharacteristicLength, Real relaxation_rate, int type_turbu_inlet)
+    : BaseFlowBoundaryCondition(body_part), type_turbu_inlet_(type_turbu_inlet),
+      relaxation_rate_(relaxation_rate),
+      CharacteristicLength_(CharacteristicLength),
+      turbu_k_(*particles_->getVariableDataByName<Real>("TurbulenceKineticEnergy")),
+      turbu_epsilon_(*particles_->getVariableDataByName<Real>("TurbulentDissipation"))
 {
     TurbulentLength_ = turbulent_length_ratio_for_epsilon_inlet_ * CharacteristicLength_;
 }
@@ -1346,8 +1347,8 @@ void kOmega_kTransportEquationInner::interaction(size_t index_i, Real dt)
     Real rho_i = rho_[index_i];
     Real turbu_mu_i = turbu_mu_[index_i];
     Real turbu_k_i = turbu_k_[index_i];
-
-    Real mu_eff_i = turbu_mu_[index_i] / std_kw_sigma_k_ + mu_;
+    Real turbu_omega_i = turbu_omega_[index_i];
+    Real mu_eff_i = mu_ + std_kw_sigma_star_ * turbu_k_i / turbu_omega_i;
 
     dk_dt_[index_i] = 0.0;
     dk_dt_without_dissipation_[index_i] = 0.0;
@@ -1362,7 +1363,7 @@ void kOmega_kTransportEquationInner::interaction(size_t index_i, Real dt)
     for (size_t n = 0; n != inner_neighborhood.current_size_; ++n)
     {
         size_t index_j = inner_neighborhood.j_[n];
-        Real mu_eff_j = turbu_mu_[index_j] / sigma_k_ + mu_;
+        Real mu_eff_j = mu_ + std_kw_sigma_star_ * turbu_k_[index_j] / turbu_omega_[index_j];
         Real mu_harmo = 2 * mu_eff_i * mu_eff_j / (mu_eff_i + mu_eff_j);
         k_derivative = (turbu_k_i - turbu_k_[index_j]) / (inner_neighborhood.r_ij_[n] + 0.01 * smoothing_length_);
         k_lap += 2.0 * mu_harmo * k_derivative * inner_neighborhood.dW_ij_[n] * this->Vol_[index_j] / rho_i;
@@ -1374,16 +1375,17 @@ void kOmega_kTransportEquationInner::interaction(size_t index_i, Real dt)
 
     Matd k_production_matrix = Re_stress.array() * velocity_gradient_[index_i].array();
     //** The near wall k production is updated in wall function part *
+    //** So this k_production variable should not be initialised *
     if (is_near_wall_P1_[index_i] != 1)
         k_production_[index_i] = k_production_matrix.sum();
 
     k_production = k_production_[index_i];
-    k_dissipation = turbu_omega_[index_i];
+    k_dissipation = std_kw_beta_star_ * turbu_k_i * turbu_omega_i;
 
     dk_dt_[index_i] = k_production - k_dissipation + k_lap;
     dk_dt_without_dissipation_[index_i] = k_production + k_lap;
 
-    //** for test */
+    //** for record */
     k_diffusion_[index_i] = k_lap;
     vel_x_[index_i] = vel_[index_i][0];
     turbu_strain_rate_[index_i] = strain_rate;
@@ -1439,7 +1441,7 @@ void kOmega_omegaTransportEquationInner::
     Real omega_lap(0.0);
     Real omega_dissipation(0.0);
 
-    std_kw_alpha_[index_i] = get_alpha_standard_kw();
+    //std_kw_alpha_[index_i] = get_alpha_standard_kw();
 
     const Neighborhood &inner_neighborhood = inner_configuration_[index_i];
     for (size_t n = 0; n != inner_neighborhood.current_size_; ++n)

@@ -35,6 +35,8 @@ class BaseTurbuClosureCoeff
     //** Closure coefficients for Omega *
     Real std_kw_sigma_k_;
     Real std_kw_sigma_omega_;
+    Real std_kw_beta_star_;
+    Real std_kw_sigma_star_;
 };
 //=================================================================================================//
 class WallFunction : public BaseTurbuClosureCoeff
