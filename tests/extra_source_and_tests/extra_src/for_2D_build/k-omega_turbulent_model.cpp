@@ -11,10 +11,12 @@ BaseTurbuClosureCoeff::BaseTurbuClosureCoeff()
     : Karman_(0.41), turbu_const_E_(9.8), C_mu_(0.09), turbulent_intensity_(5.0e-2),
       sigma_k_(1.0), C_l_(1.44), C_2_(1.92), sigma_E_(1.3), turbulent_length_ratio_for_epsilon_inlet_(0.07),
       start_time_laminar_(0.0), y_star_threshold_laminar_(11.225),
-      std_kw_sigma_k_(2.0), std_kw_sigma_omega_(2.0), std_kw_beta_star_(0.09), std_kw_sigma_star_(0.6)
+      std_kw_sigma_k_(2.0), std_kw_sigma_omega_(2.0), std_kw_beta_star_(0.09), std_kw_sigma_star_(0.6),
+      std_kw_alpha_(0.52), std_kw_sigma_(0.5), std_kw_f_beta_(1.0), std_kw_beta_0_(0.0708)
 {
     C_mu_25_ = pow(C_mu_, 0.25);
     C_mu_75_ = pow(C_mu_, 0.75);
+    std_kw_beta_ = std_kw_beta_0_ * std_kw_f_beta_;
 }
 //=================================================================================================//
 Real WallFunction::get_distance_from_P_to_wall(Real y_p_constant)
@@ -1407,8 +1409,7 @@ kOmega_omegaTransportEquationInner::kOmega_omegaTransportEquationInner(BaseInner
       turbu_k_(*particles_->getVariableDataByName<Real>("TurbulenceKineticEnergy")),
       turbu_omega_(*particles_->getVariableDataByName<Real>("TurbulentSpecificDissipation")),
       k_production_(*particles_->getVariableDataByName<Real>("K_Production")),
-      is_near_wall_P1_(*particles_->getVariableDataByName<int>("IsNearWallP1")),
-      std_kw_alpha_(*particles_->registerSharedVariable<Real>("StandardKOmegaAlpha"))
+      is_near_wall_P1_(*particles_->getVariableDataByName<int>("IsNearWallP1"))
 {
     particles_->addVariableToSort<Real>("ChangeRateOfTDR");
     particles_->addVariableToWrite<Real>("ChangeRateOfTDR");
@@ -1431,11 +1432,10 @@ void kOmega_omegaTransportEquationInner::
     Real turbu_k_i = turbu_k_[index_i];
     Real turbu_omega_i = turbu_omega_[index_i];
 
-    Real mu_eff_i = turbu_mu_[index_i] / std_kw_sigma_omega_ + mu_;
+    Real mu_eff_i = mu_ + std_kw_sigma_ * turbu_k_i / turbu_omega_i;
 
     domega_dt_[index_i] = 0.0;
     domega_dt_without_disspation_[index_i] = 0.0;
-    std_kw_alpha_[index_i] = 0.0;
     Real omega_production(0.0);
     Real omega_derivative(0.0);
     Real omega_lap(0.0);
@@ -1447,14 +1447,14 @@ void kOmega_omegaTransportEquationInner::
     for (size_t n = 0; n != inner_neighborhood.current_size_; ++n)
     {
         size_t index_j = inner_neighborhood.j_[n];
-        Real mu_eff_j = turbu_mu_[index_j] / sigma_E_ + mu_;
+        Real mu_eff_j = mu_ + std_kw_sigma_ * turbu_k_[index_j] / turbu_omega_[index_j];
         Real mu_harmo = 2 * mu_eff_i * mu_eff_j / (mu_eff_i + mu_eff_j);
         omega_derivative = (turbu_omega_i - turbu_omega_[index_j]) / (inner_neighborhood.r_ij_[n] + 0.01 * smoothing_length_);
         omega_lap += 2.0 * mu_harmo * omega_derivative * inner_neighborhood.dW_ij_[n] * this->Vol_[index_j] / rho_i;
     }
 
-    omega_production = std_kw_alpha_[index_i] * turbu_omega_i * k_production_[index_i] / turbu_k_i;
-    omega_dissipation = C_2_ * turbu_omega_i * turbu_omega_i / turbu_k_i;
+    omega_production = std_kw_alpha_ * turbu_omega_i * k_production_[index_i] / turbu_k_i;
+    omega_dissipation = std_kw_beta_ * turbu_omega_i * turbu_omega_i;
 
     domega_dt_[index_i] = omega_production - omega_dissipation + omega_lap;
     domega_dt_without_disspation_[index_i] = omega_production + omega_lap;

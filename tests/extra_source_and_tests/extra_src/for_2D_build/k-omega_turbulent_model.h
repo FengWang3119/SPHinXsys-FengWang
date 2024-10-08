@@ -37,6 +37,11 @@ class BaseTurbuClosureCoeff
     Real std_kw_sigma_omega_;
     Real std_kw_beta_star_;
     Real std_kw_sigma_star_;
+    Real std_kw_alpha_;
+    Real std_kw_sigma_;
+    Real std_kw_beta_;
+    Real std_kw_f_beta_; //** Temporarily treat for 2d */
+    Real std_kw_beta_0_;
 };
 //=================================================================================================//
 class WallFunction : public BaseTurbuClosureCoeff
@@ -261,7 +266,6 @@ class kOmega_omegaTransportEquationInner : public BaseTurtbulentModel<Base, Data
     StdLargeVec<Real> &turbu_omega_;
     StdLargeVec<Real> &k_production_;
     StdLargeVec<int> &is_near_wall_P1_;
-    StdLargeVec<Real> &std_kw_alpha_;
 };
 //=================================================================================================//
 
