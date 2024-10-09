@@ -12,7 +12,8 @@ BaseTurbuClosureCoeff::BaseTurbuClosureCoeff()
       sigma_k_(1.0), C_l_(1.44), C_2_(1.92), sigma_E_(1.3), turbulent_length_ratio_for_epsilon_inlet_(0.07),
       start_time_laminar_(0.0), y_star_threshold_laminar_(11.225),
       std_kw_sigma_k_(2.0), std_kw_sigma_omega_(2.0), std_kw_beta_star_(0.09), std_kw_sigma_star_(0.6),
-      std_kw_alpha_(0.52), std_kw_sigma_(0.5), std_kw_f_beta_(1.0), std_kw_beta_0_(0.0708), std_kw_sigma_do_(0.125)
+      std_kw_alpha_(0.52), std_kw_sigma_(0.5), std_kw_f_beta_(1.0), std_kw_beta_0_(0.0708),
+      std_kw_sigma_do_(0.125), std_kw_C_lim_(0.875)
 {
     C_mu_25_ = pow(C_mu_, 0.25);
     C_mu_75_ = pow(C_mu_, 0.75);
@@ -642,13 +643,17 @@ kOmegaTurbulentEddyViscosity::
       rho_(*particles_->getVariableDataByName<Real>("Density")),
       turbu_mu_(*particles_->getVariableDataByName<Real>("TurbulentViscosity")),
       turbu_k_(*particles_->getVariableDataByName<Real>("TurbulenceKineticEnergy")),
+      turbu_omega_(*particles_->getVariableDataByName<Real>("TurbulentSpecificDissipation")),
       wall_Y_plus_(*particles_->getVariableDataByName<Real>("WallYplus")),
       wall_Y_star_(*particles_->getVariableDataByName<Real>("WallYstar")),
+      turbu_strain_rate_magnitude_(*particles_->getVariableDataByName<Real>("TurbulentStrainRateMagnitude")),
       mu_(DynamicCast<Fluid>(this, particles_->getBaseMaterial()).ReferenceViscosity()) {}
 //=================================================================================================//
 void kOmegaTurbulentEddyViscosity::update(size_t index_i, Real dt)
 {
-    turbu_mu_[index_i] = 0.0;
+    Real limited_omega = std_kw_C_lim_ * turbu_strain_rate_magnitude_[index_i] / sqrt(std_kw_beta_star_);
+    Real turbu_omega_tilde_ = SMAX(turbu_omega_[index_i], limited_omega);
+    turbu_mu_[index_i] = turbu_k_[index_i] / turbu_omega_tilde_;
 }
 //=================================================================================================//
 TurbulentAdvectionTimeStepSize::TurbulentAdvectionTimeStepSize(SPHBody &sph_body, Real U_max, Real advectionCFL)

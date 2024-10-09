@@ -44,6 +44,7 @@ class BaseTurbuClosureCoeff
     Real std_kw_beta_0_;
     Real std_kw_sigma_do_;
     Real std_kw_sigma_d_;
+    Real std_kw_C_lim_;
 };
 //=================================================================================================//
 class WallFunction : public BaseTurbuClosureCoeff
@@ -431,7 +432,9 @@ class kOmegaTurbulentEddyViscosity : public LocalDynamics,
     StdLargeVec<Real> &rho_;
     StdLargeVec<Real> &turbu_mu_;
     StdLargeVec<Real> &turbu_k_;
+    StdLargeVec<Real> &turbu_omega_;
     StdLargeVec<Real> &wall_Y_plus_, &wall_Y_star_;
+    StdLargeVec<Real> &turbu_strain_rate_magnitude_;
     Real mu_;
 };
 //=================================================================================================//
