@@ -152,6 +152,7 @@ class BaseTurtbulentModel<Base, DataDelegationType>
     StdLargeVec<Real> &turbu_epsilon_;
     StdLargeVec<Real> &turbu_mu_;
     StdLargeVec<Matd> &turbu_strain_rate_; //** temporary naming to distinguish the regular strain rate *
+    StdLargeVec<Real> &turbu_strain_rate_magnitude_;
     StdLargeVec<Real> &turbu_omega_;
 
     Real mu_, smoothing_length_, particle_spacing_min_;
@@ -239,6 +240,7 @@ class kOmega_kTransportEquationInner : public BaseTurtbulentModel<Base, DataDele
     StdLargeVec<Real> &turbu_omega_;
     StdLargeVec<Real> &turbu_mu_;
     StdLargeVec<Matd> &turbu_strain_rate_;
+    StdLargeVec<Real> &turbu_strain_rate_magnitude_;
     StdLargeVec<int> &is_extra_viscous_dissipation_;
 
     //** for test */
@@ -407,6 +409,28 @@ class TurbulentEddyViscosity : public LocalDynamics,
     StdLargeVec<Real> &turbu_mu_;
     StdLargeVec<Real> &turbu_k_;
     StdLargeVec<Real> &turbu_epsilon_;
+    StdLargeVec<Real> &wall_Y_plus_, &wall_Y_star_;
+    Real mu_;
+};
+//=================================================================================================//
+/**
+	 * @class TurbuViscousAccInner
+	 * @brief  the turbulent viscosity force induced acceleration
+	 */
+class kOmegaTurbulentEddyViscosity : public LocalDynamics,
+                                     public DataDelegateSimple,
+                                     public BaseTurbuClosureCoeff
+{
+  public:
+    explicit kOmegaTurbulentEddyViscosity(SPHBody &sph_body);
+    virtual ~kOmegaTurbulentEddyViscosity(){};
+
+    void update(size_t index_i, Real dt = 0.0);
+
+  protected:
+    StdLargeVec<Real> &rho_;
+    StdLargeVec<Real> &turbu_mu_;
+    StdLargeVec<Real> &turbu_k_;
     StdLargeVec<Real> &wall_Y_plus_, &wall_Y_star_;
     Real mu_;
 };

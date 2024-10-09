@@ -636,6 +636,21 @@ void TurbulentEddyViscosity::update(size_t index_i, Real dt)
     turbu_mu_[index_i] = rho_[index_i] * C_mu_ * turbu_k_[index_i] * turbu_k_[index_i] / (turbu_epsilon_[index_i]);
 }
 //=================================================================================================//
+kOmegaTurbulentEddyViscosity::
+    kOmegaTurbulentEddyViscosity(SPHBody &sph_body)
+    : LocalDynamics(sph_body), DataDelegateSimple(sph_body),
+      rho_(*particles_->getVariableDataByName<Real>("Density")),
+      turbu_mu_(*particles_->getVariableDataByName<Real>("TurbulentViscosity")),
+      turbu_k_(*particles_->getVariableDataByName<Real>("TurbulenceKineticEnergy")),
+      wall_Y_plus_(*particles_->getVariableDataByName<Real>("WallYplus")),
+      wall_Y_star_(*particles_->getVariableDataByName<Real>("WallYstar")),
+      mu_(DynamicCast<Fluid>(this, particles_->getBaseMaterial()).ReferenceViscosity()) {}
+//=================================================================================================//
+void kOmegaTurbulentEddyViscosity::update(size_t index_i, Real dt)
+{
+    turbu_mu_[index_i] = 0.0;
+}
+//=================================================================================================//
 TurbulentAdvectionTimeStepSize::TurbulentAdvectionTimeStepSize(SPHBody &sph_body, Real U_max, Real advectionCFL)
     : LocalDynamicsReduce<ReduceMax>(sph_body), DataDelegateSimple(sph_body),
       vel_(*particles_->getVariableDataByName<Vecd>("Velocity")),
@@ -1295,6 +1310,7 @@ kOmega_kTransportEquationInner::kOmega_kTransportEquationInner(BaseInnerRelation
       turbu_omega_(*particles_->getVariableDataByName<Real>("TurbulentSpecificDissipation")),
       turbu_mu_(*particles_->getVariableDataByName<Real>("TurbulentViscosity")),
       turbu_strain_rate_(*particles_->getVariableDataByName<Matd>("TurbulentStrainRate")),
+      turbu_strain_rate_magnitude_(*particles_->getVariableDataByName<Real>("TurbulentStrainRateMagnitude")),
       is_extra_viscous_dissipation_(*particles_->registerSharedVariable<int>("TurbulentExtraViscousDissipation")),
       turbu_indicator_(*particles_->registerSharedVariable<int>("TurbulentIndicator")),
       k_diffusion_(*particles_->registerSharedVariable<Real>("K_Diffusion")),
@@ -1371,6 +1387,8 @@ void kOmega_kTransportEquationInner::interaction(size_t index_i, Real dt)
         k_lap += 2.0 * mu_harmo * k_derivative * inner_neighborhood.dW_ij_[n] * this->Vol_[index_j] / rho_i;
     }
     strain_rate = 0.5 * (velocity_gradient_[index_i].transpose() + velocity_gradient_[index_i]);
+    Real strain_rate_squre = (strain_rate.array() * strain_rate.array()).sum();
+    turbu_strain_rate_magnitude_[index_i] = sqrt(2.0 * strain_rate_squre);
 
     Re_stress = 2.0 * strain_rate * turbu_mu_i / rho_i - (2.0 / 3.0) * turbu_k_i * Matd::Identity();
     //Re_stress = 2.0 * strain_rate * turbu_mu_i / rho_i;
