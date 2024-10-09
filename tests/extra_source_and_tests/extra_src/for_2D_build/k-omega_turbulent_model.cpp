@@ -12,7 +12,7 @@ BaseTurbuClosureCoeff::BaseTurbuClosureCoeff()
       sigma_k_(1.0), C_l_(1.44), C_2_(1.92), sigma_E_(1.3), turbulent_length_ratio_for_epsilon_inlet_(0.07),
       start_time_laminar_(0.0), y_star_threshold_laminar_(11.225),
       std_kw_sigma_k_(2.0), std_kw_sigma_omega_(2.0), std_kw_beta_star_(0.09), std_kw_sigma_star_(0.6),
-      std_kw_alpha_(0.52), std_kw_sigma_(0.5), std_kw_f_beta_(1.0), std_kw_beta_0_(0.0708)
+      std_kw_alpha_(0.52), std_kw_sigma_(0.5), std_kw_f_beta_(1.0), std_kw_beta_0_(0.0708), std_kw_sigma_do_(0.125)
 {
     C_mu_25_ = pow(C_mu_, 0.25);
     C_mu_75_ = pow(C_mu_, 0.75);
@@ -1405,6 +1405,7 @@ kOmega_omegaTransportEquationInner::kOmega_omegaTransportEquationInner(BaseInner
       omega_production_(*particles_->registerSharedVariable<Real>("omega_Production")),
       omega_dissipation_(*particles_->registerSharedVariable<Real>("omega_Dissipation")),
       omega_diffusion_(*particles_->registerSharedVariable<Real>("omega_Diffusion")),
+      omega_cross_diffusion_(*particles_->registerSharedVariable<Real>("omega_Cross_Diffusion")),
       turbu_mu_(*particles_->getVariableDataByName<Real>("TurbulentViscosity")),
       turbu_k_(*particles_->getVariableDataByName<Real>("TurbulenceKineticEnergy")),
       turbu_omega_(*particles_->getVariableDataByName<Real>("TurbulentSpecificDissipation")),
@@ -1422,6 +1423,9 @@ kOmega_omegaTransportEquationInner::kOmega_omegaTransportEquationInner(BaseInner
 
     particles_->addVariableToSort<Real>("omega_Diffusion");
     particles_->addVariableToWrite<Real>("omega_Diffusion");
+
+    particles_->addVariableToSort<Real>("omega_Cross_Diffusion");
+    particles_->addVariableToWrite<Real>("omega_Cross_Diffusion");
 }
 //=================================================================================================//
 void kOmega_omegaTransportEquationInner::
@@ -1440,9 +1444,10 @@ void kOmega_omegaTransportEquationInner::
     Real omega_derivative(0.0);
     Real omega_lap(0.0);
     Real omega_dissipation(0.0);
-
+    Real omega_cross_diffusion(0.0);
     //std_kw_alpha_[index_i] = get_alpha_standard_kw();
-
+    Vecd k_gradient = Vecd::Zero();
+    Vecd omega_gradient = Vecd::Zero();
     const Neighborhood &inner_neighborhood = inner_configuration_[index_i];
     for (size_t n = 0; n != inner_neighborhood.current_size_; ++n)
     {
@@ -1451,18 +1456,29 @@ void kOmega_omegaTransportEquationInner::
         Real mu_harmo = 2 * mu_eff_i * mu_eff_j / (mu_eff_i + mu_eff_j);
         omega_derivative = (turbu_omega_i - turbu_omega_[index_j]) / (inner_neighborhood.r_ij_[n] + 0.01 * smoothing_length_);
         omega_lap += 2.0 * mu_harmo * omega_derivative * inner_neighborhood.dW_ij_[n] * this->Vol_[index_j] / rho_i;
+
+        Vecd nablaW_ijV_j = inner_neighborhood.dW_ij_[n] * this->Vol_[index_j] * inner_neighborhood.e_ij_[n];
+        //** non-conservative form *
+        k_gradient += -1.0 * (turbu_k_i - turbu_k_[index_j]) * nablaW_ijV_j;
+        omega_gradient += -1.0 * (turbu_omega_i - turbu_omega_[index_j]) * nablaW_ijV_j;
     }
 
     omega_production = std_kw_alpha_ * turbu_omega_i * k_production_[index_i] / turbu_k_i;
     omega_dissipation = std_kw_beta_ * turbu_omega_i * turbu_omega_i;
 
-    domega_dt_[index_i] = omega_production - omega_dissipation + omega_lap;
-    domega_dt_without_disspation_[index_i] = omega_production + omega_lap;
+    Real grad_dot_k_omega = k_gradient.dot(omega_gradient);
+    std_kw_sigma_d_ = grad_dot_k_omega > 0.0 ? std_kw_sigma_do_ : 0.0;
+
+    omega_cross_diffusion = std_kw_sigma_d_ / turbu_omega_i * grad_dot_k_omega;
+
+    domega_dt_[index_i] = omega_production - omega_dissipation + omega_lap + omega_cross_diffusion;
+    domega_dt_without_disspation_[index_i] = omega_production + omega_lap + omega_cross_diffusion;
 
     //** for test */
     omega_production_[index_i] = omega_production;
     omega_dissipation_[index_i] = omega_dissipation;
     omega_diffusion_[index_i] = omega_lap;
+    omega_cross_diffusion_[index_i] = omega_cross_diffusion;
 }
 //=================================================================================================//
 void kOmega_omegaTransportEquationInner::update(size_t index_i, Real dt)
