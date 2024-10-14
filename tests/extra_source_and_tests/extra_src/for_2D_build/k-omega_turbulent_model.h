@@ -45,6 +45,7 @@ class BaseTurbuClosureCoeff
     Real std_kw_sigma_do_;
     Real std_kw_sigma_d_;
     Real std_kw_C_lim_;
+    Real std_kw_beta_i_;
 };
 //=================================================================================================//
 class WallFunction : public BaseTurbuClosureCoeff
@@ -530,6 +531,7 @@ class StandardWallFunctionCorrection : public LocalDynamics, public DataDelegate
     Real molecular_viscosity_;
     StdLargeVec<Real> &turbu_k_;
     StdLargeVec<Real> &turbu_epsilon_;
+    StdLargeVec<Real> &turbu_omega_;
     StdLargeVec<Real> &turbu_mu_;
     StdLargeVec<int> &is_near_wall_P1_;
     StdLargeVec<int> &is_near_wall_P2_;

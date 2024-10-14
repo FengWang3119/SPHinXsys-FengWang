@@ -13,7 +13,7 @@ BaseTurbuClosureCoeff::BaseTurbuClosureCoeff()
       start_time_laminar_(0.0), y_star_threshold_laminar_(11.225),
       std_kw_sigma_k_(2.0), std_kw_sigma_omega_(2.0), std_kw_beta_star_(0.09), std_kw_sigma_star_(0.6),
       std_kw_alpha_(0.52), std_kw_sigma_(0.5), std_kw_f_beta_(1.0), std_kw_beta_0_(0.0708),
-      std_kw_sigma_do_(0.125), std_kw_C_lim_(0.875)
+      std_kw_sigma_do_(0.125), std_kw_C_lim_(0.875), std_kw_beta_i_(0.072)
 {
     C_mu_25_ = pow(C_mu_, 0.25);
     C_mu_75_ = pow(C_mu_, 0.75);
@@ -998,6 +998,7 @@ StandardWallFunctionCorrection::
       molecular_viscosity_(DynamicCast<Fluid>(this, particles_->getBaseMaterial()).ReferenceViscosity()),
       turbu_k_(*particles_->getVariableDataByName<Real>("TurbulenceKineticEnergy")),
       turbu_epsilon_(*particles_->getVariableDataByName<Real>("TurbulentDissipation")),
+      turbu_omega_(*particles_->getVariableDataByName<Real>("TurbulentSpecificDissipation")),
       turbu_mu_(*particles_->getVariableDataByName<Real>("TurbulentViscosity")),
       is_near_wall_P1_(*particles_->getVariableDataByName<int>("IsNearWallP1")),
       is_near_wall_P2_(*particles_->getVariableDataByName<int>("IsNearWallP2")),
@@ -1130,6 +1131,7 @@ void StandardWallFunctionCorrection::interaction(size_t index_i, Real dt)
             Real epsilon_p_weighted_sum = 0.0;
             Real dudn_p_weighted_sum = 0.0;
             Real G_k_p_weighted_sum = 0.0;
+            Real omega_p_weighted_sum = 0.0;
 
             for (size_t k = 0; k < contact_configuration_.size(); ++k)
             {
@@ -1142,6 +1144,7 @@ void StandardWallFunctionCorrection::interaction(size_t index_i, Real dt)
                     Real epsilon_p_j = 0.0;
                     Real dudn_p_j = 0.0;
                     Real G_k_p_j = 0.0;
+                    Real omega_p_j = 0.0;
 
                     Real y_p_j = 0.0;
 
@@ -1176,18 +1179,22 @@ void StandardWallFunctionCorrection::interaction(size_t index_i, Real dt)
                     {
                         epsilon_p_j = 2.0 * turbu_k_[index_i] * nu_i / (y_p_j * y_p_j);
                         G_k_p_j = 0.0;
+                        omega_p_j = 6.0 * nu_i / (std_kw_beta_i_ * y_p_j * y_p_j);
                     }
                     else
                     {
                         epsilon_p_j = C_mu_75_ * turbu_k_i_15 / (Karman_ * y_p_j);
                         G_k_p_j = rho_i * fric_vel_mag_j * fric_vel_mag_j * dudn_p_mag_j;
+                        omega_p_j = turbu_k_i_05 / (std_kw_beta_star_ * Karman_ * y_p_j);
                     }
 
                     epsilon_p_weighted_sum += weight_j * epsilon_p_j;
                     G_k_p_weighted_sum += weight_j * G_k_p_j;
+                    omega_p_weighted_sum += weight_j * omega_p_j;
                 }
             }
             turbu_epsilon_[index_i] = epsilon_p_weighted_sum / total_weight;
+            turbu_omega_[index_i] = omega_p_weighted_sum / total_weight;
 
             vel_grad_i_tn(0, 0) = 0.0;
             vel_grad_i_tn(0, 1) = dudn_p_weighted_sum / total_weight;
