@@ -1,5 +1,5 @@
 /**
- * @file 	freestream_flow_around_cylinder.cpp
+ * @file 	freestream_flow_around_v_gutter.cpp
  * @author 	Xiangyu Hu, Shuoguo Zhang
  */
 
@@ -29,13 +29,13 @@ int main(int ac, char *av[])
     ParticleBuffer<ReserveSizeFactor> inlet_particle_buffer(0.5);
     water_block.generateParticlesWithReserve<BaseParticles, Lattice>(inlet_particle_buffer);
 
-    SolidBody cylinder(sph_system, makeShared<Cylinder>("Cylinder"));
-    cylinder.defineAdaptationRatios(1.15, 2.0);
-    cylinder.defineBodyLevelSetShape();
-    cylinder.defineMaterial<Solid>();
+    SolidBody v_gutter(sph_system, makeShared<V_Gutter>("V_Gutter"));
+    v_gutter.defineAdaptationRatios(1.15, 2.0);
+    v_gutter.defineBodyLevelSetShape();
+    v_gutter.defineMaterial<Solid>();
     (!sph_system.RunParticleRelaxation() && sph_system.ReloadParticles())
-        ? cylinder.generateParticles<BaseParticles, Reload>(cylinder.getName())
-        : cylinder.generateParticles<BaseParticles, Lattice>();
+        ? v_gutter.generateParticles<BaseParticles, Reload>(v_gutter.getName())
+        : v_gutter.generateParticles<BaseParticles, Lattice>();
 
     ObserverBody fluid_observer(sph_system, "FluidObserver");
     fluid_observer.generateParticles<ObserverParticles>(observation_locations);
@@ -48,8 +48,8 @@ int main(int ac, char *av[])
     //  inner and contact relations.
     //----------------------------------------------------------------------
     InnerRelation water_block_inner(water_block);
-    ContactRelation water_block_contact(water_block, {&cylinder});
-    ContactRelation cylinder_contact(cylinder, {&water_block});
+    ContactRelation water_block_contact(water_block, {&v_gutter});
+    ContactRelation v_gutter_contact(v_gutter, {&water_block});
     ContactRelation fluid_observer_contact(fluid_observer, {&water_block});
     //----------------------------------------------------------------------
     // Combined relations built from basic relations
@@ -62,19 +62,19 @@ int main(int ac, char *av[])
     if (sph_system.RunParticleRelaxation())
     {
         /** body topology only for particle relaxation */
-        InnerRelation cylinder_inner(cylinder);
+        InnerRelation v_gutter_inner(v_gutter);
         //----------------------------------------------------------------------
         //	Methods used for particle relaxation.
         //----------------------------------------------------------------------
         using namespace relax_dynamics;
         /** Random reset the insert body particle position. */
-        SimpleDynamics<RandomizeParticlePosition> random_inserted_body_particles(cylinder);
+        SimpleDynamics<RandomizeParticlePosition> random_inserted_body_particles(v_gutter);
         /** Write the body state to Vtp file. */
-        BodyStatesRecordingToVtp write_inserted_body_to_vtp(cylinder);
+        BodyStatesRecordingToVtp write_inserted_body_to_vtp(v_gutter);
         /** Write the particle reload files. */
-        ReloadParticleIO write_particle_reload_files(cylinder);
+        ReloadParticleIO write_particle_reload_files(v_gutter);
         /** A  Physics relaxation step. */
-        RelaxationStepInner relaxation_step_inner(cylinder_inner);
+        RelaxationStepInner relaxation_step_inner(v_gutter_inner);
         //----------------------------------------------------------------------
         //	Particle relaxation starts here.
         //----------------------------------------------------------------------
@@ -107,7 +107,7 @@ int main(int ac, char *av[])
     StartupAcceleration time_dependent_acceleration(Vec2d(U_f, 0.0), 2.0);
     SimpleDynamics<GravityForce<StartupAcceleration>> apply_gravity_force(water_block, time_dependent_acceleration);
     InteractionWithUpdate<SpatialTemporalFreeSurfaceIndicationComplex> free_stream_surface_indicator(water_block_inner, water_block_contact);
-    SimpleDynamics<NormalDirectionFromBodyShape> cylinder_normal_direction(cylinder);
+    SimpleDynamics<NormalDirectionFromBodyShape> v_gutter_normal_direction(v_gutter);
 
     Dynamics1Level<fluid_dynamics::Integration1stHalfWithWallRiemann> pressure_relaxation(water_block_inner, water_block_contact);
     Dynamics1Level<fluid_dynamics::Integration2ndHalfWithWallNoRiemann> density_relaxation(water_block_inner, water_block_contact);
@@ -133,8 +133,8 @@ int main(int ac, char *av[])
     //	Algorithms of FSI.
     //----------------------------------------------------------------------
     /** Compute the force exerted on solid body due to fluid pressure and viscosity. */
-    InteractionWithUpdate<solid_dynamics::PressureForceFromFluid<decltype(density_relaxation)>> pressure_force_from_fluid(cylinder_contact);
-    InteractionWithUpdate<solid_dynamics::ViscousForceFromFluid> viscous_force_from_fluid(cylinder_contact);
+    InteractionWithUpdate<solid_dynamics::PressureForceFromFluid<decltype(density_relaxation)>> pressure_force_from_fluid(v_gutter_contact);
+    InteractionWithUpdate<solid_dynamics::ViscousForceFromFluid> viscous_force_from_fluid(v_gutter_contact);
     //----------------------------------------------------------------------
     //	Define the configuration related particles dynamics.
     //----------------------------------------------------------------------
@@ -146,8 +146,8 @@ int main(int ac, char *av[])
     write_real_body_states.addToWrite<Real>(water_block, "Pressure");
     write_real_body_states.addToWrite<int>(water_block, "Indicator");
     ObservedQuantityRecording<Vecd> write_fluid_velocity("Velocity", fluid_observer_contact);
-    RegressionTestTimeAverage<ReducedQuantityRecording<QuantitySummation<Vecd>>> write_total_viscous_force_from_fluid(cylinder, "ViscousForceFromFluid");
-    ReducedQuantityRecording<QuantitySummation<Vecd>> write_total_pressure_force_from_fluid(cylinder, "PressureForceFromFluid");
+    RegressionTestTimeAverage<ReducedQuantityRecording<QuantitySummation<Vecd>>> write_total_viscous_force_from_fluid(v_gutter, "ViscousForceFromFluid");
+    ReducedQuantityRecording<QuantitySummation<Vecd>> write_total_pressure_force_from_fluid(v_gutter, "PressureForceFromFluid");
     //----------------------------------------------------------------------
     //	Prepare the simulation with cell linked list, configuration
     //	and case specified initial condition if necessary.
@@ -157,7 +157,7 @@ int main(int ac, char *av[])
     /** initialize configurations for all bodies. */
     sph_system.initializeSystemConfigurations();
     /** computing surface normal direction for the insert body. */
-    cylinder_normal_direction.exec();
+    v_gutter_normal_direction.exec();
     //----------------------------------------------------------------------
     //	First output before the main loop.
     //----------------------------------------------------------------------
@@ -178,6 +178,8 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     //	Main loop starts here.
     //----------------------------------------------------------------------
+    std::cout << "Press any key to start";
+    std::cin.get();
     while (physical_time < end_time)
     {
         Real integration_time = 0.0;
@@ -232,7 +234,7 @@ int main(int ac, char *av[])
             water_block_complex.updateConfiguration();
             /** one need update configuration after periodic condition. */
             /** write run-time observation into file */
-            cylinder_contact.updateConfiguration();
+            v_gutter_contact.updateConfiguration();
         }
 
         TickCount t2 = TickCount::now();
@@ -252,7 +254,7 @@ int main(int ac, char *av[])
 
     if (sph_system.GenerateRegressionData())
     {
-        // The lift force at the cylinder is very small and not important in this case.
+        // The lift force at the v_gutter is very small and not important in this case.
         write_total_viscous_force_from_fluid.generateDataBase({1.0e-2, 1.0e-2}, {1.0e-2, 1.0e-2});
     }
     else

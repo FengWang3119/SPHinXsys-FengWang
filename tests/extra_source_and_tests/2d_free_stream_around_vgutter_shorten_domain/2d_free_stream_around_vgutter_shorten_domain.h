@@ -10,13 +10,12 @@ using namespace SPH;
 //----------------------------------------------------------------------
 //	Basic geometry parameters and numerical setup.
 //----------------------------------------------------------------------
-Real DL = 20.0;                               /**< Channel length. */
-Real DH = 16.0;                               /**< Channel height. */
-Real particle_spacing_ref = 0.2;              /**< Initial reference particle spacing. */
+Real DL = 0.3;                                /**< Channel length. */
+Real DH = 0.1;                                /**< Channel height. */
+Real particle_spacing_ref = 0.4e-3;           /**< Initial reference particle spacing. */
 Real DL_sponge = particle_spacing_ref * 20.0; /**< Sponge region to impose emitter. */
 Real BW = 4.0 * particle_spacing_ref;         /**< Sponge region to impose injection. */
-Vec2d insert_circle_center(10.0, 0.5 * DH);   /**< Location of the cylinder center. */
-Real insert_circle_radius = 1.0;              /**< Radius of the cylinder. */
+Real gutter_expanding_size = 0.022;           /**< Characteristic length. */
 // Observation locations
 Vec2d point_coordinate_1(3.0, 5.0);
 Vec2d point_coordinate_2(4.0, 5.0);
@@ -25,23 +24,61 @@ StdVec<Vecd> observation_locations = {point_coordinate_1, point_coordinate_2, po
 //----------------------------------------------------------------------
 //	Global parameters on the fluid properties
 //----------------------------------------------------------------------
-Real rho0_f = 1.0;                                            /**< Density. */
-Real U_f = 1.0;                                               /**< Characteristic velocity. */
-Real c_f = 10.0 * U_f;                                        /**< Speed of sound. */
-Real Re = 100.0;                                              /**< Reynolds number. */
-Real mu_f = rho0_f * U_f * (2.0 * insert_circle_radius) / Re; /**< Dynamics viscosity. */
+Real rho0_f = 1.0;                                     /**< Density. */
+Real U_f = 1.0;                                        /**< Characteristic velocity. */
+Real U_max_expected = 3.0 * U_f;                       /**< Expected max velocity. */
+Real c_f = 10.0 * U_max_expected;                      /**< Speed of sound. */
+Real Re = 100.0;                                       /**< Reynolds number. */
+Real mu_f = rho0_f * U_f * gutter_expanding_size / Re; /**< Dynamics viscosity. */
 //----------------------------------------------------------------------
 //	define geometry of SPH bodies
-//----------------------------------------------------------------------
-//	water block shape
-std::vector<Vecd> water_block_shape{
-    Vecd(-DL_sponge, 0.0), Vecd(-DL_sponge, DH), Vecd(DL, DH), Vecd(DL, 0.0), Vecd(-DL_sponge, 0.0)};
+
 Vec2d emitter_halfsize = Vec2d(0.5 * BW, 0.5 * DH);
 Vec2d emitter_translation = Vec2d(-DL_sponge, 0.0) + emitter_halfsize;
 Vec2d emitter_buffer_halfsize = Vec2d(0.5 * DL_sponge, 0.5 * DH);
 Vec2d emitter_buffer_translation = Vec2d(-DL_sponge, 0.0) + emitter_buffer_halfsize;
 Vec2d disposer_halfsize = Vec2d(0.5 * BW, 0.75 * DH);
 Vec2d disposer_translation = Vec2d(DL, DH + 0.25 * DH) - disposer_halfsize;
+
+/** the water block . */
+std::vector<Vecd> water_block_shape{
+    Vecd(-DL_sponge, 0.0),
+    Vecd(-DL_sponge, DH),
+    Vecd(DL, DH),
+    Vecd(DL, 0.0),
+    Vecd(-DL_sponge, 0.0),
+};
+/** the v gutter . */
+std::vector<Vecd> v_gutter_shape_up{
+    Vecd(0.050, 0.0524782),
+    Vecd(0.0741421, 0.0624782),
+    Vecd(0.0747544, 0.061),
+    Vecd(0.0506123, 0.051),
+    Vecd(0.050, 0.0524782),
+};
+std::vector<Vecd> v_gutter_shape_down{
+    Vecd(0.0506123, 0.049),
+    Vecd(0.0747544, 0.039),
+    Vecd(0.0741421, 0.0375218),
+    Vecd(0.0500, 0.0475218),
+    Vecd(0.0506123, 0.049),
+};
+/** the side wall . */
+Real extend_value = 4.0 * BW;
+std::vector<Vecd> wall_side_up{
+    Vecd(-DL_sponge - extend_value, DH),
+    Vecd(-DL_sponge - extend_value, DH + BW),
+    Vecd(DL + extend_value, DH + BW),
+    Vecd(DL + extend_value, DH),
+    Vecd(-DL_sponge - extend_value, DH),
+};
+std::vector<Vecd> wall_side_down{
+    Vecd(-DL_sponge - extend_value, -BW),
+    Vecd(-DL_sponge - extend_value, 0.0),
+    Vecd(DL + extend_value, 0.0),
+    Vecd(DL + extend_value, -BW),
+    Vecd(-DL_sponge - extend_value, -BW),
+};
 
 //----------------------------------------------------------------------
 //	Define case dependent geometries
@@ -52,15 +89,19 @@ class WaterBlock : public MultiPolygonShape
     explicit WaterBlock(const std::string &shape_name) : MultiPolygonShape(shape_name)
     {
         multi_polygon_.addAPolygon(water_block_shape, ShapeBooleanOps::add);
-        multi_polygon_.addACircle(insert_circle_center, insert_circle_radius, 100, ShapeBooleanOps::sub);
+        multi_polygon_.addAPolygon(v_gutter_shape_up, ShapeBooleanOps::sub);
+        multi_polygon_.addAPolygon(v_gutter_shape_down, ShapeBooleanOps::sub);
     }
 };
-class Cylinder : public MultiPolygonShape
+class V_Gutter : public MultiPolygonShape
 {
   public:
-    explicit Cylinder(const std::string &shape_name) : MultiPolygonShape(shape_name)
+    explicit V_Gutter(const std::string &shape_name) : MultiPolygonShape(shape_name)
     {
-        multi_polygon_.addACircle(insert_circle_center, insert_circle_radius, 100, ShapeBooleanOps::add);
+        multi_polygon_.addAPolygon(v_gutter_shape_up, ShapeBooleanOps::add);
+        multi_polygon_.addAPolygon(v_gutter_shape_down, ShapeBooleanOps::add);
+        multi_polygon_.addAPolygon(wall_side_up, ShapeBooleanOps::add);
+        multi_polygon_.addAPolygon(wall_side_down, ShapeBooleanOps::add);
     }
 };
 //----------------------------------------------------------------------
