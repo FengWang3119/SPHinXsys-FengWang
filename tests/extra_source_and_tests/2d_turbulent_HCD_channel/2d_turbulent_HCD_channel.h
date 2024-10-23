@@ -19,7 +19,7 @@ using namespace SPH;
 //	Basic geometry parameters and numerical setup.
 //----------------------------------------------------------------------
 Real DH = 2.0; /**< Channel height. */
-Real num_fluid_cross_section = 120.0;
+Real num_fluid_cross_section = 80.0;
 Real extend_in = 2.0;
 Real extend_out = 4.0;
 Real DL1 = 1.0 + extend_in;
@@ -53,7 +53,7 @@ bool is_always_lattice_arrange_fluid = false;
 //** Empirical parameter for initial stability*
 Real turbulent_module_activate_time = 2.5;
 //** Intial values for K, Epsilon and Mu_t *
-StdVec<Real> initial_turbu_values = {0.000180001, 3.326679e-5, 1.0e-3};
+StdVec<Real> initial_turbu_values = {0.000180001, 3.326679e-5, 1.0e-2};
 
 //Real y_p_constant = DH / 2.0 / num_fluid_cross_section; //** For the first try *
 Real y_p_constant = 0.025;
