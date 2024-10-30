@@ -19,7 +19,7 @@ using namespace SPH;
 //	Basic geometry parameters and numerical setup.
 //----------------------------------------------------------------------
 Real DH = 0.0635; /**< Channel height. */
-Real num_fluid_cross_section = 20.0;
+Real num_fluid_cross_section = 40.0;
 Real central_angel = 43.0 * 2.0 * Pi / 360.0;
 Real extend_in = 0.0;
 Real extend_out = 0.0;
@@ -51,12 +51,14 @@ Real characteristic_length = DH; /**<It needs characteristic Length to calculate
 int type_turbulent_inlet = 0;
 Real relaxation_rate_turbulent_inlet = 0.8;
 //** Tag for AMRD *
-int is_AMRD = 1;
+int is_AMRD = 0;
 //** Weight for correcting the velocity  gradient in the sub near wall region  *
 Real weight_vel_grad_sub_nearwall = 0.1;
+//** Tag for Source Term Linearisation *
+bool is_source_term_linearisation = false;
 //** Empirical parameter for initial stability*
 Real turbulent_module_activate_time = 2.5;
-//** Intial values for K, Epsilon and Mu_t *
+//** Initial values for K, Epsilon and Mu_t *
 StdVec<Real> initial_turbu_values = {0.000180001, 3.326679e-5, 1.0e-9};
 
 Real y_p_constant = DH / 2.0 / num_fluid_cross_section; //** For the first try *
@@ -98,7 +100,7 @@ Real Re_calculated = U_f * DH * rho0_f / mu_f;
 
 Real DH_C = DH - 2.0 * offset_distance;
 
-//** Intial inlet pressure to drive flow *
+//** Initial inlet pressure to drive flow *
 //Real initial_inlet_pressure = 0.5 * rho0_f * U_inlet ;
 //Real initial_inlet_pressure = 100.0;
 //----------------------------------------------------------------------
@@ -145,7 +147,7 @@ Real observe_angles[4] = {
     34.0 * (2.0 * Pi / 360.0)};
 Real observer_offset_distance = 2.0 * resolution_ref;
 
-int num_observer_points = std::round(DH_C / resolution_ref); //**Evrey particle is regarded as a cell monitor*
+int num_observer_points = std::round(DH_C / resolution_ref); //**Every particle is regarded as a cell monitor*
 Real observe_spacing = DH_C / num_observer_points;
 
 StdVec<Vecd> observation_locations;
@@ -204,7 +206,7 @@ std::vector<Vecd> createWaterBlockShape()
     {
         Real x_coordinate = start_x + k * arc_sampling_interval; //** clockwise *
         //** Circle center is (DL1, R2), radius is R1. Equation is (x-DL1)^2+(y-R2)^2=R1^2,
-        //** Considring the coordinate, y= -sqr(R1^2-(x-DH1)^2)+R2 *
+        //** Considering the coordinate, y= -sqr(R1^2-(x-DH1)^2)+R2 *
         Real y_coordinate = -sqrt(R1 * R1 - (x_coordinate - DL1) * (x_coordinate - DL1)) + R2;
         water_block_shape.push_back(Vecd(x_coordinate, y_coordinate));
     }
@@ -221,7 +223,7 @@ std::vector<Vecd> createWaterBlockShape()
     {
         Real x_coordinate = start_x - k * arc_sampling_interval; //** clockwise *
         //** Circle center is (DL1, R2), radius is R2. Equation is (x-DL1)^2+(y-R2)^2=R2^2,
-        //** Considring the coordinate, y= -sqr(R2^2-(x-DH1)^2)+R2 *
+        //** Considering the coordinate, y= -sqr(R2^2-(x-DH1)^2)+R2 *
         Real y_coordinate = -sqrt(R2 * R2 - (x_coordinate - DL1) * (x_coordinate - DL1)) + R2;
         water_block_shape.push_back(Vecd(x_coordinate, y_coordinate));
     }
@@ -261,7 +263,7 @@ std::vector<Vecd> createOuterWallShape()
     {
         Real x_coordinate = start_x + k * arc_sampling_interval; //** clockwise *
         //** Circle center is (DL1, R2), radius is R1. Equation is (x-DL1)^2+(y-R2)^2=R1^2,
-        //** Considring the coordinate, y= -sqr(R1^2-(x-DH1)^2)+R2 *
+        //** Considering the coordinate, y= -sqr(R1^2-(x-DH1)^2)+R2 *
         Real y_coordinate = -sqrt(R1 * R1 - (x_coordinate - DL1) * (x_coordinate - DL1)) + R2;
         water_block_shape.push_back(Vecd(x_coordinate, y_coordinate));
     }
@@ -278,7 +280,7 @@ std::vector<Vecd> createOuterWallShape()
     {
         Real x_coordinate = start_x - k * arc_sampling_interval; //** clockwise *
         //** Circle center is (DL1, R2), radius is R2. Equation is (x-DL1)^2+(y-R2)^2=R2^2,
-        //** Considring the coordinate, y= -sqr(R2^2-(x-DH1)^2)+R2 *
+        //** Considering the coordinate, y= -sqr(R2^2-(x-DH1)^2)+R2 *
         Real y_coordinate = -sqrt(R2 * R2 - (x_coordinate - DL1) * (x_coordinate - DL1)) + R2;
         water_block_shape.push_back(Vecd(x_coordinate, y_coordinate));
     }
@@ -308,7 +310,7 @@ std::vector<Vecd> createInnerWallShape()
     {
         Real x_coordinate = start_x + k * arc_sampling_interval; //** clockwise *
         //** Circle center is (DL1, R2), radius is R1. Equation is (x-DL1)^2+(y-R2)^2=R1^2,
-        //** Considring the coordinate, y= -sqr(R1^2-(x-DH1)^2)+R2 *
+        //** Considering the coordinate, y= -sqr(R1^2-(x-DH1)^2)+R2 *
         Real y_coordinate = -sqrt(R1 * R1 - (x_coordinate - DL1) * (x_coordinate - DL1)) + R2;
         water_block_shape.push_back(Vecd(x_coordinate, y_coordinate));
     }
@@ -325,7 +327,7 @@ std::vector<Vecd> createInnerWallShape()
     {
         Real x_coordinate = start_x - k * arc_sampling_interval; //** clockwise *
         //** Circle center is (DL1, R2), radius is R2. Equation is (x-DL1)^2+(y-R2)^2=R2^2,
-        //** Considring the coordinate, y= -sqr(R2^2-(x-DH1)^2)+R2 *
+        //** Considering the coordinate, y= -sqr(R2^2-(x-DH1)^2)+R2 *
         Real y_coordinate = -sqrt(R2 * R2 - (x_coordinate - DL1) * (x_coordinate - DL1)) + R2;
         water_block_shape.push_back(Vecd(x_coordinate, y_coordinate));
     }

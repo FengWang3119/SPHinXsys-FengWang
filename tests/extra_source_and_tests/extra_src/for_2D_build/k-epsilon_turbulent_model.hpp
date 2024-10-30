@@ -37,7 +37,7 @@ namespace fluid_dynamics
 //=================================================================================================//
 template <class DataDelegationType>
 template <class BaseRelationType>
-BaseTurtbulentModel<Base, DataDelegationType>::BaseTurtbulentModel(BaseRelationType &base_relation)
+BaseTurbulentModel<Base, DataDelegationType>::BaseTurbulentModel(BaseRelationType &base_relation)
     : LocalDynamics(base_relation.getSPHBody()), DataDelegationType(base_relation),
       turbu_k_(*(this->particles_->template registerSharedVariable<Real>("TurbulenceKineticEnergy"))),
       turbu_epsilon_(*(this->particles_->template registerSharedVariable<Real>("TurbulentDissipation"))),
@@ -50,13 +50,13 @@ BaseTurtbulentModel<Base, DataDelegationType>::BaseTurtbulentModel(BaseRelationT
       Vol_(*this->particles_->template getVariableDataByName<Real>("VolumetricMeasure")),
       vel_(*this->particles_->template getVariableDataByName<Vecd>("Velocity")),
       dimension_(2) {}
-//A temporarily treatment for dimention
+//** A temporarily treatment for dimension **
 //=================================================================================================//
 template <class DataDelegationType>
 template <class BaseRelationType>
 TKEnergyForce<Base, DataDelegationType>::
     TKEnergyForce(BaseRelationType &base_relation)
-    : BaseTurtbulentModel<Base, DataDelegationType>(base_relation),
+    : BaseTurbulentModel<Base, DataDelegationType>(base_relation),
       force_(*this->particles_->template registerSharedVariable<Vecd>("Force")),
       mass_(*this->particles_->template getVariableDataByName<Real>("Mass")),
       indicator_(*this->particles_->template getVariableDataByName<int>("Indicator")),

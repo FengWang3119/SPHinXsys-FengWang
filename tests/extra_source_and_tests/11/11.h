@@ -33,7 +33,9 @@ Real relaxation_rate_turbulent_inlet = 0.8;
 int is_AMRD = 0;
 //** Weight for correcting the velocity  gradient in the sub near wall region  *
 Real weight_vel_grad_sub_nearwall = 0.1;
-//** Intial values for K, Epsilon and Mu_t *
+//** Tag for Source Term Linearisation *
+bool is_source_term_linearisation = false;
+//** Initial values for K, Epsilon and Mu_t *
 StdVec<Real> initial_turbu_values = {0.000180001, 3.326679e-5, 1.0e-9};
 
 Real y_p_constant = 0.05;
@@ -51,15 +53,6 @@ BoundingBox system_domain_bounds(Vec2d(-DL_sponge - 2.0 * BW, -BW), Vec2d(DL + 2
 //----------------------------------------------------------------------
 //	Material properties of the fluid.
 //----------------------------------------------------------------------
-//** Laminar *
-//Real U_inlet = 0.5;
-//Real U_max = 0.75;
-//Real U_f = U_inlet; //*Characteristic velo is regarded as average velo here
-//Real c_f = 10.0 * U_max;                                        /**< Speed of sound. */
-//Real rho0_f = 1.0;                                            /**< Density. */
-//Real mu_f = 0.01;
-
-//** Same parameter as SPH_4 *
 Real U_inlet = 1.0;
 Real U_f = U_inlet;         //*Characteristic velocity
 Real U_max = 1.5 * U_inlet; //** An estimated value, generally 1.5 U_inlet *
@@ -77,29 +70,17 @@ Real DH_C = DH - 2.0 * offset_distance;
 //----------------------------------------------------------------------
 //	The emitter block with offset model.
 //----------------------------------------------------------------------
-//Vec2d emitter_halfsize = Vec2d(0.5 * BW, 0.5 * DH_C + BW );
-//Vec2d emitter_translation = Vec2d(-DL_sponge, 0.0) + emitter_halfsize + Vecd(0.0, offset_distance - BW);
-//Vec2d inlet_buffer_halfsize = Vec2d(0.5 * DL_sponge, 0.5 * DH_C + BW);
-//Vec2d inlet_buffer_translation = Vec2d(-DL_sponge, 0.0) + inlet_buffer_halfsize + Vecd(0.0, offset_distance - BW);
 Vec2d left_buffer_halfsize = Vec2d(0.5 * BW, 0.5 * DH_C + BW);
 Vec2d left_buffer_translation = Vec2d(-DL_sponge, 0.0) + left_buffer_halfsize + Vecd(0.0, offset_distance - BW);
 
-//Vec2d disposer_halfsize = Vec2d(0.5 * BW, 0.75 * DH);
-//Vec2d disposer_translation = Vec2d(DL, DH + 0.25 * DH) - disposer_halfsize;
 Vec2d right_buffer_halfsize = Vec2d(0.5 * BW, 0.75 * DH);
 Vec2d right_buffer_translation = Vec2d(DL, DH + 0.25 * DH) - right_buffer_halfsize;
 //----------------------------------------------------------------------
 // Observation with offset model.
 //----------------------------------------------------------------------
 Real x_observe_start = 0.99 * DL;
-int num_observer_points = std::round(DH_C / resolution_ref); //**Evrey particle is regarded as a cell monitor*
+int num_observer_points = std::round(DH_C / resolution_ref); //**Every particle is regarded as a cell monitor*
 Real observe_spacing = DH_C / num_observer_points;
-
-// By cell.
-Real x_observe = 0.90 * DL;
-Real observe_spacing_x = 0.02 * DL;
-int num_observer_points_x = 1;
-StdVec<Real> monitoring_bound = {x_observe_start - 2.0 * resolution_ref, x_observe_start + 2.0 * resolution_ref};
 
 // By kernel weight.
 StdVec<Vecd> observation_location;
@@ -201,13 +182,13 @@ struct InflowVelocity
             Real Y = half_channel_height - std::abs(position[1]);
             int polynomial_order = 8;
             int num_coefficient = polynomial_order + 1;
-            //** Coefficient of the polynomia, 8th-order, from py21 dp=0.024 */
+            //** Coefficient of the polynomial, 8th-order, from py21 dp=0.024 */
             // Real coeff[] = {
             //     6.153336e-01, 3.095679e+00, -1.399783e+01,
             //     4.798221e+01, -1.100147e+02, 1.619762e+02,
             //     -1.464631e+02, 7.373006e+01, -1.577924e+01
             // };
-            //** Coefficient of the polynomia, 8th-order, from py21 dp=0.1 */
+            //** Coefficient of the polynomial, 8th-order, from py21 dp=0.1 */
             Real coeff[] = {
                 6.492006e-01, 2.145673e+00, -7.442681e+00,
                 2.148624e+01, -4.443593e+01, 6.171458e+01,
