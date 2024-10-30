@@ -151,6 +151,9 @@ template <class ParticleScope>
 using MultiPhaseTransportVelocityCorrectionComplex =
     BaseMultiPhaseTransportVelocityCorrectionComplex<SingleResolution, NoKernelCorrection, ParticleScope>;
 
+template <class ParticleScope>
+using TVC_Limited_RKGC_OBC =
+    BaseTransportVelocityCorrectionComplex<SingleResolution, TruncatedLinear, LinearGradientCorrectionWithBulkScope, ParticleScope>;
 } // namespace fluid_dynamics
 } // namespace SPH
 #endif // TRANSPORT_VELOCITY_CORRECTION_H

@@ -147,8 +147,9 @@ int main(int ac, char *av[])
     InteractionWithUpdate<fluid_dynamics::ViscousForceWithWall> viscous_force(water_block_inner, water_wall_contact);
 
     /** Impose transport velocity, with or without limiter . */
-    InteractionWithUpdate<fluid_dynamics::TransportVelocityLimitedCorrectionComplex<BulkParticles>> transport_velocity_correction(water_block_inner, water_wall_contact);
+    //InteractionWithUpdate<fluid_dynamics::TransportVelocityLimitedCorrectionComplex<BulkParticles>> transport_velocity_correction(water_block_inner, water_wall_contact);
     //InteractionWithUpdate<fluid_dynamics::TransportVelocityCorrectionComplex<BulkParticles>> transport_velocity_correction(water_block_inner, water_wall_contact);
+    InteractionWithUpdate<fluid_dynamics::TVC_Limited_RKGC_OBC<BulkParticles>> transport_velocity_correction(water_block_inner, water_wall_contact);
 
     /** Evaluation of density by summation approach. */
     //InteractionWithUpdate<fluid_dynamics::DensitySummationFreeStreamComplex> update_density_by_summation(water_block_inner, water_wall_contact);
