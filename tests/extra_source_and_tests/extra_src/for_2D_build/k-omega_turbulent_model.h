@@ -164,61 +164,6 @@ class BaseTurbulentModel<Base, DataDelegationType>
 };
 //=================================================================================================//
 /**
-	 * @class K_TurbulentModelInner
-	 * @brief  K_TurbulentModelInner
-	 */
-class K_TurbulentModelInner : public BaseTurbulentModel<Base, DataDelegateInner>
-{
-  public:
-    explicit K_TurbulentModelInner(BaseInnerRelation &inner_relation, const StdVec<Real> &initial_values, int is_extr_visc_dissipa = 0);
-    virtual ~K_TurbulentModelInner(){};
-
-    inline void interaction(size_t index_i, Real dt = 0.0);
-    void update(size_t index_i, Real dt = 0.0);
-    //void update_prior_turbulent_value();
-  protected:
-    StdLargeVec<Real> &dk_dt_;
-    StdLargeVec<Real> &dk_dt_without_dissipation_;
-    StdLargeVec<Real> &k_production_;
-
-    StdLargeVec<int> &is_near_wall_P1_; //** This is used to specially treat near wall region  *
-    StdLargeVec<Matd> &velocity_gradient_;
-    StdLargeVec<Real> &turbu_k_;
-    StdLargeVec<Real> &turbu_epsilon_;
-    StdLargeVec<Real> &turbu_mu_;
-    StdLargeVec<Matd> &turbu_strain_rate_;
-    StdLargeVec<int> &is_extra_viscous_dissipation_;
-
-    //** for test */
-    StdLargeVec<int> &turbu_indicator_;
-    StdLargeVec<Real> &k_diffusion_, &vel_x_;
-};
-//=================================================================================================//
-/**
-	 * @class E_TurbulentModelInner
-	 * @brief  E_TurbulentModelInner
-	 */
-class E_TurbulentModelInner : public BaseTurbulentModel<Base, DataDelegateInner>
-{
-  public:
-    explicit E_TurbulentModelInner(BaseInnerRelation &inner_relation);
-    virtual ~E_TurbulentModelInner(){};
-
-    inline void interaction(size_t index_i, Real dt = 0.0);
-    void update(size_t index_i, Real dt = 0.0);
-
-  protected:
-    StdLargeVec<Real> &depsilon_dt_, &depsilon_dt_without_disspation_;
-    StdLargeVec<Real> &ep_production, &ep_dissipation_, &ep_diffusion_;
-
-    StdLargeVec<Real> &turbu_mu_;
-    StdLargeVec<Real> &turbu_k_;
-    StdLargeVec<Real> &turbu_epsilon_;
-    StdLargeVec<Real> &k_production_;
-    StdLargeVec<int> &is_near_wall_P1_;
-};
-//=================================================================================================//
-/**
 	 * @class kOmegaSST_TurbulentModelInner
 	 * @brief  kOmegaSST_TurbulentModelInner
 	 */
@@ -264,7 +209,7 @@ class kOmega_omegaTransportEquationInner : public BaseTurbulentModel<Base, DataD
     void update(size_t index_i, Real dt = 0.0);
 
   protected:
-    StdLargeVec<Real> &domega_dt_, &domega_dt_without_disspation_;
+    StdLargeVec<Real> &domega_dt_, &domega_dt_without_dissipation_;
     StdLargeVec<Real> &omega_production_, &omega_dissipation_, &omega_diffusion_;
     StdLargeVec<Real> &omega_cross_diffusion_;
 
@@ -559,105 +504,6 @@ class ConstrainNormalVelocityInRegionP : public LocalDynamics,
     StdLargeVec<Vecd> &vel_;
     StdLargeVec<int> &is_near_wall_P1_;
     StdLargeVec<Vecd> &e_nearest_normal_;
-};
-//=================================================================================================//
-template <typename... InteractionTypes>
-class ExtraTransportForce;
-
-template <class DataDelegationType, class ParticleScope>
-class ExtraTransportForce<Base, DataDelegationType, ParticleScope>
-    : public LocalDynamics, public DataDelegationType
-{
-  public:
-    template <class BaseRelationType>
-    explicit ExtraTransportForce(BaseRelationType &base_relation);
-    virtual ~ExtraTransportForce(){};
-
-  protected:
-    StdLargeVec<Real> &rho_;
-    StdLargeVec<Vecd> &vel_;
-    StdLargeVec<Vecd> &zero_gradient_residue_;
-    StdLargeVec<Matd> extra_transport_stress_;
-    StdLargeVec<Vecd> extra_transport_vel_;
-    ParticleScope within_scope_;
-};
-//** Inner part *
-template <class LimiterType, typename... CommonControlTypes>
-class ExtraTransportForce<Inner<LimiterType>, CommonControlTypes...>
-    : public ExtraTransportForce<Base, DataDelegateInner, CommonControlTypes...>
-{
-  public:
-    explicit ExtraTransportForce(BaseInnerRelation &inner_relation);
-    virtual ~ExtraTransportForce(){};
-    void initialization(size_t index_i, Real dt = 0.0);
-    void interaction(size_t index_i, Real dt = 0.0);
-    void update(size_t index_i, Real dt = 0.0);
-
-  protected:
-    StdLargeVec<Real> &Vol_;
-    const Real h_ref_;
-    StdLargeVec<Matd> &extra_transport_stress_;
-    StdLargeVec<Vecd> &extra_transport_vel_;
-    LimiterType limiter_;
-};
-
-template <class LimiterType, class ParticleScope>
-using ExtraTransportForceInner = ExtraTransportForce<Inner<LimiterType>, ParticleScope>;
-
-//** Wall part *
-template <typename... CommonControlTypes>
-class ExtraTransportForce<Contact<Boundary>, CommonControlTypes...>
-    : public ExtraTransportForce<Base, DataDelegateContact, CommonControlTypes...>
-{
-  public:
-    explicit ExtraTransportForce(BaseContactRelation &contact_relation);
-    virtual ~ExtraTransportForce(){};
-    void interaction(size_t index_i, Real dt = 0.0);
-
-  protected:
-    StdLargeVec<Matd> &extra_transport_stress_;
-    StdLargeVec<Vecd> &extra_transport_vel_;
-    StdVec<StdLargeVec<Real> *> wall_Vol_;
-};
-
-//** Interface part *
-template <class LimiterType, typename... CommonControlTypes>
-using BaseExtraTransportForceComplex = ComplexInteraction<ExtraTransportForce<Inner<LimiterType>, Contact<Boundary>>, CommonControlTypes...>;
-
-template <class ParticleScope>
-using ExtraTransportForceComplex = BaseExtraTransportForceComplex<NoLimiter, ParticleScope>;
-
-template <class ParticleScope>
-using ExtraTransportForceLimitedComplex = BaseExtraTransportForceComplex<TruncatedLinear, ParticleScope>;
-//=================================================================================================//
-class ConstrainVelocityAt_Y_Direction : public LocalDynamics,
-                                        public DataDelegateSimple
-{
-  public:
-    explicit ConstrainVelocityAt_Y_Direction(SPHBody &sph_body, Real Length_channel);
-    virtual ~ConstrainVelocityAt_Y_Direction(){};
-
-    void update(size_t index_i, Real dt = 0.0);
-
-  protected:
-    StdLargeVec<Vecd> &vel_;
-    StdLargeVec<Vecd> &pos_;
-    Real length_channel_;
-};
-//=================================================================================================//
-class UpdateTurbulentPlugFlowIndicator : public LocalDynamics,
-                                         public DataDelegateSimple
-{
-  public:
-    explicit UpdateTurbulentPlugFlowIndicator(SPHBody &sph_body, Real DH);
-    virtual ~UpdateTurbulentPlugFlowIndicator(){};
-
-    void update(size_t index_i, Real dt = 0.0);
-
-  protected:
-    StdLargeVec<int> &turbu_plug_flow_indicator_;
-    StdLargeVec<Vecd> &pos_;
-    Real channel_width_;
 };
 //=================================================================================================//
 template <int INDICATOR>

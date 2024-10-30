@@ -196,212 +196,6 @@ void TransferVelocityGradient::update(size_t index_i, Real dt)
     }
 }
 //=================================================================================================//
-K_TurbulentModelInner::K_TurbulentModelInner(BaseInnerRelation &inner_relation, const StdVec<Real> &initial_values, int is_extr_visc_dissipa)
-    : BaseTurbulentModel<Base, DataDelegateInner>(inner_relation),
-      dk_dt_(*particles_->registerSharedVariable<Real>("ChangeRateOfTKE")),
-      dk_dt_without_dissipation_(*particles_->registerSharedVariable<Real>("ChangeRateOfTKEWithoutDissipation")),
-      k_production_(*particles_->registerSharedVariable<Real>("K_Production")),
-      is_near_wall_P1_(*particles_->getVariableDataByName<int>("IsNearWallP1")),
-      velocity_gradient_(*particles_->getVariableDataByName<Matd>("TurbulentVelocityGradient")),
-      turbu_k_(*particles_->getVariableDataByName<Real>("TurbulenceKineticEnergy")),
-      turbu_epsilon_(*particles_->getVariableDataByName<Real>("TurbulentDissipation")),
-      turbu_mu_(*particles_->getVariableDataByName<Real>("TurbulentViscosity")),
-      turbu_strain_rate_(*particles_->getVariableDataByName<Matd>("TurbulentStrainRate")),
-      is_extra_viscous_dissipation_(*particles_->registerSharedVariable<int>("TurbulentExtraViscousDissipation")),
-      turbu_indicator_(*particles_->registerSharedVariable<int>("TurbulentIndicator")),
-      k_diffusion_(*particles_->registerSharedVariable<Real>("K_Diffusion")),
-      vel_x_(*particles_->registerSharedVariable<Real>("Velocity_X"))
-{
-    //particles_->registerSharedVariable(dk_dt_, "ChangeRateOfTKE");
-    particles_->addVariableToSort<Real>("ChangeRateOfTKE");
-    particles_->addVariableToSort<Real>("ChangeRateOfTKEWithoutDissipation");
-
-    //particles_->registerSharedVariable(k_production_, "K_Production");
-    particles_->addVariableToSort<Real>("K_Production");
-    particles_->addVariableToWrite<Real>("K_Production");
-
-    particles_->addVariableToSort<Real>("TurbulenceKineticEnergy");
-    particles_->addVariableToWrite<Real>("TurbulenceKineticEnergy");
-
-    particles_->addVariableToSort<Real>("TurbulentViscosity");
-    particles_->addVariableToWrite<Real>("TurbulentViscosity");
-
-    particles_->addVariableToSort<Real>("TurbulentDissipation");
-    particles_->addVariableToWrite<Real>("TurbulentDissipation");
-
-    particles_->addVariableToSort<Matd>("TurbulentStrainRate");
-    particles_->addVariableToWrite<Matd>("TurbulentStrainRate");
-
-    //** Obtain Initial values for transport equations *
-    std::fill(turbu_k_.begin(), turbu_k_.end(), initial_values[0]);
-    std::fill(turbu_epsilon_.begin(), turbu_epsilon_.end(), initial_values[1]);
-    std::fill(turbu_mu_.begin(), turbu_mu_.end(), initial_values[2]);
-
-    //** for test */
-    //particles_->registerSharedVariable(k_diffusion_, "K_Diffusion");
-    particles_->addVariableToSort<Real>("K_Diffusion");
-    particles_->addVariableToWrite<Real>("K_Diffusion");
-
-    particles_->addVariableToWrite<Real>("ChangeRateOfTKE");
-
-    //particles_->registerSharedVariable(vel_x_, "Velocity_X");
-    particles_->addVariableToSort<Real>("Velocity_X");
-
-    //particles_->registerSharedVariable(turbu_indicator_, "TurbulentIndicator");
-    particles_->addVariableToSort<int>("TurbulentIndicator");
-    particles_->addVariableToWrite<int>("TurbulentIndicator");
-
-    //particles_->registerSharedVariable(is_extra_viscous_dissipation_, "TurbulentExtraViscousDissipation");
-    std::fill(is_extra_viscous_dissipation_.begin(), is_extra_viscous_dissipation_.end(), is_extr_visc_dissipa);
-}
-//=================================================================================================//
-void K_TurbulentModelInner::interaction(size_t index_i, Real dt)
-{
-    //Vecd vel_i = vel_[index_i];
-    Real rho_i = rho_[index_i];
-    Real turbu_mu_i = turbu_mu_[index_i];
-    Real turbu_k_i = turbu_k_[index_i];
-
-    Real mu_eff_i = turbu_mu_[index_i] / sigma_k_ + mu_;
-
-    dk_dt_[index_i] = 0.0;
-    dk_dt_without_dissipation_[index_i] = 0.0;
-    Real k_derivative(0.0);
-    Real k_lap(0.0);
-    Matd strain_rate = Matd::Zero();
-    Matd Re_stress = Matd::Zero();
-
-    Real k_production(0.0);
-    Real k_dissipation(0.0);
-    const Neighborhood &inner_neighborhood = inner_configuration_[index_i];
-    for (size_t n = 0; n != inner_neighborhood.current_size_; ++n)
-    {
-        size_t index_j = inner_neighborhood.j_[n];
-        Real mu_eff_j = turbu_mu_[index_j] / sigma_k_ + mu_;
-        Real mu_harmo = 2 * mu_eff_i * mu_eff_j / (mu_eff_i + mu_eff_j);
-        k_derivative = (turbu_k_i - turbu_k_[index_j]) / (inner_neighborhood.r_ij_[n] + 0.01 * smoothing_length_);
-        k_lap += 2.0 * mu_harmo * k_derivative * inner_neighborhood.dW_ij_[n] * this->Vol_[index_j] / rho_i;
-    }
-    strain_rate = 0.5 * (velocity_gradient_[index_i].transpose() + velocity_gradient_[index_i]);
-
-    Re_stress = 2.0 * strain_rate * turbu_mu_i / rho_i - (2.0 / 3.0) * turbu_k_i * Matd::Identity();
-    //Re_stress = 2.0 * strain_rate * turbu_mu_i / rho_i;
-
-    Matd k_production_matrix = Re_stress.array() * velocity_gradient_[index_i].array();
-    //** The near wall k production is updated in wall function part *
-    if (is_near_wall_P1_[index_i] != 1)
-        k_production_[index_i] = k_production_matrix.sum();
-
-    k_production = k_production_[index_i];
-    k_dissipation = turbu_epsilon_[index_i];
-
-    //** Linearize the source term *
-    //k_production = k_production_prior_[index_i];
-    //k_dissipation = ( turbu_epsilon_prior_[index_i] / turbu_k_prior_[index_i] ) * turbu_k_[index_i];
-
-    dk_dt_[index_i] = k_production - k_dissipation + k_lap;
-    dk_dt_without_dissipation_[index_i] = k_production + k_lap;
-
-    //** for test */
-    k_diffusion_[index_i] = k_lap;
-    vel_x_[index_i] = vel_[index_i][0];
-    turbu_strain_rate_[index_i] = strain_rate;
-}
-//=================================================================================================//
-void K_TurbulentModelInner::update(size_t index_i, Real dt)
-{
-    turbu_k_[index_i] += dk_dt_[index_i] * dt;
-    //** If use source term linearisation *
-    //Real denominator = 1.0 + turbu_epsilon_[index_i] * dt / turbu_k_[index_i];
-    //turbu_k_[index_i] +=  dk_dt_without_dissipation_[index_i] * dt;
-    //turbu_k_[index_i] /=  denominator ;
-}
-//=================================================================================================//
-E_TurbulentModelInner::E_TurbulentModelInner(BaseInnerRelation &inner_relation)
-    : BaseTurbulentModel<Base, DataDelegateInner>(inner_relation),
-      depsilon_dt_(*particles_->registerSharedVariable<Real>("ChangeRateOfTDR")),
-      depsilon_dt_without_disspation_(*particles_->registerSharedVariable<Real>("ChangeRateOfTDRWithoutDissp")),
-      ep_production(*particles_->registerSharedVariable<Real>("Ep_Production")),
-      ep_dissipation_(*particles_->registerSharedVariable<Real>("Ep_Dissipation_")),
-      ep_diffusion_(*particles_->registerSharedVariable<Real>("Ep_Diffusion_")),
-      turbu_mu_(*particles_->getVariableDataByName<Real>("TurbulentViscosity")),
-      turbu_k_(*particles_->getVariableDataByName<Real>("TurbulenceKineticEnergy")),
-      turbu_epsilon_(*particles_->getVariableDataByName<Real>("TurbulentDissipation")),
-      k_production_(*particles_->getVariableDataByName<Real>("K_Production")),
-      is_near_wall_P1_(*particles_->getVariableDataByName<int>("IsNearWallP1"))
-{
-    //particles_->registerSharedVariable(depsilon_dt_, "ChangeRateOfTDR");
-    particles_->addVariableToSort<Real>("ChangeRateOfTDR");
-    particles_->addVariableToWrite<Real>("ChangeRateOfTDR");
-
-    //particles_->registerSharedVariable(ep_production, "Ep_Production");
-    particles_->addVariableToSort<Real>("Ep_Production");
-    particles_->addVariableToWrite<Real>("Ep_Production");
-
-    //particles_->registerSharedVariable(ep_dissipation_, "Ep_Dissipation_");
-    particles_->addVariableToSort<Real>("Ep_Dissipation_");
-    particles_->addVariableToWrite<Real>("Ep_Dissipation_");
-
-    //particles_->registerSharedVariable(ep_diffusion_, "Ep_Diffusion_");
-    particles_->addVariableToSort<Real>("Ep_Diffusion_");
-    particles_->addVariableToWrite<Real>("Ep_Diffusion_");
-}
-//=================================================================================================//
-void E_TurbulentModelInner::
-    interaction(size_t index_i, Real dt)
-{
-    Real rho_i = rho_[index_i];
-    //Real turbu_mu_i = turbu_mu_[index_i];
-    Real turbu_k_i = turbu_k_[index_i];
-    Real turbu_epsilon_i = turbu_epsilon_[index_i];
-
-    Real mu_eff_i = turbu_mu_[index_i] / sigma_E_ + mu_;
-
-    depsilon_dt_[index_i] = 0.0;
-    depsilon_dt_without_disspation_[index_i] = 0.0;
-    Real epsilon_production(0.0);
-    Real epsilon_derivative(0.0);
-    Real epsilon_lap(0.0);
-    Real epsilon_dissipation(0.0);
-    const Neighborhood &inner_neighborhood = inner_configuration_[index_i];
-    for (size_t n = 0; n != inner_neighborhood.current_size_; ++n)
-    {
-        size_t index_j = inner_neighborhood.j_[n];
-        Real mu_eff_j = turbu_mu_[index_j] / sigma_E_ + mu_;
-        Real mu_harmo = 2 * mu_eff_i * mu_eff_j / (mu_eff_i + mu_eff_j);
-        epsilon_derivative = (turbu_epsilon_i - turbu_epsilon_[index_j]) / (inner_neighborhood.r_ij_[n] + 0.01 * smoothing_length_);
-        epsilon_lap += 2.0 * mu_harmo * epsilon_derivative * inner_neighborhood.dW_ij_[n] * this->Vol_[index_j] / rho_i;
-    }
-
-    epsilon_production = C_l_ * turbu_epsilon_i * k_production_[index_i] / turbu_k_i;
-    epsilon_dissipation = C_2_ * turbu_epsilon_i * turbu_epsilon_i / turbu_k_i;
-
-    //** Linearize the source term *
-    //epsilon_production = C_l_ * turbu_epsilon_prior_[index_i] * k_production_prior_[index_i] / turbu_k_prior_[index_i];
-    //epsilon_dissipation = (C_2_ * turbu_epsilon_prior_[index_i] / turbu_k_prior_[index_i]) * turbu_epsilon_i;
-
-    depsilon_dt_[index_i] = epsilon_production - epsilon_dissipation + epsilon_lap;
-    depsilon_dt_without_disspation_[index_i] = epsilon_production + epsilon_lap;
-
-    //** for test */
-    ep_production[index_i] = epsilon_production;
-    ep_dissipation_[index_i] = epsilon_dissipation;
-    ep_diffusion_[index_i] = epsilon_lap;
-}
-//=================================================================================================//
-void E_TurbulentModelInner::update(size_t index_i, Real dt)
-{
-    //** The near wall epsilon value is updated in wall function part *
-    if (is_near_wall_P1_[index_i] != 1)
-    {
-        turbu_epsilon_[index_i] += depsilon_dt_[index_i] * dt;
-        //** If use source term linearisation *
-        //Real denominator = 1.0 + C_2_ * turbu_epsilon_[index_i] * dt / turbu_k_[index_i];
-        //turbu_epsilon_[index_i] += depsilon_dt_without_disspation_[index_i] * dt;
-        //turbu_epsilon_[index_i] /= denominator;
-    }
-}
-//=================================================================================================//
 TKEnergyForce<Inner<>>::TKEnergyForce(BaseInnerRelation &inner_relation)
     : TKEnergyForce<Base, DataDelegateInner>(inner_relation),
       test_k_grad_rslt_(*this->particles_->template getVariableDataByName<Vecd>("TkeGradResult")),
@@ -664,9 +458,9 @@ TurbulentAdvectionTimeStepSize::TurbulentAdvectionTimeStepSize(SPHBody &sph_body
 Real TurbulentAdvectionTimeStepSize::reduce(size_t index_i, Real dt)
 {
     Real turbu_viscous_speed = (fluid_.ReferenceViscosity() + turbu_mu_[index_i]) / fluid_.ReferenceDensity() / smoothing_length_min_;
-    Real turbu_viscous_speed_squre = turbu_viscous_speed * turbu_viscous_speed;
-    Real vel_n_squre = vel_[index_i].squaredNorm();
-    Real vel_bigger = SMAX(turbu_viscous_speed_squre, vel_n_squre);
+    Real turbu_viscous_speed_squire = turbu_viscous_speed * turbu_viscous_speed;
+    Real vel_n_squire = vel_[index_i].squaredNorm();
+    Real vel_bigger = SMAX(turbu_viscous_speed_squire, vel_n_squire);
 
     return vel_bigger;
 }
@@ -718,13 +512,13 @@ Real InflowTurbulentCondition::getTurbulentInflowK(Vecd &position, Vecd &velocit
 
         int polynomial_order = 8;
         int num_coefficient = polynomial_order + 1;
-        //** Coefficient of the polynomia, 8th-order, from py21 dp=0.024 */
+        //** Coefficient of the polynomial, 8th-order, from py21 dp=0.024 */
         // Real coeff[] = {
         //     1.215679e-02, -6.681989e-02, 5.043783e-01,
         //     -2.344875e+00,  6.368016e+00, -1.041386e+01,
         //     1.009652e+01, -5.336236e+00, 1.183368e+00
         // };
-        //** Coefficient of the polynomia, 8th-order, from py21 dp=0.1 */
+        //** Coefficient of the polynomial, 8th-order, from py21 dp=0.1 */
         Real coeff[] = {
             1.159981e-02, -4.662944e-02, 2.837400e-01,
             -1.193955e+00, 3.034851e+00, -4.766077e+00,
@@ -777,13 +571,13 @@ Real InflowTurbulentCondition::getTurbulentInflowE(Vecd &position, Real &turbu_k
 
         int polynomial_order = 8;
         int num_coefficient = polynomial_order + 1;
-        //** Coefficient of the polynomia, 8th-order, from py21 dp=0.024 */
+        //** Coefficient of the polynomial, 8th-order, from py21 dp=0.024 */
         // Real coeff[] = {
         //     1.633474e-02,  -2.488756e-01, 1.912092e+00,
         //     -8.381386e+00,   2.205987e+01, -3.542125e+01,
         //     3.391904e+01, -1.777442e+01, 3.918818e+00
         // };
-        //** Coefficient of the polynomia, 8th-order, from py21 dp=0.1 */
+        //** Coefficient of the polynomial, 8th-order, from py21 dp=0.1 */
         Real coeff[] = {
             1.428191e-02, -1.766636e-01, 1.153107e+00,
             -4.515606e+00, 1.103752e+01, -1.694146e+01,
@@ -964,10 +758,10 @@ void JudgeIsNearWall::update(size_t index_i, Real dt)
         //** Choose one kind of the distance to classify *
         Real distance = distance_to_dummy_interface_[index_i];
 
-        //** Classify the wall-nearest paritcles *
+        //** Classify the wall-nearest particles *
         if (distance < 1.0 * fluid_particle_spacing_)
             is_near_wall_P1_[index_i] = 1;
-        //** Check the distance. Useless because with contant_y_p this may not make big difference *
+        //** Check the distance. Useless because with constant_y_p this may not make big difference *
         //if (distance < 0.05 * fluid_particle_spacing_)
         //{
         //	std::cout << "There is a particle too close to wall" << std::endl;
@@ -1067,12 +861,12 @@ void StandardWallFunctionCorrection::interaction(size_t index_i, Real dt)
         Real rho_i = rho_[index_i];
         Real nu_i = molecular_viscosity_ / rho_i;
 
-        //** Calcualte Y_star, note the current code is based on Y_star *
+        //** Calculate Y_star, note the current code is based on Y_star *
         wall_Y_star_[index_i] = y_p_constant_i * C_mu_25_ * turbu_k_i_05 / nu_i;
 
         //** Calculate friction velocity, including P2 region. *
         Real velo_fric_mag = 0.0;
-        Real velo_tan_mag = 0.0; //** tangitial velo magnitude for fluid particle i *
+        Real velo_tan_mag = 0.0; //** tangential velo magnitude for fluid particle i *
 
         velo_tan_mag = abs(e_i_nearest_tau.dot(vel_i));
         velo_tan_[index_i] = velo_tan_mag;
@@ -1111,7 +905,7 @@ void StandardWallFunctionCorrection::interaction(size_t index_i, Real dt)
         if (vel_i.dot(velo_friction_[index_i]) < 0.0)
             velo_friction_[index_i] = -1.0 * velo_friction_[index_i];
 
-        //** Calcualte Y_plus  *
+        //** Calculate Y_plus  *
         wall_Y_plus_[index_i] = y_p_constant_i * velo_fric_mag / nu_i;
 
         // ** Correct the near wall values, only for P1 region *
@@ -1220,46 +1014,6 @@ void ConstrainNormalVelocityInRegionP::update(size_t index_i, Real dt)
     if (is_near_wall_P1_[index_i] == 1)
     {
         vel_[index_i] = vel_[index_i] - (vel_[index_i].dot(e_nearest_normal_[index_i])) * e_nearest_normal_[index_i];
-    }
-}
-//=================================================================================================//
-
-//=================================================================================================//
-ConstrainVelocityAt_Y_Direction::
-    ConstrainVelocityAt_Y_Direction(SPHBody &sph_body, Real Length_channel)
-    : LocalDynamics(sph_body), DataDelegateSimple(sph_body),
-      vel_(*particles_->getVariableDataByName<Vecd>("Velocity")),
-      pos_(*particles_->getVariableDataByName<Vecd>("Position")),
-      length_channel_(Length_channel) {}
-//=================================================================================================//
-void ConstrainVelocityAt_Y_Direction::update(size_t index_i, Real dt)
-{
-    if (pos_[index_i][0] > 0.5 * length_channel_) //** Very temporary treatment *
-    {
-        vel_[index_i][1] = 0.0;
-    }
-}
-//=================================================================================================//
-UpdateTurbulentPlugFlowIndicator::
-    UpdateTurbulentPlugFlowIndicator(SPHBody &sph_body, Real DH)
-    : LocalDynamics(sph_body), DataDelegateSimple(sph_body),
-      turbu_plug_flow_indicator_(*particles_->registerSharedVariable<int>("TurbulentPlugFlowIndicator")),
-      pos_(*particles_->getVariableDataByName<Vecd>("Position")), channel_width_(DH)
-{
-    //particles_->registerSharedVariable(turbu_plug_flow_indicator_, "TurbulentPlugFlowIndicator");
-    particles_->addVariableToSort<int>("TurbulentPlugFlowIndicator");
-    particles_->addVariableToWrite<int>("TurbulentPlugFlowIndicator");
-}
-//=================================================================================================//
-void UpdateTurbulentPlugFlowIndicator::update(size_t index_i, Real dt)
-{
-    turbu_plug_flow_indicator_[index_i] = 0;
-    if (pos_[index_i][0] > 0.0) //** Buffer region is still applied tran.vel. Very temporary treatment *
-    {
-        if (pos_[index_i][1] > 0.25 * channel_width_ && pos_[index_i][1] < 0.75 * channel_width_) //** Very temporary treatment *
-        {
-            turbu_plug_flow_indicator_[index_i] = 1;
-        }
     }
 }
 //=================================================================================================//
@@ -1392,8 +1146,8 @@ void kOmega_kTransportEquationInner::interaction(size_t index_i, Real dt)
         k_lap += 2.0 * mu_harmo * k_derivative * inner_neighborhood.dW_ij_[n] * this->Vol_[index_j] / rho_i;
     }
     strain_rate = 0.5 * (velocity_gradient_[index_i].transpose() + velocity_gradient_[index_i]);
-    Real strain_rate_squre = (strain_rate.array() * strain_rate.array()).sum();
-    turbu_strain_rate_magnitude_[index_i] = sqrt(2.0 * strain_rate_squre);
+    Real strain_rate_squire = (strain_rate.array() * strain_rate.array()).sum();
+    turbu_strain_rate_magnitude_[index_i] = sqrt(2.0 * strain_rate_squire);
 
     Re_stress = 2.0 * strain_rate * turbu_mu_i / rho_i - (2.0 / 3.0) * turbu_k_i * Matd::Identity();
     //Re_stress = 2.0 * strain_rate * turbu_mu_i / rho_i;
@@ -1424,7 +1178,7 @@ void kOmega_kTransportEquationInner::update(size_t index_i, Real dt)
 kOmega_omegaTransportEquationInner::kOmega_omegaTransportEquationInner(BaseInnerRelation &inner_relation)
     : BaseTurbulentModel<Base, DataDelegateInner>(inner_relation),
       domega_dt_(*particles_->registerSharedVariable<Real>("ChangeRateOfTDR")),
-      domega_dt_without_disspation_(*particles_->registerSharedVariable<Real>("ChangeRateOfTDRWithoutDissp")),
+      domega_dt_without_dissipation_(*particles_->registerSharedVariable<Real>("ChangeRateOfTDRWithoutDissp")),
       omega_production_(*particles_->registerSharedVariable<Real>("omega_Production")),
       omega_dissipation_(*particles_->registerSharedVariable<Real>("omega_Dissipation")),
       omega_diffusion_(*particles_->registerSharedVariable<Real>("omega_Diffusion")),
@@ -1462,7 +1216,7 @@ void kOmega_omegaTransportEquationInner::
     Real mu_eff_i = mu_ + std_kw_sigma_ * turbu_k_i / turbu_omega_i;
 
     domega_dt_[index_i] = 0.0;
-    domega_dt_without_disspation_[index_i] = 0.0;
+    domega_dt_without_dissipation_[index_i] = 0.0;
     Real omega_production(0.0);
     Real omega_derivative(0.0);
     Real omega_lap(0.0);
@@ -1495,7 +1249,7 @@ void kOmega_omegaTransportEquationInner::
     omega_cross_diffusion = std_kw_sigma_d_ / turbu_omega_i * grad_dot_k_omega;
 
     domega_dt_[index_i] = omega_production - omega_dissipation + omega_lap + omega_cross_diffusion;
-    domega_dt_without_disspation_[index_i] = omega_production + omega_lap + omega_cross_diffusion;
+    domega_dt_without_dissipation_[index_i] = omega_production + omega_lap + omega_cross_diffusion;
 
     //** for test */
     omega_production_[index_i] = omega_production;
@@ -1511,272 +1265,6 @@ void kOmega_omegaTransportEquationInner::update(size_t index_i, Real dt)
     {
         turbu_omega_[index_i] += domega_dt_[index_i] * dt;
     }
-}
-//=================================================================================================//
-
-//*********************TESTING MODULES*********************
-//=================================================================================================//
-
-//=================================================================================================//
-BaseGetTimeAverageData::BaseGetTimeAverageData(BaseInnerRelation &inner_relation, int num_observer_points)
-    : BaseTurbulentModel<Base, DataDelegateInner>(inner_relation), plt_engine_(),
-      pos_(*particles_->getVariableDataByName<Vecd>("Position")),
-      turbu_k_(*particles_->getVariableDataByName<Real>("TurbulenceKineticEnergy")),
-      turbu_mu_(*particles_->getVariableDataByName<Real>("TurbulentViscosity")),
-      turbu_epsilon_(*particles_->getVariableDataByName<Real>("TurbulentDissipation")),
-      num_cell(num_observer_points)
-{
-    num_data = 5;
-    file_name_.push_back("vel_x_sto_");
-    file_name_.push_back("turbu_k_sto_");
-    file_name_.push_back("turbu_epsilon_sto_");
-    file_name_.push_back("turbu_mu_sto_");
-    file_name_.push_back("vel_sto_");
-
-    num_in_cell_.resize(num_cell);
-    data_time_aver_sto_.resize(num_cell); //Rows
-
-    data_sto_.resize(num_cell); //Rows
-    for (int i = 0; i != num_cell; ++i)
-    {
-        data_sto_[i].resize(num_data); //Cols
-    }
-
-    for (int j = 0; j != num_data; ++j)
-    {
-        file_path_output_ = "../bin/output/" + file_name_[j] + ".dat";
-        std::ofstream out_file(file_path_output_.c_str(), std::ios::app);
-        out_file << "run_time"
-                 << "   ";
-        for (int i = 0; i != num_cell; ++i)
-        {
-            std::string quantity_name_i = file_name_[j] + "[" + std::to_string(i) + "]";
-            plt_engine_.writeAQuantityHeader(out_file, data_sto_[i][j], quantity_name_i);
-        }
-        out_file << "\n";
-        out_file.close();
-    }
-}
-//=================================================================================================//
-void BaseGetTimeAverageData::output_time_history_data(Real cutoff_time)
-{
-    /** Output for .dat file. */
-    for (int j = 0; j != num_data; ++j)
-    {
-        file_path_output_ = "../bin/output/" + file_name_[j] + ".dat";
-        std::ofstream out_file(file_path_output_.c_str(), std::ios::app);
-        out_file << GlobalStaticVariables::physical_time_ << "   ";
-        for (int i = 0; i != num_cell; ++i)
-        {
-            //if (num_in_cell_[i] == 0 && GlobalStaticVariables::physical_time_ > cutoff_time)
-            //{
-            //	std::cout << "There is a empaty monitoring cell, cell number=" << i << std::endl;
-            //	std::cin.get();
-            //}
-            num_in_cell_[i] == 0 ? plt_engine_.writeAQuantity(out_file, 0.0) : plt_engine_.writeAQuantity(out_file, data_sto_[i][j] / num_in_cell_[i]);
-        }
-        out_file << "\n";
-        out_file.close();
-    }
-    //** Clear data *
-    for (int i = 0; i < num_cell; i++)
-    {
-        num_in_cell_[i] = 0;
-        for (int j = 0; j != num_data; ++j)
-        {
-            data_sto_[i][j] = 0.0;
-        }
-    }
-}
-//=================================================================================================//
-void BaseGetTimeAverageData::get_time_average_data(Real cutoff_time)
-{
-    for (int j = 0; j != num_data; ++j)
-    {
-        data_loaded_.clear();
-        int num_line_data = 0;
-        //** Load data *
-        file_path_input_ = "../bin/output/" + file_name_[j] + ".dat";
-        std::ifstream in_file(file_path_input_.c_str());
-        bool skipFirstLine = true;
-        std::string line;
-        while (std::getline(in_file, line))
-        {
-            if (skipFirstLine)
-            {
-                skipFirstLine = false;
-                continue;
-            }
-            num_line_data++;
-            std::vector<Real> data_point;
-            std::istringstream iss(line);
-            Real value;
-            while (iss >> value)
-            {
-                data_point.push_back(value);
-            }
-            data_loaded_.push_back(data_point);
-        }
-
-        in_file.close();
-        //** Deal with data *
-        for (int k = 0; k != num_cell; ++k)
-        {
-            Real sum = 0.0;
-            int count = 0;
-            for (int i = 0; i != num_line_data; ++i)
-            {
-                if (data_loaded_[i][0] > cutoff_time)
-                {
-                    count++;
-                    Real delta_t = data_loaded_[i][0] - data_loaded_[i - 1][0];
-                    sum += data_loaded_[i][k + 1] * delta_t;
-                    //sum += data_loaded_[i][k + 1]; //**the first col is time*
-                }
-            }
-            //data_time_aver_sto_[k] = sum / count;
-            data_time_aver_sto_[k] = sum / (data_loaded_[num_line_data - 1][0] - cutoff_time);
-        }
-        //** Output data *
-        file_path_output_ = "../bin/output/TimeAverageData.dat";
-        std::ofstream out_file(file_path_output_.c_str(), std::ios::app);
-        out_file << file_name_[j] << "\n";
-        for (int k = 0; k != num_cell; ++k)
-        {
-            plt_engine_.writeAQuantity(out_file, data_time_aver_sto_[k]);
-        }
-        out_file << "\n";
-        out_file.close();
-    }
-    std::cout << "The cutoff_time is " << cutoff_time << std::endl;
-}
-//=================================================================================================//
-GetTimeAverageCrossSectionData::GetTimeAverageCrossSectionData(BaseInnerRelation &inner_relation, int num_observer_points, const StdVec<Real> &bound_x, Real offset_dist_y)
-    : BaseGetTimeAverageData(inner_relation, num_observer_points)
-{
-    x_min_ = bound_x[0];
-    x_max_ = bound_x[1];
-    offset_dist_y_ = offset_dist_y;
-    //** Get the center coordinate of the monitoring cell *
-    for (int i = 0; i < num_cell; i++)
-    {
-        Real upper_bound = ((i + 1) * particle_spacing_min_ + offset_dist_y_);
-        Real lower_bound = (i * particle_spacing_min_ + offset_dist_y_);
-        monitor_cellcenter_y.push_back((lower_bound + upper_bound) / 2.0);
-    }
-    file_path_output_ = "../bin/output/monitor_cell_center_y.dat";
-    std::ofstream out_file(file_path_output_.c_str(), std::ios::app);
-    for (int i = 0; i != num_cell; ++i)
-    {
-        plt_engine_.writeAQuantity(out_file, monitor_cellcenter_y[i]);
-        out_file << "\n";
-    }
-    out_file << "\n";
-    out_file.close();
-}
-//=================================================================================================//
-void GetTimeAverageCrossSectionData::update(size_t index_i, Real dt)
-{
-    //** Get data *
-    if (pos_[index_i][0] > x_min_ && pos_[index_i][0] <= x_max_)
-    {
-        for (int i = 0; i < num_cell; i++)
-        {
-            if (pos_[index_i][1] > (i * particle_spacing_min_ + offset_dist_y_) &&
-                pos_[index_i][1] <= ((i + 1) * particle_spacing_min_ + offset_dist_y_))
-            {
-                num_in_cell_[i] += 1;
-                data_sto_[i][0] += vel_[index_i][0];
-                data_sto_[i][1] += turbu_k_[index_i];
-                data_sto_[i][2] += turbu_epsilon_[index_i];
-                data_sto_[i][3] += turbu_mu_[index_i];
-                data_sto_[i][4] += vel_[index_i].norm();
-            }
-        }
-    }
-}
-//=================================================================================================//
-GetTimeAverageCrossSectionData_Y::GetTimeAverageCrossSectionData_Y(BaseInnerRelation &inner_relation,
-                                                                   int num_observer_points, Real observe_x_ratio, const StdVec<Real> &bound_y, const StdVec<Real> &bound_x_f, const StdVec<Real> &bound_x_b)
-    : BaseGetTimeAverageData(inner_relation, num_observer_points), observe_x_ratio_(observe_x_ratio),
-      bound_x_f_(bound_x_f), bound_x_b_(bound_x_b), bound_y_(bound_y)
-{
-    observe_x_spacing_ = particle_spacing_min_ * observe_x_ratio_;
-}
-//=================================================================================================//
-void GetTimeAverageCrossSectionData_Y::update(size_t index_i, Real dt)
-{
-    //** Get data *
-    if (pos_[index_i][1] > bound_y_[0] && pos_[index_i][1] <= bound_y_[1])
-    {
-        for (int i = 0; i < num_cell; i++)
-        {
-            if (i < static_cast<int>(bound_x_f_.size()) - 1) //* Front of cylinder
-            {
-                if (pos_[index_i][0] > bound_x_f_[i] && pos_[index_i][0] <= bound_x_f_[i + 1])
-                {
-                    num_in_cell_[i] += 1;
-                    data_sto_[i][0] += vel_[index_i][0];
-                    data_sto_[i][1] += turbu_k_[index_i];
-                    data_sto_[i][2] += turbu_epsilon_[index_i];
-                    data_sto_[i][3] += turbu_mu_[index_i];
-                    data_sto_[i][4] += vel_[index_i].norm();
-                }
-            }
-            else if (i >= static_cast<int>(bound_x_f_.size()) - 1) //* behind of cylinder
-            {
-                int j = i - (static_cast<int>(bound_x_f_.size()) - 1);
-                if (pos_[index_i][0] > bound_x_b_[j] && pos_[index_i][0] <= bound_x_b_[j + 1])
-                {
-                    num_in_cell_[i] += 1;
-                    data_sto_[i][0] += vel_[index_i][0];
-                    data_sto_[i][1] += turbu_k_[index_i];
-                    data_sto_[i][2] += turbu_epsilon_[index_i];
-                    data_sto_[i][3] += turbu_mu_[index_i];
-                    data_sto_[i][4] += vel_[index_i].norm();
-                }
-            }
-        }
-    }
-}
-//=================================================================================================//
-void GetTimeAverageCrossSectionData_Y::output_monitor_x_coordinate()
-{
-    StdVec<Real> monitor_cellcenter_x;
-    if (static_cast<int>(bound_x_f_.size()) != 0)
-    {
-        for (int i = 0; i < static_cast<int>(bound_x_f_.size()) - 1; i++)
-        {
-            monitor_cellcenter_x.push_back((bound_x_f_[i] + bound_x_f_[i + 1]) / 2.0);
-        }
-    }
-    if (static_cast<int>(bound_x_b_.size()) != 0)
-    {
-        for (int i = 0; i < static_cast<int>(bound_x_b_.size()) - 1; i++)
-        {
-            monitor_cellcenter_x.push_back((bound_x_b_[i] + bound_x_b_[i + 1]) / 2.0);
-        }
-    }
-
-    file_path_output_ = "../bin/output/monitor_cell_center_x.dat";
-    std::ofstream out_file(file_path_output_.c_str(), std::ios::app);
-    for (int i = 0; i != num_cell; ++i)
-    {
-        plt_engine_.writeAQuantity(out_file, monitor_cellcenter_x[i]);
-        out_file << "\n";
-    }
-    out_file << "\n";
-    out_file.close();
-}
-//=================================================================================================//
-ClearYPositionForTest::
-    ClearYPositionForTest(SPHBody &sph_body)
-    : LocalDynamics(sph_body), DataDelegateSimple(sph_body),
-      pos_(*particles_->getVariableDataByName<Vecd>("Position")), vel_(*particles_->getVariableDataByName<Vecd>("Velocity")) {}
-//=================================================================================================//
-void ClearYPositionForTest::update(size_t index_i, Real dt)
-{
-    vel_[index_i][1] = 0.0;
 }
 //=================================================================================================//
 } // namespace fluid_dynamics
