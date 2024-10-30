@@ -414,12 +414,12 @@ class JudgeIsNearWall : public LocalDynamics, public DataDelegateContact, public
     StdVec<StdLargeVec<Vecd> *> contact_n_;
 };
 //=================================================================================================//
-class StandardWallFunctionCorrection : public LocalDynamics, public DataDelegateContact, public WallFunction
+class kOmegaStdWallFuncCorrection : public LocalDynamics, public DataDelegateContact, public WallFunction
 {
   public:
-    StandardWallFunctionCorrection(BaseInnerRelation &inner_relation,
-                                   BaseContactRelation &contact_relation, Real y_p_constant);
-    virtual ~StandardWallFunctionCorrection(){};
+    kOmegaStdWallFuncCorrection(BaseInnerRelation &inner_relation,
+                                BaseContactRelation &contact_relation, Real y_p_constant);
+    virtual ~kOmegaStdWallFuncCorrection(){};
     inline void interaction(size_t index_i, Real dt = 0.0);
 
   protected:
