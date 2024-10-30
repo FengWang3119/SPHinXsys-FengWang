@@ -180,22 +180,6 @@ void GetVelocityGradient<Contact<Wall>>::interaction(size_t index_i, Real dt)
     }
 }
 //=================================================================================================//
-TransferVelocityGradient::
-    TransferVelocityGradient(SPHBody &sph_body)
-    : LocalDynamics(sph_body), DataDelegateSimple(sph_body),
-      is_near_wall_P1_(*particles_->getVariableDataByName<int>("IsNearWallP1")),
-      velocity_gradient_(*particles_->getVariableDataByName<Matd>("TurbulentVelocityGradient")),
-      vel_grad_(*this->particles_->template registerSharedVariable<Matd>("VelocityGradient")) {}
-//=================================================================================================//
-void TransferVelocityGradient::update(size_t index_i, Real dt)
-{
-    velocity_gradient_[index_i] = Matd::Zero();
-    if (is_near_wall_P1_[index_i] != 1)
-    {
-        velocity_gradient_[index_i] = vel_grad_[index_i]; //** Transfer value, but exclude P region */
-    }
-}
-//=================================================================================================//
 TKEnergyForce<Inner<>>::TKEnergyForce(BaseInnerRelation &inner_relation)
     : TKEnergyForce<Base, DataDelegateInner>(inner_relation),
       test_k_grad_rslt_(*this->particles_->template getVariableDataByName<Vecd>("TkeGradResult")),
@@ -406,22 +390,6 @@ void TurbuViscousForce<Contact<Wall>>::interaction(size_t index_i, Real dt)
     viscous_force_[index_i] += force;
     //** For test *
     //this->visc_acc_wall_[index_i] = force/ mass_[index_i];
-}
-//=================================================================================================//
-TurbulentEddyViscosity::
-    TurbulentEddyViscosity(SPHBody &sph_body)
-    : LocalDynamics(sph_body), DataDelegateSimple(sph_body),
-      rho_(*particles_->getVariableDataByName<Real>("Density")),
-      turbu_mu_(*particles_->getVariableDataByName<Real>("TurbulentViscosity")),
-      turbu_k_(*particles_->getVariableDataByName<Real>("TurbulenceKineticEnergy")),
-      turbu_epsilon_(*particles_->getVariableDataByName<Real>("TurbulentDissipation")),
-      wall_Y_plus_(*particles_->getVariableDataByName<Real>("WallYplus")),
-      wall_Y_star_(*particles_->getVariableDataByName<Real>("WallYstar")),
-      mu_(DynamicCast<Fluid>(this, particles_->getBaseMaterial()).ReferenceViscosity()) {}
-//=================================================================================================//
-void TurbulentEddyViscosity::update(size_t index_i, Real dt)
-{
-    turbu_mu_[index_i] = rho_[index_i] * C_mu_ * turbu_k_[index_i] * turbu_k_[index_i] / (turbu_epsilon_[index_i]);
 }
 //=================================================================================================//
 kOmegaTurbulentEddyViscosity::

@@ -122,21 +122,6 @@ using GetVelocityGradientComplex = ComplexInteraction<GetVelocityGradient<Inner<
 
 //using GetVelocityGradientComplex = BaseGetVelocityGradientComplex<Inner<>, Contact<>>;
 //=================================================================================================//
-class TransferVelocityGradient : public LocalDynamics,
-                                 public DataDelegateSimple
-{
-  public:
-    explicit TransferVelocityGradient(SPHBody &sph_body);
-    virtual ~TransferVelocityGradient(){};
-
-    void update(size_t index_i, Real dt = 0.0);
-
-  protected:
-    StdLargeVec<int> &is_near_wall_P1_;
-    StdLargeVec<Matd> &velocity_gradient_;
-    StdLargeVec<Matd> &vel_grad_;
-};
-//=================================================================================================//
 template <typename... T>
 class BaseTurbulentModel;
 
@@ -337,33 +322,6 @@ class TurbuViscousForce<Contact<Wall>> : public BaseTurbuViscousForceWithWall, p
 //** Interface part *
 using TurbulentViscousForceWithWall = ComplexInteraction<TurbuViscousForce<Inner<>, Contact<Wall>>>;
 //=================================================================================================//
-/**
-	 * @class TurbuViscousAccInner
-	 * @brief  the turbulent viscosity force induced acceleration
-	 */
-class TurbulentEddyViscosity : public LocalDynamics,
-                               public DataDelegateSimple,
-                               public BaseTurbuClosureCoeff
-{
-  public:
-    explicit TurbulentEddyViscosity(SPHBody &sph_body);
-    virtual ~TurbulentEddyViscosity(){};
-
-    void update(size_t index_i, Real dt = 0.0);
-
-  protected:
-    StdLargeVec<Real> &rho_;
-    StdLargeVec<Real> &turbu_mu_;
-    StdLargeVec<Real> &turbu_k_;
-    StdLargeVec<Real> &turbu_epsilon_;
-    StdLargeVec<Real> &wall_Y_plus_, &wall_Y_star_;
-    Real mu_;
-};
-//=================================================================================================//
-/**
-	 * @class TurbuViscousAccInner
-	 * @brief  the turbulent viscosity force induced acceleration
-	 */
 class kOmegaTurbulentEddyViscosity : public LocalDynamics,
                                      public DataDelegateSimple,
                                      public BaseTurbuClosureCoeff
@@ -616,93 +574,6 @@ using TVC_NotLimited_RKGC_OBFCorrection =
 template <class ParticleScope>
 using TVC_ModifiedLimited_withoutLinearGradientCorrection =
     BaseTransportVelocityCorrectionComplex<SingleResolution, ModifiedTruncatedLinear, NoKernelCorrection, ParticleScope>;
-//=================================================================================================//
-//*********************TESTING MODULES*********************
-//=================================================================================================//
-/** Note this is a temporary treatment *
-	* @class BaseGetTimeAverageData
-	* @brief  BaseGetTimeAverageData
-	*/
-//template <class DataDelegationType>
-class BaseGetTimeAverageData : public BaseTurbulentModel<Base, DataDelegateInner>
-{
-  public:
-    explicit BaseGetTimeAverageData(BaseInnerRelation &inner_relation, int num_observer_points);
-    virtual ~BaseGetTimeAverageData(){};
-
-    void output_time_history_data(Real cutoff_time);
-    void get_time_average_data(Real cutoff_time);
-
-  protected:
-    PltEngine plt_engine_;
-
-    StdLargeVec<Vecd> &pos_;
-    StdLargeVec<int> num_in_cell_;
-    StdLargeVec<Real> &turbu_k_, &turbu_mu_, &turbu_epsilon_;
-    //std::vector<std::vector<Real>>  data_sto_;
-    StdLargeVec<std::vector<Real>> data_sto_, data_loaded_;
-    StdLargeVec<Real> data_time_aver_sto_;
-    //ConcurrentVec<ConcurrentVec<Real>> data_sto_;
-    int num_cell, num_data;
-    StdLargeVec<std::string> file_name_;
-    std::string file_path_output_, file_path_input_;
-};
-
-/** Note this is a temporary treatment *
-	* @class GetTimeAverageCrossSectionData
-	* @brief  GetTimeAverageCrossSectionData
-	*/
-class GetTimeAverageCrossSectionData : public BaseGetTimeAverageData
-{
-  public:
-    explicit GetTimeAverageCrossSectionData(BaseInnerRelation &inner_relation, int num_observer_points, const StdVec<Real> &bound_x, Real offset_dist_y = 0.0);
-    virtual ~GetTimeAverageCrossSectionData(){};
-
-    void update(size_t index_i, Real dt = 0.0);
-
-  protected:
-    Real x_min_, x_max_;
-    Real offset_dist_y_;
-    StdVec<Real> monitor_cellcenter_y;
-};
-/** Note this is a temporary treatment *
-	* @class GetTimeAverageCrossSectionData_Y
-	* @brief  GetTimeAverageCrossSectionData_Y
-	*/
-class GetTimeAverageCrossSectionData_Y : public BaseGetTimeAverageData
-{
-  public:
-    explicit GetTimeAverageCrossSectionData_Y(BaseInnerRelation &inner_relation, int num_observer_points, Real observe_x_ratio,
-                                              const StdVec<Real> &bound_y, const StdVec<Real> &bound_x_f, const StdVec<Real> &bound_x_b);
-    virtual ~GetTimeAverageCrossSectionData_Y(){};
-
-    void update(size_t index_i, Real dt = 0.0);
-    void output_monitor_x_coordinate();
-
-  protected:
-    Real observe_x_ratio_, observe_x_spacing_;
-    StdVec<Real> bound_x_f_, bound_x_b_, bound_y_;
-};
-
-//=================================================================================================//
-/**
-	 * @class ClearYPositionForTest
-	 * @brief  Test
-	 */
-class ClearYPositionForTest : public LocalDynamics,
-                              public DataDelegateSimple,
-                              public BaseTurbuClosureCoeff
-{
-  public:
-    explicit ClearYPositionForTest(SPHBody &sph_body);
-    virtual ~ClearYPositionForTest(){};
-
-    void update(size_t index_i, Real dt = 0.0);
-
-  protected:
-    StdLargeVec<Vecd> &pos_;
-    StdLargeVec<Vecd> &vel_;
-};
 //=================================================================================================//
 } // namespace fluid_dynamics
 } // namespace SPH
