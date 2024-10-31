@@ -1,6 +1,7 @@
 #include "bidirectional_buffer.h"
 #include "density_correciton.h"
 #include "density_correciton.hpp"
+#include "k-epsilon_turbulent_model.cpp"
 #include "k-omega_turbulent_model.cpp"
 #include "kernel_summation.h"
 #include "kernel_summation.hpp"
