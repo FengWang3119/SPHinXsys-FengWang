@@ -151,6 +151,11 @@ int main(int ac, char *av[])
     //InteractionWithUpdate<fluid_dynamics::TVC_Limited_RKGC_OBC<BulkParticles>> transport_velocity_correction(water_block_inner, water_wall_contact);
     InteractionWithUpdate<fluid_dynamics::TVC_RKGC_OBC<BulkParticles>> transport_velocity_correction(water_block_inner, water_wall_contact);
 
+    /** A temporarily test for the limiter . */
+    SimpleDynamics<GetLimiterOfTransportVelocityCorrection> get_limiter_of_transport_velocity_correction(water_block);
+
+    SimpleDynamics<GetPressureGradientResidue> get_pressure_gradient_residue(water_block);
+
     /** Evaluation of density by summation approach. */
     //InteractionWithUpdate<fluid_dynamics::DensitySummationFreeStreamComplex> update_density_by_summation(water_block_inner, water_wall_contact);
 
@@ -263,6 +268,8 @@ int main(int ac, char *av[])
             //turbulent_viscous_force.exec();
 
             transport_velocity_correction.exec();
+            get_limiter_of_transport_velocity_correction.exec();
+            get_pressure_gradient_residue.exec();
 
             /** Dynamics including pressure relaxation. */
             Real relaxation_time = 0.0;
