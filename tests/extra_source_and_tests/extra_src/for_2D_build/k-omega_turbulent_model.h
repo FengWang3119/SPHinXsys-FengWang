@@ -45,14 +45,14 @@ class kOmega_BaseTurbulentModel<Base, DataDelegationType>
 
   protected:
     StdLargeVec<Real> &turbu_k_;
-    StdLargeVec<Real> &turbu_epsilon_;
     StdLargeVec<Real> &turbu_mu_;
     StdLargeVec<Matd> &turbu_strain_rate_; //** temporary naming to distinguish the regular strain rate *
     StdLargeVec<Real> &turbu_strain_rate_magnitude_;
     StdLargeVec<Real> &turbu_omega_;
 
     Real mu_, smoothing_length_, particle_spacing_min_;
-    StdLargeVec<Real> &rho_, &Vol_;
+    StdLargeVec<Real> &rho_;
+    StdLargeVec<Real> &Vol_;
     StdLargeVec<Vecd> &vel_;
     int dimension_;
 };
@@ -148,7 +148,8 @@ class kOmegaStdWallFuncCorrection : public LocalDynamics,
   protected:
     //Real offset_dist_;
     StdLargeVec<Real> &y_p_;
-    StdLargeVec<Real> &wall_Y_plus_, &wall_Y_star_;
+    StdLargeVec<Real> &wall_Y_plus_;
+    StdLargeVec<Real> &wall_Y_star_;
     StdLargeVec<Real> &velo_tan_;
     StdLargeVec<Vecd> &velo_friction_;
 
@@ -156,7 +157,6 @@ class kOmegaStdWallFuncCorrection : public LocalDynamics,
     StdLargeVec<Real> &rho_;
     Real molecular_viscosity_;
     StdLargeVec<Real> &turbu_k_;
-    StdLargeVec<Real> &turbu_epsilon_;
     StdLargeVec<Real> &turbu_omega_;
     StdLargeVec<Real> &turbu_mu_;
     StdLargeVec<int> &is_near_wall_P1_;
@@ -191,7 +191,6 @@ class kOmegaInflowTurbulentCondition : public BaseFlowBoundaryCondition, public 
     Real relaxation_rate_;
     Real CharacteristicLength_;
     StdLargeVec<Real> &turbu_k_;
-    StdLargeVec<Real> &turbu_epsilon_;
     Real TurbulentLength_;
 
     //virtual Real getTurbulentInflowK(Vecd &position, Vecd &velocity, Real &turbu_k);
