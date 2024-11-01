@@ -13,7 +13,6 @@ template <class BaseRelationType>
 kOmega_BaseTurbulentModel<Base, DataDelegationType>::kOmega_BaseTurbulentModel(BaseRelationType &base_relation)
     : LocalDynamics(base_relation.getSPHBody()), DataDelegationType(base_relation),
       turbu_k_(*(this->particles_->template registerSharedVariable<Real>("TurbulenceKineticEnergy"))),
-      turbu_epsilon_(*(this->particles_->template registerSharedVariable<Real>("TurbulentDissipation"))),
       turbu_mu_(*(this->particles_->template registerSharedVariable<Real>("TurbulentViscosity"))),
       turbu_strain_rate_(*(this->particles_->template registerSharedVariable<Matd>("TurbulentStrainRate"))),
       turbu_strain_rate_magnitude_(*(this->particles_->template registerSharedVariable<Real>("TurbulentStrainRateMagnitude"))),

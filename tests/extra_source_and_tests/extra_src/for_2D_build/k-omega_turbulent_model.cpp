@@ -104,7 +104,7 @@ void kOmegaStdWallFuncCorrection::interaction(size_t index_i, Real dt)
         Real y_p_constant_i = y_p_[index_i];
 
         Real turbu_k_i_05 = pow(turbu_k_[index_i], 0.5);
-        Real turbu_k_i_15 = pow(turbu_k_[index_i], 1.5);
+        //Real turbu_k_i_15 = pow(turbu_k_[index_i], 1.5);
 
         //** Choose one kind of the distance to calculate the wall-nearest values *
         //Real r_dummy_normal = distance_to_dummy_interface_up_average_[index_i];
@@ -171,7 +171,6 @@ void kOmegaStdWallFuncCorrection::interaction(size_t index_i, Real dt)
             Matd Q = Matd::Zero();
             Real total_weight = 0.0;
 
-            Real epsilon_p_weighted_sum = 0.0;
             Real dudn_p_weighted_sum = 0.0;
             Real G_k_p_weighted_sum = 0.0;
             Real omega_p_weighted_sum = 0.0;
@@ -184,7 +183,6 @@ void kOmegaStdWallFuncCorrection::interaction(size_t index_i, Real dt)
 
                 for (size_t n = 0; n != contact_neighborhood.current_size_; ++n)
                 {
-                    Real epsilon_p_j = 0.0;
                     Real dudn_p_j = 0.0;
                     Real G_k_p_j = 0.0;
                     Real omega_p_j = 0.0;
@@ -274,9 +272,6 @@ kOmega_kTransportEquationInner::kOmega_kTransportEquationInner(BaseInnerRelation
 
     particles_->addVariableToSort<Real>("TurbulentViscosity");
     particles_->addVariableToWrite<Real>("TurbulentViscosity");
-
-    particles_->addVariableToSort<Real>("TurbulentDissipation");
-    particles_->addVariableToWrite<Real>("TurbulentDissipation");
 
     particles_->addVariableToSort<Matd>("TurbulentStrainRate");
     particles_->addVariableToWrite<Matd>("TurbulentStrainRate");
@@ -462,7 +457,6 @@ void kOmegaInflowTurbulentCondition::update(size_t index_i, Real dt)
 {
     Real target_in_turbu_k = 0.0;
     turbu_k_[index_i] += relaxation_rate_ * (target_in_turbu_k - turbu_k_[index_i]);
-    Real target_in_turbu_E = 0.0;
 }
 //=================================================================================================//
 } // namespace fluid_dynamics

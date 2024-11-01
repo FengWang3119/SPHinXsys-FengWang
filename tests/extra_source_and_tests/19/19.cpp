@@ -230,7 +230,6 @@ int main(int ac, char *av[])
     ObservedQuantityRecording<Vecd> write_recorded_water_velocity("Velocity", fluid_observer_contact);
     ObservedQuantityRecording<Real> write_recorded_water_k("TurbulenceKineticEnergy", fluid_observer_contact);
     ObservedQuantityRecording<Real> write_recorded_water_mut("TurbulentViscosity", fluid_observer_contact);
-    ObservedQuantityRecording<Real> write_recorded_water_epsilon("TurbulentDissipation", fluid_observer_contact);
     body_states_recording.addToWrite<int>(water_block, "BufferParticleIndicator");
     RegressionTestDynamicTimeWarping<ObservedQuantityRecording<Real>> write_centerpoint_quantity("TurbulentViscosity", observer_centerpoint_contact);
     /**
@@ -376,7 +375,6 @@ int main(int ac, char *av[])
                 write_recorded_water_velocity.writeToFile(number_of_iterations);
                 write_recorded_water_k.writeToFile(number_of_iterations);
                 write_recorded_water_mut.writeToFile(number_of_iterations);
-                write_recorded_water_epsilon.writeToFile(number_of_iterations);
             }
             //if (GlobalStaticVariables::physical_time_ > end_time * 0.5)
             //body_states_recording.writeToFile();
