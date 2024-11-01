@@ -270,6 +270,9 @@ kOmega_kTransportEquationInner::kOmega_kTransportEquationInner(BaseInnerRelation
     particles_->addVariableToSort<Real>("TurbulenceKineticEnergy");
     particles_->addVariableToWrite<Real>("TurbulenceKineticEnergy");
 
+    particles_->addVariableToSort<Real>("TurbulentSpecificDissipation");
+    particles_->addVariableToWrite<Real>("TurbulentSpecificDissipation");
+
     particles_->addVariableToSort<Real>("TurbulentViscosity");
     particles_->addVariableToWrite<Real>("TurbulentViscosity");
 

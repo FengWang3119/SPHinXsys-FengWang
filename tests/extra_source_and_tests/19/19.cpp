@@ -193,7 +193,7 @@ int main(int ac, char *av[])
     SimpleDynamics<fluid_dynamics::InflowVelocityCondition<InflowVelocity>> inflow_velocity_condition(left_emitter);
 
     /** Turbulent InflowTurbulentCondition.It needs characteristic Length to calculate turbulent length  */
-    SimpleDynamics<fluid_dynamics::InflowTurbulentCondition> impose_turbulent_inflow_condition(left_emitter, characteristic_length, relaxation_rate_turbulent_inlet, type_turbulent_inlet);
+    SimpleDynamics<fluid_dynamics::kOmegaInflowTurbulentCondition> impose_turbulent_inflow_condition(left_emitter, characteristic_length, relaxation_rate_turbulent_inlet, type_turbulent_inlet);
 
     //----------------------------------------------------------------------
     // Right/Outlet buffer
@@ -252,9 +252,9 @@ int main(int ac, char *av[])
     size_t number_of_iterations = sph_system.RestartStep();
     int screen_output_interval = 100;
     int observation_sample_interval = screen_output_interval * 2;
-    Real end_time = 200.0;             /**< End time. */
-    Real Output_Time = end_time / 4.0; /**< Time stamps for output of body states. */
-    Real dt = 0.0;                     /**< Default acoustic time step sizes. */
+    Real end_time = 200.0;              /**< End time. */
+    Real Output_Time = end_time / 40.0; /**< Time stamps for output of body states. */
+    Real dt = 0.0;                      /**< Default acoustic time step sizes. */
     //----------------------------------------------------------------------
     //	Statistics for CPU time
     //----------------------------------------------------------------------
