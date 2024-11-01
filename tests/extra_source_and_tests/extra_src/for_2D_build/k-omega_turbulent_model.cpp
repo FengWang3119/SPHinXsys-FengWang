@@ -448,17 +448,96 @@ kOmegaInflowTurbulentCondition::kOmegaInflowTurbulentCondition(BodyPartByCell &b
     : BaseFlowBoundaryCondition(body_part), type_turbu_inlet_(type_turbu_inlet),
       relaxation_rate_(relaxation_rate),
       CharacteristicLength_(CharacteristicLength),
-      turbu_k_(*particles_->getVariableDataByName<Real>("TurbulenceKineticEnergy"))
+      turbu_k_(*particles_->getVariableDataByName<Real>("TurbulenceKineticEnergy")),
+      turbu_omega_(*particles_->getVariableDataByName<Real>("TurbulentSpecificDissipation"))
 {
     TurbulentLength_ = turbulent_length_ratio_for_epsilon_inlet_ * CharacteristicLength_;
 }
 //=================================================================================================//
 void kOmegaInflowTurbulentCondition::update(size_t index_i, Real dt)
 {
-    Real target_in_turbu_k = 0.0;
-    turbu_k_[index_i] += relaxation_rate_ * (target_in_turbu_k - turbu_k_[index_i]);
+    Real target_inflow_turbu_k = getTurbulentInflowK(pos_[index_i], vel_[index_i], turbu_k_[index_i]);
+    turbu_k_[index_i] += relaxation_rate_ * (target_inflow_turbu_k - turbu_k_[index_i]);
+    Real target_inflow_temp_turbu_E = getTurbulentInflowTemporaryEpsilon(pos_[index_i], turbu_k_[index_i], 0.0);
+
+    //** Calculate inlet omega from k and epsilon */
+    Real inflow_turbu_omega_temp = target_inflow_temp_turbu_E / std_kw_beta_star_ / target_inflow_turbu_k;
+    //** Also has a temporary treatment because I don't know how to set frame transfer */
+    Real target_inflow_turbu_omega = (pos_[index_i][0] < 0.0) ? inflow_turbu_omega_temp : turbu_omega_[index_i];
+    turbu_omega_[index_i] += relaxation_rate_ * (target_inflow_turbu_omega - turbu_omega_[index_i]);
 }
 //=================================================================================================//
+Real kOmegaInflowTurbulentCondition::getTurbulentInflowK(Vecd &position, Vecd &velocity, Real &turbu_k)
+{
+    Real u = velocity[0];
+    Real temp_in_turbu_k = 1.5 * pow((turbulent_intensity_ * u), 2);
+    Real turbu_k_original = turbu_k;
+    if (type_turbu_inlet_ == 1)
+    {
+        Real channel_height = CharacteristicLength_; //** Temporarily treatment *
+
+        //** Impose fully-developed K from PYTHON result */
+        //** Calculate the distance to wall, Y. position here is the actual postion in x-y coordinate, no transformation*/
+        Real Y = (position[1] < channel_height / 2.0) ? position[1] : channel_height - position[1];
+
+        int polynomial_order = 8;
+        int num_coefficient = polynomial_order + 1;
+        //** Coefficient of the polynomial, 8th-order, from py21 dp=0.1 */
+        Real coeff[] = {
+            1.159981e-02, -4.662944e-02, 2.837400e-01,
+            -1.193955e+00, 3.034851e+00, -4.766077e+00,
+            4.529136e+00, -2.380854e+00, 5.307586e-01};
+        Real polynomial_value = 0.0;
+        for (int i = 0; i < num_coefficient; ++i)
+        {
+            polynomial_value += coeff[i] * std::pow(Y, i);
+        }
+
+        if (Y > channel_height / 2.0 || Y < 0.0)
+        {
+            std::cout << "position[1]=" << position[1] << std::endl;
+            std::cout << "Y=" << Y << std::endl;
+            std::cout << "polynomial_value=" << polynomial_value << std::endl;
+            std::cout << "Stop" << std::endl;
+            std::cout << "=================" << std::endl;
+            std::cin.get();
+        }
+
+        temp_in_turbu_k = polynomial_value;
+    }
+    return (position[0] < 0.0) ? temp_in_turbu_k : turbu_k_original; //** Temporarily treatment *
+}
+//=================================================================================================//
+Real kOmegaInflowTurbulentCondition::getTurbulentInflowTemporaryEpsilon(Vecd &position, Real &turbu_k, Real turbu_E)
+{
+    Real temp_in_turbu_E = C_mu_75_ * pow(turbu_k, 1.5) / TurbulentLength_;
+    Real turbu_E_original = turbu_E;
+    if (type_turbu_inlet_ == 1)
+    {
+        Real channel_height = CharacteristicLength_; //** Temporarily treatment *
+
+        //** Impose fully-developed K from PYTHON result */
+        //** Calculate the distance to wall, Y. position here is the actual postion in x-y coordinate, no transformation*/
+        Real Y = (position[1] < channel_height / 2.0) ? position[1] : channel_height - position[1];
+
+        int polynomial_order = 8;
+        int num_coefficient = polynomial_order + 1;
+        //** Coefficient of the polynomial, 8th-order, from py21 dp=0.1 */
+        Real coeff[] = {
+            1.428191e-02, -1.766636e-01, 1.153107e+00,
+            -4.515606e+00, 1.103752e+01, -1.694146e+01,
+            1.584534e+01, -8.241577e+00, 1.825421e+00};
+
+        Real polynomial_value = 0.0;
+        for (int i = 0; i < num_coefficient; ++i)
+        {
+            polynomial_value += coeff[i] * std::pow(Y, i);
+        }
+        temp_in_turbu_E = polynomial_value;
+    }
+
+    return (position[0] < 0.0) ? temp_in_turbu_E : turbu_E_original; //** Temporarily treatment *
+}
 } // namespace fluid_dynamics
 //=================================================================================================//
 } // namespace SPH

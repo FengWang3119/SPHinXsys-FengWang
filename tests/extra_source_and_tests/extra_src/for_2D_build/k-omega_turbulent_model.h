@@ -178,7 +178,9 @@ class kOmegaStdWallFuncCorrection : public LocalDynamics,
 	*          TargetVelocity gives the velocity profile along the inflow direction,
 	*          i.e. x direction in local frame.
 	*/
-class kOmegaInflowTurbulentCondition : public BaseFlowBoundaryCondition, public BaseTurbuClosureCoeff
+class kOmegaInflowTurbulentCondition : public BaseFlowBoundaryCondition,
+                                       public BaseTurbuClosureCoeff,
+                                       public kOmega_BaseTurbuClosureCoeff
 {
   public:
     explicit kOmegaInflowTurbulentCondition(BodyPartByCell &body_part,
@@ -191,10 +193,11 @@ class kOmegaInflowTurbulentCondition : public BaseFlowBoundaryCondition, public 
     Real relaxation_rate_;
     Real CharacteristicLength_;
     StdLargeVec<Real> &turbu_k_;
+    StdLargeVec<Real> &turbu_omega_;
     Real TurbulentLength_;
 
-    //virtual Real getTurbulentInflowK(Vecd &position, Vecd &velocity, Real &turbu_k);
-    //virtual Real getTurbulentInflowE(Vecd &position, Real &turbu_k, Real &turbu_E);
+    virtual Real getTurbulentInflowK(Vecd &position, Vecd &velocity, Real &turbu_k);
+    virtual Real getTurbulentInflowTemporaryEpsilon(Vecd &position, Real &turbu_k, Real turbu_E);
 };
 //=================================================================================================//
 } // namespace fluid_dynamics
