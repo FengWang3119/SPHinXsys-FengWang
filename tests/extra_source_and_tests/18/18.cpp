@@ -155,6 +155,7 @@ int main(int ac, char *av[])
     SimpleDynamics<GetLimiterOfTransportVelocityCorrection> get_limiter_of_transport_velocity_correction(water_block);
 
     SimpleDynamics<GetPressureGradientResidue> get_pressure_gradient_residue(water_block);
+    InteractionDynamics<GetPressureGradientResidueComplex_RKGC> get_RKGC_pressure_gradient_residue(water_block_inner, water_wall_contact);
 
     /** Evaluation of density by summation approach. */
     //InteractionWithUpdate<fluid_dynamics::DensitySummationFreeStreamComplex> update_density_by_summation(water_block_inner, water_wall_contact);
@@ -210,6 +211,7 @@ int main(int ac, char *av[])
     ObservedQuantityRecording<Vecd> write_recorded_water_velocity("Velocity", fluid_observer_contact);
     body_states_recording.addToWrite<int>(water_block, "BufferParticleIndicator");
     body_states_recording.addToWrite<Real>(water_block, "VolumetricMeasure");
+    body_states_recording.addToWrite<Matd>(water_block, "LinearGradientCorrectionMatrix");
     /**
      * @brief Setup geometry and initial conditions.
      */
@@ -270,6 +272,7 @@ int main(int ac, char *av[])
             transport_velocity_correction.exec();
             get_limiter_of_transport_velocity_correction.exec();
             get_pressure_gradient_residue.exec();
+            get_RKGC_pressure_gradient_residue.exec();
 
             /** Dynamics including pressure relaxation. */
             Real relaxation_time = 0.0;

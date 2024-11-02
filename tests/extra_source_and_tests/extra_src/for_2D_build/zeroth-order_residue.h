@@ -21,14 +21,14 @@
  *                                                                          *
  * ------------------------------------------------------------------------*/
 /**
- * @file 	k-epsilon_turbulent_model.h
+ * @file 	zeroth-order_residue.h
  * @brief 	
  * @details     
  * @author Xiangyu Hu
  */
 
-#ifndef K_EPSILON_TURBULENT_MODEL_H
-#define K_EPSILON_TURBULENT_MODEL_H
+#ifndef ZEROTH_ORDER_RESIDUE_H
+#define ZEROTH_ORDER_RESIDUE_H
 
 #include "sphinxsys.h"
 #include <mutex>
@@ -64,5 +64,51 @@ class GetPressureGradientResidue : public LocalDynamics
     Real *p_;
     Vecd *pressure_gradient_residue_;
 };
+//=================================================================================================//
+template <typename... InteractionTypes>
+class GetPressureGradientResidue_RKGC;
+
+template <class DataDelegationType>
+class GetPressureGradientResidue_RKGC<Base, DataDelegationType>
+    : public LocalDynamics, public DataDelegationType
+{
+  public:
+    template <class BaseRelationType>
+    explicit GetPressureGradientResidue_RKGC(BaseRelationType &base_relation);
+    virtual ~GetPressureGradientResidue_RKGC(){};
+
+  protected:
+    Real *p_;
+    Vecd *pressure_gradient_residue_RKGC_;
+    Matd *B_;
+    Real *Vol_;
+};
+//** Inner part *
+template <>
+class GetPressureGradientResidue_RKGC<Inner<>> : public GetPressureGradientResidue_RKGC<Base, DataDelegateInner>
+{
+  public:
+    explicit GetPressureGradientResidue_RKGC(BaseInnerRelation &inner_relation);
+    virtual ~GetPressureGradientResidue_RKGC(){};
+    void interaction(size_t index_i, Real dt = 0.0);
+
+  protected:
+};
+//** Wall part *
+template <>
+class GetPressureGradientResidue_RKGC<Contact<>> : public GetPressureGradientResidue_RKGC<Base, DataDelegateContact>
+{
+  public:
+    explicit GetPressureGradientResidue_RKGC(BaseContactRelation &contact_relation);
+    virtual ~GetPressureGradientResidue_RKGC(){};
+    void interaction(size_t index_i, Real dt = 0.0);
+
+  protected:
+};
+
+//** Interface part *
+template <class InnerInteractionType, class... ContactInteractionTypes>
+using BaseGetPressureGradientResidueComplex_RKGC = ComplexInteraction<GetPressureGradientResidue_RKGC<InnerInteractionType, ContactInteractionTypes...>>;
+using GetPressureGradientResidueComplex_RKGC = BaseGetPressureGradientResidueComplex_RKGC<Inner<>, Contact<>>;
 } // namespace SPH
 #endif // K_EPSILON_TURBULENT_MODEL_H
