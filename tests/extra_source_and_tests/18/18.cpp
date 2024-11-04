@@ -148,8 +148,8 @@ int main(int ac, char *av[])
     /** Impose transport velocity, with or without limiter . */
     //InteractionWithUpdate<fluid_dynamics::TransportVelocityLimitedCorrectionComplex<BulkParticles>> transport_velocity_correction(water_block_inner, water_wall_contact);
     //InteractionWithUpdate<fluid_dynamics::TransportVelocityCorrectionComplex<BulkParticles>> transport_velocity_correction(water_block_inner, water_wall_contact);
-    //InteractionWithUpdate<fluid_dynamics::TVC_Limited_RKGC_OBC<BulkParticles>> transport_velocity_correction(water_block_inner, water_wall_contact);
-    InteractionWithUpdate<fluid_dynamics::TVC_RKGC_OBC<BulkParticles>> transport_velocity_correction(water_block_inner, water_wall_contact);
+    InteractionWithUpdate<fluid_dynamics::TVC_Limited_RKGC_OBC<BulkParticles>> transport_velocity_correction(water_block_inner, water_wall_contact);
+    //InteractionWithUpdate<fluid_dynamics::TVC_RKGC_OBC<BulkParticles>> transport_velocity_correction(water_block_inner, water_wall_contact);
 
     /** A temporarily test for the limiter . */
     SimpleDynamics<GetLimiterOfTransportVelocityCorrection> get_limiter_of_transport_velocity_correction(water_block);
