@@ -44,7 +44,7 @@ Real U_inlet = 1.0;
 Real U_f = U_inlet;         //*Characteristic velocity
 Real U_max = 1.5 * U_inlet; //** An estimated value, generally 1.5 U_inlet *
 Real c_f = 10.0 * U_max;
-Real rho0_f = 1.0; /**< Density. */
+Real rho0_f = 1000.0; /**< Density. */
 Real Re = 200.0;
 
 Real Outlet_pressure = 0.0;
