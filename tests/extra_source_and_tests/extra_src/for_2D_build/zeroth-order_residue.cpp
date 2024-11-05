@@ -62,7 +62,7 @@ void GetPressureGradientResidue_RKGC<Contact<>>::interaction(size_t index_i, Rea
         {
             size_t index_j = contact_neighborhood.j_[n];
             Vecd nablaW_ijV_j = contact_neighborhood.dW_ij_[n] * this->Vol_[index_j] * contact_neighborhood.e_ij_[n];
-            pressure_gradient_residue_RKGC_[index_i] -= (p_[index_i] + p_[index_j]) * B_[index_i] * nablaW_ijV_j;
+            pressure_gradient_residue_RKGC_[index_i] -= (p_[index_i] + p_[index_i]) * B_[index_i] * nablaW_ijV_j;
         }
     }
 }
