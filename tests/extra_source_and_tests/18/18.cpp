@@ -134,8 +134,8 @@ int main(int ac, char *av[])
     InteractionWithUpdate<LinearGradientCorrectionMatrixComplex> corrected_configuration_fluid(water_block_inner, water_wall_contact);
 
     /** Pressure relaxation algorithm with Riemann solver for viscous flows. */
-    //Dynamics1Level<fluid_dynamics::Integration1stHalfWithWallRiemann> pressure_relaxation(water_block_inner, water_wall_contact);
-    Dynamics1Level<fluid_dynamics::Integration1stHalfWithWallRiemann_RKGC_OBC> pressure_relaxation(water_block_inner, water_wall_contact);
+    Dynamics1Level<fluid_dynamics::Integration1stHalfWithWallRiemann> pressure_relaxation(water_block_inner, water_wall_contact);
+    //Dynamics1Level<fluid_dynamics::Integration1stHalfWithWallRiemann_RKGC_OBC> pressure_relaxation(water_block_inner, water_wall_contact);
 
     /** Density relaxation algorithm by using position verlet time stepping. */
     Dynamics1Level<fluid_dynamics::Integration2ndHalfWithWallNoRiemann> density_relaxation(water_block_inner, water_wall_contact);
@@ -171,8 +171,8 @@ int main(int ac, char *av[])
     BodyAlignedBoxByCell left_emitter(water_block, left_emitter_shape);
     fluid_dynamics::BidirectionalBuffer<LeftInflowPressure> left_bidirection_buffer(left_emitter, inlet_particle_buffer);
 
-    //SimpleDynamics<fluid_dynamics::PressureCondition<LeftInflowPressure>> left_inflow_pressure_condition(left_emitter);
-    SimpleDynamics<fluid_dynamics::PressureConditionCorrection<LeftInflowPressure>> left_inflow_pressure_condition(left_emitter);
+    SimpleDynamics<fluid_dynamics::PressureCondition<LeftInflowPressure>> left_inflow_pressure_condition(left_emitter);
+    //SimpleDynamics<fluid_dynamics::PressureConditionCorrection<LeftInflowPressure>> left_inflow_pressure_condition(left_emitter);
 
     SimpleDynamics<fluid_dynamics::InflowVelocityCondition<InflowVelocity>> inflow_velocity_condition(left_emitter);
 
@@ -183,8 +183,8 @@ int main(int ac, char *av[])
     BodyAlignedBoxByCell right_emitter(water_block, right_emitter_shape);
     fluid_dynamics::BidirectionalBuffer<RightOutflowPressure> right_bidirection_buffer(right_emitter, inlet_particle_buffer);
 
-    //SimpleDynamics<fluid_dynamics::PressureCondition<RightOutflowPressure>> right_outflow_pressure_condition(right_emitter);
-    SimpleDynamics<fluid_dynamics::PressureConditionCorrection<RightOutflowPressure>> right_outflow_pressure_condition(right_emitter);
+    SimpleDynamics<fluid_dynamics::PressureCondition<RightOutflowPressure>> right_outflow_pressure_condition(right_emitter);
+    //SimpleDynamics<fluid_dynamics::PressureConditionCorrection<RightOutflowPressure>> right_outflow_pressure_condition(right_emitter);
     //----------------------------------------------------------------------
 
     InteractionWithUpdate<fluid_dynamics::DensitySummationPressureComplex> update_fluid_density_pressure(water_block_inner, water_wall_contact);
@@ -232,9 +232,9 @@ int main(int ac, char *av[])
     Real &physical_time = *sph_system.getSystemVariableDataByName<Real>("PhysicalTime");
     size_t number_of_iterations = sph_system.RestartStep();
     int screen_output_interval = 100;
-    Real end_time = 200.0;               /**< End time. */
-    Real Output_Time = end_time / 200.0; /**< Time stamps for output of body states. */
-    Real dt = 0.0;                       /**< Default acoustic time step sizes. */
+    Real end_time = 100.0;                /**< End time. */
+    Real Output_Time = end_time / 2000.0; /**< Time stamps for output of body states. */
+    Real dt = 0.0;                        /**< Default acoustic time step sizes. */
     //----------------------------------------------------------------------
     //	Statistics for CPU time
     //----------------------------------------------------------------------
