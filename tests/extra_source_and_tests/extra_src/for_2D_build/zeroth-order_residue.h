@@ -110,5 +110,19 @@ class GetPressureGradientResidue_RKGC<Contact<>> : public GetPressureGradientRes
 template <class InnerInteractionType, class... ContactInteractionTypes>
 using BaseGetPressureGradientResidueComplex_RKGC = ComplexInteraction<GetPressureGradientResidue_RKGC<InnerInteractionType, ContactInteractionTypes...>>;
 using GetPressureGradientResidueComplex_RKGC = BaseGetPressureGradientResidueComplex_RKGC<Inner<>, Contact<>>;
+//=================================================================================================//
+class NonDimensionalisePressure : public LocalDynamics
+{
+  public:
+    explicit NonDimensionalisePressure(SPHBody &sph_body);
+    virtual ~NonDimensionalisePressure(){};
+
+    void update(size_t index_i, Real dt = 0.0);
+
+  protected:
+    Real *rho_;
+    Real *p_;
+    Real *p_dimensionless_;
+};
 } // namespace SPH
 #endif // K_EPSILON_TURBULENT_MODEL_H

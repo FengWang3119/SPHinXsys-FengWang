@@ -67,5 +67,20 @@ void GetPressureGradientResidue_RKGC<Contact<>>::interaction(size_t index_i, Rea
     }
 }
 //=================================================================================================//
+NonDimensionalisePressure::
+    NonDimensionalisePressure(SPHBody &sph_body)
+    : LocalDynamics(sph_body),
+      rho_(particles_->getVariableDataByName<Real>("Density")),
+      p_(particles_->getVariableDataByName<Real>("Pressure")),
+      p_dimensionless_(particles_->registerStateVariable<Real>("PressureDimensionless"))
+{
+    particles_->addVariableToWrite<Real>("PressureDimensionless");
+}
+//=================================================================================================//
+void NonDimensionalisePressure::update(size_t index_i, Real dt)
+{
+    p_dimensionless_[index_i] = p_[index_i] / rho_[index_i];
+}
+//=================================================================================================//
 } // namespace SPH
   //=================================================================================================//
