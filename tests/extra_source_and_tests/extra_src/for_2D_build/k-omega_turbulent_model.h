@@ -29,6 +29,7 @@ class kOmega_BaseTurbuClosureCoeff
     Real std_kw_sigma_d_;
     Real std_kw_C_lim_;
     Real std_kw_beta_i_;
+    Real std_kw_beta_star_25_;
 };
 //=================================================================================================//
 template <typename... T>

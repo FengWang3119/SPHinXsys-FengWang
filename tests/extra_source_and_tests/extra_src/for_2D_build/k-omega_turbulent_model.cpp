@@ -13,6 +13,7 @@ kOmega_BaseTurbuClosureCoeff::kOmega_BaseTurbuClosureCoeff()
       std_kw_sigma_do_(0.125), std_kw_C_lim_(0.875), std_kw_beta_i_(0.072)
 {
     std_kw_beta_ = std_kw_beta_0_ * std_kw_f_beta_;
+    std_kw_beta_star_25_ = pow(std_kw_beta_star_, 0.25);
 }
 //=================================================================================================//
 kOmegaTurbulentEddyViscosity::
@@ -222,7 +223,7 @@ void kOmegaStdWallFuncCorrection::interaction(size_t index_i, Real dt)
                     else
                     {
                         G_k_p_j = rho_i * fric_vel_mag_j * fric_vel_mag_j * dudn_p_mag_j;
-                        omega_p_j = turbu_k_i_05 / (std_kw_beta_star_ * Karman_ * y_p_j);
+                        omega_p_j = turbu_k_i_05 / (std_kw_beta_star_25_ * Karman_ * y_p_j);
                     }
                     G_k_p_weighted_sum += weight_j * G_k_p_j;
                     omega_p_weighted_sum += weight_j * omega_p_j;
