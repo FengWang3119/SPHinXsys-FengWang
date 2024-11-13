@@ -68,15 +68,16 @@ Vec2d right_buffer_translation = Vec2d(DL - 2.5 * resolution_ref, 0.5 * DH);
 //----------------------------------------------------------------------
 // Observation with offset model.
 //----------------------------------------------------------------------
-Real x_observe_start = 0.99 * DL;
-int num_observer_points = std::round(DH / resolution_ref); //**Every particle is regarded as a cell monitor*
+Real x_observe_start = 0.0;
+Real y_observe_start = DH / 2.0;
+
+int num_observer_points = std::round(DL / resolution_ref / 5.0); //**Every particle is regarded as a cell monitor*
 Real observe_spacing = DH / num_observer_points;
 
-// By kernel weight.
 StdVec<Vecd> observation_location;
-Vecd pos_observe_start = Vecd(x_observe_start, resolution_ref / 2.0);
-Vecd unit_direction_observe = Vecd(0.0, 1.0);
-Real observer_offset_distance = 2.0 * resolution_ref;
+Vecd pos_observe_start = Vecd(x_observe_start, y_observe_start);
+Vecd unit_direction_observe = Vecd(1.0, 0.0);
+Real observer_offset_distance = 0.0;
 
 //** For regression test *
 StdVec<Vecd> observer_location_center_point = {Vecd(0.5 * DL, 0.5 * DH)};
