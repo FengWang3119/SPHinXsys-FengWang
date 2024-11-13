@@ -16,8 +16,6 @@ class kOmega_BaseTurbuClosureCoeff
 
   protected:
     //** Closure coefficients for Omega *
-    Real std_kw_sigma_k_;
-    Real std_kw_sigma_omega_;
     Real std_kw_beta_star_;
     Real std_kw_sigma_star_;
     Real std_kw_alpha_;
