@@ -47,6 +47,7 @@ class kOmega_BaseTurbulentModel<Base, DataDelegationType>
     StdLargeVec<Real> &turbu_mu_;
     StdLargeVec<Matd> &turbu_strain_rate_; //** temporary naming to distinguish the regular strain rate *
     StdLargeVec<Real> &turbu_strain_rate_magnitude_;
+    StdLargeVec<Real> &turbu_strain_rate_traceless_magnitude_;
     StdLargeVec<Real> &turbu_omega_;
 
     Real mu_, smoothing_length_, particle_spacing_min_;
@@ -129,7 +130,7 @@ class kOmegaTurbulentEddyViscosity : public LocalDynamics,
     StdLargeVec<Real> &turbu_k_;
     StdLargeVec<Real> &turbu_omega_;
     StdLargeVec<Real> &wall_Y_plus_, &wall_Y_star_;
-    StdLargeVec<Real> &turbu_strain_rate_magnitude_;
+    StdLargeVec<Real> &turbu_strain_rate_traceless_magnitude_;
     Real mu_;
 };
 //=================================================================================================//

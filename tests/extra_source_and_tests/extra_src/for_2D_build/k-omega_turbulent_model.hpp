@@ -16,6 +16,7 @@ kOmega_BaseTurbulentModel<Base, DataDelegationType>::kOmega_BaseTurbulentModel(B
       turbu_mu_(*(this->particles_->template registerSharedVariable<Real>("TurbulentViscosity"))),
       turbu_strain_rate_(*(this->particles_->template registerSharedVariable<Matd>("TurbulentStrainRate"))),
       turbu_strain_rate_magnitude_(*(this->particles_->template registerSharedVariable<Real>("TurbulentStrainRateMagnitude"))),
+      turbu_strain_rate_traceless_magnitude_(*(this->particles_->template registerSharedVariable<Real>("TurbulentStrainRateTracelessMagnitude"))),
       turbu_omega_(*(this->particles_->template registerSharedVariable<Real>("TurbulentSpecificDissipation"))),
       mu_(DynamicCast<Fluid>(this, this->particles_->getBaseMaterial()).ReferenceViscosity()),
       smoothing_length_(this->sph_body_.sph_adaptation_->ReferenceSmoothingLength()),
