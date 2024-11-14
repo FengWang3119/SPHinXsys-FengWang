@@ -31,7 +31,7 @@ void kOmegaTurbulentEddyViscosity::update(size_t index_i, Real dt)
 {
     Real limited_omega = std_kw_C_lim_ * turbu_strain_rate_magnitude_[index_i] / sqrt(std_kw_beta_star_);
     Real turbu_omega_tilde_ = SMAX(turbu_omega_[index_i], limited_omega);
-    turbu_mu_[index_i] = turbu_k_[index_i] / turbu_omega_tilde_;
+    turbu_mu_[index_i] = rho_[index_i] * turbu_k_[index_i] / turbu_omega_tilde_;
 }
 //=================================================================================================//
 kOmegaStdWallFuncCorrection::
