@@ -305,7 +305,7 @@ void kOmega_kTransportEquationInner::interaction(size_t index_i, Real dt)
     Real turbu_mu_i = turbu_mu_[index_i];
     Real turbu_k_i = turbu_k_[index_i];
     Real turbu_omega_i = turbu_omega_[index_i];
-    Real mu_eff_i = mu_ + std_kw_sigma_star_ * turbu_k_i / turbu_omega_i;
+    Real mu_eff_i = mu_ + std_kw_sigma_star_ * rho_i * turbu_k_i / turbu_omega_i;
 
     dk_dt_[index_i] = 0.0;
     dk_dt_without_dissipation_[index_i] = 0.0;
@@ -322,7 +322,7 @@ void kOmega_kTransportEquationInner::interaction(size_t index_i, Real dt)
     for (size_t n = 0; n != inner_neighborhood.current_size_; ++n)
     {
         size_t index_j = inner_neighborhood.j_[n];
-        Real mu_eff_j = mu_ + std_kw_sigma_star_ * turbu_k_[index_j] / turbu_omega_[index_j];
+        Real mu_eff_j = mu_ + std_kw_sigma_star_ * rho_i * turbu_k_[index_j] / turbu_omega_[index_j];
         Real mu_harmo = 2 * mu_eff_i * mu_eff_j / (mu_eff_i + mu_eff_j);
         k_derivative = (turbu_k_i - turbu_k_[index_j]) / (inner_neighborhood.r_ij_[n] + 0.01 * smoothing_length_);
         k_lap += 2.0 * mu_harmo * k_derivative * inner_neighborhood.dW_ij_[n] * this->Vol_[index_j];
