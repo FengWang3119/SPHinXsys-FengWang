@@ -420,13 +420,14 @@ void kOmega_omegaTransportEquationInner::
         Real mu_eff_j = mu_ + std_kw_sigma_ * turbu_k_[index_j] / turbu_omega_[index_j];
         Real mu_harmo = 2 * mu_eff_i * mu_eff_j / (mu_eff_i + mu_eff_j);
         omega_derivative = (turbu_omega_i - turbu_omega_[index_j]) / (inner_neighborhood.r_ij_[n] + 0.01 * smoothing_length_);
-        omega_lap += 2.0 * mu_harmo * omega_derivative * inner_neighborhood.dW_ij_[n] * this->Vol_[index_j] / rho_i;
+        omega_lap += 2.0 * mu_harmo * omega_derivative * inner_neighborhood.dW_ij_[n] * this->Vol_[index_j];
 
         Vecd nablaW_ijV_j = inner_neighborhood.dW_ij_[n] * this->Vol_[index_j] * inner_neighborhood.e_ij_[n];
         //** non-conservative form *
         k_gradient += -1.0 * (turbu_k_i - turbu_k_[index_j]) * nablaW_ijV_j;
         omega_gradient += -1.0 * (turbu_omega_i - turbu_omega_[index_j]) * nablaW_ijV_j;
     }
+    omega_lap /= rho_i;
 
     omega_production = std_kw_alpha_ * turbu_omega_i * k_production_[index_i] / turbu_k_i;
     omega_dissipation = std_kw_beta_ * turbu_omega_i * turbu_omega_i;
