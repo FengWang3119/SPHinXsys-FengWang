@@ -9,7 +9,7 @@ namespace fluid_dynamics
 kOmega_BaseTurbuClosureCoeff::kOmega_BaseTurbuClosureCoeff()
     : std_kw_beta_star_(0.09), std_kw_sigma_star_(0.6),
       std_kw_alpha_(0.52), std_kw_sigma_(0.5), std_kw_f_beta_(1.0), std_kw_beta_0_(0.0708),
-      std_kw_sigma_do_(0.125), std_kw_C_lim_(0.875), std_kw_beta_i_(0.072)
+      std_kw_sigma_do_(0.125), std_kw_C_lim_(0.875), std_kw_beta_i_(0.075)
 {
     std_kw_beta_ = std_kw_beta_0_ * std_kw_f_beta_;
     std_kw_beta_star_25_ = pow(std_kw_beta_star_, 0.25);
