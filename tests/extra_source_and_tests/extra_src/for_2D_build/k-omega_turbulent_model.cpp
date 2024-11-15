@@ -317,6 +317,7 @@ void kOmega_kTransportEquationInner::interaction(size_t index_i, Real dt)
 
     Real k_production(0.0);
     Real k_dissipation(0.0);
+    Real k_diffusion(0.0);
     const Neighborhood &inner_neighborhood = inner_configuration_[index_i];
     for (size_t n = 0; n != inner_neighborhood.current_size_; ++n)
     {
@@ -326,7 +327,7 @@ void kOmega_kTransportEquationInner::interaction(size_t index_i, Real dt)
         k_derivative = (turbu_k_i - turbu_k_[index_j]) / (inner_neighborhood.r_ij_[n] + 0.01 * smoothing_length_);
         k_lap += 2.0 * mu_harmo * k_derivative * inner_neighborhood.dW_ij_[n] * this->Vol_[index_j];
     }
-    k_lap /= rho_i;
+    k_diffusion = k_lap / rho_i;
 
     strain_rate = 0.5 * (velocity_gradient_[index_i].transpose() + velocity_gradient_[index_i]);
     Real strain_rate_trace = strain_rate.trace();
@@ -349,11 +350,11 @@ void kOmega_kTransportEquationInner::interaction(size_t index_i, Real dt)
     k_production = k_production_[index_i];
     k_dissipation = std_kw_beta_star_ * turbu_k_i * turbu_omega_i;
 
-    dk_dt_[index_i] = k_production - k_dissipation + k_lap;
-    dk_dt_without_dissipation_[index_i] = k_production + k_lap;
+    dk_dt_[index_i] = k_production - k_dissipation + k_diffusion;
+    dk_dt_without_dissipation_[index_i] = k_production + k_diffusion;
 
     //** for record */
-    k_diffusion_[index_i] = k_lap;
+    k_diffusion_[index_i] = k_diffusion;
     vel_x_[index_i] = vel_[index_i][0];
     turbu_strain_rate_[index_i] = strain_rate;
 }
@@ -410,6 +411,7 @@ void kOmega_omegaTransportEquationInner::
     Real omega_lap(0.0);
     Real omega_dissipation(0.0);
     Real omega_cross_diffusion(0.0);
+    Real omega_diffusion(0.0);
     //std_kw_alpha_[index_i] = get_alpha_standard_kw();
     Vecd k_gradient = Vecd::Zero();
     Vecd omega_gradient = Vecd::Zero();
@@ -427,7 +429,7 @@ void kOmega_omegaTransportEquationInner::
         k_gradient += -1.0 * (turbu_k_i - turbu_k_[index_j]) * nablaW_ijV_j;
         omega_gradient += -1.0 * (turbu_omega_i - turbu_omega_[index_j]) * nablaW_ijV_j;
     }
-    omega_lap /= rho_i;
+    omega_diffusion = omega_lap / rho_i;
 
     omega_production = std_kw_alpha_ * turbu_omega_i * k_production_[index_i] / turbu_k_i;
     omega_dissipation = std_kw_beta_ * turbu_omega_i * turbu_omega_i;
@@ -437,13 +439,13 @@ void kOmega_omegaTransportEquationInner::
 
     omega_cross_diffusion = std_kw_sigma_d_ / turbu_omega_i * grad_dot_k_omega;
 
-    domega_dt_[index_i] = omega_production - omega_dissipation + omega_lap + omega_cross_diffusion;
-    domega_dt_without_dissipation_[index_i] = omega_production + omega_lap + omega_cross_diffusion;
+    domega_dt_[index_i] = omega_production - omega_dissipation + omega_diffusion + omega_cross_diffusion;
+    domega_dt_without_dissipation_[index_i] = omega_production + omega_diffusion + omega_cross_diffusion;
 
     //** for test */
     omega_production_[index_i] = omega_production;
     omega_dissipation_[index_i] = omega_dissipation;
-    omega_diffusion_[index_i] = omega_lap;
+    omega_diffusion_[index_i] = omega_diffusion;
     omega_cross_diffusion_[index_i] = omega_cross_diffusion;
 }
 //=================================================================================================//
