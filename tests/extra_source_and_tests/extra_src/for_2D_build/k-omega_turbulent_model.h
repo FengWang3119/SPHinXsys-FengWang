@@ -86,7 +86,8 @@ class kOmega_kTransportEquationInner : public kOmega_BaseTurbulentModel<Base, Da
 
     //** for test */
     StdLargeVec<int> &turbu_indicator_;
-    StdLargeVec<Real> &k_diffusion_, &vel_x_;
+    StdLargeVec<Real> &k_diffusion_;
+    StdLargeVec<Real> &vel_x_;
 };
 //=================================================================================================//
 /**
@@ -103,8 +104,11 @@ class kOmega_omegaTransportEquationInner : public kOmega_BaseTurbulentModel<Base
     void update(size_t index_i, Real dt = 0.0);
 
   protected:
-    StdLargeVec<Real> &domega_dt_, &domega_dt_without_dissipation_;
-    StdLargeVec<Real> &omega_production_, &omega_dissipation_, &omega_diffusion_;
+    StdLargeVec<Real> &domega_dt_;
+    StdLargeVec<Real> &domega_dt_without_dissipation_;
+    StdLargeVec<Real> &omega_production_;
+    StdLargeVec<Real> &omega_dissipation_;
+    StdLargeVec<Real> &omega_diffusion_;
     StdLargeVec<Real> &omega_cross_diffusion_;
 
     StdLargeVec<Real> &turbu_mu_;
@@ -129,7 +133,8 @@ class kOmegaTurbulentEddyViscosity : public LocalDynamics,
     StdLargeVec<Real> &turbu_mu_;
     StdLargeVec<Real> &turbu_k_;
     StdLargeVec<Real> &turbu_omega_;
-    StdLargeVec<Real> &wall_Y_plus_, &wall_Y_star_;
+    StdLargeVec<Real> &wall_Y_plus_;
+    StdLargeVec<Real> &wall_Y_star_;
     StdLargeVec<Real> &turbu_strain_rate_traceless_magnitude_;
     Real mu_;
 };
