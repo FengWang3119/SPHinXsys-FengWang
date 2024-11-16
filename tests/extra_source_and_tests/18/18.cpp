@@ -39,19 +39,9 @@ int main(int ac, char *av[])
     ObserverBody observer_center_point(sph_system, "ObserverCenterPoint");
     observer_center_point.generateParticles<ObserverParticles>(observer_location_center_point);
 
-    for (int i = 0; i < num_observer_points; ++i)
-    {
-        Vecd pos_observer_i = pos_observe_start + i * observe_spacing * unit_direction_observe;
-        if (i == 0)
-        {
-            pos_observer_i -= observer_offset_distance * unit_direction_observe;
-        }
-        if (i == num_observer_points - 1)
-        {
-            pos_observer_i += observer_offset_distance * unit_direction_observe;
-        }
-        observation_location.push_back(pos_observer_i);
-    }
+    get_observation_locations();
+    output_observer_theoretical_x();
+
     ObserverBody fluid_observer(sph_system, "FluidObserver");
     fluid_observer.generateParticles<ObserverParticles>(observation_location);
 

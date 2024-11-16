@@ -78,6 +78,37 @@ StdVec<Vecd> observation_location;
 Vecd pos_observe_start = Vecd(x_observe_start, y_observe_start);
 Vecd unit_direction_observe = Vecd(1.0, 0.0);
 Real observer_offset_distance = 0.0;
+void get_observation_locations()
+{
+    for (int i = 0; i < num_observer_points; ++i)
+    {
+        Vecd pos_observer_i = pos_observe_start + i * observe_spacing * unit_direction_observe;
+        if (i == 0)
+        {
+            pos_observer_i -= observer_offset_distance * unit_direction_observe;
+        }
+        if (i == num_observer_points - 1)
+        {
+            pos_observer_i += observer_offset_distance * unit_direction_observe;
+        }
+        observation_location.push_back(pos_observer_i);
+    }
+}
+void output_observer_theoretical_x()
+{
+    std::string filename = "../bin/output/observer_theoretical_x.dat";
+    std::ofstream outfile(filename);
+    if (!outfile.is_open())
+    {
+        std::cerr << "Error: Unable to open file " << filename << " for writing." << std::endl;
+        return;
+    }
+    for (const Vecd &position : observation_location)
+    {
+        outfile << position[0] << "\n";
+    }
+    outfile.close();
+}
 
 //** For regression test *
 StdVec<Vecd> observer_location_center_point = {Vecd(0.5 * DL, 0.5 * DH)};
