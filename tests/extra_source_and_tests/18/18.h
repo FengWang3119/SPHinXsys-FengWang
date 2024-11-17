@@ -72,7 +72,7 @@ Real x_observe_start = 0.0;
 Real y_observe_start = DH / 2.0;
 
 int num_observer_points = std::round(DL / resolution_ref / 5.0); //**Every particle is regarded as a cell monitor*
-Real observe_spacing = DH / num_observer_points;
+Real observe_spacing = DL / num_observer_points;
 
 StdVec<Vecd> observation_location;
 Vecd pos_observe_start = Vecd(x_observe_start, y_observe_start);
