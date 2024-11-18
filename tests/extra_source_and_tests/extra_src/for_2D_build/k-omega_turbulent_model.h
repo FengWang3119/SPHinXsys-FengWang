@@ -43,12 +43,9 @@ class kOmega_BaseTurbulentModel<Base, DataDelegationType>
     virtual ~kOmega_BaseTurbulentModel(){};
 
   protected:
-    Real *turbu_k_;
-    Real *turbu_mu_;
     Matd *turbu_strain_rate_; //** temporary naming to distinguish the regular strain rate *
     Real *turbu_strain_rate_magnitude_;
     Real *turbu_strain_rate_traceless_magnitude_;
-    Real *turbu_omega_;
 
     Real mu_, smoothing_length_, particle_spacing_min_;
     Real *rho_;
@@ -174,6 +171,7 @@ class kOmegaStdWallFuncCorrection : public LocalDynamics,
     Vecd *e_nearest_normal_;
     StdVec<Real *> contact_Vol_;
     StdVec<Vecd *> contact_n_;
+    Real *physical_time_;
 };
 //=================================================================================================//
 /**

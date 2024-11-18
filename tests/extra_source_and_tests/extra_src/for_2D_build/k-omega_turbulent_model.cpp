@@ -38,7 +38,7 @@ kOmegaStdWallFuncCorrection::
     kOmegaStdWallFuncCorrection(BaseInnerRelation &inner_relation,
                                 BaseContactRelation &contact_relation, Real y_p_constant)
     : LocalDynamics(inner_relation.getSPHBody()), DataDelegateContact(contact_relation),
-      y_p_(particles_->registerStateVariable<Real>("Y_P")),
+      y_p_(particles_->registerStateVariable<Real>("Y_P", y_p_constant)),
       wall_Y_plus_(particles_->registerStateVariable<Real>("WallYplus")),
       wall_Y_star_(particles_->registerStateVariable<Real>("WallYstar")),
       velo_tan_(particles_->registerStateVariable<Real>("TangentialVelocity")),
@@ -56,7 +56,8 @@ kOmegaStdWallFuncCorrection::
       distance_to_dummy_interface_up_average_(particles_->getVariableDataByName<Real>("DistanceToDummyInterfaceUpAver")),
       index_nearest(particles_->getVariableDataByName<int>("NearestIndex")),
       e_nearest_tau_(particles_->getVariableDataByName<Vecd>("WallNearestTangentialUnitVector")),
-      e_nearest_normal_(particles_->getVariableDataByName<Vecd>("WallNearestNormalUnitVector"))
+      e_nearest_normal_(particles_->getVariableDataByName<Vecd>("WallNearestNormalUnitVector")),
+      physical_time_(sph_system_.getSystemVariableDataByName<Real>("PhysicalTime"))
 {
     for (size_t k = 0; k != contact_particles_.size(); ++k)
     {
@@ -69,7 +70,7 @@ kOmegaStdWallFuncCorrection::
     particles_->addVariableToWrite<Real>("Y_P");
 
     //** Fixed y_p_ as a constant distance *
-    std::fill(y_p_.begin(), y_p_.end(), y_p_constant);
+    //std::fill(y_p_.begin(), y_p_.end(), y_p_constant);
 
     //particles_->registerStateVariable(wall_Y_plus_, "WallYplus");
     particles_->addVariableToSort<Real>("WallYplus");
@@ -95,6 +96,7 @@ void kOmegaStdWallFuncCorrection::interaction(size_t index_i, Real dt)
     velo_friction_[index_i] = Vecd::Zero();
     wall_Y_plus_[index_i] = 0.0;
     wall_Y_star_[index_i] = 0.0;
+    Real current_time = *physical_time_;
 
     //** If use level-set to get distance from P to wall, activate this *
     //y_p_[index_i]= distance_to_dummy_interface_levelset_[index_i];
@@ -133,7 +135,7 @@ void kOmegaStdWallFuncCorrection::interaction(size_t index_i, Real dt)
             std::cin.get();
         }
 
-        Real u_star = get_dimensionless_velocity(wall_Y_star_[index_i]);
+        Real u_star = get_dimensionless_velocity(wall_Y_star_[index_i], current_time);
         velo_fric_mag = sqrt(C_mu_25_ * turbu_k_i_05 * velo_tan_mag / u_star);
 
         if (velo_fric_mag != static_cast<Real>(velo_fric_mag))
@@ -207,14 +209,14 @@ void kOmegaStdWallFuncCorrection::interaction(size_t index_i, Real dt)
 
                     Real vel_i_tau_mag = abs(vel_i.dot(e_j_tau));
                     Real y_star_j = C_mu_25_ * turbu_k_i_05 * y_p_j / nu_i;
-                    Real u_star_j = get_dimensionless_velocity(y_star_j);
+                    Real u_star_j = get_dimensionless_velocity(y_star_j, current_time);
                     Real fric_vel_mag_j = sqrt(C_mu_25_ * turbu_k_i_05 * vel_i_tau_mag / u_star_j);
 
                     Real dudn_p_mag_j = get_near_wall_velocity_gradient_magnitude(y_star_j, fric_vel_mag_j, denominator_log_law_j, nu_i);
                     dudn_p_j = dudn_p_mag_j * boost::qvm::sign(vel_i.dot(e_j_tau));
                     dudn_p_weighted_sum += weight_j * dudn_p_j;
 
-                    if (y_star_j < y_star_threshold_laminar_ && GlobalStaticVariables::physical_time_ > start_time_laminar_)
+                    if (y_star_j < y_star_threshold_laminar_ && current_time > start_time_laminar_)
                     {
                         G_k_p_j = 0.0;
                         omega_p_j = 6.0 * nu_i / (std_kw_beta_i_ * y_p_j * y_p_j);
@@ -251,12 +253,12 @@ kOmega_kTransportEquationInner::kOmega_kTransportEquationInner(BaseInnerRelation
       k_production_(particles_->registerStateVariable<Real>("K_Production")),
       is_near_wall_P1_(particles_->getVariableDataByName<int>("IsNearWallP1")),
       velocity_gradient_(particles_->getVariableDataByName<Matd>("TurbulentVelocityGradient")),
-      turbu_k_(particles_->getVariableDataByName<Real>("TurbulenceKineticEnergy")),
-      turbu_omega_(particles_->getVariableDataByName<Real>("TurbulentSpecificDissipation")),
-      turbu_mu_(particles_->getVariableDataByName<Real>("TurbulentViscosity")),
+      turbu_k_(particles_->registerStateVariable<Real>("TurbulenceKineticEnergy", Real(initial_values[0]))),
+      turbu_omega_(particles_->registerStateVariable<Real>("TurbulentSpecificDissipation", Real(initial_values[1]))),
+      turbu_mu_(particles_->registerStateVariable<Real>("TurbulentViscosity", Real(initial_values[2]))),
       turbu_strain_rate_(particles_->getVariableDataByName<Matd>("TurbulentStrainRate")),
       turbu_strain_rate_magnitude_(particles_->getVariableDataByName<Real>("TurbulentStrainRateMagnitude")),
-      is_extra_viscous_dissipation_(particles_->registerStateVariable<int>("TurbulentExtraViscousDissipation")),
+      is_extra_viscous_dissipation_(particles_->registerStateVariable<int>("TurbulentExtraViscousDissipation", is_extr_visc_dissipa)),
       turbu_indicator_(particles_->registerStateVariable<int>("TurbulentIndicator")),
       k_diffusion_(particles_->registerStateVariable<Real>("K_Diffusion")),
       vel_x_(particles_->registerStateVariable<Real>("Velocity_X"))
@@ -280,9 +282,9 @@ kOmega_kTransportEquationInner::kOmega_kTransportEquationInner(BaseInnerRelation
     particles_->addVariableToWrite<Matd>("TurbulentStrainRate");
 
     //** Obtain Initial values for transport equations *
-    std::fill(turbu_k_.begin(), turbu_k_.end(), initial_values[0]);
-    std::fill(turbu_omega_.begin(), turbu_omega_.end(), initial_values[1]);
-    std::fill(turbu_mu_.begin(), turbu_mu_.end(), initial_values[2]);
+    // std::fill(turbu_k_.begin(), turbu_k_.end(), initial_values[0]);
+    // std::fill(turbu_omega_.begin(), turbu_omega_.end(), initial_values[1]);
+    // std::fill(turbu_mu_.begin(), turbu_mu_.end(), initial_values[2]);
 
     //** for test */
     particles_->addVariableToSort<Real>("K_Diffusion");
@@ -295,7 +297,7 @@ kOmega_kTransportEquationInner::kOmega_kTransportEquationInner(BaseInnerRelation
     particles_->addVariableToSort<int>("TurbulentIndicator");
     particles_->addVariableToWrite<int>("TurbulentIndicator");
 
-    std::fill(is_extra_viscous_dissipation_.begin(), is_extra_viscous_dissipation_.end(), is_extr_visc_dissipa);
+    //std::fill(is_extra_viscous_dissipation_.begin(), is_extra_viscous_dissipation_.end(), is_extr_visc_dissipa);
 }
 //=================================================================================================//
 void kOmega_kTransportEquationInner::interaction(size_t index_i, Real dt)

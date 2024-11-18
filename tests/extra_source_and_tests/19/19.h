@@ -162,11 +162,10 @@ struct InflowVelocity
           aligned_box_(boundary_condition.getAlignedBox()),
           halfsize_(aligned_box_.HalfSize()) {}
 
-    Vecd operator()(Vecd &position, Vecd &velocity)
+    Vecd operator()(Vecd &position, Vecd &velocity, Real current_time)
     {
         Vecd target_velocity = velocity;
-        Real run_time = GlobalStaticVariables::physical_time_;
-        Real u_ave = run_time < t_ref_ ? 0.5 * u_ref_ * (1.0 - cos(Pi * run_time / t_ref_)) : u_ref_;
+        Real u_ave = current_time < t_ref_ ? 0.5 * u_ref_ * (1.0 - cos(Pi * current_time / t_ref_)) : u_ref_;
         //target_velocity[0] = 1.5 * u_ave * SMAX(0.0, 1.0 - position[1] * position[1] / halfsize_[1] / halfsize_[1]);
         //target_velocity[0] = 1.5 * u_ave * (1.0 - position[1] * position[1] / half_channel_height / half_channel_height);
         target_velocity[0] = u_ave;
@@ -205,7 +204,7 @@ struct InflowVelocity
             }
 
             //** Impose inlet velocity gradually */
-            target_velocity[0] = run_time < t_ref_ ? 0.5 * polynomial_value * (1.0 - cos(Pi * run_time / t_ref_)) : polynomial_value;
+            target_velocity[0] = current_time < t_ref_ ? 0.5 * polynomial_value * (1.0 - cos(Pi * current_time / t_ref_)) : polynomial_value;
             //target_velocity[0] = polynomial_value;
         }
 
@@ -225,7 +224,7 @@ struct RightOutflowPressure
     template <class BoundaryConditionType>
     RightOutflowPressure(BoundaryConditionType &boundary_condition) {}
 
-    Real operator()(Real &p_)
+    Real operator()(Real p, Real current_time)
     {
         /*constant pressure*/
         Real pressure = Outlet_pressure;
@@ -237,8 +236,8 @@ struct LeftInflowPressure
     template <class BoundaryConditionType>
     LeftInflowPressure(BoundaryConditionType &boundary_condition) {}
 
-    Real operator()(Real &p_)
+    Real operator()(Real p, Real current_time)
     {
-        return p_;
+        return p;
     }
 };
