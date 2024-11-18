@@ -79,10 +79,44 @@ Real observe_spacing = DH_C / num_observer_points;
 
 // By kernel weight.
 StdVec<Vecd> observation_location;
+StdVec<Vecd> observation_theoretical_locations;
 Vecd pos_observe_start = Vecd(x_observe_start, resolution_ref / 2.0 + offset_distance);
 Vecd unit_direction_observe = Vecd(0.0, 1.0);
 Real observer_offset_distance = 2.0 * resolution_ref;
 
+void get_observation_locations()
+{
+    for (int i = 0; i < num_observer_points; ++i)
+    {
+        Vecd pos_observer_i = pos_observe_start + i * observe_spacing * unit_direction_observe;
+        Vecd pos_observer_i_no_offset = pos_observe_start + i * observe_spacing * unit_direction_observe;
+        if (i == 0)
+        {
+            pos_observer_i -= observer_offset_distance * unit_direction_observe;
+        }
+        if (i == num_observer_points - 1)
+        {
+            pos_observer_i += observer_offset_distance * unit_direction_observe;
+        }
+        observation_location.push_back(pos_observer_i);
+        observation_theoretical_locations.push_back(pos_observer_i_no_offset);
+    }
+}
+void output_observer_theoretical_y()
+{
+    std::string filename = "../bin/output/observer_theoretical_y.dat";
+    std::ofstream outfile(filename);
+    if (!outfile.is_open())
+    {
+        std::cerr << "Error: Unable to open file " << filename << " for writing." << std::endl;
+        return;
+    }
+    for (const Vecd &position : observation_theoretical_locations)
+    {
+        outfile << position[1] << "\n";
+    }
+    outfile.close();
+}
 //** For regression test *
 StdVec<Vecd> observer_location_center_point = {Vecd(0.5 * DL, 0.5 * DH)};
 //----------------------------------------------------------------------
