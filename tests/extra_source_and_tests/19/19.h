@@ -30,8 +30,8 @@ bool is_constrain_normal_velocity_in_P_region = false;
 Real weight_vel_grad_sub_nearwall = 0.1;
 //** Tag for Source Term Linearisation *
 bool is_source_term_linearisation = false;
-//** Initial values for K, Epsilon and Mu_t *
-StdVec<Real> initial_turbu_values = {0.000180001, 3.326679e-5, 1.0e-9};
+//** Initial values for K, Omega and Mu_t *
+StdVec<Real> initial_turbu_values = {0.000180001, 2.056, 1.0e-9};
 
 Real y_p_constant = 0.05;
 Real resolution_ref = (DH - 2.0 * y_p_constant) / (num_fluid_cross_section - 1.0); /**< Initial reference particle spacing. */
