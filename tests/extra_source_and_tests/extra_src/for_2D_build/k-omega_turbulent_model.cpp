@@ -17,14 +17,14 @@ kOmega_BaseTurbuClosureCoeff::kOmega_BaseTurbuClosureCoeff()
 //=================================================================================================//
 kOmegaTurbulentEddyViscosity::
     kOmegaTurbulentEddyViscosity(SPHBody &sph_body)
-    : LocalDynamics(sph_body), DataDelegateSimple(sph_body),
-      rho_(*particles_->getVariableDataByName<Real>("Density")),
-      turbu_mu_(*particles_->getVariableDataByName<Real>("TurbulentViscosity")),
-      turbu_k_(*particles_->getVariableDataByName<Real>("TurbulenceKineticEnergy")),
-      turbu_omega_(*particles_->getVariableDataByName<Real>("TurbulentSpecificDissipation")),
-      wall_Y_plus_(*particles_->getVariableDataByName<Real>("WallYplus")),
-      wall_Y_star_(*particles_->getVariableDataByName<Real>("WallYstar")),
-      turbu_strain_rate_traceless_magnitude_(*particles_->getVariableDataByName<Real>("TurbulentStrainRateTracelessMagnitude")),
+    : LocalDynamics(sph_body),
+      rho_(particles_->getVariableDataByName<Real>("Density")),
+      turbu_mu_(particles_->getVariableDataByName<Real>("TurbulentViscosity")),
+      turbu_k_(particles_->getVariableDataByName<Real>("TurbulenceKineticEnergy")),
+      turbu_omega_(particles_->getVariableDataByName<Real>("TurbulentSpecificDissipation")),
+      wall_Y_plus_(particles_->getVariableDataByName<Real>("WallYplus")),
+      wall_Y_star_(particles_->getVariableDataByName<Real>("WallYstar")),
+      turbu_strain_rate_traceless_magnitude_(particles_->getVariableDataByName<Real>("TurbulentStrainRateTracelessMagnitude")),
       mu_(DynamicCast<Fluid>(this, particles_->getBaseMaterial()).ReferenceViscosity()) {}
 //=================================================================================================//
 void kOmegaTurbulentEddyViscosity::update(size_t index_i, Real dt)
@@ -38,25 +38,25 @@ kOmegaStdWallFuncCorrection::
     kOmegaStdWallFuncCorrection(BaseInnerRelation &inner_relation,
                                 BaseContactRelation &contact_relation, Real y_p_constant)
     : LocalDynamics(inner_relation.getSPHBody()), DataDelegateContact(contact_relation),
-      y_p_(*particles_->registerSharedVariable<Real>("Y_P")),
-      wall_Y_plus_(*particles_->registerSharedVariable<Real>("WallYplus")),
-      wall_Y_star_(*particles_->registerSharedVariable<Real>("WallYstar")),
-      velo_tan_(*particles_->registerSharedVariable<Real>("TangentialVelocity")),
-      velo_friction_(*particles_->registerSharedVariable<Vecd>("FrictionVelocity")),
-      vel_(*particles_->getVariableDataByName<Vecd>("Velocity")), rho_(*particles_->getVariableDataByName<Real>("Density")),
+      y_p_(particles_->registerStateVariable<Real>("Y_P")),
+      wall_Y_plus_(particles_->registerStateVariable<Real>("WallYplus")),
+      wall_Y_star_(particles_->registerStateVariable<Real>("WallYstar")),
+      velo_tan_(particles_->registerStateVariable<Real>("TangentialVelocity")),
+      velo_friction_(particles_->registerStateVariable<Vecd>("FrictionVelocity")),
+      vel_(particles_->getVariableDataByName<Vecd>("Velocity")), rho_(particles_->getVariableDataByName<Real>("Density")),
       molecular_viscosity_(DynamicCast<Fluid>(this, particles_->getBaseMaterial()).ReferenceViscosity()),
-      turbu_k_(*particles_->getVariableDataByName<Real>("TurbulenceKineticEnergy")),
-      turbu_omega_(*particles_->getVariableDataByName<Real>("TurbulentSpecificDissipation")),
-      turbu_mu_(*particles_->getVariableDataByName<Real>("TurbulentViscosity")),
-      is_near_wall_P1_(*particles_->getVariableDataByName<int>("IsNearWallP1")),
-      is_near_wall_P2_(*particles_->getVariableDataByName<int>("IsNearWallP2")),
-      velocity_gradient_(*particles_->getVariableDataByName<Matd>("TurbulentVelocityGradient")),
-      k_production_(*particles_->getVariableDataByName<Real>("K_Production")),
-      distance_to_dummy_interface_(*particles_->getVariableDataByName<Real>("DistanceToDummyInterface")),
-      distance_to_dummy_interface_up_average_(*particles_->getVariableDataByName<Real>("DistanceToDummyInterfaceUpAver")),
-      index_nearest(*particles_->getVariableDataByName<int>("NearestIndex")),
-      e_nearest_tau_(*particles_->getVariableDataByName<Vecd>("WallNearestTangentialUnitVector")),
-      e_nearest_normal_(*particles_->getVariableDataByName<Vecd>("WallNearestNormalUnitVector"))
+      turbu_k_(particles_->getVariableDataByName<Real>("TurbulenceKineticEnergy")),
+      turbu_omega_(particles_->getVariableDataByName<Real>("TurbulentSpecificDissipation")),
+      turbu_mu_(particles_->getVariableDataByName<Real>("TurbulentViscosity")),
+      is_near_wall_P1_(particles_->getVariableDataByName<int>("IsNearWallP1")),
+      is_near_wall_P2_(particles_->getVariableDataByName<int>("IsNearWallP2")),
+      velocity_gradient_(particles_->getVariableDataByName<Matd>("TurbulentVelocityGradient")),
+      k_production_(particles_->getVariableDataByName<Real>("K_Production")),
+      distance_to_dummy_interface_(particles_->getVariableDataByName<Real>("DistanceToDummyInterface")),
+      distance_to_dummy_interface_up_average_(particles_->getVariableDataByName<Real>("DistanceToDummyInterfaceUpAver")),
+      index_nearest(particles_->getVariableDataByName<int>("NearestIndex")),
+      e_nearest_tau_(particles_->getVariableDataByName<Vecd>("WallNearestTangentialUnitVector")),
+      e_nearest_normal_(particles_->getVariableDataByName<Vecd>("WallNearestNormalUnitVector"))
 {
     for (size_t k = 0; k != contact_particles_.size(); ++k)
     {
@@ -64,27 +64,27 @@ kOmegaStdWallFuncCorrection::
         contact_Vol_.push_back(contact_particles_[k]->getVariableDataByName<Real>("VolumetricMeasure"));
     }
 
-    //particles_->registerSharedVariable(y_p_, "Y_P");
+    //particles_->registerStateVariable(y_p_, "Y_P");
     particles_->addVariableToSort<Real>("Y_P");
     particles_->addVariableToWrite<Real>("Y_P");
 
     //** Fixed y_p_ as a constant distance *
     std::fill(y_p_.begin(), y_p_.end(), y_p_constant);
 
-    //particles_->registerSharedVariable(wall_Y_plus_, "WallYplus");
+    //particles_->registerStateVariable(wall_Y_plus_, "WallYplus");
     particles_->addVariableToSort<Real>("WallYplus");
     particles_->addVariableToWrite<Real>("WallYplus");
 
     //** Initial value is important, especially when use log law *
-    //particles_->registerSharedVariable(wall_Y_star_, "WallYstar", TinyReal);
+    //particles_->registerStateVariable(wall_Y_star_, "WallYstar", TinyReal);
     particles_->addVariableToSort<Real>("WallYstar");
     particles_->addVariableToWrite<Real>("WallYstar");
 
-    //particles_->registerSharedVariable(velo_tan_, "TangentialVelocity");
+    //particles_->registerStateVariable(velo_tan_, "TangentialVelocity");
     particles_->addVariableToSort<Real>("TangentialVelocity");
     particles_->addVariableToWrite<Real>("TangentialVelocity");
 
-    //particles_->registerSharedVariable(velo_friction_, "FrictionVelocity");
+    //particles_->registerStateVariable(velo_friction_, "FrictionVelocity");
     particles_->addVariableToSort<Vecd>("FrictionVelocity");
     particles_->addVariableToWrite<Vecd>("FrictionVelocity");
 };
@@ -177,8 +177,8 @@ void kOmegaStdWallFuncCorrection::interaction(size_t index_i, Real dt)
 
             for (size_t k = 0; k < contact_configuration_.size(); ++k)
             {
-                StdLargeVec<Real> &Vol_k = *(contact_Vol_[k]);
-                StdLargeVec<Vecd> &n_k = *(contact_n_[k]);
+                Real *Vol_k = (contact_Vol_[k]);
+                Vecd *n_k = (contact_n_[k]);
                 Neighborhood &contact_neighborhood = (*contact_configuration_[k])[index_i];
 
                 for (size_t n = 0; n != contact_neighborhood.current_size_; ++n)
@@ -246,20 +246,20 @@ void kOmegaStdWallFuncCorrection::interaction(size_t index_i, Real dt)
 //=================================================================================================//
 kOmega_kTransportEquationInner::kOmega_kTransportEquationInner(BaseInnerRelation &inner_relation, const StdVec<Real> &initial_values, int is_extr_visc_dissipa)
     : kOmega_BaseTurbulentModel<Base, DataDelegateInner>(inner_relation),
-      dk_dt_(*particles_->registerSharedVariable<Real>("ChangeRateOfTKE")),
-      dk_dt_without_dissipation_(*particles_->registerSharedVariable<Real>("ChangeRateOfTKEWithoutDissipation")),
-      k_production_(*particles_->registerSharedVariable<Real>("K_Production")),
-      is_near_wall_P1_(*particles_->getVariableDataByName<int>("IsNearWallP1")),
-      velocity_gradient_(*particles_->getVariableDataByName<Matd>("TurbulentVelocityGradient")),
-      turbu_k_(*particles_->getVariableDataByName<Real>("TurbulenceKineticEnergy")),
-      turbu_omega_(*particles_->getVariableDataByName<Real>("TurbulentSpecificDissipation")),
-      turbu_mu_(*particles_->getVariableDataByName<Real>("TurbulentViscosity")),
-      turbu_strain_rate_(*particles_->getVariableDataByName<Matd>("TurbulentStrainRate")),
-      turbu_strain_rate_magnitude_(*particles_->getVariableDataByName<Real>("TurbulentStrainRateMagnitude")),
-      is_extra_viscous_dissipation_(*particles_->registerSharedVariable<int>("TurbulentExtraViscousDissipation")),
-      turbu_indicator_(*particles_->registerSharedVariable<int>("TurbulentIndicator")),
-      k_diffusion_(*particles_->registerSharedVariable<Real>("K_Diffusion")),
-      vel_x_(*particles_->registerSharedVariable<Real>("Velocity_X"))
+      dk_dt_(particles_->registerStateVariable<Real>("ChangeRateOfTKE")),
+      dk_dt_without_dissipation_(particles_->registerStateVariable<Real>("ChangeRateOfTKEWithoutDissipation")),
+      k_production_(particles_->registerStateVariable<Real>("K_Production")),
+      is_near_wall_P1_(particles_->getVariableDataByName<int>("IsNearWallP1")),
+      velocity_gradient_(particles_->getVariableDataByName<Matd>("TurbulentVelocityGradient")),
+      turbu_k_(particles_->getVariableDataByName<Real>("TurbulenceKineticEnergy")),
+      turbu_omega_(particles_->getVariableDataByName<Real>("TurbulentSpecificDissipation")),
+      turbu_mu_(particles_->getVariableDataByName<Real>("TurbulentViscosity")),
+      turbu_strain_rate_(particles_->getVariableDataByName<Matd>("TurbulentStrainRate")),
+      turbu_strain_rate_magnitude_(particles_->getVariableDataByName<Real>("TurbulentStrainRateMagnitude")),
+      is_extra_viscous_dissipation_(particles_->registerStateVariable<int>("TurbulentExtraViscousDissipation")),
+      turbu_indicator_(particles_->registerStateVariable<int>("TurbulentIndicator")),
+      k_diffusion_(particles_->registerStateVariable<Real>("K_Diffusion")),
+      vel_x_(particles_->registerStateVariable<Real>("Velocity_X"))
 {
     particles_->addVariableToSort<Real>("ChangeRateOfTKE");
     particles_->addVariableToSort<Real>("ChangeRateOfTKEWithoutDissipation");
@@ -366,17 +366,17 @@ void kOmega_kTransportEquationInner::update(size_t index_i, Real dt)
 //=================================================================================================//
 kOmega_omegaTransportEquationInner::kOmega_omegaTransportEquationInner(BaseInnerRelation &inner_relation)
     : kOmega_BaseTurbulentModel<Base, DataDelegateInner>(inner_relation),
-      domega_dt_(*particles_->registerSharedVariable<Real>("ChangeRateOfTDR")),
-      domega_dt_without_dissipation_(*particles_->registerSharedVariable<Real>("ChangeRateOfTDRWithoutDissp")),
-      omega_production_(*particles_->registerSharedVariable<Real>("omega_Production")),
-      omega_dissipation_(*particles_->registerSharedVariable<Real>("omega_Dissipation")),
-      omega_diffusion_(*particles_->registerSharedVariable<Real>("omega_Diffusion")),
-      omega_cross_diffusion_(*particles_->registerSharedVariable<Real>("omega_Cross_Diffusion")),
-      turbu_mu_(*particles_->getVariableDataByName<Real>("TurbulentViscosity")),
-      turbu_k_(*particles_->getVariableDataByName<Real>("TurbulenceKineticEnergy")),
-      turbu_omega_(*particles_->getVariableDataByName<Real>("TurbulentSpecificDissipation")),
-      k_production_(*particles_->getVariableDataByName<Real>("K_Production")),
-      is_near_wall_P1_(*particles_->getVariableDataByName<int>("IsNearWallP1"))
+      domega_dt_(particles_->registerStateVariable<Real>("ChangeRateOfTDR")),
+      domega_dt_without_dissipation_(particles_->registerStateVariable<Real>("ChangeRateOfTDRWithoutDissp")),
+      omega_production_(particles_->registerStateVariable<Real>("omega_Production")),
+      omega_dissipation_(particles_->registerStateVariable<Real>("omega_Dissipation")),
+      omega_diffusion_(particles_->registerStateVariable<Real>("omega_Diffusion")),
+      omega_cross_diffusion_(particles_->registerStateVariable<Real>("omega_Cross_Diffusion")),
+      turbu_mu_(particles_->getVariableDataByName<Real>("TurbulentViscosity")),
+      turbu_k_(particles_->getVariableDataByName<Real>("TurbulenceKineticEnergy")),
+      turbu_omega_(particles_->getVariableDataByName<Real>("TurbulentSpecificDissipation")),
+      k_production_(particles_->getVariableDataByName<Real>("K_Production")),
+      is_near_wall_P1_(particles_->getVariableDataByName<int>("IsNearWallP1"))
 {
     particles_->addVariableToSort<Real>("ChangeRateOfTDR");
     particles_->addVariableToWrite<Real>("ChangeRateOfTDR");
@@ -462,8 +462,8 @@ kOmegaInflowTurbulentCondition::kOmegaInflowTurbulentCondition(BodyPartByCell &b
     : BaseFlowBoundaryCondition(body_part), type_turbu_inlet_(type_turbu_inlet),
       relaxation_rate_(relaxation_rate),
       CharacteristicLength_(CharacteristicLength),
-      turbu_k_(*particles_->getVariableDataByName<Real>("TurbulenceKineticEnergy")),
-      turbu_omega_(*particles_->getVariableDataByName<Real>("TurbulentSpecificDissipation"))
+      turbu_k_(particles_->getVariableDataByName<Real>("TurbulenceKineticEnergy")),
+      turbu_omega_(particles_->getVariableDataByName<Real>("TurbulentSpecificDissipation"))
 {
     TurbulentLength_ = turbulent_length_ratio_for_epsilon_inlet_ * CharacteristicLength_;
 }

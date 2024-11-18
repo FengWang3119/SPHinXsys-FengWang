@@ -43,17 +43,17 @@ class kOmega_BaseTurbulentModel<Base, DataDelegationType>
     virtual ~kOmega_BaseTurbulentModel(){};
 
   protected:
-    StdLargeVec<Real> &turbu_k_;
-    StdLargeVec<Real> &turbu_mu_;
-    StdLargeVec<Matd> &turbu_strain_rate_; //** temporary naming to distinguish the regular strain rate *
-    StdLargeVec<Real> &turbu_strain_rate_magnitude_;
-    StdLargeVec<Real> &turbu_strain_rate_traceless_magnitude_;
-    StdLargeVec<Real> &turbu_omega_;
+    Real *turbu_k_;
+    Real *turbu_mu_;
+    Matd *turbu_strain_rate_; //** temporary naming to distinguish the regular strain rate *
+    Real *turbu_strain_rate_magnitude_;
+    Real *turbu_strain_rate_traceless_magnitude_;
+    Real *turbu_omega_;
 
     Real mu_, smoothing_length_, particle_spacing_min_;
-    StdLargeVec<Real> &rho_;
-    StdLargeVec<Real> &Vol_;
-    StdLargeVec<Vecd> &vel_;
+    Real *rho_;
+    Real *Vol_;
+    Vecd *vel_;
     int dimension_;
 };
 //=================================================================================================//
@@ -71,23 +71,23 @@ class kOmega_kTransportEquationInner : public kOmega_BaseTurbulentModel<Base, Da
     void update(size_t index_i, Real dt = 0.0);
 
   protected:
-    StdLargeVec<Real> &dk_dt_;
-    StdLargeVec<Real> &dk_dt_without_dissipation_;
-    StdLargeVec<Real> &k_production_;
+    Real *dk_dt_;
+    Real *dk_dt_without_dissipation_;
+    Real *k_production_;
 
-    StdLargeVec<int> &is_near_wall_P1_; //** This is used to specially treat near wall region  *
-    StdLargeVec<Matd> &velocity_gradient_;
-    StdLargeVec<Real> &turbu_k_;
-    StdLargeVec<Real> &turbu_omega_;
-    StdLargeVec<Real> &turbu_mu_;
-    StdLargeVec<Matd> &turbu_strain_rate_;
-    StdLargeVec<Real> &turbu_strain_rate_magnitude_;
-    StdLargeVec<int> &is_extra_viscous_dissipation_;
+    int *is_near_wall_P1_; //** This is used to specially treat near wall region  *
+    Matd *velocity_gradient_;
+    Real *turbu_k_;
+    Real *turbu_omega_;
+    Real *turbu_mu_;
+    Matd *turbu_strain_rate_;
+    Real *turbu_strain_rate_magnitude_;
+    int *is_extra_viscous_dissipation_;
 
     //** for test */
-    StdLargeVec<int> &turbu_indicator_;
-    StdLargeVec<Real> &k_diffusion_;
-    StdLargeVec<Real> &vel_x_;
+    int *turbu_indicator_;
+    Real *k_diffusion_;
+    Real *vel_x_;
 };
 //=================================================================================================//
 /**
@@ -104,22 +104,21 @@ class kOmega_omegaTransportEquationInner : public kOmega_BaseTurbulentModel<Base
     void update(size_t index_i, Real dt = 0.0);
 
   protected:
-    StdLargeVec<Real> &domega_dt_;
-    StdLargeVec<Real> &domega_dt_without_dissipation_;
-    StdLargeVec<Real> &omega_production_;
-    StdLargeVec<Real> &omega_dissipation_;
-    StdLargeVec<Real> &omega_diffusion_;
-    StdLargeVec<Real> &omega_cross_diffusion_;
+    Real *domega_dt_;
+    Real *domega_dt_without_dissipation_;
+    Real *omega_production_;
+    Real *omega_dissipation_;
+    Real *omega_diffusion_;
+    Real *omega_cross_diffusion_;
 
-    StdLargeVec<Real> &turbu_mu_;
-    StdLargeVec<Real> &turbu_k_;
-    StdLargeVec<Real> &turbu_omega_;
-    StdLargeVec<Real> &k_production_;
-    StdLargeVec<int> &is_near_wall_P1_;
+    Real *turbu_mu_;
+    Real *turbu_k_;
+    Real *turbu_omega_;
+    Real *k_production_;
+    int *is_near_wall_P1_;
 };
 //=================================================================================================//
 class kOmegaTurbulentEddyViscosity : public LocalDynamics,
-                                     public DataDelegateSimple,
                                      public kOmega_BaseTurbuClosureCoeff
 {
   public:
@@ -129,13 +128,13 @@ class kOmegaTurbulentEddyViscosity : public LocalDynamics,
     void update(size_t index_i, Real dt = 0.0);
 
   protected:
-    StdLargeVec<Real> &rho_;
-    StdLargeVec<Real> &turbu_mu_;
-    StdLargeVec<Real> &turbu_k_;
-    StdLargeVec<Real> &turbu_omega_;
-    StdLargeVec<Real> &wall_Y_plus_;
-    StdLargeVec<Real> &wall_Y_star_;
-    StdLargeVec<Real> &turbu_strain_rate_traceless_magnitude_;
+    Real *rho_;
+    Real *turbu_mu_;
+    Real *turbu_k_;
+    Real *turbu_omega_;
+    Real *wall_Y_plus_;
+    Real *wall_Y_star_;
+    Real *turbu_strain_rate_traceless_magnitude_;
     Real mu_;
 };
 //=================================================================================================//
@@ -152,29 +151,29 @@ class kOmegaStdWallFuncCorrection : public LocalDynamics,
 
   protected:
     //Real offset_dist_;
-    StdLargeVec<Real> &y_p_;
-    StdLargeVec<Real> &wall_Y_plus_;
-    StdLargeVec<Real> &wall_Y_star_;
-    StdLargeVec<Real> &velo_tan_;
-    StdLargeVec<Vecd> &velo_friction_;
+    Real *y_p_;
+    Real *wall_Y_plus_;
+    Real *wall_Y_star_;
+    Real *velo_tan_;
+    Vecd *velo_friction_;
 
-    StdLargeVec<Vecd> &vel_;
-    StdLargeVec<Real> &rho_;
+    Vecd *vel_;
+    Real *rho_;
     Real molecular_viscosity_;
-    StdLargeVec<Real> &turbu_k_;
-    StdLargeVec<Real> &turbu_omega_;
-    StdLargeVec<Real> &turbu_mu_;
-    StdLargeVec<int> &is_near_wall_P1_;
-    StdLargeVec<int> &is_near_wall_P2_;
-    StdLargeVec<Matd> &velocity_gradient_;
-    StdLargeVec<Real> &k_production_;
-    StdLargeVec<Real> &distance_to_dummy_interface_;
-    StdLargeVec<Real> &distance_to_dummy_interface_up_average_;
-    StdLargeVec<int> &index_nearest;
-    StdLargeVec<Vecd> &e_nearest_tau_;
-    StdLargeVec<Vecd> &e_nearest_normal_;
-    StdVec<StdLargeVec<Real> *> contact_Vol_;
-    StdVec<StdLargeVec<Vecd> *> contact_n_;
+    Real *turbu_k_;
+    Real *turbu_omega_;
+    Real *turbu_mu_;
+    int *is_near_wall_P1_;
+    int *is_near_wall_P2_;
+    Matd *velocity_gradient_;
+    Real *k_production_;
+    Real *distance_to_dummy_interface_;
+    Real *distance_to_dummy_interface_up_average_;
+    int *index_nearest;
+    Vecd *e_nearest_tau_;
+    Vecd *e_nearest_normal_;
+    StdVec<Real *> contact_Vol_;
+    StdVec<Vecd *> contact_n_;
 };
 //=================================================================================================//
 /**
@@ -197,8 +196,8 @@ class kOmegaInflowTurbulentCondition : public BaseFlowBoundaryCondition,
     int type_turbu_inlet_;
     Real relaxation_rate_;
     Real CharacteristicLength_;
-    StdLargeVec<Real> &turbu_k_;
-    StdLargeVec<Real> &turbu_omega_;
+    Real *turbu_k_;
+    Real *turbu_omega_;
     Real TurbulentLength_;
 
     virtual Real getTurbulentInflowK(Vecd &position, Vecd &velocity, Real &turbu_k);
