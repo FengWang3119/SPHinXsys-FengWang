@@ -31,6 +31,7 @@ int type_turbulent_inlet = 1;
 Real relaxation_rate_turbulent_inlet = 0.8;
 //** Tag for AMRD *
 int is_AMRD = 0;
+bool is_constrain_normal_velocity_in_P_region = false;
 //** Weight for correcting the velocity  gradient in the sub near wall region  *
 Real weight_vel_grad_sub_nearwall = 0.1;
 //** Tag for Source Term Linearisation *
@@ -70,11 +71,15 @@ Real DH_C = DH - 2.0 * offset_distance;
 //----------------------------------------------------------------------
 //	The emitter block with offset model.
 //----------------------------------------------------------------------
-Vec2d left_buffer_halfsize = Vec2d(0.5 * BW, 0.5 * DH_C + BW);
-Vec2d left_buffer_translation = Vec2d(-DL_sponge, 0.0) + left_buffer_halfsize + Vecd(0.0, offset_distance - BW);
+// Vec2d left_buffer_halfsize = Vec2d(0.5 * BW, 0.5 * DH_C + BW);
+// Vec2d left_buffer_translation = Vec2d(-DL_sponge, 0.0) + left_buffer_halfsize + Vecd(0.0, offset_distance - BW);
+Vec2d left_buffer_halfsize = Vec2d(2.5 * resolution_ref, 0.5 * DH);
+Vec2d left_buffer_translation = left_buffer_halfsize + Vec2d(-DL_sponge, 0.0);
 
-Vec2d right_buffer_halfsize = Vec2d(0.5 * BW, 0.75 * DH);
-Vec2d right_buffer_translation = Vec2d(DL, DH + 0.25 * DH) - right_buffer_halfsize;
+// Vec2d right_buffer_halfsize = Vec2d(0.5 * BW, 0.75 * DH);
+// Vec2d right_buffer_translation = Vec2d(DL, DH + 0.25 * DH) - right_buffer_halfsize;
+Vec2d right_buffer_halfsize = Vec2d(2.5 * resolution_ref, 0.5 * DH);
+Vec2d right_buffer_translation = Vec2d(DL - 2.5 * resolution_ref, 0.5 * DH);
 //----------------------------------------------------------------------
 // Observation with offset model.
 //----------------------------------------------------------------------
@@ -167,11 +172,10 @@ struct InflowVelocity
           aligned_box_(boundary_condition.getAlignedBox()),
           halfsize_(aligned_box_.HalfSize()) {}
 
-    Vecd operator()(Vecd &position, Vecd &velocity)
+    Vecd operator()(Vecd &position, Vecd &velocity, Real current_time)
     {
         Vecd target_velocity = velocity;
-        Real run_time = GlobalStaticVariables::physical_time_;
-        Real u_ave = run_time < t_ref_ ? 0.5 * u_ref_ * (1.0 - cos(Pi * run_time / t_ref_)) : u_ref_;
+        Real u_ave = current_time < t_ref_ ? 0.5 * u_ref_ * (1.0 - cos(Pi * current_time / t_ref_)) : u_ref_;
         //target_velocity[0] = 1.5 * u_ave * SMAX(0.0, 1.0 - position[1] * position[1] / halfsize_[1] / halfsize_[1]);
         //target_velocity[0] = 1.5 * u_ave * (1.0 - position[1] * position[1] / half_channel_height / half_channel_height);
         target_velocity[0] = u_ave;
@@ -210,7 +214,7 @@ struct InflowVelocity
             }
 
             //** Impose inlet velocity gradually */
-            target_velocity[0] = run_time < t_ref_ ? 0.5 * polynomial_value * (1.0 - cos(Pi * run_time / t_ref_)) : polynomial_value;
+            target_velocity[0] = current_time < t_ref_ ? 0.5 * polynomial_value * (1.0 - cos(Pi * current_time / t_ref_)) : polynomial_value;
             //target_velocity[0] = polynomial_value;
         }
 
@@ -224,31 +228,13 @@ struct InflowVelocity
         return target_velocity;
     }
 };
-//----------------------------------------------------------------------
-//	Define time dependent acceleration in x-direction
-//----------------------------------------------------------------------
-class TimeDependentAcceleration : public Gravity
-{
-    Real t_ref_, u_ref_, du_ave_dt_;
-
-  public:
-    explicit TimeDependentAcceleration(Vecd gravity_vector)
-        : Gravity(gravity_vector), t_ref_(2.0), u_ref_(U_inlet), du_ave_dt_(0) {}
-
-    virtual Vecd InducedAcceleration(const Vecd &position) override
-    {
-        Real run_time_ = GlobalStaticVariables::physical_time_;
-        du_ave_dt_ = 0.5 * u_ref_ * (Pi / t_ref_) * sin(Pi * run_time_ / t_ref_);
-        return run_time_ < t_ref_ ? Vecd(du_ave_dt_, 0.0) : global_acceleration_;
-    }
-};
 
 struct RightOutflowPressure
 {
     template <class BoundaryConditionType>
     RightOutflowPressure(BoundaryConditionType &boundary_condition) {}
 
-    Real operator()(Real &p_)
+    Real operator()(Real p, Real current_time)
     {
         /*constant pressure*/
         Real pressure = Outlet_pressure;
@@ -260,8 +246,8 @@ struct LeftInflowPressure
     template <class BoundaryConditionType>
     LeftInflowPressure(BoundaryConditionType &boundary_condition) {}
 
-    Real operator()(Real &p_)
+    Real operator()(Real p, Real current_time)
     {
-        return p_;
+        return p;
     }
 };
