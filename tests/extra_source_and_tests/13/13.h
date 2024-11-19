@@ -19,7 +19,7 @@ using namespace SPH;
 //	Basic geometry parameters and numerical setup.
 //----------------------------------------------------------------------
 Real DH = 0.0635; /**< Channel height. */
-Real num_fluid_cross_section = 40.0;
+Real num_fluid_cross_section = 20.0;
 Real central_angel = 43.0 * 2.0 * Pi / 360.0;
 Real extend_in = 0.0;
 Real extend_out = 0.0;
@@ -441,7 +441,6 @@ struct InflowVelocity
     Vecd operator()(Vecd &position, Vecd &velocity, Real current_time)
     {
         Vecd target_velocity = velocity;
-        Real current_time = physical_time_;
         Real u_ave = current_time < t_ref_ ? 0.5 * u_ref_ * (1.0 - cos(Pi * current_time / t_ref_)) : u_ref_;
         //target_velocity[0] = 1.5 * u_ave * SMAX(0.0, 1.0 - position[1] * position[1] / halfsize_[1] / halfsize_[1]);
         //target_velocity[0] = 1.5 * u_ave * (1.0 - position[1] * position[1] / half_channel_height / half_channel_height);
@@ -454,24 +453,6 @@ struct InflowVelocity
         }
         target_velocity[1] = 0.0;
         return target_velocity;
-    }
-};
-//----------------------------------------------------------------------
-//	Define time dependent acceleration in x-direction
-//----------------------------------------------------------------------
-class TimeDependentAcceleration : public Gravity
-{
-    Real t_ref_, u_ref_, du_ave_dt_;
-
-  public:
-    explicit TimeDependentAcceleration(Vecd gravity_vector)
-        : Gravity(gravity_vector), t_ref_(2.0), u_ref_(U_inlet), du_ave_dt_(0) {}
-
-    virtual Vecd InducedAcceleration(const Vecd &position) override
-    {
-        Real run_time_ = physical_time_;
-        du_ave_dt_ = 0.5 * u_ref_ * (Pi / t_ref_) * sin(Pi * run_time_ / t_ref_);
-        return run_time_ < t_ref_ ? Vecd(du_ave_dt_, 0.0) : global_acceleration_;
     }
 };
 
