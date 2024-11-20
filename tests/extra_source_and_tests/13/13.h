@@ -19,7 +19,7 @@ using namespace SPH;
 //	Basic geometry parameters and numerical setup.
 //----------------------------------------------------------------------
 Real DH = 0.0635; /**< Channel height. */
-Real num_fluid_cross_section = 20.0;
+Real num_fluid_cross_section = 40.0;
 Real central_angel = 43.0 * 2.0 * Pi / 360.0;
 Real extend_in = 0.0;
 Real extend_out = 0.0;
@@ -59,7 +59,7 @@ bool is_source_term_linearisation = false;
 //** Empirical parameter for initial stability*
 Real turbulent_module_activate_time = 2.5;
 //** Initial values for K, Epsilon and Mu_t *
-StdVec<Real> initial_turbu_values = {0.000180001, 3.326679e-5, 1.0e-9};
+StdVec<Real> initial_turbu_values = {0.000180001, 3.326679e-5, 1.0e-3};
 
 Real y_p_constant = DH / 2.0 / num_fluid_cross_section; //** For the first try *
 //Real y_p_constant = 0.05;
