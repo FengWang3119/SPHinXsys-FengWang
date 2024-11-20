@@ -140,10 +140,10 @@ int main(int ac, char *av[])
     //InteractionWithUpdate<fluid_dynamics::GetVelocityGradientComplex> get_velocity_gradient(water_block_inner, water_wall_contact);
 
     /** Turbulent.Note: Temporarily transfer parameters at this place. The 3rd parameter refers to extra dissipation for viscous */
-    InteractionWithUpdate<fluid_dynamics::K_TurbulentModelInner> k_equation_relaxation(water_block_inner, initial_turbu_values, is_AMRD, is_source_term_linearisation);
-    InteractionWithUpdate<fluid_dynamics::E_TurbulentModelInner> epsilon_equation_relaxation(water_block_inner, is_source_term_linearisation);
+    InteractionWithUpdate<fluid_dynamics::kOmega_kTransportEquationInner> k_equation_relaxation(water_block_inner, initial_turbu_values, is_AMRD);
+    InteractionWithUpdate<fluid_dynamics::kOmega_omegaTransportEquationInner> epsilon_equation_relaxation(water_block_inner);
     InteractionDynamics<fluid_dynamics::TKEnergyForceComplex> turbulent_kinetic_energy_force(water_block_inner, water_wall_contact);
-    InteractionDynamics<fluid_dynamics::StandardWallFunctionCorrection> standard_wall_function_correction(water_block_inner, water_wall_contact, y_p_constant);
+    InteractionDynamics<fluid_dynamics::kOmegaStdWallFuncCorrection> standard_wall_function_correction(water_block_inner, water_wall_contact, y_p_constant);
 
     /** Turbulent.Extra boundary condition */
     SimpleDynamics<fluid_dynamics::ConstrainNormalVelocityInRegionP> constrain_normal_velocity_in_P_region(water_block);
@@ -175,7 +175,7 @@ int main(int ac, char *av[])
     SimpleDynamics<fluid_dynamics::InflowVelocityCondition<InflowVelocity>> inflow_velocity_condition(left_emitter);
 
     /** Turbulent InflowTurbulentCondition.It needs characteristic Length to calculate turbulent length  */
-    SimpleDynamics<fluid_dynamics::InflowTurbulentCondition> impose_turbulent_inflow_condition(left_emitter, characteristic_length, relaxation_rate_turbulent_inlet, type_turbulent_inlet);
+    SimpleDynamics<fluid_dynamics::kOmegaInflowTurbulentCondition> impose_turbulent_inflow_condition(left_emitter, characteristic_length, relaxation_rate_turbulent_inlet, type_turbulent_inlet);
 
     //----------------------------------------------------------------------
     // Right/Outlet buffer
@@ -199,7 +199,7 @@ int main(int ac, char *av[])
     ReduceDynamics<fluid_dynamics::AcousticTimeStep> get_fluid_time_step_size(water_block);
 
     /** Turbulent eddy viscosity calculation needs values of Wall Y start. */
-    SimpleDynamics<fluid_dynamics::TurbulentEddyViscosity> update_eddy_viscosity(water_block);
+    SimpleDynamics<fluid_dynamics::kOmegaTurbulentEddyViscosity> update_eddy_viscosity(water_block);
     //----------------------------------------------------------------------
     //	Define the configuration related particles dynamics.
     //----------------------------------------------------------------------
@@ -216,7 +216,7 @@ int main(int ac, char *av[])
     ObservedQuantityRecording<Vecd> write_recorded_water_velocity("Velocity", fluid_observer_contact);
     ObservedQuantityRecording<Real> write_recorded_water_k("TurbulenceKineticEnergy", fluid_observer_contact);
     ObservedQuantityRecording<Real> write_recorded_water_mut("TurbulentViscosity", fluid_observer_contact);
-    ObservedQuantityRecording<Real> write_recorded_water_epsilon("TurbulentDissipation", fluid_observer_contact);
+    ObservedQuantityRecording<Real> write_recorded_water_omega("TurbulentSpecificDissipation", fluid_observer_contact);
     body_states_recording.addToWrite<int>(water_block, "BufferParticleIndicator");
 
     /**
@@ -372,7 +372,7 @@ int main(int ac, char *av[])
                 write_recorded_water_velocity.writeToFile(number_of_iterations);
                 write_recorded_water_k.writeToFile(number_of_iterations);
                 write_recorded_water_mut.writeToFile(number_of_iterations);
-                write_recorded_water_epsilon.writeToFile(number_of_iterations);
+                write_recorded_water_omega.writeToFile(number_of_iterations);
             }
             //if (physical_time > end_time * 0.5)
             //body_states_recording.writeToFile();
