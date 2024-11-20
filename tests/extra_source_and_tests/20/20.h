@@ -9,6 +9,7 @@
 #include "density_correciton.h"
 #include "density_correciton.hpp"
 #include "k-epsilon_turbulent_model.cpp"
+#include "k-omega_turbulent_model.cpp"
 #include "kernel_summation.h"
 #include "kernel_summation.hpp"
 #include "pressure_boundary.h"
@@ -65,8 +66,8 @@ Real weight_vel_grad_sub_nearwall = 0.10;
 bool is_source_term_linearisation = false;
 //** Empirical parameter for initial stability*
 Real turbulent_module_activate_time = 2.5;
-//** Initial values for K, Epsilon and Mu_t *
-StdVec<Real> initial_turbu_values = {0.000180001, 3.326679e-5, 1.0e-3};
+//** Initial values for K, Omega and Mu_t *
+StdVec<Real> initial_turbu_values = {0.000180001, 2.056, 1.0e-3};
 
 Real y_p_constant = DH / 2.0 / num_fluid_cross_section; //** For the first try *
 //Real y_p_constant = 0.05;
