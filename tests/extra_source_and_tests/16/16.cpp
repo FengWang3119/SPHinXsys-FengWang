@@ -165,11 +165,9 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     // Left/Inlet buffer
     //----------------------------------------------------------------------
-    BodyAlignedBoxByCell left_emitter(water_block, makeShared<AlignedBoxShape>(xAxis, Transform(Vec2d(left_buffer_translation)), left_buffer_halfsize));
-    fluid_dynamics::NonPrescribedPressureBidirectionalBuffer left_emitter_inflow_injection(left_emitter, inlet_particle_buffer);
-
-    BodyAlignedBoxByCell left_disposer(water_block, makeShared<AlignedBoxShape>(xAxis, Transform(Rotation2d(Pi), Vec2d(left_buffer_translation)), left_buffer_halfsize));
-    SimpleDynamics<fluid_dynamics::DisposerOutflowDeletion> left_disposer_outflow_deletion(left_disposer);
+    AlignedBoxShape left_emitter_shape(xAxis, Transform(Vec2d(left_buffer_translation)), left_buffer_halfsize);
+    BodyAlignedBoxByCell left_emitter(water_block, left_emitter_shape);
+    fluid_dynamics::BidirectionalBuffer<LeftInflowPressure> left_bidirection_buffer(left_emitter, inlet_particle_buffer);
 
     //SimpleDynamics<fluid_dynamics::PressureCondition<LeftInflowPressure>> left_inflow_pressure_condition(left_emitter);
     SimpleDynamics<fluid_dynamics::PressureConditionCorrection<LeftInflowPressure>> left_inflow_pressure_condition(left_emitter);
@@ -182,12 +180,9 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     // Right/Outlet buffer
     //----------------------------------------------------------------------
-    //BodyAlignedBoxByCell disposer(water_block, makeShared<AlignedBoxShape>(Transform(Vec2d(disposer_translation)), disposer_halfsize));
-    //SimpleDynamics<fluid_dynamics::DisposerOutflowDeletion> disposer_outflow_deletion(disposer, 0);
-    BodyAlignedBoxByCell right_emitter(water_block, makeShared<AlignedBoxShape>(xAxis, Transform(Rotation2d(outlet_emitter_rotation_angel), Vec2d(right_buffer_translation)), right_buffer_halfsize));
-    fluid_dynamics::BidirectionalBuffer<RightOutflowPressure> right_emitter_inflow_injection(right_emitter, inlet_particle_buffer);
-    BodyAlignedBoxByCell right_disposer(water_block, makeShared<AlignedBoxShape>(xAxis, Transform(Rotation2d(outlet_disposer_rotation_angel), Vec2d(right_buffer_translation)), right_buffer_halfsize));
-    SimpleDynamics<fluid_dynamics::DisposerOutflowDeletion> right_disposer_outflow_deletion(right_disposer);
+    AlignedBoxShape right_emitter_shape(xAxis, Transform(Rotation2d(Pi), Vec2d(right_buffer_translation)), right_buffer_halfsize);
+    BodyAlignedBoxByCell right_emitter(water_block, right_emitter_shape);
+    fluid_dynamics::BidirectionalBuffer<RightOutflowPressure> right_bidirection_buffer(right_emitter, inlet_particle_buffer);
 
     //SimpleDynamics<fluid_dynamics::PressureCondition<RightOutflowPressure>> right_outflow_pressure_condition(right_emitter);
     SimpleDynamics<fluid_dynamics::PressureConditionCorrection<RightOutflowPressure>> right_outflow_pressure_condition(right_emitter);
@@ -205,7 +200,10 @@ int main(int ac, char *av[])
 
     /** Turbulent eddy viscosity calculation needs values of Wall Y start. */
     SimpleDynamics<fluid_dynamics::TurbulentEddyViscosity> update_eddy_viscosity(water_block);
-
+    //----------------------------------------------------------------------
+    //	Define the configuration related particles dynamics.
+    //----------------------------------------------------------------------
+    ParticleSorting particle_sorting(water_block);
     //----------------------------------------------------------------------
     //	File output and regression check.
     //----------------------------------------------------------------------
@@ -232,14 +230,15 @@ int main(int ac, char *av[])
     /** Tag inlet/outlet truncated particles */
     inlet_outlet_surface_particle_indicator.exec();
     /** Tag in/outlet buffer particles */
-    left_emitter_inflow_injection.tag_buffer_particles.exec();
-    right_emitter_inflow_injection.tag_buffer_particles.exec();
+    left_bidirection_buffer.tag_buffer_particles.exec();
+    right_bidirection_buffer.tag_buffer_particles.exec();
 
     /** Output the start states of bodies. */
     body_states_recording.writeToFile();
     //----------------------------------------------------------------------
     //	Setup computing and initial conditions.
     //----------------------------------------------------------------------
+    Real &physical_time = *sph_system.getSystemVariableDataByName<Real>("PhysicalTime");
     size_t number_of_iterations = sph_system.RestartStep();
     Real dt = 0.0; /**< Default acoustic time step sizes. */
     //----------------------------------------------------------------------
@@ -254,7 +253,7 @@ int main(int ac, char *av[])
     //Real start_time_turbulence = 70.0;
     //std::cout << "Press any key to start";
     //std::cin.get();
-    while (physical_time_ < end_time)
+    while (physical_time < end_time)
     {
         Real integration_time = 0.0;
         /** Integrate time (loop) until the next output time. */
@@ -272,7 +271,7 @@ int main(int ac, char *av[])
 
             corrected_configuration_fluid.exec();
             corrected_configuration_fluid_only_inner.exec();
-            if (physical_time_ > turbulent_module_activate_time) //** A temporary treatment *
+            if (physical_time > turbulent_module_activate_time) //** A temporary treatment *
             {
                 update_eddy_viscosity.exec();
             }
@@ -294,7 +293,7 @@ int main(int ac, char *av[])
 
                 dt = SMIN(get_fluid_time_step_size.exec(), Dt);
 
-                if (physical_time_ > turbulent_module_activate_time) //** A temporary treatment *
+                if (physical_time > turbulent_module_activate_time) //** A temporary treatment *
                 {
                     turbulent_kinetic_energy_force.exec();
                 }
@@ -311,7 +310,7 @@ int main(int ac, char *av[])
 
                 inflow_velocity_condition.exec();
 
-                if (physical_time_ > turbulent_module_activate_time) //** A temporary treatment *
+                if (physical_time > turbulent_module_activate_time) //** A temporary treatment *
                 {
                     impose_turbulent_inflow_condition.exec();
                 }
@@ -321,7 +320,7 @@ int main(int ac, char *av[])
                 distance_to_wall.exec();
                 update_near_wall_status.exec();
 
-                if (physical_time_ > turbulent_module_activate_time) //** A temporary treatment *
+                if (physical_time > turbulent_module_activate_time) //** A temporary treatment *
                 {
                     standard_wall_function_correction.exec();
                     get_velocity_gradient.exec(dt);
@@ -330,10 +329,10 @@ int main(int ac, char *av[])
                 }
                 relaxation_time += dt;
                 integration_time += dt;
-                physical_time_ += dt;
+                physical_time += dt;
                 inner_itr++;
                 //std::cout << "num_output_file=" << num_output_file << std::endl;
-                //if (physical_time_ >9.3)
+                //if (physical_time >9.3)
                 //{
                 //body_states_recording.writeToFile();
                 //}
@@ -341,17 +340,17 @@ int main(int ac, char *av[])
             if (number_of_iterations % screen_output_interval == 0)
             {
                 std::cout << std::fixed << std::setprecision(9) << "N=" << number_of_iterations << "	Time = "
-                          << physical_time_
+                          << physical_time
                           << "	Dt = " << Dt << "	dt = " << dt << "\n";
             }
             number_of_iterations++;
 
-            /** inflow injection*/
-            left_emitter_inflow_injection.injection.exec();
-            right_emitter_inflow_injection.injection.exec();
-
-            left_disposer_outflow_deletion.exec();
-            right_disposer_outflow_deletion.exec();
+            // ** First do injection for all buffers *
+            left_bidirection_buffer.injection.exec();
+            right_bidirection_buffer.injection.exec();
+            // ** Then do deletion for all buffers *
+            left_bidirection_buffer.deletion.exec();
+            right_bidirection_buffer.deletion.exec();
 
             /** Update cell linked list and configuration. */
             if (number_of_iterations % 100 == 0 && number_of_iterations != 1)
@@ -365,17 +364,17 @@ int main(int ac, char *av[])
             /** Tag truncated inlet/outlet particles*/
             inlet_outlet_surface_particle_indicator.exec();
             /** Tag in/outlet buffer particles that suffer pressure condition*/
-            left_emitter_inflow_injection.tag_buffer_particles.exec();
-            right_emitter_inflow_injection.tag_buffer_particles.exec();
+            left_bidirection_buffer.tag_buffer_particles.exec();
+            right_bidirection_buffer.tag_buffer_particles.exec();
 
-            if (physical_time_ > cutoff_time)
+            if (physical_time > cutoff_time)
             {
                 write_recorded_water_velocity.writeToFile(number_of_iterations);
                 write_recorded_water_k.writeToFile(number_of_iterations);
                 write_recorded_water_mut.writeToFile(number_of_iterations);
                 write_recorded_water_epsilon.writeToFile(number_of_iterations);
             }
-            //if (physical_time_ > end_time * 0.5)
+            //if (physical_time > end_time * 0.5)
             //body_states_recording.writeToFile();
         }
         //TickCount t2 = TickCount::now();
