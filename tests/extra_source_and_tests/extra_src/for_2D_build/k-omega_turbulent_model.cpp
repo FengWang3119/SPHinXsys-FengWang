@@ -223,7 +223,10 @@ void kOmegaStdWallFuncCorrection::interaction(size_t index_i, Real dt)
                     }
                     else
                     {
-                        G_k_p_j = rho_i * fric_vel_mag_j * fric_vel_mag_j * dudn_p_mag_j;
+                        Real u_star_temp = C_mu_25_ * turbu_k_i_05;
+                        G_k_p_j = (u_star_temp * vel_i_tau_mag / u_star_j) * (u_star_temp * vel_i_tau_mag / u_star_j) / (nu_i * Karman_ * y_star_j);
+
+                        //G_k_p_j = rho_i * fric_vel_mag_j * fric_vel_mag_j * dudn_p_mag_j;
                         omega_p_j = turbu_k_i_05 / (std_kw_beta_star_25_ * Karman_ * y_p_j);
                     }
                     G_k_p_weighted_sum += weight_j * G_k_p_j;
