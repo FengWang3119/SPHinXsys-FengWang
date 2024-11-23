@@ -45,7 +45,7 @@ Real WallFunction::get_dimensionless_velocity(Real y_star, Real time)
     {
         std::cout << "u_star=" << dimensionless_velocity << std::endl;
         std::cout << "y_star=" << y_star << std::endl;
-        std::cin.get();
+        //std::cin.get();
     }
     //if (dimensionless_velocity<0.0)
     //{

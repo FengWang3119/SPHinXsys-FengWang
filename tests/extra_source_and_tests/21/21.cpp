@@ -332,10 +332,8 @@ int main(int ac, char *av[])
                 physical_time += dt;
                 inner_itr++;
                 //std::cout << "num_output_file=" << num_output_file << std::endl;
-                //if (physical_time >9.3)
-                //{
+                //if (physical_time > 0.583780668)
                 //body_states_recording.writeToFile();
-                //}
             }
             if (number_of_iterations % screen_output_interval == 0)
             {
