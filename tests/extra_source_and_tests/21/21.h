@@ -9,7 +9,7 @@
 #include "density_correciton.h"
 #include "density_correciton.hpp"
 #include "k-epsilon_turbulent_model.cpp"
-#include "k-omega_turbulent_model.cpp"
+//#include "k-omega_turbulent_model.cpp"
 #include "kernel_summation.h"
 #include "kernel_summation.hpp"
 #include "pressure_boundary.h"
@@ -20,7 +20,7 @@ using namespace SPH;
 //	Basic geometry parameters and numerical setup.
 //----------------------------------------------------------------------
 Real DH = 2.0; /**< Channel height. */
-Real num_fluid_cross_section = 60.0;
+Real num_fluid_cross_section = 40.0;
 Real extend_in = 2.0;
 Real extend_out = 4.0;
 Real extend_compensate_relaxation = 0.0;
@@ -59,8 +59,8 @@ Real turbulent_module_activate_time = 2.5;
 //** Initial values for K, Omega and Mu_t *
 StdVec<Real> initial_turbu_values = {0.000180001, 2.056, 1.0e-3};
 
-//Real y_p_constant = DH / 2.0 / num_fluid_cross_section; //** For the first try *
-Real y_p_constant = 0.025;
+Real y_p_constant = DH / 2.0 / num_fluid_cross_section; //** For the first try or laminar*
+//Real y_p_constant = 0.025;
 Real resolution_ref_temp = (DH - 2.0 * y_p_constant) / (num_fluid_cross_section - 1.0); /**< Initial reference particle spacing. */
 Real resolution_ref = round(resolution_ref_temp * 1.0e8) / 1.0e8;
 Real offset_distance = y_p_constant - resolution_ref / 2.0; //** Basically offset distance is large than or equal to 0 *
@@ -83,8 +83,8 @@ Real U_f = U_inlet;         //*Characteristic velocity
 Real U_max = 3.0 * U_inlet; //** An estimated value, generally 1.5 U_inlet *
 Real c_f = 10.0 * U_max;
 Real rho0_f = 1.0; /**< Density. */
-Real Re = 40000.0;
-//Real Re = 100.0;
+//Real Re = 40000.0;
+Real Re = 100.0;
 Real mu_f = rho0_f * U_f * DH / Re;
 
 Real Re_calculated = U_f * DH * rho0_f / mu_f;
