@@ -1100,11 +1100,12 @@ ConstrainNormalVelocityInRegionP::
     : LocalDynamics(sph_body),
       vel_(particles_->getVariableDataByName<Vecd>("Velocity")),
       is_near_wall_P1_(particles_->getVariableDataByName<int>("IsNearWallP1")),
-      e_nearest_normal_(particles_->getVariableDataByName<Vecd>("WallNearestNormalUnitVector")) {}
+      e_nearest_normal_(particles_->getVariableDataByName<Vecd>("WallNearestNormalUnitVector")),
+      wall_Y_star_(particles_->getVariableDataByName<Real>("WallYstar")) {}
 //=================================================================================================//
 void ConstrainNormalVelocityInRegionP::update(size_t index_i, Real dt)
 {
-    if (is_near_wall_P1_[index_i] == 1)
+    if (is_near_wall_P1_[index_i] == 1 && wall_Y_star_[index_i] >= y_star_threshold_laminar_)
     {
         vel_[index_i] = vel_[index_i] - (vel_[index_i].dot(e_nearest_normal_[index_i])) * e_nearest_normal_[index_i];
     }

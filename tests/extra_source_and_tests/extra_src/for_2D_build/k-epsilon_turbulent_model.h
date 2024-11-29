@@ -466,7 +466,7 @@ class StandardWallFunctionCorrection : public LocalDynamics, public DataDelegate
     Real *physical_time_;
 };
 //=================================================================================================//
-class ConstrainNormalVelocityInRegionP : public LocalDynamics
+class ConstrainNormalVelocityInRegionP : public LocalDynamics, public BaseTurbuClosureCoeff
 {
   public:
     explicit ConstrainNormalVelocityInRegionP(SPHBody &sph_body);
@@ -478,6 +478,7 @@ class ConstrainNormalVelocityInRegionP : public LocalDynamics
     Vecd *vel_;
     int *is_near_wall_P1_;
     Vecd *e_nearest_normal_;
+    Real *wall_Y_star_;
 };
 //=================================================================================================//
 template <typename... InteractionTypes>
