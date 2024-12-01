@@ -75,6 +75,12 @@ Real WallFunction::laminar_law_wall_function(Real y_star)
     return u_star;
 }
 //=================================================================================================//
+Real WallFunction::Spalding_wall_function(Real y_star)
+{
+    Real u_star = y_star;
+    return u_star;
+}
+//=================================================================================================//
 Real WallFunction::log_law_velocity_gradient(Real vel_fric_mag, Real denominator_log_law)
 {
     return vel_fric_mag * vel_fric_mag / denominator_log_law;

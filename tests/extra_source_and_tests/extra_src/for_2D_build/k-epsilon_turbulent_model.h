@@ -76,6 +76,7 @@ class WallFunction : public BaseTurbuClosureCoeff
     Real laminar_law_wall_function(Real y_star);
     Real log_law_velocity_gradient(Real vel_fric_mag, Real denominator_log_law);
     Real laminar_law_velocity_gradient(Real vel_fric_mag, Real dynamic_viscosity);
+    Real Spalding_wall_function(Real y_star);
 };
 //=================================================================================================//
 template <typename... InteractionTypes>
