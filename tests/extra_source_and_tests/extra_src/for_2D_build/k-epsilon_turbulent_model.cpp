@@ -77,7 +77,23 @@ Real WallFunction::laminar_law_wall_function(Real y_star)
 //=================================================================================================//
 Real WallFunction::Spalding_wall_function(Real y_star)
 {
-    Real u_star = y_star;
+    //** Use Newton method */
+    Real u_star = y_star; //** initial guess */
+    int max_iter = 100;
+    Real tolerance = 1.0e-6;
+    Real inv_turbu_E = 1.0 / turbu_const_E_;
+    for (int iter = 0; iter < max_iter; ++iter)
+    {
+        Real Karman_u_star = Karman_ * u_star;
+        Real f = u_star + inv_turbu_E * (std::exp(Karman_u_star) - 1.0 - Karman_u_star - 0.5 * pow(Karman_u_star, 2) - 1.0 / 6.0 * pow(Karman_u_star, 3)) - y_star;
+        Real df = 1.0 + inv_turbu_E * (Karman_ * std::exp(Karman_u_star) - Karman_ - Karman_ * Karman_u_star - 0.5 * Karman_ * pow(Karman_u_star, 2));
+        //** update */
+        u_star -= f / df;
+        //** judge */
+        Real residue = std::abs(f / df);
+        if (residue <= tolerance)
+            break;
+    }
     return u_star;
 }
 //=================================================================================================//
