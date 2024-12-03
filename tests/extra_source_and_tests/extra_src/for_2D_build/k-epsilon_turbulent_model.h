@@ -46,6 +46,7 @@ class BaseTurbuClosureCoeff
   protected:
     Real Karman_;
     Real turbu_const_E_;
+    Real inv_turbu_E_;
     Real C_mu_, C_mu_25_, C_mu_75_;
     Real turbulent_intensity_;
 
@@ -76,7 +77,7 @@ class WallFunction : public BaseTurbuClosureCoeff
     Real laminar_law_wall_function(Real y_star);
     Real log_law_velocity_gradient(Real vel_fric_mag, Real denominator_log_law);
     Real laminar_law_velocity_gradient(Real vel_fric_mag, Real dynamic_viscosity);
-    Real Spalding_wall_function(Real y_star);
+    Real Spalding_wall_function(Real y_star, Real u_star_guess);
 };
 //=================================================================================================//
 template <typename... InteractionTypes>

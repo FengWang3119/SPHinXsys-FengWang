@@ -12,6 +12,7 @@ BaseTurbuClosureCoeff::BaseTurbuClosureCoeff()
       sigma_k_(1.0), C_l_(1.44), C_2_(1.92), sigma_E_(1.3), turbulent_length_ratio_for_epsilon_inlet_(0.07),
       start_time_laminar_(0.0), y_star_threshold_laminar_(11.225)
 {
+    inv_turbu_E_ = 1.0 / turbu_const_E_;
     C_mu_25_ = pow(C_mu_, 0.25);
     C_mu_75_ = pow(C_mu_, 0.75);
 }
@@ -75,24 +76,28 @@ Real WallFunction::laminar_law_wall_function(Real y_star)
     return u_star;
 }
 //=================================================================================================//
-Real WallFunction::Spalding_wall_function(Real y_star)
+Real WallFunction::Spalding_wall_function(Real y_star, Real u_star_guess)
 {
     //** Use Newton method */
-    Real u_star = y_star; //** initial guess */
-    int max_iter = 100;
-    Real tolerance = 1.0e-6;
-    Real inv_turbu_E = 1.0 / turbu_const_E_;
+    Real u_star = u_star_guess; //** initial guess */
+    int max_iter = 10;
+    Real tolerance = 0.01;
     for (int iter = 0; iter < max_iter; ++iter)
     {
         Real Karman_u_star = Karman_ * u_star;
-        Real f = u_star + inv_turbu_E * (std::exp(Karman_u_star) - 1.0 - Karman_u_star - 0.5 * pow(Karman_u_star, 2) - 1.0 / 6.0 * pow(Karman_u_star, 3)) - y_star;
-        Real df = 1.0 + inv_turbu_E * (Karman_ * std::exp(Karman_u_star) - Karman_ - Karman_ * Karman_u_star - 0.5 * Karman_ * pow(Karman_u_star, 2));
+        Real f = u_star + inv_turbu_E_ * (std::exp(Karman_u_star) - 1.0 - Karman_u_star - 0.5 * pow(Karman_u_star, 2) - 1.0 / 6.0 * pow(Karman_u_star, 3)) - y_star;
+        Real df = 1.0 + inv_turbu_E_ * (Karman_ * std::exp(Karman_u_star) - Karman_ - Karman_ * Karman_u_star - 0.5 * Karman_ * pow(Karman_u_star, 2));
         //** update */
         u_star -= f / df;
         //** judge */
         Real residue = std::abs(f / df);
         if (residue <= tolerance)
             break;
+    }
+    if (u_star > 100.0)
+    {
+        std::cout << "u+ is larger than 100, please check." << std::endl;
+        std::cin.get();
     }
     return u_star;
 }
