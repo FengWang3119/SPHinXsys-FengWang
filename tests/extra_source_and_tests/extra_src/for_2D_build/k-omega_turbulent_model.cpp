@@ -13,6 +13,7 @@ kOmega_BaseTurbuClosureCoeff::kOmega_BaseTurbuClosureCoeff()
 {
     std_kw_beta_ = std_kw_beta_0_ * std_kw_f_beta_;
     std_kw_beta_star_25_ = pow(std_kw_beta_star_, 0.25);
+    std_kw_beta_star_5_ = pow(std_kw_beta_star_, 0.5);
 }
 //=================================================================================================//
 kOmegaTurbulentEddyViscosity::
@@ -104,8 +105,8 @@ void kOmegaStdWallFuncCorrection::interaction(size_t index_i, Real dt)
     if (is_near_wall_P2_[index_i] == 10)
     {
         Real y_p_constant_i = y_p_[index_i];
-
-        Real turbu_k_i_05 = pow(turbu_k_[index_i], 0.5);
+        Real turbu_k_i = turbu_k_[index_i];
+        Real turbu_k_i_05 = pow(turbu_k_i, 0.5);
         //Real turbu_k_i_15 = pow(turbu_k_[index_i], 1.5);
 
         //** Choose one kind of the distance to calculate the wall-nearest values *
@@ -216,18 +217,42 @@ void kOmegaStdWallFuncCorrection::interaction(size_t index_i, Real dt)
                     dudn_p_j = dudn_p_mag_j * boost::qvm::sign(vel_i.dot(e_j_tau));
                     dudn_p_weighted_sum += weight_j * dudn_p_j;
 
-                    if (y_star_j < y_star_threshold_laminar_ && current_time > start_time_laminar_)
+                    bool blended = false;
+                    if (blended)
                     {
-                        G_k_p_j = 0.0;
-                        omega_p_j = 6.0 * nu_i / (std_kw_beta_i_ * y_p_j * y_p_j);
+                        Real local_Re = y_p_j * turbu_k_i_05 / nu_i;
+                        Real lam_frac = std::exp(-1.0 * local_Re / 11.0);
+                        Real turbu_frac = 1.0 - lam_frac;
+                        //** This is to be consistent with openfoam v12, I don't know why need to introduce u_tau_temp  */
+                        Real u_tau_temp_square_laminar = nu_i * vel_i_tau_mag / y_p_j;
+                        Real u_tau_temp_square_turbulent = std_kw_beta_star_5_ * turbu_k_i;
+                        Real u_tau_temp = sqrt(lam_frac * u_tau_temp_square_laminar + turbu_frac * u_tau_temp_square_turbulent);
+
+                        Real omega_p_j_lam = 6.0 * nu_i / (std_kw_beta_i_ * y_p_j * y_p_j);
+
+                        Real omega_p_j_turbu = u_tau_temp / (std_kw_beta_star_5_ * Karman_ * y_p_j);
+                        Real G_k_p_j_turbu = (u_tau_temp * vel_i_tau_mag / u_star_j) * (u_tau_temp * vel_i_tau_mag / u_star_j) / (nu_i * Karman_ * y_star_j);
+
+                        omega_p_j = lam_frac * omega_p_j_lam + turbu_frac * omega_p_j_turbu;
+                        G_k_p_j = turbu_frac * G_k_p_j_turbu;
                     }
                     else
                     {
-                        Real u_star_temp = C_mu_25_ * turbu_k_i_05;
-                        G_k_p_j = (u_star_temp * vel_i_tau_mag / u_star_j) * (u_star_temp * vel_i_tau_mag / u_star_j) / (nu_i * Karman_ * y_star_j);
+                        if (y_star_j < y_star_threshold_laminar_ && current_time > start_time_laminar_)
+                        {
+                            G_k_p_j = 0.0;
+                            omega_p_j = 6.0 * nu_i / (std_kw_beta_i_ * y_p_j * y_p_j);
+                        }
+                        else
+                        {
+                            //** This is to be consistent with openfoam v12, I don't know why need to so complicated  */
+                            Real u_tau_temp = C_mu_25_ * turbu_k_i_05;
+                            G_k_p_j = (u_tau_temp * vel_i_tau_mag / u_star_j) * (u_tau_temp * vel_i_tau_mag / u_star_j) / (nu_i * Karman_ * y_star_j);
+                            omega_p_j = u_tau_temp / (std_kw_beta_star_5_ * Karman_ * y_p_j);
 
-                        //G_k_p_j = rho_i * fric_vel_mag_j * fric_vel_mag_j * dudn_p_mag_j;
-                        omega_p_j = turbu_k_i_05 / (std_kw_beta_star_25_ * Karman_ * y_p_j);
+                            //G_k_p_j = rho_i * fric_vel_mag_j * fric_vel_mag_j * dudn_p_mag_j;
+                            //omega_p_j = turbu_k_i_05 / (std_kw_beta_star_25_ * Karman_ * y_p_j);
+                        }
                     }
                     G_k_p_weighted_sum += weight_j * G_k_p_j;
                     omega_p_weighted_sum += weight_j * omega_p_j;

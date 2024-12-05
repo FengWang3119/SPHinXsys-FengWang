@@ -16,7 +16,7 @@ class kOmega_BaseTurbuClosureCoeff
 
   protected:
     //** Closure coefficients for Omega *
-    Real std_kw_beta_star_;
+    Real std_kw_beta_star_; //** This is Cmu in OpenFoam v12 */
     Real std_kw_sigma_star_;
     Real std_kw_alpha_;
     Real std_kw_sigma_;
@@ -28,6 +28,7 @@ class kOmega_BaseTurbuClosureCoeff
     Real std_kw_C_lim_;
     Real std_kw_beta_i_;
     Real std_kw_beta_star_25_;
+    Real std_kw_beta_star_5_;
 };
 //=================================================================================================//
 template <typename... T>
