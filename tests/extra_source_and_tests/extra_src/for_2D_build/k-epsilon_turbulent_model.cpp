@@ -31,16 +31,25 @@ Real WallFunction::get_distance_from_P_to_wall(Real y_p_constant)
     return y_p_constant;
 }
 //=================================================================================================//
-Real WallFunction::get_dimensionless_velocity(Real y_star, Real time)
+Real WallFunction::get_dimensionless_velocity(Real y_star, Real time, Real u_star_previous)
 {
     Real dimensionless_velocity = 0.0;
-    if (y_star < y_star_threshold_laminar_ && time > start_time_laminar_)
+    bool blended = false;
+    if (blended)
     {
-        dimensionless_velocity = laminar_law_wall_function(y_star);
+        dimensionless_velocity = Spalding_wall_function(y_star, u_star_previous);
     }
     else
     {
-        dimensionless_velocity = log_law_wall_function(y_star);
+
+        if (y_star < y_star_threshold_laminar_ && time > start_time_laminar_)
+        {
+            dimensionless_velocity = laminar_law_wall_function(y_star);
+        }
+        else
+        {
+            dimensionless_velocity = log_law_wall_function(y_star);
+        }
     }
     if (std::isnan(dimensionless_velocity) || std::isinf(dimensionless_velocity))
     {
@@ -78,6 +87,11 @@ Real WallFunction::laminar_law_wall_function(Real y_star)
 //=================================================================================================//
 Real WallFunction::Spalding_wall_function(Real y_star, Real u_star_guess)
 {
+    if (u_star_guess > 100.0 || u_star_guess <= TinyReal)
+    {
+        std::cout << "u_star_guess > 100.0 || u_star_guess <= TinyReal, please check." << std::endl;
+        std::cin.get();
+    }
     //** Use Newton method */
     Real u_star = u_star_guess; //** initial guess */
     int max_iter = 10;
@@ -524,6 +538,7 @@ void TurbuViscousForce<Contact<Wall>>::interaction(size_t index_i, Real dt)
     if (this->is_near_wall_P2_[index_i] != 10)
         return;
 
+    Real vel_fric_mag_previous = velo_friction_[index_i].norm();
     Real current_time = *physical_time_;
     Real turbu_k_i = this->turbu_k_[index_i];
     Real turbu_k_i_05 = pow(turbu_k_i, 0.5);
@@ -557,9 +572,11 @@ void TurbuViscousForce<Contact<Wall>>::interaction(size_t index_i, Real dt)
             //** Calculate the local friction velocity *
             Real vel_i_tau_mag = abs(vel_i.dot(e_j_tau));
 
+            Real u_star_previous = vel_i_tau_mag / vel_fric_mag_previous;
+
             Real y_p_j = get_distance_from_P_to_wall(y_p_constant_i);
             Real y_star_j = rho_i * C_mu_25_ * turbu_k_i_05 * y_p_j / molecular_viscosity_;
-            Real u_star_j = get_dimensionless_velocity(y_star_j, current_time);
+            Real u_star_j = get_dimensionless_velocity(y_star_j, current_time, u_star_previous);
             Real fric_vel_mag_j = sqrt(C_mu_25_ * turbu_k_i_05 * vel_i_tau_mag / u_star_j);
 
             //** Construct local wall shear stress, if this is on each wall particle j   *

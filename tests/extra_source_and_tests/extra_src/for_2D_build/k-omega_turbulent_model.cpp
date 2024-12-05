@@ -94,6 +94,7 @@ kOmegaStdWallFuncCorrection::
 void kOmegaStdWallFuncCorrection::interaction(size_t index_i, Real dt)
 {
     velo_tan_[index_i] = 0.0;
+    Real vel_fric_mag_previous = velo_friction_[index_i].norm();
     velo_friction_[index_i] = Vecd::Zero();
     wall_Y_plus_[index_i] = 0.0;
     wall_Y_star_[index_i] = 0.0;
@@ -129,6 +130,7 @@ void kOmegaStdWallFuncCorrection::interaction(size_t index_i, Real dt)
 
         velo_tan_mag = abs(e_i_nearest_tau.dot(vel_i));
         velo_tan_[index_i] = velo_tan_mag;
+        Real u_star_previous = velo_tan_mag / vel_fric_mag_previous;
 
         if (wall_Y_star_[index_i] != static_cast<Real>(wall_Y_star_[index_i]))
         {
@@ -136,7 +138,7 @@ void kOmegaStdWallFuncCorrection::interaction(size_t index_i, Real dt)
             std::cin.get();
         }
 
-        Real u_star = get_dimensionless_velocity(wall_Y_star_[index_i], current_time);
+        Real u_star = get_dimensionless_velocity(wall_Y_star_[index_i], current_time, u_star_previous);
         velo_fric_mag = sqrt(C_mu_25_ * turbu_k_i_05 * velo_tan_mag / u_star);
 
         if (velo_fric_mag != static_cast<Real>(velo_fric_mag))
@@ -210,7 +212,7 @@ void kOmegaStdWallFuncCorrection::interaction(size_t index_i, Real dt)
 
                     Real vel_i_tau_mag = abs(vel_i.dot(e_j_tau));
                     Real y_star_j = C_mu_25_ * turbu_k_i_05 * y_p_j / nu_i;
-                    Real u_star_j = get_dimensionless_velocity(y_star_j, current_time);
+                    Real u_star_j = get_dimensionless_velocity(y_star_j, current_time, u_star_previous);
                     Real fric_vel_mag_j = sqrt(C_mu_25_ * turbu_k_i_05 * vel_i_tau_mag / u_star_j);
 
                     Real dudn_p_mag_j = get_near_wall_velocity_gradient_magnitude(y_star_j, fric_vel_mag_j, denominator_log_law_j, nu_i);
