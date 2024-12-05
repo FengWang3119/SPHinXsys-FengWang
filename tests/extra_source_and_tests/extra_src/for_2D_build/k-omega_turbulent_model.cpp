@@ -130,7 +130,17 @@ void kOmegaStdWallFuncCorrection::interaction(size_t index_i, Real dt)
 
         velo_tan_mag = abs(e_i_nearest_tau.dot(vel_i));
         velo_tan_[index_i] = velo_tan_mag;
+
         Real u_star_previous = velo_tan_mag / vel_fric_mag_previous;
+        if ((u_star_previous > 100.0 || u_star_previous <= TinyReal) && current_time > start_time_laminar_)
+        {
+            // std::cout << "u_star_previous > 100.0 || u_star_previous <= TinyReal, please check." << std::endl;
+            // std::cout << "u_star_previous=" << u_star_previous << std::endl;
+            // std::cout << "velo_tan_mag=" << velo_tan_mag << std::endl;
+            // std::cout << "vel_fric_mag_previous=" << vel_fric_mag_previous << std::endl;
+            u_star_previous = wall_Y_star_[index_i] + 10.0 * TinyReal; //** If too small initially, use y_star as initial guess */
+            //std::cin.get();
+        }
 
         if (wall_Y_star_[index_i] != static_cast<Real>(wall_Y_star_[index_i]))
         {
@@ -219,7 +229,7 @@ void kOmegaStdWallFuncCorrection::interaction(size_t index_i, Real dt)
                     dudn_p_j = dudn_p_mag_j * boost::qvm::sign(vel_i.dot(e_j_tau));
                     dudn_p_weighted_sum += weight_j * dudn_p_j;
 
-                    bool blended = false;
+                    bool blended = true;
                     if (blended)
                     {
                         Real local_Re = y_p_j * turbu_k_i_05 / nu_i;

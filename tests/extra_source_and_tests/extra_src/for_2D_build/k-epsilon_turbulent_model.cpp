@@ -10,7 +10,7 @@ using TurbuIntegration2ndHalfWithWallDissipativeRiemann = ComplexInteraction<Int
 BaseTurbuClosureCoeff::BaseTurbuClosureCoeff()
     : Karman_(0.41), turbu_const_E_(9.8), C_mu_(0.09), turbulent_intensity_(5.0e-2),
       sigma_k_(1.0), C_l_(1.44), C_2_(1.92), sigma_E_(1.3), turbulent_length_ratio_for_epsilon_inlet_(0.07),
-      start_time_laminar_(0.0), y_star_threshold_laminar_(11.225)
+      start_time_laminar_(2.0), y_star_threshold_laminar_(11.225)
 {
     inv_turbu_E_ = 1.0 / turbu_const_E_;
     C_mu_25_ = pow(C_mu_, 0.25);
@@ -34,8 +34,8 @@ Real WallFunction::get_distance_from_P_to_wall(Real y_p_constant)
 Real WallFunction::get_dimensionless_velocity(Real y_star, Real time, Real u_star_previous)
 {
     Real dimensionless_velocity = 0.0;
-    bool blended = false;
-    if (blended)
+    bool blended = true;
+    if (blended && time > start_time_laminar_)
     {
         dimensionless_velocity = Spalding_wall_function(y_star, u_star_previous);
     }
@@ -90,6 +90,7 @@ Real WallFunction::Spalding_wall_function(Real y_star, Real u_star_guess)
     if (u_star_guess > 100.0 || u_star_guess <= TinyReal)
     {
         std::cout << "u_star_guess > 100.0 || u_star_guess <= TinyReal, please check." << std::endl;
+        std::cout << "u_star_guess=" << u_star_guess << std::endl;
         std::cin.get();
     }
     //** Use Newton method */
@@ -573,6 +574,15 @@ void TurbuViscousForce<Contact<Wall>>::interaction(size_t index_i, Real dt)
             Real vel_i_tau_mag = abs(vel_i.dot(e_j_tau));
 
             Real u_star_previous = vel_i_tau_mag / vel_fric_mag_previous;
+            if ((u_star_previous > 100.0 || u_star_previous <= TinyReal) && current_time > start_time_laminar_)
+            {
+                // std::cout << "u_star_previous > 100.0 || u_star_previous <= TinyReal, please check." << std::endl;
+                // std::cout << "u_star_previous=" << u_star_previous << std::endl;
+                // std::cout << "vel_i_tau_mag=" << vel_i_tau_mag << std::endl;
+                // std::cout << "vel_fric_mag_previous=" << vel_fric_mag_previous << std::endl;
+                u_star_previous = wall_Y_star_[index_i] + 10.0 * TinyReal; //** If too small initially, use y_star as initial guess */
+                //std::cin.get();
+            }
 
             Real y_p_j = get_distance_from_P_to_wall(y_p_constant_i);
             Real y_star_j = rho_i * C_mu_25_ * turbu_k_i_05 * y_p_j / molecular_viscosity_;
