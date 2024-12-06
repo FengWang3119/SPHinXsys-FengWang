@@ -91,7 +91,7 @@ Real WallFunction::Spalding_wall_function(Real y_star, Real u_star_guess)
     {
         std::cout << "u_star_guess > 100.0 || u_star_guess <= TinyReal, please check." << std::endl;
         std::cout << "u_star_guess=" << u_star_guess << std::endl;
-        std::cin.get();
+        //std::cin.get();
     }
     //** Use Newton method */
     Real u_star = u_star_guess; //** initial guess */
@@ -112,7 +112,8 @@ Real WallFunction::Spalding_wall_function(Real y_star, Real u_star_guess)
     if (u_star > 100.0)
     {
         std::cout << "u+ is larger than 100, please check." << std::endl;
-        std::cin.get();
+        std::cout << "u_star=" << u_star << std::endl;
+        //std::cin.get();
     }
     return u_star;
 }
