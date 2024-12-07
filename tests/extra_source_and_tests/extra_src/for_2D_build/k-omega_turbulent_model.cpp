@@ -229,7 +229,7 @@ void kOmegaStdWallFuncCorrection::interaction(size_t index_i, Real dt)
                     dudn_p_j = dudn_p_mag_j * boost::qvm::sign(vel_i.dot(e_j_tau));
                     dudn_p_weighted_sum += weight_j * dudn_p_j;
 
-                    bool blended = true;
+                    bool blended = false;
                     if (blended)
                     {
                         Real local_Re = y_p_j * turbu_k_i_05 / nu_i;

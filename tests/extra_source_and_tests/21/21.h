@@ -20,7 +20,7 @@ using namespace SPH;
 //	Basic geometry parameters and numerical setup.
 //----------------------------------------------------------------------
 Real DH = 2.0; /**< Channel height. */
-Real num_fluid_cross_section = 80.0;
+Real num_fluid_cross_section = 40.0;
 Real extend_in = 2.0;
 Real extend_out = 4.0;
 Real extend_compensate_relaxation = 0.0;
@@ -81,7 +81,7 @@ Real U_inlet = 1.0;
 Real Outlet_pressure = 0.0;
 Real U_f = U_inlet;         //*Characteristic velocity
 Real U_max = 3.0 * U_inlet; //** An estimated value, generally 1.5 U_inlet *
-Real c_f = 10.0 * U_max;
+Real c_f = 10.0 * U_max * 1.2;
 Real rho0_f = 1.0; /**< Density. */
 Real Re = 40000.0;
 //Real Re = 100.0;

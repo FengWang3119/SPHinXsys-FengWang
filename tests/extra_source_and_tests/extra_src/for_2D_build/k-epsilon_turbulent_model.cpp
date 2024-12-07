@@ -34,7 +34,7 @@ Real WallFunction::get_distance_from_P_to_wall(Real y_p_constant)
 Real WallFunction::get_dimensionless_velocity(Real y_star, Real time, Real u_star_previous)
 {
     Real dimensionless_velocity = 0.0;
-    bool blended = true;
+    bool blended = false;
     if (blended && time > start_time_laminar_)
     {
         dimensionless_velocity = Spalding_wall_function(y_star, u_star_previous);
@@ -99,7 +99,7 @@ Real WallFunction::Spalding_wall_function(Real y_star, Real u_star_guess)
     Real tolerance = 0.01;
     for (int iter = 0; iter < max_iter; ++iter)
     {
-        Real Karman_u_star = Karman_ * u_star;
+        Real Karman_u_star = SMIN(Karman_ * u_star, 50.0);
         Real f = u_star + inv_turbu_E_ * (std::exp(Karman_u_star) - 1.0 - Karman_u_star - 0.5 * pow(Karman_u_star, 2) - 1.0 / 6.0 * pow(Karman_u_star, 3)) - y_star;
         Real df = 1.0 + inv_turbu_E_ * (Karman_ * std::exp(Karman_u_star) - Karman_ - Karman_ * Karman_u_star - 0.5 * Karman_ * pow(Karman_u_star, 2));
         //** update */
