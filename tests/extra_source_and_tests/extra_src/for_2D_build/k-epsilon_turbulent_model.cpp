@@ -466,7 +466,7 @@ void TurbuViscousForce<Inner<>>::interaction(size_t index_i, Real dt)
 
         Real u_jump = (vel_[index_i] - vel_[index_j]).dot(e_ij);
 
-        Real dissipation = rho_[index_i] * smoothing_length_ * SMIN(3.0 * SMAX(u_jump, Real(0)), 0.5 * c0_);
+        Real dissipation = rho_[index_i] * smoothing_length_ * SMIN(3.0 * SMAX(u_jump, Real(0)), c0_);
         Real dissipation_judge = dissipation;
 
         //** Introduce dissipation *
