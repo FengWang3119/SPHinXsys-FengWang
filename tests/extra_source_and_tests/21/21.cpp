@@ -278,6 +278,17 @@ int main(int ac, char *av[])
             //viscous_force.exec();
             turbulent_viscous_force.exec();
 
+            distance_to_wall.exec();
+            update_near_wall_status.exec();
+
+            if (physical_time > turbulent_module_activate_time) //** A temporary treatment *
+            {
+                standard_wall_function_correction.exec();
+                get_velocity_gradient.exec(dt);
+                k_equation_relaxation.exec(dt);
+                epsilon_equation_relaxation.exec(dt);
+            }
+
             transport_velocity_correction.exec();
             get_limiter_of_transport_velocity_correction.exec();
 
@@ -317,16 +328,6 @@ int main(int ac, char *av[])
 
                 density_relaxation.exec(dt);
 
-                distance_to_wall.exec();
-                update_near_wall_status.exec();
-
-                if (physical_time > turbulent_module_activate_time) //** A temporary treatment *
-                {
-                    standard_wall_function_correction.exec();
-                    get_velocity_gradient.exec(dt);
-                    k_equation_relaxation.exec(dt);
-                    epsilon_equation_relaxation.exec(dt);
-                }
                 relaxation_time += dt;
                 integration_time += dt;
                 physical_time += dt;
