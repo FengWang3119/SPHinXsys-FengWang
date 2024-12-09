@@ -46,6 +46,8 @@ Real characteristic_length = DH; /**<It needs characteristic Length to calculate
 //** For K and Epsilon, type of the turbulent inlet, 0 is freestream, 1 is from interpolation from PY21 *
 int type_turbulent_inlet = 0;
 Real relaxation_rate_turbulent_inlet = 0.8;
+//** Tag for wall treatment *
+int is_blended = 0;
 //** Tag for AMRD *
 int is_AMRD = 1;
 bool is_constrain_normal_velocity_in_P_region = true;

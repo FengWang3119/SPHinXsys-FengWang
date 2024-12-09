@@ -62,7 +62,7 @@ class kOmega_BaseTurbulentModel<Base, DataDelegationType>
 class kOmega_kTransportEquationInner : public kOmega_BaseTurbulentModel<Base, DataDelegateInner>
 {
   public:
-    explicit kOmega_kTransportEquationInner(BaseInnerRelation &inner_relation, const StdVec<Real> &initial_values, int is_extr_visc_dissipa = 0);
+    explicit kOmega_kTransportEquationInner(BaseInnerRelation &inner_relation, const StdVec<Real> &initial_values, int is_extr_visc_dissipa, int is_blended = 0);
     virtual ~kOmega_kTransportEquationInner(){};
 
     inline void interaction(size_t index_i, Real dt = 0.0);
@@ -81,7 +81,7 @@ class kOmega_kTransportEquationInner : public kOmega_BaseTurbulentModel<Base, Da
     Matd *turbu_strain_rate_;
     Real *turbu_strain_rate_magnitude_;
     int *is_extra_viscous_dissipation_;
-
+    int *is_blended_;
     //** for test */
     int *turbu_indicator_;
     Real *k_diffusion_;
@@ -173,6 +173,7 @@ class kOmegaStdWallFuncCorrection : public LocalDynamics,
     StdVec<Real *> contact_Vol_;
     StdVec<Vecd *> contact_n_;
     Real *physical_time_;
+    int *is_blended_;
 };
 //=================================================================================================//
 /**

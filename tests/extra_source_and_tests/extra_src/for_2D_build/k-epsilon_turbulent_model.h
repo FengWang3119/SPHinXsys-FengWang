@@ -69,7 +69,7 @@ class WallFunction : public BaseTurbuClosureCoeff
     explicit WallFunction(){};
     virtual ~WallFunction(){};
 
-    Real get_dimensionless_velocity(Real y_star, Real time, Real u_star_previous = 0.0);
+    Real get_dimensionless_velocity(Real y_star, Real time, Real u_star_previous = 0.0, int is_blended = 0);
     Real get_near_wall_velocity_gradient_magnitude(Real y_star, Real vel_fric_mag, Real denominator_log_law, Real dynamic_viscosity);
     Real get_distance_from_P_to_wall(Real y_p_constant);
 
@@ -337,6 +337,7 @@ class TurbuViscousForce<Contact<Wall>> : public BaseTurbuViscousForceWithWall, p
     Real wall_particle_spacing_;
     Matd *B_;
     Real *physical_time_;
+    int *is_blended_;
 };
 
 //** Interface part *

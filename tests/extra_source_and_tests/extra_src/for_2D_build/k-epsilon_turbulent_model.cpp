@@ -31,11 +31,10 @@ Real WallFunction::get_distance_from_P_to_wall(Real y_p_constant)
     return y_p_constant;
 }
 //=================================================================================================//
-Real WallFunction::get_dimensionless_velocity(Real y_star, Real time, Real u_star_previous)
+Real WallFunction::get_dimensionless_velocity(Real y_star, Real time, Real u_star_previous, int is_blended)
 {
     Real dimensionless_velocity = 0.0;
-    bool blended = false;
-    if (blended && time > start_time_laminar_)
+    if (is_blended && time > start_time_laminar_)
     {
         dimensionless_velocity = Spalding_wall_function(y_star, u_star_previous);
     }
@@ -532,7 +531,8 @@ TurbuViscousForce<Contact<Wall>>::TurbuViscousForce(BaseContactRelation &wall_co
     : BaseTurbuViscousForceWithWall(wall_contact_relation),
       wall_particle_spacing_(wall_contact_relation.getSPHBody().sph_adaptation_->ReferenceSpacing()),
       B_(particles_->getVariableDataByName<Matd>("LinearGradientCorrectionMatrix")),
-      physical_time_(sph_system_.getSystemVariableDataByName<Real>("PhysicalTime")) {}
+      physical_time_(sph_system_.getSystemVariableDataByName<Real>("PhysicalTime")),
+      is_blended_(particles_->getVariableDataByName<int>("TurbulentWallTreatmentType")) {}
 //=================================================================================================//
 void TurbuViscousForce<Contact<Wall>>::interaction(size_t index_i, Real dt)
 {
@@ -587,7 +587,7 @@ void TurbuViscousForce<Contact<Wall>>::interaction(size_t index_i, Real dt)
 
             Real y_p_j = get_distance_from_P_to_wall(y_p_constant_i);
             Real y_star_j = rho_i * C_mu_25_ * turbu_k_i_05 * y_p_j / molecular_viscosity_;
-            Real u_star_j = get_dimensionless_velocity(y_star_j, current_time, u_star_previous);
+            Real u_star_j = get_dimensionless_velocity(y_star_j, current_time, u_star_previous, is_blended_[index_i]);
             Real fric_vel_mag_j = sqrt(C_mu_25_ * turbu_k_i_05 * vel_i_tau_mag / u_star_j);
 
             //** Construct local wall shear stress, if this is on each wall particle j   *

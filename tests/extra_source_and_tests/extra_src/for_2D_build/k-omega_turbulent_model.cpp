@@ -58,7 +58,8 @@ kOmegaStdWallFuncCorrection::
       index_nearest(particles_->getVariableDataByName<int>("NearestIndex")),
       e_nearest_tau_(particles_->getVariableDataByName<Vecd>("WallNearestTangentialUnitVector")),
       e_nearest_normal_(particles_->getVariableDataByName<Vecd>("WallNearestNormalUnitVector")),
-      physical_time_(sph_system_.getSystemVariableDataByName<Real>("PhysicalTime"))
+      physical_time_(sph_system_.getSystemVariableDataByName<Real>("PhysicalTime")),
+      is_blended_(particles_->getVariableDataByName<int>("TurbulentWallTreatmentType"))
 {
     for (size_t k = 0; k != contact_particles_.size(); ++k)
     {
@@ -148,7 +149,7 @@ void kOmegaStdWallFuncCorrection::interaction(size_t index_i, Real dt)
             std::cin.get();
         }
 
-        Real u_star = get_dimensionless_velocity(wall_Y_star_[index_i], current_time, u_star_previous);
+        Real u_star = get_dimensionless_velocity(wall_Y_star_[index_i], current_time, u_star_previous, is_blended_[index_i]);
         velo_fric_mag = sqrt(C_mu_25_ * turbu_k_i_05 * velo_tan_mag / u_star);
 
         if (velo_fric_mag != static_cast<Real>(velo_fric_mag))
@@ -222,15 +223,14 @@ void kOmegaStdWallFuncCorrection::interaction(size_t index_i, Real dt)
 
                     Real vel_i_tau_mag = abs(vel_i.dot(e_j_tau));
                     Real y_star_j = C_mu_25_ * turbu_k_i_05 * y_p_j / nu_i;
-                    Real u_star_j = get_dimensionless_velocity(y_star_j, current_time, u_star_previous);
+                    Real u_star_j = get_dimensionless_velocity(y_star_j, current_time, u_star_previous, is_blended_[index_i]);
                     Real fric_vel_mag_j = sqrt(C_mu_25_ * turbu_k_i_05 * vel_i_tau_mag / u_star_j);
 
                     Real dudn_p_mag_j = get_near_wall_velocity_gradient_magnitude(y_star_j, fric_vel_mag_j, denominator_log_law_j, nu_i);
                     dudn_p_j = dudn_p_mag_j * boost::qvm::sign(vel_i.dot(e_j_tau));
                     dudn_p_weighted_sum += weight_j * dudn_p_j;
 
-                    bool blended = false;
-                    if (blended)
+                    if (is_blended_[index_i])
                     {
                         Real local_Re = y_p_j * turbu_k_i_05 / nu_i;
                         Real lam_frac = std::exp(-1.0 * local_Re / 11.0);
@@ -286,7 +286,7 @@ void kOmegaStdWallFuncCorrection::interaction(size_t index_i, Real dt)
     }
 }
 //=================================================================================================//
-kOmega_kTransportEquationInner::kOmega_kTransportEquationInner(BaseInnerRelation &inner_relation, const StdVec<Real> &initial_values, int is_extr_visc_dissipa)
+kOmega_kTransportEquationInner::kOmega_kTransportEquationInner(BaseInnerRelation &inner_relation, const StdVec<Real> &initial_values, int is_extr_visc_dissipa, int is_blended)
     : kOmega_BaseTurbulentModel<Base, DataDelegateInner>(inner_relation),
       dk_dt_(particles_->registerStateVariable<Real>("ChangeRateOfTKE")),
       dk_dt_without_dissipation_(particles_->registerStateVariable<Real>("ChangeRateOfTKEWithoutDissipation")),
@@ -299,6 +299,7 @@ kOmega_kTransportEquationInner::kOmega_kTransportEquationInner(BaseInnerRelation
       turbu_strain_rate_(particles_->getVariableDataByName<Matd>("TurbulentStrainRate")),
       turbu_strain_rate_magnitude_(particles_->getVariableDataByName<Real>("TurbulentStrainRateMagnitude")),
       is_extra_viscous_dissipation_(particles_->registerStateVariable<int>("TurbulentExtraViscousDissipation", is_extr_visc_dissipa)),
+      is_blended_(particles_->registerStateVariable<int>("TurbulentWallTreatmentType", is_blended)),
       turbu_indicator_(particles_->registerStateVariable<int>("TurbulentIndicator")),
       k_diffusion_(particles_->registerStateVariable<Real>("K_Diffusion")),
       vel_x_(particles_->registerStateVariable<Real>("Velocity_X"))
