@@ -49,7 +49,7 @@ Real relaxation_rate_turbulent_inlet = 0.8;
 //** Tag for wall treatment *
 int is_blended = 1;
 //** Tag for AMRD *
-int is_AMRD = 1;
+int is_AMRD = 0;
 bool is_constrain_normal_velocity_in_P_region = true;
 //** Weight for correcting the velocity  gradient in the sub near wall region  *
 Real weight_vel_grad_sub_nearwall = 0.1;
