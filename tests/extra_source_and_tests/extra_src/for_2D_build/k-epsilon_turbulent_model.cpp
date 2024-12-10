@@ -47,6 +47,14 @@ Real WallFunction::get_dimensionless_velocity(Real y_star, Real time, Real u_sta
         }
         else
         {
+            if (std::isnan(dimensionless_velocity) || std::isinf(dimensionless_velocity))
+            {
+                std::cout << "u_star=" << dimensionless_velocity << std::endl;
+                std::cout << "y_star=" << y_star << std::endl;
+                std::cout << "system pause" << std::endl;
+
+                std::cin.get();
+            }
             dimensionless_velocity = log_law_wall_function(y_star);
         }
     }
