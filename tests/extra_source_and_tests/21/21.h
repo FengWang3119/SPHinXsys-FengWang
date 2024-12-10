@@ -22,7 +22,7 @@ using namespace SPH;
 Real DH = 2.0; /**< Channel height. */
 Real num_fluid_cross_section = 40.0;
 Real extend_in = 2.0;
-Real extend_out = 4.0;
+Real extend_out = 4.0 + 5.0;
 Real extend_compensate_relaxation = 0.0;
 Real DL1 = 1.0 + extend_in;
 Real DL2 = 1.5;
@@ -47,7 +47,7 @@ Real characteristic_length = DH; /**<It needs characteristic Length to calculate
 int type_turbulent_inlet = 0;
 Real relaxation_rate_turbulent_inlet = 0.8;
 //** Tag for wall treatment *
-int is_blended = 0;
+int is_blended = 1;
 //** Tag for AMRD *
 int is_AMRD = 1;
 bool is_constrain_normal_velocity_in_P_region = true;
@@ -80,7 +80,7 @@ Real offset_distance = y_p_constant - resolution_ref / 2.0; //** Basically offse
 
 //** Same parameter as SPH_4 *
 Real U_inlet = 1.0;
-Real Outlet_pressure = 0.0;
+Real Outlet_pressure = 0.0; //** For this case the outlet pressure should be 0 since the wall near outlet is extended */
 Real U_f = U_inlet;         //*Characteristic velocity
 Real U_max = 3.0 * U_inlet; //** An estimated value, generally 1.5 U_inlet *
 Real c_f = 10.0 * U_max;
@@ -114,16 +114,8 @@ Vec2d outlet_buffer_center_translation = (point_B + point_C) / 2.0 + Vecd(-1.0, 
 
 Real outlet_emitter_rotation_angel = Pi + outlet_disposer_rotation_angel; //** By default, counter-clockwise is positive *
 
-//** If return to the straight channel *
-// Real outlet_disposer_rotation_angel = 0.0 * Pi ; //** By default, counter-clockwise is positive *
-// Real outlet_emitter_rotation_angel =  Pi ; //** By default, counter-clockwise is positive *
-// Vec2d outlet_buffer_center_translation = Vec2d(DL_domain - 0.5 * outlet_buffer_length , 0.5 * DH) ;
-
 Vec2d right_buffer_halfsize = Vec2d(0.5 * outlet_buffer_length, 0.75 * outlet_buffer_height);
 Vec2d right_buffer_translation = outlet_buffer_center_translation;
-
-//Vec2d disposer_halfsize = Vec2d(0.75 * DH, 0.5 * BW);
-//Vec2d disposer_translation = Vec2d(DL_domain + 0.25 * DH, DH_domain ) - disposer_halfsize;
 
 //----------------------------------------------------------------------
 //	Domain bounds of the system.
@@ -269,7 +261,8 @@ class WaterBlock : public ComplexShape
     explicit WaterBlock(const std::string &shape_name) : ComplexShape(shape_name)
     {
         MultiPolygon computational_domain(createWaterBlockShape());
-        add<ExtrudeShape<MultiPolygonShape>>(-offset_distance, computational_domain, "ComputationalDomain");
+        //add<ExtrudeShape<MultiPolygonShape>>(-offset_distance, computational_domain, "ComputationalDomain");
+        add<MultiPolygonShape>(computational_domain, "ComputationalDomain");
     }
 };
 
@@ -324,7 +317,8 @@ class WallBoundary : public ComplexShape
         add<ExtrudeShape<MultiPolygonShape>>(-offset_distance + BW, outer_dummy_boundary, "OuterDummyBoundary");
 
         MultiPolygon inner_dummy_boundary(createInnerWallShape());
-        subtract<ExtrudeShape<MultiPolygonShape>>(-offset_distance, inner_dummy_boundary, "InnerDummyBoundary");
+        //subtract<ExtrudeShape<MultiPolygonShape>>(-offset_distance, inner_dummy_boundary, "InnerDummyBoundary");
+        subtract<MultiPolygonShape>(inner_dummy_boundary, "InnerDummyBoundary");
     }
 };
 
