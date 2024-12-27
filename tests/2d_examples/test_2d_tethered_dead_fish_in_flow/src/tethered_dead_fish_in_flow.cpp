@@ -309,7 +309,7 @@ int main(int ac, char *av[])
     ReduceDynamics<fluid_dynamics::AdvectionViscousTimeStep> get_fluid_advection_time_step_size(water_block, U_f);
     /** Time step size with considering sound wave speed. */
     ReduceDynamics<fluid_dynamics::AcousticTimeStep> get_fluid_time_step_size(water_block);
-    /** Pressure relaxation using verlet time stepping. */
+    /** Pressure relaxation using Verlet time stepping. */
     Dynamics1Level<fluid_dynamics::Integration1stHalfWithWallRiemann> pressure_relaxation(water_block_inner, water_block_contact);
     Dynamics1Level<fluid_dynamics::Integration2ndHalfWithWallNoRiemann> density_relaxation(water_block_inner, water_block_contact);
     /** Computing viscous acceleration. */
@@ -476,8 +476,7 @@ int main(int ac, char *av[])
                     fish_body_stress_relaxation_first_half.exec(dt_s);
                     SimTK::State &state_for_update = integ.updAdvancedState();
                     force_on_bodies.clearAllBodyForces(state_for_update);
-                    force_on_bodies.setOneBodyForce(state_for_update, tethered_spot,
-                                                    force_on_tethered_spot.exec());
+                    force_on_bodies.setOneBodyForce(state_for_update, tethered_spot, force_on_tethered_spot.exec());
                     integ.stepBy(dt_s);
                     constraint_tethered_spot.exec();
                     fish_body_stress_relaxation_second_half.exec(dt_s);
