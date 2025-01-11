@@ -11,8 +11,9 @@ using namespace SPH;
 //----------------------------------------------------------------------
 //	Basic geometry parameters and numerical setup.
 //----------------------------------------------------------------------
-Real DL = 0.004;                                             /**< Channel length. */
-Real DH = 0.001;                                             /**< Channel height. */
+Real DH = 0.001; /**< Channel height. */
+Real half_channel_height = DH / 2.0;
+Real DL = 4.0 * DH;                                          /**< Channel length. */
 Real resolution_ref = DH / 20.0;                             /**< Initial reference particle spacing. */
 Real BW = resolution_ref * 4;                                /**< Extending width for BCs. */
 StdVec<Vecd> observer_location = {Vecd(0.5 * DL, 0.5 * DH)}; /**< Displacement observation point. */
@@ -20,13 +21,18 @@ BoundingBox system_domain_bounds(Vec2d(-BW, -BW), Vec2d(DL + BW, DH + BW));
 //----------------------------------------------------------------------
 //	Material parameters.
 //----------------------------------------------------------------------
-Real Inlet_pressure = 0.2;
-Real Outlet_pressure = 0.1;
+Real U_inlet = 1.0;
+Real U_f = U_inlet;         //*Characteristic velocity
+Real U_max = 1.5 * U_inlet; //** An estimated value, generally 1.5 U_inlet *
+Real c_f = 10.0 * U_max;
+Real T_ref = 2.0;
 Real rho0_f = 1000.0;
 Real Re = 50.0;
-Real mu_f = sqrt(rho0_f * pow(0.5 * DH, 3.0) * fabs(Inlet_pressure - Outlet_pressure) / (Re * DL));
-Real U_f = pow(0.5 * DH, 2.0) * fabs(Inlet_pressure - Outlet_pressure) / (2.0 * mu_f * DL);
-Real c_f = 10.0 * U_f;
+
+Real Outlet_pressure = 0.0;
+
+Real mu_f = rho0_f * U_f * DH / Re;
+Real Re_calculated = U_f * DH * rho0_f / mu_f;
 //----------------------------------------------------------------------
 //	Geometric shapes used in this case.
 //----------------------------------------------------------------------
@@ -67,20 +73,25 @@ struct RightInflowPressure
 struct InflowVelocity
 {
     Real u_ave;
+    Real u_ref_, t_ref_;
+    AlignedBoxShape &aligned_box_;
+    Vecd halfsize_;
 
     template <class BoundaryConditionType>
     InflowVelocity(BoundaryConditionType &boundary_condition)
-        : u_ave(0.0) {}
+        : u_ave(0.0), u_ref_(U_inlet), t_ref_(T_ref),
+          aligned_box_(boundary_condition.getAlignedBox()),
+          halfsize_(aligned_box_.HalfSize()) {}
 
     Vecd operator()(Vecd &position, Vecd &velocity, Real current_time)
     {
         Vecd target_velocity = Vecd::Zero();
 
-        u_ave = (Inlet_pressure - Outlet_pressure) * (position[1] + 0.5 * DH) * (DH - position[1] - 0.5 * DH) / (2.0 * mu_f * DL) +
-                (4.0 * (Inlet_pressure - Outlet_pressure) * DH * DH) /
-                    (mu_f * DL * Pi * Pi * Pi) * sin(Pi * (position[1] + 0.5 * DH) / DH) * exp(-(Pi * Pi * mu_f * current_time) / (DH * DH));
+        u_ave = current_time < t_ref_ ? 0.5 * U_inlet * (1.0 - cos(Pi * current_time / t_ref_)) : U_inlet;
 
-        target_velocity[0] = u_ave;
+        //target_velocity[0] = u_ave;
+        target_velocity[0] = 1.5 * u_ave * (1.0 - position[1] * position[1] / half_channel_height / half_channel_height);
+
         target_velocity[1] = 0.0;
 
         return target_velocity;
