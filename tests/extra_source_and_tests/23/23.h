@@ -11,7 +11,7 @@ using namespace SPH;
 //----------------------------------------------------------------------
 //	Basic geometry parameters and numerical setup.
 //----------------------------------------------------------------------
-Real DH = 0.001; /**< Channel height. */
+Real DH = 2.0; /**< Channel height. */
 Real half_channel_height = DH / 2.0;
 Real DL = 4.0 * DH;                                          /**< Channel length. */
 Real resolution_ref = DH / 20.0;                             /**< Initial reference particle spacing. */
