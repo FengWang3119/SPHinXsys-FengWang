@@ -13,11 +13,33 @@ using namespace SPH;
 //----------------------------------------------------------------------
 Real DH = 2.0; /**< Channel height. */
 Real half_channel_height = DH / 2.0;
-Real DL = 4.0 * DH;                                          /**< Channel length. */
-Real resolution_ref = DH / 20.0;                             /**< Initial reference particle spacing. */
-Real BW = resolution_ref * 4;                                /**< Extending width for BCs. */
-StdVec<Vecd> observer_location = {Vecd(0.5 * DL, 0.5 * DH)}; /**< Displacement observation point. */
-BoundingBox system_domain_bounds(Vec2d(-BW, -BW), Vec2d(DL + BW, DH + BW));
+Real characteristic_length = DH;
+Real num_fluid_cross_section = 10.0;
+Real resolution_ref = DH / num_fluid_cross_section; /**< Initial reference particle spacing. */
+Real BW = resolution_ref * 4;                       /**< Extending width for BCs. */
+
+Real extend_in = 0.0;
+Real extend_out = 0.0;
+Real extend_compensate_relaxation = 0.0;
+Real DH1 = 2.5 * DH;
+Real DL1 = 5.0 * DH;
+Real DL2 = 5.0 * DH;
+
+Vec2d point_O(0.0, 0.0);
+Vec2d point_A = point_O + Vec2d(0.0, DH);
+Vec2d point_B = point_A + Vec2d(DL1, 0.0);
+Vec2d point_C = point_B + Vec2d(0.0, DH1);
+Vec2d point_D = point_C + Vec2d(DL2, 0.0);
+Vec2d point_E = point_D + Vec2d(0.0, -(2.0 * DH1 + DH));
+Vec2d point_F = point_E + Vec2d(-DL2, 0.0);
+Vec2d point_G = point_F + Vec2d(0.0, DH1);
+
+Vec2d point_OA_half = (point_O + point_A) / 2.0;
+Vec2d point_DE_half = (point_D + point_E) / 2.0;
+Real buffer_thickness = 5.0 * resolution_ref;
+
+StdVec<Vecd> observer_location = {Vecd(0.5 * DL1, 0.5 * DH)}; /**< Displacement observation point. */
+BoundingBox system_domain_bounds(Vec2d(point_O[0], point_F[1]) + Vec2d(-BW, -BW), point_D + Vec2d(BW, BW));
 //----------------------------------------------------------------------
 //	Material parameters.
 //----------------------------------------------------------------------
@@ -31,15 +53,16 @@ Real Re = 40.0;
 
 Real Outlet_pressure = 0.0;
 
-Real mu_f = rho0_f * U_f * DH / Re;
+Real mu_f = rho0_f * U_f * characteristic_length / Re;
 
-Real Re_calculated = U_f * DH * rho0_f / mu_f;
+Real Re_calculated = U_f * characteristic_length * rho0_f / mu_f;
 //----------------------------------------------------------------------
 //	Geometric shapes used in this case.
 //----------------------------------------------------------------------
-Vec2d bidirectional_buffer_halfsize = Vec2d(2.5 * resolution_ref, 0.5 * DH);
-Vec2d left_bidirectional_translation = bidirectional_buffer_halfsize;
-Vec2d right_bidirectional_translation = Vec2d(DL - 2.5 * resolution_ref, 0.5 * DH);
+Vec2d left_bidirectional_buffer_halfsize = 0.5 * Vec2d(buffer_thickness, (point_A[1] - point_O[1]));
+Vec2d left_bidirectional_translation = point_OA_half + Vec2d(0.5 * buffer_thickness, 0.0);
+Vec2d right_bidirectional_buffer_halfsize = 0.5 * Vec2d(buffer_thickness, (point_D[1] - point_E[1]));
+Vec2d right_bidirectional_translation = point_DE_half - Vec2d(0.5 * buffer_thickness, 0.0);
 Vec2d normal = Vec2d(1.0, 0.0);
 //----------------------------------------------------------------------
 //	Pressure boundary definition.
@@ -108,11 +131,15 @@ class WaterBlock : public MultiPolygonShape
     explicit WaterBlock(const std::string &shape_name) : MultiPolygonShape(shape_name)
     {
         std::vector<Vecd> water_block_shape;
-        water_block_shape.push_back(Vecd(0.0, 0.0));
-        water_block_shape.push_back(Vecd(0.0, DH));
-        water_block_shape.push_back(Vecd(DL, DH));
-        water_block_shape.push_back(Vecd(DL, 0.0));
-        water_block_shape.push_back(Vecd(0.0, 0.0));
+        water_block_shape.push_back(point_O);
+        water_block_shape.push_back(point_A);
+        water_block_shape.push_back(point_B);
+        water_block_shape.push_back(point_C);
+        water_block_shape.push_back(point_D);
+        water_block_shape.push_back(point_E);
+        water_block_shape.push_back(point_F);
+        water_block_shape.push_back(point_G);
+        water_block_shape.push_back(point_O);
         multi_polygon_.addAPolygon(water_block_shape, ShapeBooleanOps::add);
     }
 };
@@ -126,17 +153,27 @@ class WallBoundary : public MultiPolygonShape
     explicit WallBoundary(const std::string &shape_name) : MultiPolygonShape(shape_name)
     {
         std::vector<Vecd> outer_wall_shape;
-        outer_wall_shape.push_back(Vecd(0.0, -BW));
-        outer_wall_shape.push_back(Vecd(0.0, DH + BW));
-        outer_wall_shape.push_back(Vecd(DL, DH + BW));
-        outer_wall_shape.push_back(Vecd(DL, -BW));
-        outer_wall_shape.push_back(Vecd(0.0, -BW));
+        outer_wall_shape.push_back(point_O + Vecd(0.0, -BW)); //** Keep the section neat */
+        outer_wall_shape.push_back(point_A + Vecd(0.0, +BW));
+        outer_wall_shape.push_back(point_B + Vecd(-BW, +BW));
+        outer_wall_shape.push_back(point_C + Vecd(-BW, +BW));
+        outer_wall_shape.push_back(point_D + Vecd(0.0, +BW)); //** Keep the section neat */
+        outer_wall_shape.push_back(point_E + Vecd(0.0, -BW));
+        outer_wall_shape.push_back(point_F + Vecd(-BW, -BW));
+        outer_wall_shape.push_back(point_G + Vecd(-BW, -BW));
+        outer_wall_shape.push_back(point_O + Vecd(0.0, -BW));
+
         std::vector<Vecd> inner_wall_shape;
-        inner_wall_shape.push_back(Vecd(-BW, 0.0));
-        inner_wall_shape.push_back(Vecd(-BW, DH));
-        inner_wall_shape.push_back(Vecd(DL + BW, DH));
-        inner_wall_shape.push_back(Vecd(DL + BW, 0.0));
-        inner_wall_shape.push_back(Vecd(-BW, 0.0));
+
+        inner_wall_shape.push_back(point_O + Vecd(-BW, 0.0));
+        inner_wall_shape.push_back(point_A + Vecd(-BW, 0.0));
+        inner_wall_shape.push_back(point_B);
+        inner_wall_shape.push_back(point_C);
+        inner_wall_shape.push_back(point_D + Vecd(+BW, 0.0));
+        inner_wall_shape.push_back(point_E + Vecd(+BW, 0.0));
+        inner_wall_shape.push_back(point_F);
+        inner_wall_shape.push_back(point_G);
+        inner_wall_shape.push_back(point_O + Vecd(-BW, 0.0));
 
         multi_polygon_.addAPolygon(outer_wall_shape, ShapeBooleanOps::add);
         multi_polygon_.addAPolygon(inner_wall_shape, ShapeBooleanOps::sub);
