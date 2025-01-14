@@ -17,12 +17,13 @@ Real characteristic_length = DH;
 Real num_fluid_cross_section = 10.0;
 Real resolution_ref = DH / num_fluid_cross_section; /**< Initial reference particle spacing. */
 Real BW = resolution_ref * 4;                       /**< Extending width for BCs. */
+Real buffer_thickness = 5.0 * resolution_ref;
 
 Real extend_in = 0.0;
 Real extend_out = 0.0;
 Real extend_compensate_relaxation = 0.0;
 Real DH1 = 20.0 * DH;
-Real DL1 = 5.0 * DH;
+Real DL1 = buffer_thickness; //** Inlet velocity as uniform U_inlet */
 Real DL2 = 50.0 * DH;
 
 Vec2d point_O(0.0, 0.0);
@@ -36,7 +37,6 @@ Vec2d point_G = point_F + Vec2d(0.0, DH1);
 
 Vec2d point_OA_half = (point_O + point_A) / 2.0;
 Vec2d point_DE_half = (point_D + point_E) / 2.0;
-Real buffer_thickness = 5.0 * resolution_ref;
 
 StdVec<Vecd> observer_location = {Vecd(0.5 * DL1, 0.5 * DH)}; /**< Displacement observation point. */
 BoundingBox system_domain_bounds(Vec2d(point_O[0], point_F[1]) + Vec2d(-BW, -BW), point_D + Vec2d(BW, BW));
@@ -113,8 +113,8 @@ struct InflowVelocity
 
         u_ave = current_time < t_ref_ ? 0.5 * U_inlet * (1.0 - cos(Pi * current_time / t_ref_)) : U_inlet;
 
-        //target_velocity[0] = u_ave;
-        target_velocity[0] = 1.5 * u_ave * (1.0 - position[1] * position[1] / half_channel_height / half_channel_height);
+        target_velocity[0] = u_ave;
+        //target_velocity[0] = 1.5 * u_ave * (1.0 - position[1] * position[1] / half_channel_height / half_channel_height);
 
         target_velocity[1] = 0.0;
 
