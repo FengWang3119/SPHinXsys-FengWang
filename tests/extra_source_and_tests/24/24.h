@@ -22,24 +22,32 @@ Real buffer_thickness = 5.0 * resolution_ref;
 Real extend_in = 0.0;
 Real extend_out = 0.0;
 Real extend_compensate_relaxation = 0.0;
-Real DH1 = 20.0 * DH;
+Real DH1 = 2.0 * DH;
 Real DL1 = buffer_thickness; //** Inlet velocity as uniform U_inlet */
-Real DL2 = 50.0 * DH;
+Real DL2 = 5.0 * DH;
 
 Vec2d point_O(0.0, 0.0);
-Vec2d point_A = point_O + Vec2d(0.0, DH);
-Vec2d point_B = point_A + Vec2d(DL1, 0.0);
-Vec2d point_C = point_B + Vec2d(0.0, DH1);
-Vec2d point_D = point_C + Vec2d(DL2, 0.0);
-Vec2d point_E = point_D + Vec2d(0.0, -(2.0 * DH1 + DH));
-Vec2d point_F = point_E + Vec2d(-DL2, 0.0);
-Vec2d point_G = point_F + Vec2d(0.0, DH1);
+Vec2d point_A = point_O + Vec2d(0.0, DH + 2.0 * DH1);
+Vec2d point_B = point_A + Vec2d(DL2, 0.0);
+Vec2d point_C = point_O + Vec2d(DL2, 0.0);
 
 Vec2d point_OA_half = (point_O + point_A) / 2.0;
-Vec2d point_DE_half = (point_D + point_E) / 2.0;
+Vec2d point_BC_half = (point_B + point_C) / 2.0;
 
-StdVec<Vecd> observer_location = {Vecd(0.5 * DL1, 0.5 * DH)}; /**< Displacement observation point. */
-BoundingBox system_domain_bounds(Vec2d(point_O[0], point_F[1]) + Vec2d(-BW, -BW), point_D + Vec2d(BW, BW));
+Vec2d point_D = point_O + Vec2d(0.0, DH1);
+Vec2d point_E = point_D + Vec2d(0.0, DH);
+Vec2d point_F = point_E + Vec2d(buffer_thickness, 0.0);
+Vec2d point_G = point_D + Vec2d(buffer_thickness, 0.0);
+Vec2d point_H = point_A + Vec2d(buffer_thickness, 0.0);
+Vec2d point_I = point_O + Vec2d(buffer_thickness, 0.0);
+
+Vec2d point_AO_half = (point_A + point_O) / 2.0;
+Vec2d point_AE_half = (point_A + point_E) / 2.0;
+Vec2d point_ED_half = (point_E + point_D) / 2.0;
+Vec2d point_DO_half = (point_D + point_O) / 2.0;
+
+StdVec<Vecd> observer_location = {Vecd(0.5 * DL2, 0.5 * DH)}; /**< Displacement observation point. */
+BoundingBox system_domain_bounds(Vec2d(point_O[0], point_O[1]) + Vec2d(-BW, -BW), point_B + Vec2d(BW, BW));
 //----------------------------------------------------------------------
 //	Material parameters.
 //----------------------------------------------------------------------
@@ -59,11 +67,19 @@ Real Re_calculated = U_f * characteristic_length * rho0_f / mu_f;
 //----------------------------------------------------------------------
 //	Geometric shapes used in this case.
 //----------------------------------------------------------------------
-Vec2d left_bidirectional_buffer_halfsize = 0.5 * Vec2d(buffer_thickness, (point_A[1] - point_O[1]));
-Vec2d left_bidirectional_translation = point_OA_half + Vec2d(0.5 * buffer_thickness, 0.0);
-Vec2d right_bidirectional_buffer_halfsize = 0.5 * Vec2d(buffer_thickness, (point_D[1] - point_E[1]));
-Vec2d right_bidirectional_translation = point_DE_half - Vec2d(0.5 * buffer_thickness, 0.0);
+// Vec2d left_bidirectional_buffer_halfsize = 0.5 * Vec2d(buffer_thickness, (point_A[1] - point_O[1]));
+// Vec2d left_bidirectional_translation = point_AO_half + Vec2d(0.5 * buffer_thickness, 0.0);
+Vec2d left_bidirectional_buffer_halfsize = 0.5 * Vec2d(buffer_thickness, (point_E[1] - point_D[1]));
+Vec2d left_bidirectional_translation = point_ED_half + Vec2d(0.5 * buffer_thickness, 0.0);
+
+Vec2d right_bidirectional_buffer_halfsize = 0.5 * Vec2d(buffer_thickness, (point_B[1] - point_C[1]));
+Vec2d right_bidirectional_translation = point_BC_half - Vec2d(0.5 * buffer_thickness, 0.0);
 Vec2d normal = Vec2d(1.0, 0.0);
+
+Vec2d static_buffer_halfsize_up = 0.5 * Vec2d(buffer_thickness, (point_A[1] - point_E[1]));
+Vec2d static_translation_up = point_AE_half + Vec2d(0.5 * buffer_thickness, 0.0);
+Vec2d static_buffer_halfsize_down = 0.5 * Vec2d(buffer_thickness, (point_D[1] - point_O[1]));
+Vec2d static_translation_down = point_DO_half + Vec2d(0.5 * buffer_thickness, 0.0);
 //----------------------------------------------------------------------
 //	Pressure boundary definition.
 //----------------------------------------------------------------------
@@ -113,15 +129,29 @@ struct InflowVelocity
 
         u_ave = current_time < t_ref_ ? 0.5 * U_inlet * (1.0 - cos(Pi * current_time / t_ref_)) : U_inlet;
 
-        target_velocity[0] = u_ave;
+        //target_velocity[0] = u_ave;
         //target_velocity[0] = 1.5 * u_ave * (1.0 - position[1] * position[1] / half_channel_height / half_channel_height);
-
-        target_velocity[1] = 0.0;
+        if (abs(position[1]) <= half_channel_height)
+        {
+            target_velocity[0] = u_ave;
+            target_velocity[1] = 0.0;
+        }
 
         return target_velocity;
     }
 };
+struct StaticInflowVelocity
+{
 
+    template <class BoundaryConditionType>
+    StaticInflowVelocity(BoundaryConditionType &boundary_condition) {}
+
+    Vecd operator()(Vecd &position, Vecd &velocity, Real current_time)
+    {
+        Vecd target_velocity = Vecd::Zero();
+        return target_velocity;
+    }
+};
 //----------------------------------------------------------------------
 //	Fluid body definition.
 //----------------------------------------------------------------------
@@ -135,10 +165,6 @@ class WaterBlock : public MultiPolygonShape
         water_block_shape.push_back(point_A);
         water_block_shape.push_back(point_B);
         water_block_shape.push_back(point_C);
-        water_block_shape.push_back(point_D);
-        water_block_shape.push_back(point_E);
-        water_block_shape.push_back(point_F);
-        water_block_shape.push_back(point_G);
         water_block_shape.push_back(point_O);
         multi_polygon_.addAPolygon(water_block_shape, ShapeBooleanOps::add);
     }
@@ -155,27 +181,55 @@ class WallBoundary : public MultiPolygonShape
         std::vector<Vecd> outer_wall_shape;
         outer_wall_shape.push_back(point_O + Vecd(0.0, -BW)); //** Keep the section neat */
         outer_wall_shape.push_back(point_A + Vecd(0.0, +BW));
-        outer_wall_shape.push_back(point_B + Vecd(-BW, +BW));
-        outer_wall_shape.push_back(point_C + Vecd(-BW, +BW));
-        outer_wall_shape.push_back(point_D + Vecd(0.0, +BW)); //** Keep the section neat */
-        outer_wall_shape.push_back(point_E + Vecd(0.0, -BW));
-        outer_wall_shape.push_back(point_F + Vecd(-BW, -BW));
-        outer_wall_shape.push_back(point_G + Vecd(-BW, -BW));
+        outer_wall_shape.push_back(point_B + Vecd(0.0, +BW));
+        outer_wall_shape.push_back(point_C + Vecd(0.0, -BW));
         outer_wall_shape.push_back(point_O + Vecd(0.0, -BW));
 
         std::vector<Vecd> inner_wall_shape;
 
         inner_wall_shape.push_back(point_O + Vecd(-BW, 0.0));
         inner_wall_shape.push_back(point_A + Vecd(-BW, 0.0));
-        inner_wall_shape.push_back(point_B);
-        inner_wall_shape.push_back(point_C);
-        inner_wall_shape.push_back(point_D + Vecd(+BW, 0.0));
-        inner_wall_shape.push_back(point_E + Vecd(+BW, 0.0));
-        inner_wall_shape.push_back(point_F);
-        inner_wall_shape.push_back(point_G);
+        inner_wall_shape.push_back(point_B + Vecd(+BW, 0.0));
+        inner_wall_shape.push_back(point_C + Vecd(+BW, 0.0));
         inner_wall_shape.push_back(point_O + Vecd(-BW, 0.0));
 
         multi_polygon_.addAPolygon(outer_wall_shape, ShapeBooleanOps::add);
         multi_polygon_.addAPolygon(inner_wall_shape, ShapeBooleanOps::sub);
     }
 };
+
+template <int INDICATOR>
+class IndicatedParticlesExcludeInletBuffer : public WithinScope
+{
+    int *indicator_;
+    int *buffer_indicator_;
+    Vecd *pos_;
+
+  public:
+    explicit IndicatedParticlesExcludeInletBuffer(BaseParticles *base_particles)
+        : WithinScope(),
+          indicator_(base_particles->getVariableDataByName<int>("Indicator")),
+          buffer_indicator_(base_particles->getVariableDataByName<int>("BufferParticleIndicator")),
+          pos_(base_particles->getVariableDataByName<Vecd>("Position")){};
+    bool operator()(size_t index_i)
+    {
+        if (pos_[index_i][0] < point_F[0] && pos_[index_i][1] > point_F[1]) //** Exclude static inlet buffer up */
+        {
+            return false;
+        }
+        if (pos_[index_i][0] < point_G[0] && pos_[index_i][1] < point_G[1]) //** Exclude static inlet buffer down */
+        {
+            return false;
+        }
+        if (indicator_[index_i] == INDICATOR)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    };
+};
+
+using BulkParticlesWithoutInlet = IndicatedParticlesExcludeInletBuffer<0>;
