@@ -46,6 +46,11 @@ Vec2d point_AE_half = (point_A + point_E) / 2.0;
 Vec2d point_ED_half = (point_E + point_D) / 2.0;
 Vec2d point_DO_half = (point_D + point_O) / 2.0;
 
+Vec2d point_AB_half = (point_A + point_B) / 2.0;
+
+Vec2d point_J = point_H + Vec2d(0.0, -buffer_thickness);
+Vec2d point_K = point_B + Vec2d(-buffer_thickness, -buffer_thickness);
+
 StdVec<Vecd> observer_location = {Vecd(0.5 * DL2, 0.5 * DH)}; /**< Displacement observation point. */
 BoundingBox system_domain_bounds(Vec2d(point_O[0], point_O[1]) + Vec2d(-BW, -BW), point_B + Vec2d(BW, BW));
 //----------------------------------------------------------------------
@@ -60,6 +65,7 @@ Real rho0_f = 1.0;
 Real Re = 40.0;
 
 Real Outlet_pressure = 0.0;
+Real Freestream_pressure = 0.0;
 
 Real mu_f = rho0_f * U_f * characteristic_length / Re;
 
@@ -80,6 +86,10 @@ Vec2d static_buffer_halfsize_up = 0.5 * Vec2d(buffer_thickness, (point_A[1] - po
 Vec2d static_translation_up = point_AE_half + Vec2d(0.5 * buffer_thickness, 0.0);
 Vec2d static_buffer_halfsize_down = 0.5 * Vec2d(buffer_thickness, (point_D[1] - point_O[1]));
 Vec2d static_translation_down = point_DO_half + Vec2d(0.5 * buffer_thickness, 0.0);
+
+Vec2d up_buffer_halfsize = 0.5 * Vec2d(buffer_thickness, (point_K[0] - point_J[0]));
+Vec2d up_buffer_translation = point_AB_half + Vec2d(0.0, -0.5 * buffer_thickness);
+Real up_buffer_rotation_angle = -0.5 * Pi; //** Negative means clock-wise */
 //----------------------------------------------------------------------
 //	Pressure boundary definition.
 //----------------------------------------------------------------------
@@ -107,6 +117,18 @@ struct RightInflowPressure
     }
 };
 
+struct FreestreamPressure
+{
+    template <class BoundaryConditionType>
+    FreestreamPressure(BoundaryConditionType &boundary_condition) {}
+
+    Real operator()(Real p, Real current_time)
+    {
+        /*constant pressure*/
+        Real pressure = Freestream_pressure;
+        return pressure;
+    }
+};
 //----------------------------------------------------------------------
 //	inflow velocity definition.
 //----------------------------------------------------------------------
@@ -178,23 +200,31 @@ class WallBoundary : public MultiPolygonShape
   public:
     explicit WallBoundary(const std::string &shape_name) : MultiPolygonShape(shape_name)
     {
-        std::vector<Vecd> outer_wall_shape;
-        outer_wall_shape.push_back(point_O + Vecd(0.0, -BW)); //** Keep the section neat */
-        outer_wall_shape.push_back(point_A + Vecd(0.0, +BW));
-        outer_wall_shape.push_back(point_B + Vecd(0.0, +BW));
-        outer_wall_shape.push_back(point_C + Vecd(0.0, -BW));
-        outer_wall_shape.push_back(point_O + Vecd(0.0, -BW));
+        // std::vector<Vecd> outer_wall_shape;
+        // outer_wall_shape.push_back(point_O + Vecd(0.0, -BW)); //** Keep the section neat */
+        // outer_wall_shape.push_back(point_A + Vecd(0.0, +BW));
+        // outer_wall_shape.push_back(point_B + Vecd(0.0, +BW));
+        // outer_wall_shape.push_back(point_C + Vecd(0.0, -BW));
+        // outer_wall_shape.push_back(point_O + Vecd(0.0, -BW));
 
-        std::vector<Vecd> inner_wall_shape;
+        // std::vector<Vecd> inner_wall_shape;
+        // inner_wall_shape.push_back(point_O + Vecd(-BW, 0.0));
+        // inner_wall_shape.push_back(point_A + Vecd(-BW, 0.0));
+        // inner_wall_shape.push_back(point_B + Vecd(+BW, 0.0));
+        // inner_wall_shape.push_back(point_C + Vecd(+BW, 0.0));
+        // inner_wall_shape.push_back(point_O + Vecd(-BW, 0.0));
 
-        inner_wall_shape.push_back(point_O + Vecd(-BW, 0.0));
-        inner_wall_shape.push_back(point_A + Vecd(-BW, 0.0));
-        inner_wall_shape.push_back(point_B + Vecd(+BW, 0.0));
-        inner_wall_shape.push_back(point_C + Vecd(+BW, 0.0));
-        inner_wall_shape.push_back(point_O + Vecd(-BW, 0.0));
+        // multi_polygon_.addAPolygon(outer_wall_shape, ShapeBooleanOps::add);
+        // multi_polygon_.addAPolygon(inner_wall_shape, ShapeBooleanOps::sub);
 
-        multi_polygon_.addAPolygon(outer_wall_shape, ShapeBooleanOps::add);
-        multi_polygon_.addAPolygon(inner_wall_shape, ShapeBooleanOps::sub);
+        std::vector<Vecd> wall_shape;
+        wall_shape.push_back(point_O);
+        wall_shape.push_back(point_C);
+        wall_shape.push_back(point_C + Vecd(0.0, -BW));
+        wall_shape.push_back(point_O + Vecd(0.0, -BW));
+        wall_shape.push_back(point_O);
+
+        multi_polygon_.addAPolygon(wall_shape, ShapeBooleanOps::add);
     }
 };
 

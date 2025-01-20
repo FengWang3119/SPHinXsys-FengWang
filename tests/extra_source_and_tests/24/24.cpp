@@ -123,7 +123,11 @@ int main(int ac, char *av[])
     BodyAlignedBoxByCell static_emitter_down(water_block, makeShared<AlignedBoxShape>(xAxis, Transform(Vec2d(static_translation_down)), static_buffer_halfsize_down));
     fluid_dynamics::BidirectionalBuffer<LeftInflowPressure> static_buffer_down(static_emitter_down, in_outlet_particle_buffer);
 
-    InteractionWithUpdate<fluid_dynamics::DensitySummationPressureComplex> update_fluid_density(water_block_inner, water_block_contact);
+    BodyAlignedBoxByCell up_emitter(water_block, makeShared<AlignedBoxShape>(xAxis, Transform(Rotation2d(up_buffer_rotation_angle), Vec2d(up_buffer_translation)), up_buffer_halfsize));
+    fluid_dynamics::BidirectionalBuffer<LeftInflowPressure> up_bidirection_buffer(up_emitter, in_outlet_particle_buffer);
+
+    InteractionWithUpdate<fluid_dynamics::DensitySummationPressureComplex>
+        update_fluid_density(water_block_inner, water_block_contact);
     SimpleDynamics<fluid_dynamics::PressureCondition<LeftInflowPressure>> left_inflow_pressure_condition(left_emitter);
     SimpleDynamics<fluid_dynamics::PressureCondition<RightInflowPressure>> right_inflow_pressure_condition(right_emitter);
     SimpleDynamics<fluid_dynamics::InflowVelocityCondition<InflowVelocity>> inflow_velocity_condition(left_emitter);
@@ -132,6 +136,8 @@ int main(int ac, char *av[])
     SimpleDynamics<fluid_dynamics::PressureCondition<LeftInflowPressure>> static_down_inflow_pressure_condition(static_emitter_down);
     SimpleDynamics<fluid_dynamics::InflowVelocityCondition<StaticInflowVelocity>> static_up_inflow_velocity_condition(static_emitter_up);
     SimpleDynamics<fluid_dynamics::InflowVelocityCondition<StaticInflowVelocity>> static_down_inflow_velocity_condition(static_emitter_down);
+
+    SimpleDynamics<fluid_dynamics::PressureCondition<FreestreamPressure>> up_pressure_condition(up_emitter);
 
     InteractionWithUpdate<fluid_dynamics::TransportVelocityCorrectionComplex<BulkParticlesWithoutInlet>> transport_velocity_correction(water_block_inner, water_block_contact);
 
@@ -166,6 +172,8 @@ int main(int ac, char *av[])
 
     left_bidirection_buffer.tag_buffer_particles.exec();
     right_bidirection_buffer.tag_buffer_particles.exec();
+
+    up_bidirection_buffer.tag_buffer_particles.exec();
 
     wall_boundary_normal_direction.exec();
     //----------------------------------------------------------------------
@@ -226,6 +234,8 @@ int main(int ac, char *av[])
                 static_up_inflow_velocity_condition.exec();
                 static_down_inflow_velocity_condition.exec();
 
+                up_pressure_condition.exec(dt);
+
                 //inlet_buffer_constraint.exec();
 
                 density_relaxation.exec(dt);
@@ -252,9 +262,14 @@ int main(int ac, char *av[])
             // first do injection for all buffers
             left_bidirection_buffer.injection.exec();
             right_bidirection_buffer.injection.exec();
+
+            up_bidirection_buffer.injection.exec();
+
             // then do deletion for all buffers
             left_bidirection_buffer.deletion.exec();
             right_bidirection_buffer.deletion.exec();
+
+            up_bidirection_buffer.deletion.exec();
 
             if (number_of_iterations % 100 == 0 && number_of_iterations != 1)
             {
@@ -269,6 +284,8 @@ int main(int ac, char *av[])
 
             static_buffer_up.tag_buffer_particles.exec();
             static_buffer_down.tag_buffer_particles.exec();
+
+            up_bidirection_buffer.tag_buffer_particles.exec();
         }
         TickCount t2 = TickCount::now();
         body_states_recording.writeToFile();
