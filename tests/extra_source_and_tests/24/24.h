@@ -51,6 +51,8 @@ Vec2d point_AB_half = (point_A + point_B) / 2.0;
 Vec2d point_J = point_H + Vec2d(0.0, -buffer_thickness);
 Vec2d point_K = point_B + Vec2d(-buffer_thickness, -buffer_thickness);
 
+Vec2d point_OC_half = (point_O + point_C) / 2.0;
+
 StdVec<Vecd> observer_location = {Vecd(0.5 * DL2, 0.5 * DH)}; /**< Displacement observation point. */
 BoundingBox system_domain_bounds(Vec2d(point_O[0], point_O[1]) + Vec2d(-BW, -BW), point_B + Vec2d(BW, BW));
 //----------------------------------------------------------------------
@@ -90,6 +92,11 @@ Vec2d static_translation_down = point_DO_half + Vec2d(0.5 * buffer_thickness, 0.
 Vec2d up_buffer_halfsize = 0.5 * Vec2d(buffer_thickness, (point_K[0] - point_J[0]));
 Vec2d up_buffer_translation = point_AB_half + Vec2d(0.0, -0.5 * buffer_thickness);
 Real up_buffer_rotation_angle = -0.5 * Pi; //** Negative means clock-wise */
+
+Vec2d down_buffer_halfsize = 0.5 * Vec2d(buffer_thickness, (point_K[0] - point_J[0]));
+Vec2d down_buffer_translation = point_OC_half + Vec2d(0.0, 0.5 * buffer_thickness);
+Real down_buffer_rotation_angle = 0.5 * Pi; //** Negative means clock-wise */
+
 //----------------------------------------------------------------------
 //	Pressure boundary definition.
 //----------------------------------------------------------------------
@@ -218,11 +225,11 @@ class WallBoundary : public MultiPolygonShape
         // multi_polygon_.addAPolygon(inner_wall_shape, ShapeBooleanOps::sub);
 
         std::vector<Vecd> wall_shape;
-        wall_shape.push_back(point_O);
-        wall_shape.push_back(point_C);
-        wall_shape.push_back(point_C + Vecd(0.0, -BW));
         wall_shape.push_back(point_O + Vecd(0.0, -BW));
-        wall_shape.push_back(point_O);
+        wall_shape.push_back(point_C + Vecd(0.0, -BW));
+        wall_shape.push_back(point_C + Vecd(0.0, -BW) + Vecd(0.0, -BW));
+        wall_shape.push_back(point_O + Vecd(0.0, -BW) + Vecd(0.0, -BW));
+        wall_shape.push_back(point_O + Vecd(0.0, -BW));
 
         multi_polygon_.addAPolygon(wall_shape, ShapeBooleanOps::add);
     }
