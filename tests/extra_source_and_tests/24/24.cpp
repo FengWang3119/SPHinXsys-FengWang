@@ -124,7 +124,7 @@ int main(int ac, char *av[])
     fluid_dynamics::BidirectionalBuffer<LeftInflowPressure> static_buffer_down(static_emitter_down, in_outlet_particle_buffer);
 
     BodyAlignedBoxByCell up_emitter(water_block, makeShared<AlignedBoxShape>(xAxis, Transform(Rotation2d(up_buffer_rotation_angle), Vec2d(up_buffer_translation)), up_buffer_halfsize));
-    fluid_dynamics::BidirectionalBuffer<LeftInflowPressure> up_bidirection_buffer(up_emitter, in_outlet_particle_buffer);
+    fluid_dynamics::BidirectionalBuffer<FreestreamPressure> up_bidirection_buffer(up_emitter, in_outlet_particle_buffer);
 
     InteractionWithUpdate<fluid_dynamics::DensitySummationPressureComplex>
         update_fluid_density(water_block_inner, water_block_contact);
