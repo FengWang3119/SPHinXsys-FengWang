@@ -11,24 +11,30 @@ NablaWV<Inner<>>::
 void NablaWV<Inner<>>::interaction(size_t index_i, Real dt)
 {
     kernel_sum_[index_i] = Vecd::Zero();
-    const Neighborhood &inner_neighborhood = inner_configuration_[index_i];
-    for (size_t n = 0; n != inner_neighborhood.current_size_; ++n)
+    if (buffer_particle_indicator_[index_i] != 0)
     {
-        size_t index_j = inner_neighborhood.j_[n];
-        kernel_sum_[index_i] += inner_neighborhood.dW_ij_[n] * Vol_[index_j] * inner_neighborhood.e_ij_[n];
+        const Neighborhood &inner_neighborhood = inner_configuration_[index_i];
+        for (size_t n = 0; n != inner_neighborhood.current_size_; ++n)
+        {
+            size_t index_j = inner_neighborhood.j_[n];
+            kernel_sum_[index_i] += inner_neighborhood.dW_ij_[n] * Vol_[index_j] * inner_neighborhood.e_ij_[n];
+        }
     }
 }
 //=================================================================================================//
 void NablaWV<Contact<>>::interaction(size_t index_i, Real dt)
 {
-    for (size_t k = 0; k < contact_configuration_.size(); ++k)
+    if (buffer_particle_indicator_[index_i] != 0)
     {
-        Real *Vol_k = contact_Vol_[k];
-        Neighborhood &contact_neighborhood = (*contact_configuration_[k])[index_i];
-        for (size_t n = 0; n != contact_neighborhood.current_size_; ++n)
+        for (size_t k = 0; k < contact_configuration_.size(); ++k)
         {
-            size_t index_j = contact_neighborhood.j_[n];
-            kernel_sum_[index_i] += contact_neighborhood.dW_ij_[n] * Vol_k[index_j] * contact_neighborhood.e_ij_[n];
+            Real *Vol_k = contact_Vol_[k];
+            Neighborhood &contact_neighborhood = (*contact_configuration_[k])[index_i];
+            for (size_t n = 0; n != contact_neighborhood.current_size_; ++n)
+            {
+                size_t index_j = contact_neighborhood.j_[n];
+                kernel_sum_[index_i] += contact_neighborhood.dW_ij_[n] * Vol_k[index_j] * contact_neighborhood.e_ij_[n];
+            }
         }
     }
 }

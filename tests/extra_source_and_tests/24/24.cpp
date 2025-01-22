@@ -101,7 +101,6 @@ int main(int ac, char *av[])
     // boundary condition and other constraints should be defined.
     //----------------------------------------------------------------------
     SimpleDynamics<NormalDirectionFromBodyShape> wall_boundary_normal_direction(wall_boundary);
-    InteractionDynamics<NablaWVComplex> kernel_summation(water_block_inner, water_block_contact);
     InteractionWithUpdate<SpatialTemporalFreeSurfaceIndicationComplex> boundary_indicator(water_block_inner, water_block_contact);
 
     Dynamics1Level<fluid_dynamics::Integration1stHalfWithWallRiemann> pressure_relaxation(water_block_inner, water_block_contact);
@@ -130,6 +129,9 @@ int main(int ac, char *av[])
 
     InteractionWithUpdate<fluid_dynamics::DensitySummationPressureComplex>
         update_fluid_density(water_block_inner, water_block_contact);
+
+    InteractionDynamics<NablaWVComplex> kernel_summation(water_block_inner, water_block_contact);
+
     SimpleDynamics<fluid_dynamics::PressureCondition<LeftInflowPressure>> left_inflow_pressure_condition(left_emitter);
     SimpleDynamics<fluid_dynamics::PressureCondition<RightInflowPressure>> right_inflow_pressure_condition(right_emitter);
     SimpleDynamics<fluid_dynamics::InflowVelocityCondition<InflowVelocity>> inflow_velocity_condition(left_emitter);

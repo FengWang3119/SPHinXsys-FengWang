@@ -48,6 +48,7 @@ class NablaWV<DataDelegationType>
 
   protected:
     Vecd *kernel_sum_;
+    int *buffer_particle_indicator_;
 };
 
 template <>
