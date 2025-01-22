@@ -161,6 +161,8 @@ int main(int ac, char *av[])
     body_states_recording.addToWrite<int>(water_block, "BufferParticleIndicator");
     body_states_recording.addToWrite<Vecd>(wall_boundary, "NormalDirection");
     body_states_recording.addToWrite<Vecd>(water_block, "ZeroGradientResidue");
+    body_states_recording.addToWrite<Vecd>(water_block, "KernelSummation");
+    body_states_recording.addToWrite<Real>(water_block, "VolumetricMeasure");
     RegressionTestDynamicTimeWarping<ObservedQuantityRecording<Vecd>> write_centerline_velocity("Velocity", velocity_observer_contact);
     //----------------------------------------------------------------------
     //	Prepare the simulation with cell linked list, configuration
@@ -220,6 +222,7 @@ int main(int ac, char *av[])
             update_fluid_density.exec();
             viscous_acceleration.exec();
             transport_velocity_correction.exec();
+            kernel_summation.exec();
             interval_computing_time_step += TickCount::now() - time_instance;
 
             time_instance = TickCount::now();
@@ -228,7 +231,7 @@ int main(int ac, char *av[])
             {
                 dt = SMIN(get_fluid_time_step_size.exec(), Dt);
                 pressure_relaxation.exec(dt);
-                kernel_summation.exec();
+
                 left_inflow_pressure_condition.exec(dt);
                 right_inflow_pressure_condition.exec(dt);
                 inflow_velocity_condition.exec();
