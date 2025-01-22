@@ -84,6 +84,7 @@ class NablaWV<Contact<>>
 };
 
 using NablaWVComplex = ComplexInteraction<NablaWV<Inner<>, Contact<>>>;
+using NablaWVInner = ComplexInteraction<NablaWV<Inner<>>>;
 
 } // namespace SPH
 #endif // KERNEL_SUMMATION_H

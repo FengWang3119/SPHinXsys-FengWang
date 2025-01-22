@@ -202,38 +202,38 @@ class WaterBlock : public MultiPolygonShape
 //----------------------------------------------------------------------
 //	Wall boundary body definition.
 //----------------------------------------------------------------------
-class WallBoundary : public MultiPolygonShape
-{
-  public:
-    explicit WallBoundary(const std::string &shape_name) : MultiPolygonShape(shape_name)
-    {
-        // std::vector<Vecd> outer_wall_shape;
-        // outer_wall_shape.push_back(point_O + Vecd(0.0, -BW)); //** Keep the section neat */
-        // outer_wall_shape.push_back(point_A + Vecd(0.0, +BW));
-        // outer_wall_shape.push_back(point_B + Vecd(0.0, +BW));
-        // outer_wall_shape.push_back(point_C + Vecd(0.0, -BW));
-        // outer_wall_shape.push_back(point_O + Vecd(0.0, -BW));
+// class WallBoundary : public MultiPolygonShape
+// {
+//   public:
+//     explicit WallBoundary(const std::string &shape_name) : MultiPolygonShape(shape_name)
+//     {
+// std::vector<Vecd> outer_wall_shape;
+// outer_wall_shape.push_back(point_O + Vecd(0.0, -BW)); //** Keep the section neat */
+// outer_wall_shape.push_back(point_A + Vecd(0.0, +BW));
+// outer_wall_shape.push_back(point_B + Vecd(0.0, +BW));
+// outer_wall_shape.push_back(point_C + Vecd(0.0, -BW));
+// outer_wall_shape.push_back(point_O + Vecd(0.0, -BW));
 
-        // std::vector<Vecd> inner_wall_shape;
-        // inner_wall_shape.push_back(point_O + Vecd(-BW, 0.0));
-        // inner_wall_shape.push_back(point_A + Vecd(-BW, 0.0));
-        // inner_wall_shape.push_back(point_B + Vecd(+BW, 0.0));
-        // inner_wall_shape.push_back(point_C + Vecd(+BW, 0.0));
-        // inner_wall_shape.push_back(point_O + Vecd(-BW, 0.0));
+// std::vector<Vecd> inner_wall_shape;
+// inner_wall_shape.push_back(point_O + Vecd(-BW, 0.0));
+// inner_wall_shape.push_back(point_A + Vecd(-BW, 0.0));
+// inner_wall_shape.push_back(point_B + Vecd(+BW, 0.0));
+// inner_wall_shape.push_back(point_C + Vecd(+BW, 0.0));
+// inner_wall_shape.push_back(point_O + Vecd(-BW, 0.0));
 
-        // multi_polygon_.addAPolygon(outer_wall_shape, ShapeBooleanOps::add);
-        // multi_polygon_.addAPolygon(inner_wall_shape, ShapeBooleanOps::sub);
+// multi_polygon_.addAPolygon(outer_wall_shape, ShapeBooleanOps::add);
+// multi_polygon_.addAPolygon(inner_wall_shape, ShapeBooleanOps::sub);
 
-        std::vector<Vecd> wall_shape;
-        wall_shape.push_back(point_O + Vecd(0.0, -BW));
-        wall_shape.push_back(point_C + Vecd(0.0, -BW));
-        wall_shape.push_back(point_C + Vecd(0.0, -BW) + Vecd(0.0, -BW));
-        wall_shape.push_back(point_O + Vecd(0.0, -BW) + Vecd(0.0, -BW));
-        wall_shape.push_back(point_O + Vecd(0.0, -BW));
+//         std::vector<Vecd> wall_shape;
+//         wall_shape.push_back(point_O + Vecd(0.0, -BW));
+//         wall_shape.push_back(point_C + Vecd(0.0, -BW));
+//         wall_shape.push_back(point_C + Vecd(0.0, -BW) + Vecd(0.0, -BW));
+//         wall_shape.push_back(point_O + Vecd(0.0, -BW) + Vecd(0.0, -BW));
+//         wall_shape.push_back(point_O + Vecd(0.0, -BW));
 
-        multi_polygon_.addAPolygon(wall_shape, ShapeBooleanOps::add);
-    }
-};
+//         multi_polygon_.addAPolygon(wall_shape, ShapeBooleanOps::add);
+//     }
+// };
 
 template <int INDICATOR>
 class IndicatedParticlesExcludeInletBuffer : public WithinScope

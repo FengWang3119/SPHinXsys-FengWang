@@ -24,12 +24,12 @@ int main(int ac, char *av[])
     ParticleBuffer<ReserveSizeFactor> in_outlet_particle_buffer(0.5);
     water_block.generateParticlesWithReserve<BaseParticles, Lattice>(in_outlet_particle_buffer);
 
-    SolidBody wall_boundary(sph_system, makeShared<WallBoundary>("WallBoundary"));
-    wall_boundary.defineBodyLevelSetShape();
-    wall_boundary.defineMaterial<Solid>();
-    (!sph_system.RunParticleRelaxation() && sph_system.ReloadParticles())
-        ? wall_boundary.generateParticles<BaseParticles, Reload>(wall_boundary.getName())
-        : wall_boundary.generateParticles<BaseParticles, Lattice>();
+    // SolidBody wall_boundary(sph_system, makeShared<WallBoundary>("WallBoundary"));
+    // wall_boundary.defineBodyLevelSetShape();
+    // wall_boundary.defineMaterial<Solid>();
+    // (!sph_system.RunParticleRelaxation() && sph_system.ReloadParticles())
+    //     ? wall_boundary.generateParticles<BaseParticles, Reload>(wall_boundary.getName())
+    //     : wall_boundary.generateParticles<BaseParticles, Lattice>();
 
     ObserverBody velocity_observer(sph_system, "VelocityObserver");
     velocity_observer.generateParticles<ObserverParticles>(observer_location);
@@ -40,57 +40,57 @@ int main(int ac, char *av[])
     //  Generally, we first define all the inner relations, then the contact relations.
     //----------------------------------------------------------------------
     InnerRelation water_block_inner(water_block);
-    ContactRelation water_block_contact(water_block, {&wall_boundary});
+    //ContactRelation water_block_contact(water_block, {&wall_boundary});
     ContactRelation velocity_observer_contact(velocity_observer, {&water_block});
     //----------------------------------------------------------------------
     // Combined relations built from basic relations
     // which is only used for update configuration.
     //----------------------------------------------------------------------
-    ComplexRelation water_block_complex(water_block_inner, water_block_contact);
+    //ComplexRelation water_block_complex(water_block_inner, water_block_contact);
     //----------------------------------------------------------------------
     //	Run particle relaxation for body-fitted distribution if chosen.
     //----------------------------------------------------------------------
-    if (sph_system.RunParticleRelaxation())
-    {
-        /** body topology only for particle relaxation */
-        InnerRelation solid_inner(wall_boundary);
-        //----------------------------------------------------------------------
-        //	Methods used for particle relaxation.
-        //----------------------------------------------------------------------
-        using namespace relax_dynamics;
-        /** Random reset the insert body particle position. */
-        SimpleDynamics<RandomizeParticlePosition> random_inserted_body_particles(wall_boundary);
-        /** Write the body state to Vtp file. */
-        BodyStatesRecordingToVtp write_inserted_body_to_vtp(wall_boundary);
-        /** Write the particle reload files. */
-        ReloadParticleIO write_particle_reload_files(wall_boundary);
-        /** A  Physics relaxation step. */
-        RelaxationStepInner relaxation_step_inner(solid_inner);
-        //----------------------------------------------------------------------
-        //	Particle relaxation starts here.
-        //----------------------------------------------------------------------
-        random_inserted_body_particles.exec(0.25);
-        relaxation_step_inner.SurfaceBounding().exec();
-        write_inserted_body_to_vtp.writeToFile(0);
-        //----------------------------------------------------------------------
-        //	Relax particles of the insert body.
-        //----------------------------------------------------------------------
-        int ite_p = 0;
-        while (ite_p < 1000)
-        {
-            relaxation_step_inner.exec();
-            ite_p += 1;
-            if (ite_p % 200 == 0)
-            {
-                std::cout << std::fixed << std::setprecision(9) << "Relaxation steps for the inserted body N = " << ite_p << "\n";
-                write_inserted_body_to_vtp.writeToFile(ite_p);
-            }
-        }
-        std::cout << "The physics relaxation process of inserted body finish !" << std::endl;
-        /** Output results. */
-        write_particle_reload_files.writeToFile(0);
-        return 0;
-    }
+    // if (sph_system.RunParticleRelaxation())
+    // {
+    //     /** body topology only for particle relaxation */
+    //     InnerRelation solid_inner(wall_boundary);
+    //     //----------------------------------------------------------------------
+    //     //	Methods used for particle relaxation.
+    //     //----------------------------------------------------------------------
+    //     using namespace relax_dynamics;
+    //     /** Random reset the insert body particle position. */
+    //     SimpleDynamics<RandomizeParticlePosition> random_inserted_body_particles(wall_boundary);
+    //     /** Write the body state to Vtp file. */
+    //     BodyStatesRecordingToVtp write_inserted_body_to_vtp(wall_boundary);
+    //     /** Write the particle reload files. */
+    //     ReloadParticleIO write_particle_reload_files(wall_boundary);
+    //     /** A  Physics relaxation step. */
+    //     RelaxationStepInner relaxation_step_inner(solid_inner);
+    //     //----------------------------------------------------------------------
+    //     //	Particle relaxation starts here.
+    //     //----------------------------------------------------------------------
+    //     random_inserted_body_particles.exec(0.25);
+    //     relaxation_step_inner.SurfaceBounding().exec();
+    //     write_inserted_body_to_vtp.writeToFile(0);
+    //     //----------------------------------------------------------------------
+    //     //	Relax particles of the insert body.
+    //     //----------------------------------------------------------------------
+    //     int ite_p = 0;
+    //     while (ite_p < 1000)
+    //     {
+    //         relaxation_step_inner.exec();
+    //         ite_p += 1;
+    //         if (ite_p % 200 == 0)
+    //         {
+    //             std::cout << std::fixed << std::setprecision(9) << "Relaxation steps for the inserted body N = " << ite_p << "\n";
+    //             write_inserted_body_to_vtp.writeToFile(ite_p);
+    //         }
+    //     }
+    //     std::cout << "The physics relaxation process of inserted body finish !" << std::endl;
+    //     /** Output results. */
+    //     write_particle_reload_files.writeToFile(0);
+    //     return 0;
+    // }
     //----------------------------------------------------------------------
     // Define the numerical methods used in the simulation.
     // Note that there may be data dependence on the sequence of constructions.
@@ -100,12 +100,17 @@ int main(int ac, char *av[])
     // Finally, the auxiliary models such as time step estimator, initial condition,
     // boundary condition and other constraints should be defined.
     //----------------------------------------------------------------------
-    SimpleDynamics<NormalDirectionFromBodyShape> wall_boundary_normal_direction(wall_boundary);
-    InteractionWithUpdate<SpatialTemporalFreeSurfaceIndicationComplex> boundary_indicator(water_block_inner, water_block_contact);
+    //SimpleDynamics<NormalDirectionFromBodyShape> wall_boundary_normal_direction(wall_boundary);
 
-    Dynamics1Level<fluid_dynamics::Integration1stHalfWithWallRiemann> pressure_relaxation(water_block_inner, water_block_contact);
-    Dynamics1Level<fluid_dynamics::Integration2ndHalfWithWallRiemann> density_relaxation(water_block_inner, water_block_contact);
-    InteractionWithUpdate<fluid_dynamics::ViscousForceWithWall> viscous_acceleration(water_block_inner, water_block_contact);
+    //InteractionWithUpdate<SpatialTemporalFreeSurfaceIndicationComplex> boundary_indicator(water_block_inner, water_block_contact);
+    InteractionWithUpdate<SpatialTemporalFreeSurfaceIndicationInner> boundary_indicator(water_block_inner);
+
+    // Dynamics1Level<fluid_dynamics::Integration1stHalfWithWallRiemann> pressure_relaxation(water_block_inner, water_block_contact);
+    // Dynamics1Level<fluid_dynamics::Integration2ndHalfWithWallRiemann> density_relaxation(water_block_inner, water_block_contact);
+    // InteractionWithUpdate<fluid_dynamics::ViscousForceWithWall> viscous_acceleration(water_block_inner, water_block_contact);
+    Dynamics1Level<fluid_dynamics::Integration1stHalfInnerRiemann> pressure_relaxation(water_block_inner);
+    Dynamics1Level<fluid_dynamics::Integration2ndHalfInnerRiemann> density_relaxation(water_block_inner);
+    InteractionWithUpdate<fluid_dynamics::ViscousForceInner> viscous_acceleration(water_block_inner);
 
     //InteractionWithUpdate<fluid_dynamics::TransportVelocityCorrectionComplex<BulkParticles>> transport_velocity_correction(water_block_inner, water_block_contact);
 
@@ -127,10 +132,11 @@ int main(int ac, char *av[])
     BodyAlignedBoxByCell down_emitter(water_block, makeShared<AlignedBoxShape>(xAxis, Transform(Rotation2d(down_buffer_rotation_angle), Vec2d(down_buffer_translation)), down_buffer_halfsize));
     fluid_dynamics::BidirectionalBuffer<FreestreamPressure> down_bidirection_buffer(down_emitter, in_outlet_particle_buffer);
 
-    InteractionWithUpdate<fluid_dynamics::DensitySummationPressureComplex>
-        update_fluid_density(water_block_inner, water_block_contact);
+    //InteractionWithUpdate<fluid_dynamics::DensitySummationPressureComplex> update_fluid_density(water_block_inner, water_block_contact);
+    InteractionWithUpdate<fluid_dynamics::DensitySummationPressureInner> update_fluid_density(water_block_inner);
 
-    InteractionDynamics<NablaWVComplex> kernel_summation(water_block_inner, water_block_contact);
+    //InteractionDynamics<NablaWVComplex> kernel_summation(water_block_inner, water_block_contact);
+    InteractionDynamics<NablaWVInner> kernel_summation(water_block_inner);
 
     SimpleDynamics<fluid_dynamics::PressureCondition<LeftInflowPressure>> left_inflow_pressure_condition(left_emitter);
     SimpleDynamics<fluid_dynamics::PressureCondition<RightInflowPressure>> right_inflow_pressure_condition(right_emitter);
@@ -144,7 +150,8 @@ int main(int ac, char *av[])
     SimpleDynamics<fluid_dynamics::PressureCondition<FreestreamPressure>> up_pressure_condition(up_emitter);
     SimpleDynamics<fluid_dynamics::PressureCondition<FreestreamPressure>> down_pressure_condition(down_emitter);
 
-    InteractionWithUpdate<fluid_dynamics::TransportVelocityCorrectionComplex<BulkParticlesWithoutInlet>> transport_velocity_correction(water_block_inner, water_block_contact);
+    //InteractionWithUpdate<fluid_dynamics::TransportVelocityCorrectionComplex<BulkParticlesWithoutInlet>> transport_velocity_correction(water_block_inner, water_block_contact);
+    InteractionWithUpdate<fluid_dynamics::TransportVelocityCorrectionInner<NoLimiter, BulkParticlesWithoutInlet>> transport_velocity_correction(water_block_inner);
 
     //BodyRegionByParticle inlet_buffer_constraint_part(water_block, makeShared<MultiPolygonShape>(createConstrainShape()));
     //SimpleDynamics<FixBodyPartConstraint> inlet_buffer_constraint(inlet_buffer_constraint_part);
@@ -161,7 +168,7 @@ int main(int ac, char *av[])
     body_states_recording.addToWrite<int>(water_block, "Indicator");
     body_states_recording.addToWrite<Real>(water_block, "Density");
     body_states_recording.addToWrite<int>(water_block, "BufferParticleIndicator");
-    body_states_recording.addToWrite<Vecd>(wall_boundary, "NormalDirection");
+    //body_states_recording.addToWrite<Vecd>(wall_boundary, "NormalDirection");
     body_states_recording.addToWrite<Vecd>(water_block, "ZeroGradientResidue");
     body_states_recording.addToWrite<Vecd>(water_block, "KernelSummation");
     body_states_recording.addToWrite<Real>(water_block, "VolumetricMeasure");
@@ -183,7 +190,7 @@ int main(int ac, char *av[])
     up_bidirection_buffer.tag_buffer_particles.exec();
     down_bidirection_buffer.tag_buffer_particles.exec();
 
-    wall_boundary_normal_direction.exec();
+    //wall_boundary_normal_direction.exec();
     //----------------------------------------------------------------------
     //	Setup for time-stepping control
     //----------------------------------------------------------------------
@@ -288,7 +295,10 @@ int main(int ac, char *av[])
                 particle_sorting.exec();
             }
             water_block.updateCellLinkedList();
-            water_block_complex.updateConfiguration();
+
+            //water_block_complex.updateConfiguration();
+            water_block_inner.updateConfiguration();
+
             interval_updating_configuration += TickCount::now() - time_instance;
             boundary_indicator.exec();
             left_bidirection_buffer.tag_buffer_particles.exec();

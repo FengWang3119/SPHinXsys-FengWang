@@ -110,6 +110,7 @@ template <class InnerInteractionType, class... ContactInteractionTypes>
 using BaseDensitySummationPressureComplex = ComplexInteraction<DensitySummationPressure<InnerInteractionType, ContactInteractionTypes...>>;
 
 using DensitySummationPressureComplex = BaseDensitySummationPressureComplex<Inner<>, Contact<>>;
+using DensitySummationPressureInner = BaseDensitySummationPressureComplex<Inner<>>;
 
 } // namespace fluid_dynamics
 } // namespace SPH
