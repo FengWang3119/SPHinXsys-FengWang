@@ -98,6 +98,112 @@ Vec2d down_buffer_translation = point_OC_half + Vec2d(0.0, 0.5 * buffer_thicknes
 Real down_buffer_rotation_angle = 0.5 * Pi; //** Negative means clock-wise */
 
 //----------------------------------------------------------------------
+// Output and time average control.
+//----------------------------------------------------------------------
+Real cutoff_time = 50.0; //** cutoff_time should be a integral and the same as the PY script */
+//----------------------------------------------------------------------
+// Observation with offset model.
+//----------------------------------------------------------------------
+// ** By kernel weight. *
+Real offset_distance = 0.0;
+int number_observe_line = 2;
+Real observer_offset_distance = 2.0 * resolution_ref;
+Vec2d unit_direction_observe(0.0, 1.0);
+// ** Determine the observing start point. *
+Real observe_start_x[2] = {
+    (point_E[0] + point_F[0]) / 2.0,
+    (point_C[0] + point_D[0]) / 2.0};
+Real observe_start_y[2] = {
+    DH1 + offset_distance + 0.5 * resolution_ref,
+    point_C[1] + offset_distance + 0.5 * resolution_ref};
+// ** Determine the length of the observing line and other information. *
+Real observe_line_length[2] = {0.0};
+int num_observer_points[2] = {0};
+void getObservingLineLengthAndEndPoints()
+{
+    for (int i = 0; i < number_observe_line; ++i)
+    {
+        if (observe_start_x[i] < point_E[0] && observe_start_x[i] >= point_F[0])
+        {
+            observe_line_length[i] = DH - DH1 - 2.0 * offset_distance;
+            num_observer_points[i] = std::round(observe_line_length[i] / resolution_ref);
+        }
+        else if (observe_start_x[i] >= point_D[0])
+        {
+            observe_line_length[i] = DH_C;
+            num_observer_points[i] = std::round(observe_line_length[i] / resolution_ref);
+        }
+    }
+}
+
+StdVec<Vecd> observation_locations;
+StdVec<Vecd> observation_theoretical_locations;
+void getPositionsOfMultipleObserveLines()
+{
+    getObservingLineLengthAndEndPoints();
+    for (int k = 0; k < number_observe_line; ++k)
+    {
+        Vecd pos_observe_start(observe_start_x[k], observe_start_y[k]);
+        int num_observer_point = num_observer_points[k];
+        Real observe_spacing = observe_line_length[k] / num_observer_point;
+        for (int i = 0; i < num_observer_point; ++i)
+        {
+            Real offset = 0.0;
+            offset = (i == 0 ? -observer_offset_distance : (i == num_observer_point - 1 ? observer_offset_distance : 0.0));
+            Vecd pos_observer_i = pos_observe_start + (i * observe_spacing + offset) * unit_direction_observe;
+            Vecd pos_observer_i_no_offset = pos_observe_start + i * observe_spacing * unit_direction_observe;
+            observation_locations.push_back(pos_observer_i);
+            observation_theoretical_locations.push_back(pos_observer_i_no_offset);
+        }
+    }
+}
+void output_observe_positions()
+{
+    std::string filename = "../bin/output/observer_positions.dat";
+    std::ofstream outfile(filename);
+    if (!outfile.is_open())
+    {
+        std::cerr << "Error: Unable to open file " << filename << " for writing." << std::endl;
+        return;
+    }
+    for (const Vecd &position : observation_locations)
+    {
+        outfile << position[0] << " " << position[1] << "\n";
+    }
+    outfile.close();
+}
+void output_observe_theoretical_y()
+{
+    std::string filename = "../bin/output/observer_theoretical_y.dat";
+    std::ofstream outfile(filename);
+    if (!outfile.is_open())
+    {
+        std::cerr << "Error: Unable to open file " << filename << " for writing." << std::endl;
+        return;
+    }
+    for (const Vecd &position : observation_theoretical_locations)
+    {
+        outfile << position[1] << "\n";
+    }
+    outfile.close();
+}
+void output_number_observe_points_on_lines()
+{
+    std::string filename = "../bin/output/observer_num_points_on_lines.dat";
+    std::ofstream outfile(filename);
+    if (!outfile.is_open())
+    {
+        std::cerr << "Error: Unable to open file " << filename << " for writing." << std::endl;
+        return;
+    }
+    for (const int &number : num_observer_points)
+    {
+        outfile << number << "\n";
+    }
+    outfile.close();
+}
+
+//----------------------------------------------------------------------
 //	Pressure boundary definition.
 //----------------------------------------------------------------------
 struct LeftInflowPressure
