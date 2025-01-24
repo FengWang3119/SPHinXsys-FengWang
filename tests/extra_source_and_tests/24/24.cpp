@@ -203,9 +203,9 @@ int main(int ac, char *av[])
     size_t number_of_iterations = 0;
     int screen_output_interval = 100;
     //int observation_sample_interval = screen_output_interval * 2;
-    Real end_time = 100.0;  /**< End time. */
-    Real Output_Time = 1.0; /**< Time stamps for output of body states. */
-    Real dt = 0.0;          /**< Default acoustic time step sizes. */
+    Real end_time = 800.0;   /**< End time. */
+    Real Output_Time = 10.0; /**< Time stamps for output of body states. */
+    Real dt = 0.0;           /**< Default acoustic time step sizes. */
     //----------------------------------------------------------------------
     //	Statistics for CPU time
     //----------------------------------------------------------------------
@@ -223,8 +223,8 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     //	Main loop starts here.
     //----------------------------------------------------------------------
-    std::cout << "Simulation starts?" << std::endl;
-    std::cin.get();
+    // std::cout << "Simulation starts?" << std::endl;
+    // std::cin.get();
     while (physical_time < end_time)
     {
         Real integration_time = 0.0;
