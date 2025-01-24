@@ -31,8 +31,13 @@ int main(int ac, char *av[])
     //     ? wall_boundary.generateParticles<BaseParticles, Reload>(wall_boundary.getName())
     //     : wall_boundary.generateParticles<BaseParticles, Lattice>();
 
-    ObserverBody velocity_observer(sph_system, "VelocityObserver");
-    velocity_observer.generateParticles<ObserverParticles>(observer_location);
+    getObservingLineLengthAndEndPoints();
+    getPositionsOfMultipleObserveLines();
+    output_observe_positions();
+    output_observe_theoretical_x();
+    output_number_observe_points_on_lines();
+    ObserverBody velocity_observer(sph_system, "CenterlineVelocityObserver");
+    velocity_observer.generateParticles<ObserverParticles>(observation_locations);
     //----------------------------------------------------------------------
     //	Define body relation map.
     //	The contact map gives the topological connections between the bodies.
@@ -172,7 +177,7 @@ int main(int ac, char *av[])
     body_states_recording.addToWrite<Vecd>(water_block, "ZeroGradientResidue");
     body_states_recording.addToWrite<Vecd>(water_block, "KernelSummation");
     body_states_recording.addToWrite<Real>(water_block, "VolumetricMeasure");
-    RegressionTestDynamicTimeWarping<ObservedQuantityRecording<Vecd>> write_centerline_velocity("Velocity", velocity_observer_contact);
+    ObservedQuantityRecording<Vecd> write_centerline_velocity("Velocity", velocity_observer_contact);
     //----------------------------------------------------------------------
     //	Prepare the simulation with cell linked list, configuration
     //	and case specified initial condition if necessary.
@@ -197,9 +202,9 @@ int main(int ac, char *av[])
     Real &physical_time = *sph_system.getSystemVariableDataByName<Real>("PhysicalTime");
     size_t number_of_iterations = 0;
     int screen_output_interval = 100;
-    int observation_sample_interval = screen_output_interval * 2;
+    //int observation_sample_interval = screen_output_interval * 2;
     Real end_time = 100.0;  /**< End time. */
-    Real Output_Time = 0.1; /**< Time stamps for output of body states. */
+    Real Output_Time = 1.0; /**< Time stamps for output of body states. */
     Real dt = 0.0;          /**< Default acoustic time step sizes. */
     //----------------------------------------------------------------------
     //	Statistics for CPU time
@@ -214,7 +219,7 @@ int main(int ac, char *av[])
     //	First output before the main loop.
     //----------------------------------------------------------------------
     body_states_recording.writeToFile();
-    write_centerline_velocity.writeToFile(number_of_iterations);
+    //write_centerline_velocity.writeToFile(number_of_iterations);
     //----------------------------------------------------------------------
     //	Main loop starts here.
     //----------------------------------------------------------------------
@@ -266,11 +271,6 @@ int main(int ac, char *av[])
                 std::cout << std::fixed << std::setprecision(9) << "N=" << number_of_iterations << "	Time = "
                           << physical_time
                           << "	Dt = " << Dt << "	dt = " << dt << "\n";
-
-                if (number_of_iterations % observation_sample_interval == 0 && number_of_iterations != sph_system.RestartStep())
-                {
-                    write_centerline_velocity.writeToFile(number_of_iterations);
-                }
             }
             number_of_iterations++;
 
@@ -312,7 +312,12 @@ int main(int ac, char *av[])
         }
         TickCount t2 = TickCount::now();
         body_states_recording.writeToFile();
+
         velocity_observer_contact.updateConfiguration();
+        if (physical_time > cutoff_time)
+        {
+            write_centerline_velocity.writeToFile(number_of_iterations);
+        }
         TickCount t3 = TickCount::now();
         interval += t3 - t2;
     }

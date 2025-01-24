@@ -53,7 +53,6 @@ Vec2d point_K = point_B + Vec2d(-buffer_thickness, -buffer_thickness);
 
 Vec2d point_OC_half = (point_O + point_C) / 2.0;
 
-StdVec<Vecd> observer_location = {Vecd(0.5 * DL2, 0.5 * DH)}; /**< Displacement observation point. */
 BoundingBox system_domain_bounds(Vec2d(point_O[0], point_O[1]) + Vec2d(-BW, -BW), point_B + Vec2d(BW, BW));
 //----------------------------------------------------------------------
 //	Material parameters.
@@ -100,39 +99,31 @@ Real down_buffer_rotation_angle = 0.5 * Pi; //** Negative means clock-wise */
 //----------------------------------------------------------------------
 // Output and time average control.
 //----------------------------------------------------------------------
-Real cutoff_time = 50.0; //** cutoff_time should be a integral and the same as the PY script */
+Real cutoff_time = 90.0; //** cutoff_time should be a integral and the same as the PY script */
+//----------------------------------------------------------------------
+// Observation for regression test.
+//----------------------------------------------------------------------
+StdVec<Vecd> observer_location = {Vecd(0.5 * DL2, 0.5 * DH)}; /**< Displacement observation point. */
 //----------------------------------------------------------------------
 // Observation with offset model.
 //----------------------------------------------------------------------
 // ** By kernel weight. *
 Real offset_distance = 0.0;
-int number_observe_line = 2;
-Real observer_offset_distance = 2.0 * resolution_ref;
-Vec2d unit_direction_observe(0.0, 1.0);
-// ** Determine the observing start point. *
-Real observe_start_x[2] = {
-    (point_E[0] + point_F[0]) / 2.0,
-    (point_C[0] + point_D[0]) / 2.0};
-Real observe_start_y[2] = {
-    DH1 + offset_distance + 0.5 * resolution_ref,
-    point_C[1] + offset_distance + 0.5 * resolution_ref};
+const int number_observe_line = 1;
+Real observer_offset_distance = 0.0 * resolution_ref;
+Vec2d unit_direction_observe(1.0, 0.0);
+// ** Determine the observing start point of the each line. *
+Real observe_start_x[number_observe_line] = {point_G[0]};
+Real observe_start_y[number_observe_line] = {point_ED_half[1]};
 // ** Determine the length of the observing line and other information. *
-Real observe_line_length[2] = {0.0};
-int num_observer_points[2] = {0};
+Real observe_line_length[number_observe_line] = {0.0};
+int num_observer_points[number_observe_line] = {0};
 void getObservingLineLengthAndEndPoints()
 {
     for (int i = 0; i < number_observe_line; ++i)
     {
-        if (observe_start_x[i] < point_E[0] && observe_start_x[i] >= point_F[0])
-        {
-            observe_line_length[i] = DH - DH1 - 2.0 * offset_distance;
-            num_observer_points[i] = std::round(observe_line_length[i] / resolution_ref);
-        }
-        else if (observe_start_x[i] >= point_D[0])
-        {
-            observe_line_length[i] = DH_C;
-            num_observer_points[i] = std::round(observe_line_length[i] / resolution_ref);
-        }
+        observe_line_length[i] = point_K[0] - point_G[0];
+        num_observer_points[i] = std::round(observe_line_length[i] / resolution_ref);
     }
 }
 
@@ -172,9 +163,9 @@ void output_observe_positions()
     }
     outfile.close();
 }
-void output_observe_theoretical_y()
+void output_observe_theoretical_x()
 {
-    std::string filename = "../bin/output/observer_theoretical_y.dat";
+    std::string filename = "../bin/output/observer_theoretical_x.dat";
     std::ofstream outfile(filename);
     if (!outfile.is_open())
     {
@@ -183,7 +174,7 @@ void output_observe_theoretical_y()
     }
     for (const Vecd &position : observation_theoretical_locations)
     {
-        outfile << position[1] << "\n";
+        outfile << position[0] << "\n";
     }
     outfile.close();
 }
