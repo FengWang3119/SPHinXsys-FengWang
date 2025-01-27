@@ -173,8 +173,8 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     //	Main loop starts here.
     //----------------------------------------------------------------------
-    std::cout << "Simulation starts?" << std::endl;
-    std::cin.get();
+    // std::cout << "Simulation starts?" << std::endl;
+    // std::cin.get();
     while (physical_time < end_time)
     {
         Real integration_time = 0.0;
