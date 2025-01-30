@@ -63,7 +63,7 @@ Real U_max = 1.5 * U_inlet; //** An estimated value, generally 1.5 U_inlet *
 Real c_f = 10.0 * U_max;
 Real T_ref = 2.0;
 Real rho0_f = 1.0;
-Real Re = 40.0;
+Real Re = 80.0;
 
 Real Outlet_pressure = 0.0;
 Real Freestream_pressure = 0.0;
