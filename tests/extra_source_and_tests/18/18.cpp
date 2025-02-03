@@ -231,9 +231,13 @@ int main(int ac, char *av[])
     Real &physical_time = *sph_system.getSystemVariableDataByName<Real>("PhysicalTime");
     size_t number_of_iterations = sph_system.RestartStep();
     int screen_output_interval = 100;
-    Real end_time = 200.0;              /**< End time. */
-    Real Output_Time = end_time / 10.0; /**< Time stamps for output of body states. */
-    Real dt = 0.0;                      /**< Default acoustic time step sizes. */
+    Real end_time = 200.0;                      /**< End time. */
+    Real cutoff_ratio = 0.8;                    //** cutoff_time should be a integral and the same as the PY script */
+    Real cutoff_time = cutoff_ratio * end_time; //** cutoff_time should be a integral and the same as the PY script */
+    Real num_output_files = 10.0;
+    Real Output_Time = end_time / num_output_files; /**< Time stamps for output of body states. */
+    Real index_check_file_fully_developed = num_output_files * cutoff_ratio;
+    Real dt = 0.0; /**< Default acoustic time step sizes. */
     //----------------------------------------------------------------------
     //	Statistics for CPU time
     //----------------------------------------------------------------------
@@ -334,7 +338,7 @@ int main(int ac, char *av[])
             left_bidirection_buffer.tag_buffer_particles.exec();
             right_bidirection_buffer.tag_buffer_particles.exec();
 
-            if (physical_time > end_time * 0.6)
+            if (physical_time > cutoff_time)
             {
                 write_recorded_water_velocity.writeToFile(number_of_iterations);
                 write_recorded_water_velocity_cross_section.writeToFile(number_of_iterations);
@@ -356,5 +360,9 @@ int main(int ac, char *av[])
     tt = t4 - t1 - interval;
     std::cout << "Total wall time for computation: " << tt.seconds()
               << " seconds." << std::endl;
+    std::cout << "Cutoff_time: " << cutoff_time
+              << " seconds." << std::endl;
+    std::cout << "For checking fully-developed or not, index of the cutoff output file =  " << index_check_file_fully_developed << std::endl;
+
     return 0;
 }
