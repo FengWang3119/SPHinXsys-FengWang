@@ -47,7 +47,7 @@ Real c_f = 10.0 * U_max;
 Real rho0_f = 1000.0; /**< Density. */
 Real Re = 200.0;
 
-Real Outlet_pressure = 100.0;
+Real Outlet_pressure = 0.0;
 
 Real mu_f = rho0_f * U_f * DH / Re;
 
