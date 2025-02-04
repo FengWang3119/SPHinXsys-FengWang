@@ -117,6 +117,7 @@ void output_observer_theoretical_x()
 //** For getting cross-section velocity *
 namespace observe_cross_sections
 {
+constexpr const char *namespace_prefix = "cross_sections";
 const int number_observe_line = 5;
 Real observer_offset_distance = 2.0 * resolution_ref;
 Vec2d unit_direction_observe(0.0, 1.0);
@@ -171,7 +172,7 @@ void getPositionsOfMultipleObserveLines()
 }
 void output_observe_positions()
 {
-    std::string filename = "../bin/output/observer_positions.dat";
+    std::string filename = "../bin/output/" + std::string(namespace_prefix) + "_observer_positions.dat";
     std::ofstream outfile(filename);
     if (!outfile.is_open())
     {
@@ -186,7 +187,7 @@ void output_observe_positions()
 }
 void output_observe_theoretical_y()
 {
-    std::string filename = "../bin/output/observer_theoretical_y.dat";
+    std::string filename = "../bin/output/" + std::string(namespace_prefix) + "_observer_theoretical_y.dat";
     std::ofstream outfile(filename);
     if (!outfile.is_open())
     {
@@ -201,7 +202,7 @@ void output_observe_theoretical_y()
 }
 void output_number_observe_points_on_lines()
 {
-    std::string filename = "../bin/output/observer_num_points_on_lines.dat";
+    std::string filename = "../bin/output/" + std::string(namespace_prefix) + "_observer_num_points_on_lines.dat";
     std::ofstream outfile(filename);
     if (!outfile.is_open())
     {
