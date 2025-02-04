@@ -99,10 +99,6 @@ Vec2d down_buffer_translation = point_OC_half + Vec2d(0.0, 0.5 * buffer_thicknes
 Real down_buffer_rotation_angle = 0.5 * Pi; //** Negative means clock-wise */
 
 //----------------------------------------------------------------------
-// Output and time average control.
-//----------------------------------------------------------------------
-Real cutoff_time = 150.0; //** cutoff_time should be a integral and the same as the PY script */
-//----------------------------------------------------------------------
 // Observation for regression test.
 //----------------------------------------------------------------------
 StdVec<Vecd> observer_location = {Vecd(0.5 * DL2, 0.5 * DH)}; /**< Displacement observation point. */

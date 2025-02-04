@@ -203,9 +203,13 @@ int main(int ac, char *av[])
     size_t number_of_iterations = 0;
     int screen_output_interval = 100;
     //int observation_sample_interval = screen_output_interval * 2;
-    Real end_time = 200.0;   /**< End time. */
-    Real Output_Time = 10.0; /**< Time stamps for output of body states. */
-    Real dt = 0.0;           /**< Default acoustic time step sizes. */
+    Real end_time = 200.0;                      /**< End time. */
+    Real cutoff_ratio = 0.9;                    //** cutoff_time should be a integral and the same as the PY script */
+    Real cutoff_time = cutoff_ratio * end_time; //** cutoff_time should be a integral and the same as the PY script */
+    Real num_output_files = 10.0;
+    Real Output_Time = end_time / num_output_files; /**< Time stamps for output of body states. */
+    Real index_check_file_fully_developed = num_output_files * cutoff_ratio;
+    Real dt = 0.0; /**< Default acoustic time step sizes. */
     //----------------------------------------------------------------------
     //	Statistics for CPU time
     //----------------------------------------------------------------------
@@ -298,6 +302,7 @@ int main(int ac, char *av[])
 
             //water_block_complex.updateConfiguration();
             water_block_inner.updateConfiguration();
+            velocity_observer_contact.updateConfiguration();
 
             interval_updating_configuration += TickCount::now() - time_instance;
             boundary_indicator.exec();
@@ -309,15 +314,14 @@ int main(int ac, char *av[])
 
             up_bidirection_buffer.tag_buffer_particles.exec();
             down_bidirection_buffer.tag_buffer_particles.exec();
+            if (physical_time > cutoff_time)
+            {
+                write_centerline_velocity.writeToFile(number_of_iterations);
+            }
         }
         TickCount t2 = TickCount::now();
         body_states_recording.writeToFile();
 
-        velocity_observer_contact.updateConfiguration();
-        if (physical_time > cutoff_time)
-        {
-            write_centerline_velocity.writeToFile(number_of_iterations);
-        }
         TickCount t3 = TickCount::now();
         interval += t3 - t2;
     }
@@ -336,6 +340,7 @@ int main(int ac, char *av[])
 
     std::cout << "Cutoff_time: " << cutoff_time
               << " seconds." << std::endl;
+    std::cout << "For checking fully-developed or not, index of the cutoff output file =  " << index_check_file_fully_developed << std::endl;
     // if (sph_system.GenerateRegressionData())
     // {
     //     write_centerline_velocity.generateDataBase(1.0e-3);
