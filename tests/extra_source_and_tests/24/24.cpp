@@ -31,13 +31,22 @@ int main(int ac, char *av[])
     //     ? wall_boundary.generateParticles<BaseParticles, Reload>(wall_boundary.getName())
     //     : wall_boundary.generateParticles<BaseParticles, Lattice>();
 
-    getObservingLineLengthAndEndPoints();
-    getPositionsOfMultipleObserveLines();
-    output_observe_positions();
-    output_observe_theoretical_x();
-    output_number_observe_points_on_lines();
+    observe_centerline::getObservingLineLengthAndEndPoints();
+    observe_centerline::getPositionsOfMultipleObserveLines();
+    observe_centerline::output_observe_positions();
+    observe_centerline::output_observe_theoretical_x();
+    observe_centerline::output_number_observe_points_on_lines();
     ObserverBody velocity_observer(sph_system, "CenterlineVelocityObserver");
-    velocity_observer.generateParticles<ObserverParticles>(observation_locations);
+    velocity_observer.generateParticles<ObserverParticles>(observe_centerline::observation_locations);
+
+    observe_cross_sections::get_observe_start_coordinate();
+    observe_cross_sections::getPositionsOfMultipleObserveLines();
+    observe_cross_sections::output_observe_positions();
+    observe_cross_sections::output_observe_theoretical_y();
+    observe_cross_sections::output_observe_line_pos_x();
+    observe_cross_sections::output_number_observe_points_on_lines();
+    ObserverBody fluid_observer_cross_section(sph_system, "FluidObserverCrossSections");
+    fluid_observer_cross_section.generateParticles<ObserverParticles>(observe_cross_sections::observation_locations);
     //----------------------------------------------------------------------
     //	Define body relation map.
     //	The contact map gives the topological connections between the bodies.
@@ -47,6 +56,7 @@ int main(int ac, char *av[])
     InnerRelation water_block_inner(water_block);
     //ContactRelation water_block_contact(water_block, {&wall_boundary});
     ContactRelation velocity_observer_contact(velocity_observer, {&water_block});
+    ContactRelation fluid_observer_cross_section_contact(fluid_observer_cross_section, {&water_block});
     //----------------------------------------------------------------------
     // Combined relations built from basic relations
     // which is only used for update configuration.
@@ -178,6 +188,7 @@ int main(int ac, char *av[])
     body_states_recording.addToWrite<Vecd>(water_block, "KernelSummation");
     body_states_recording.addToWrite<Real>(water_block, "VolumetricMeasure");
     ObservedQuantityRecording<Vecd> write_centerline_velocity("Velocity", velocity_observer_contact);
+    ObservedQuantityRecording<Vecd> write_recorded_water_velocity_cross_section("Velocity", fluid_observer_cross_section_contact);
     //----------------------------------------------------------------------
     //	Prepare the simulation with cell linked list, configuration
     //	and case specified initial condition if necessary.
@@ -303,6 +314,7 @@ int main(int ac, char *av[])
             //water_block_complex.updateConfiguration();
             water_block_inner.updateConfiguration();
             velocity_observer_contact.updateConfiguration();
+            fluid_observer_cross_section_contact.updateConfiguration();
 
             interval_updating_configuration += TickCount::now() - time_instance;
             boundary_indicator.exec();
@@ -317,6 +329,7 @@ int main(int ac, char *av[])
             if (physical_time > cutoff_time)
             {
                 write_centerline_velocity.writeToFile(number_of_iterations);
+                write_recorded_water_velocity_cross_section.writeToFile(number_of_iterations);
             }
         }
         TickCount t2 = TickCount::now();

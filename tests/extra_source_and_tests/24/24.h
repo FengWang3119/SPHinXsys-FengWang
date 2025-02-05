@@ -106,6 +106,9 @@ StdVec<Vecd> observer_location = {Vecd(0.5 * DL2, 0.5 * DH)}; /**< Displacement 
 // Observation with offset model.
 //----------------------------------------------------------------------
 // ** By kernel weight. *
+//** For getting centerline velocity *
+namespace observe_centerline
+{
 Real offset_distance = 0.0;
 const int number_observe_line = 1;
 Real observer_offset_distance = 0.0 * resolution_ref;
@@ -191,7 +194,123 @@ void output_number_observe_points_on_lines()
     }
     outfile.close();
 }
+} // namespace observe_centerline
+//** For getting cross-section velocity *
+namespace observe_cross_sections
+{
+constexpr const char *namespace_prefix = "cross_sections";
+const int number_observe_line = 10;
+Real observer_offset_distance = 0.0;
+Vec2d unit_direction_observe(0.0, 1.0);
+// ** Determine the observing start point. *
+Real observe_start_x[number_observe_line] = {0.0};
+Real observe_start_y[number_observe_line] = {0.0};
+Real observe_start_x_spacing = (point_K[0] - point_J[0]) / Real(number_observe_line - 1); //** 3 lines means actually 2 spaceing */
 
+void get_observe_start_coordinate()
+{
+    for (int i = 0; i < number_observe_line; ++i)
+    {
+        observe_start_x[i] = point_J[0] + i * observe_start_x_spacing;
+        observe_start_y[i] = point_OA_half[1];
+    }
+}
+
+// ** Determine the length of the observing line and other information. *
+Real observe_line_length[number_observe_line] = {0.0};
+int num_observer_points[number_observe_line] = {0};
+
+void getObservingLineLengthAndEndPoints()
+{
+    for (int i = 0; i < number_observe_line; ++i)
+    {
+        observe_line_length[i] = point_J[1] - point_ED_half[1];
+        num_observer_points[i] = std::round(observe_line_length[i] / resolution_ref);
+    }
+}
+
+StdVec<Vecd> observation_locations;
+StdVec<Vecd> observation_theoretical_locations;
+void getPositionsOfMultipleObserveLines()
+{
+    getObservingLineLengthAndEndPoints();
+    for (int k = 0; k < number_observe_line; ++k)
+    {
+        Vecd pos_observe_start(observe_start_x[k], observe_start_y[k]);
+        int num_observer_point = num_observer_points[k];
+        Real observe_spacing = observe_line_length[k] / num_observer_point;
+        for (int i = 0; i < num_observer_point; ++i)
+        {
+            Real offset = 0.0;
+            offset = (i == 0 ? -observer_offset_distance : (i == num_observer_point - 1 ? observer_offset_distance : 0.0));
+            Vecd pos_observer_i = pos_observe_start + (i * observe_spacing + offset) * unit_direction_observe;
+            Vecd pos_observer_i_no_offset = pos_observe_start + i * observe_spacing * unit_direction_observe;
+            observation_locations.push_back(pos_observer_i);
+            observation_theoretical_locations.push_back(pos_observer_i_no_offset);
+        }
+    }
+}
+void output_observe_positions()
+{
+    std::string filename = "../bin/output/" + std::string(namespace_prefix) + "_observer_positions.dat";
+    std::ofstream outfile(filename);
+    if (!outfile.is_open())
+    {
+        std::cerr << "Error: Unable to open file " << filename << " for writing." << std::endl;
+        return;
+    }
+    for (const Vecd &position : observation_locations)
+    {
+        outfile << position[0] << " " << position[1] << "\n";
+    }
+    outfile.close();
+}
+void output_observe_theoretical_y()
+{
+    std::string filename = "../bin/output/" + std::string(namespace_prefix) + "_observer_theoretical_y.dat";
+    std::ofstream outfile(filename);
+    if (!outfile.is_open())
+    {
+        std::cerr << "Error: Unable to open file " << filename << " for writing." << std::endl;
+        return;
+    }
+    for (const Vecd &position : observation_theoretical_locations)
+    {
+        outfile << position[1] << "\n";
+    }
+    outfile.close();
+}
+void output_observe_line_pos_x()
+{
+    std::string filename = "../bin/output/" + std::string(namespace_prefix) + "_observer_line_pos_x.dat";
+    std::ofstream outfile(filename);
+    if (!outfile.is_open())
+    {
+        std::cerr << "Error: Unable to open file " << filename << " for writing." << std::endl;
+        return;
+    }
+    for (const Real &position : observe_start_x)
+    {
+        outfile << position << "\n";
+    }
+    outfile.close();
+}
+void output_number_observe_points_on_lines()
+{
+    std::string filename = "../bin/output/" + std::string(namespace_prefix) + "_observer_num_points_on_lines.dat";
+    std::ofstream outfile(filename);
+    if (!outfile.is_open())
+    {
+        std::cerr << "Error: Unable to open file " << filename << " for writing." << std::endl;
+        return;
+    }
+    for (const int &number : num_observer_points)
+    {
+        outfile << number << "\n";
+    }
+    outfile.close();
+}
+} // namespace observe_cross_sections
 //----------------------------------------------------------------------
 //	Pressure boundary definition.
 //----------------------------------------------------------------------
