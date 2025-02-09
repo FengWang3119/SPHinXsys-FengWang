@@ -65,7 +65,7 @@ Real U_max = 1.5 * U_inlet; //** An estimated value, generally 1.5 U_inlet *
 Real c_f = 10.0 * U_max;
 Real T_ref = 2.0;
 Real rho0_f = 1.0;
-Real Re = 20.0;
+Real Re = 40.0;
 
 Real Outlet_pressure = 0.0;
 Real Freestream_pressure = 0.0;
@@ -199,7 +199,7 @@ void output_number_observe_points_on_lines()
 namespace observe_cross_sections
 {
 constexpr const char *namespace_prefix = "cross_sections";
-const int number_observe_line = 10;
+const int number_observe_line = 50;
 Real observer_offset_distance = 0.0;
 Vec2d unit_direction_observe(0.0, 1.0);
 // ** Determine the observing start point. *
