@@ -14,7 +14,7 @@ using namespace SPH;
 Real DH = 2.0; /**< Channel height. */
 Real half_channel_height = DH / 2.0;
 Real characteristic_length = DH;
-Real num_fluid_cross_section = 20.0;
+Real num_fluid_cross_section = 10.0;
 Real resolution_ref = DH / num_fluid_cross_section; /**< Initial reference particle spacing. */
 Real BW = resolution_ref * 4;                       /**< Extending width for BCs. */
 Real buffer_thickness = 5.0 * resolution_ref;
