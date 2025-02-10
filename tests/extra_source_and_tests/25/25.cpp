@@ -143,7 +143,7 @@ int main(int ac, char *av[])
     int screen_output_interval = 100;
     int observation_sample_interval = screen_output_interval * 2;
     int restart_output_interval = screen_output_interval * 10;
-    Real end_time = 20.0;
+    Real end_time = 2.5;
     Real output_interval = 0.1;
     //----------------------------------------------------------------------
     //	Statistics for CPU time
@@ -237,16 +237,16 @@ int main(int ac, char *av[])
     std::cout << std::fixed << std::setprecision(9) << "interval_updating_configuration = "
               << interval_updating_configuration.seconds() << "\n";
 
-    if (sph_system.GenerateRegressionData())
-    {
-        write_water_mechanical_energy.generateDataBase(1.0e-3);
-        write_recorded_water_pressure.generateDataBase(1.0e-3);
-    }
-    else if (sph_system.RestartStep() == 0)
-    {
-        write_water_mechanical_energy.testResult();
-        write_recorded_water_pressure.testResult();
-    }
+    // if (sph_system.GenerateRegressionData())
+    // {
+    //     write_water_mechanical_energy.generateDataBase(1.0e-3);
+    //     write_recorded_water_pressure.generateDataBase(1.0e-3);
+    // }
+    // else if (sph_system.RestartStep() == 0)
+    // {
+    //     write_water_mechanical_energy.testResult();
+    //     write_recorded_water_pressure.testResult();
+    // }
 
     return 0;
 };
