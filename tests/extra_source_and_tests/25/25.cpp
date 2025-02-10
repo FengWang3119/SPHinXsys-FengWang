@@ -45,6 +45,19 @@ class WallBoundary : public ComplexShape
         subtract<TransformShape<GeometricShapeBox>>(Transform(inner_wall_translation), inner_wall_halfsize);
     }
 };
+MultiPolygon createProbeShape()
+{
+    std::vector<Vecd> pnts;
+    pnts.push_back(Vecd(LL, 0.0));
+    pnts.push_back(Vecd(LL, BW));
+    pnts.push_back(Vecd(DL, BW));
+    pnts.push_back(Vecd(DL, 0.0));
+    pnts.push_back(Vecd(LL, 0.0));
+
+    MultiPolygon multi_polygon;
+    multi_polygon.addAPolygon(pnts, ShapeBooleanOps::add);
+    return multi_polygon;
+}
 //----------------------------------------------------------------------
 //	Main program starts here.
 //----------------------------------------------------------------------
@@ -117,6 +130,12 @@ int main(int ac, char *av[])
     RestartIO restart_io(sph_system);
     RegressionTestDynamicTimeWarping<ReducedQuantityRecording<TotalMechanicalEnergy>> write_water_mechanical_energy(water_block, gravity);
     RegressionTestDynamicTimeWarping<ObservedQuantityRecording<Real>> write_recorded_water_pressure("Pressure", fluid_observer_contact);
+
+    /** PositionProbes. */
+    BodyRegionByCell position_probe_buffer(water_block, makeShared<MultiPolygonShape>(createProbeShape(), "PositionProbe"));
+    RegressionTestDynamicTimeWarping<ReducedQuantityRecording<UpperFrontInAxisDirection<BodyPartByCell>>>
+        position_probe(position_probe_buffer, "MaxHorizontalDisplacement", 0);
+
     //----------------------------------------------------------------------
     //	Prepare the simulation with cell linked list, configuration
     //	and case specified initial condition if necessary.
@@ -160,6 +179,7 @@ int main(int ac, char *av[])
     body_states_recording.writeToFile();
     write_water_mechanical_energy.writeToFile(number_of_iterations);
     write_recorded_water_pressure.writeToFile(number_of_iterations);
+    position_probe.writeToFile(number_of_iterations);
     //----------------------------------------------------------------------
     //	Main loop starts here.
     //----------------------------------------------------------------------
@@ -217,6 +237,8 @@ int main(int ac, char *av[])
             water_wall_complex.updateConfiguration();
             fluid_observer_contact.updateConfiguration();
             interval_updating_configuration += TickCount::now() - time_instance;
+
+            position_probe.writeToFile(number_of_iterations);
         }
 
         body_states_recording.writeToFile();
