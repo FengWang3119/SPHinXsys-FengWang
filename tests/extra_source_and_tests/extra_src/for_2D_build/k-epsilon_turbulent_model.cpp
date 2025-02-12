@@ -140,7 +140,6 @@ GetVelocityGradient<Contact<Wall>>::GetVelocityGradient(BaseContactRelation &con
       velocity_gradient_(particles_->getVariableDataByName<Matd>("TurbulentVelocityGradient"))
 {
     this->particles_->addVariableToSort<Matd>("Velocity_Gradient_Wall");
-    this->particles_->addVariableToWrite<Matd>("Velocity_Gradient_Wall");
 }
 //=================================================================================================//
 void GetVelocityGradient<Contact<Wall>>::interaction(size_t index_i, Real dt)
@@ -159,22 +158,6 @@ void GetVelocityGradient<Contact<Wall>>::interaction(size_t index_i, Real dt)
                 velocity_gradient_[index_i] += -1.0 * (vel_i)*nablaW_ijV_j.transpose();
             }
         }
-    }
-}
-//=================================================================================================//
-TransferVelocityGradient::
-    TransferVelocityGradient(SPHBody &sph_body)
-    : LocalDynamics(sph_body),
-      is_near_wall_P1_(particles_->getVariableDataByName<int>("IsNearWallP1")),
-      velocity_gradient_(particles_->getVariableDataByName<Matd>("TurbulentVelocityGradient")),
-      vel_grad_(this->particles_->template registerStateVariable<Matd>("VelocityGradient")) {}
-//=================================================================================================//
-void TransferVelocityGradient::update(size_t index_i, Real dt)
-{
-    velocity_gradient_[index_i] = Matd::Zero();
-    if (is_near_wall_P1_[index_i] != 1)
-    {
-        velocity_gradient_[index_i] = vel_grad_[index_i]; //** Transfer value, but exclude P region */
     }
 }
 //=================================================================================================//
@@ -466,7 +449,7 @@ void TurbuViscousForce<Inner<>>::interaction(size_t index_i, Real dt)
 
         Real u_jump = (vel_[index_i] - vel_[index_j]).dot(e_ij);
 
-        Real dissipation = rho_[index_i] * smoothing_length_ * SMIN(3.0 * SMAX(u_jump, Real(0)), c0_);
+        Real dissipation = rho_[index_i] * smoothing_length_ * SMIN(Real(3.0) * SMAX(u_jump, Real(0)), c0_);
         Real dissipation_judge = dissipation;
 
         //** Introduce dissipation *
@@ -562,7 +545,8 @@ TurbulentEddyViscosity::
       turbu_epsilon_(particles_->getVariableDataByName<Real>("TurbulentDissipation")),
       wall_Y_plus_(particles_->getVariableDataByName<Real>("WallYplus")),
       wall_Y_star_(particles_->getVariableDataByName<Real>("WallYstar")),
-      mu_(DynamicCast<Fluid>(this, particles_->getBaseMaterial()).ReferenceViscosity()) {}
+      viscosity_(DynamicCast<Viscosity>(this, particles_->getBaseMaterial())),
+      mu_(viscosity_.ReferenceViscosity()) {}
 //=================================================================================================//
 void TurbulentEddyViscosity::update(size_t index_i, Real dt)
 {
@@ -575,15 +559,16 @@ TurbulentAdvectionTimeStepSize::TurbulentAdvectionTimeStepSize(SPHBody &sph_body
       smoothing_length_min_(sph_body.sph_adaptation_->MinimumSmoothingLength()),
       speed_ref_turbu_(U_max), advectionCFL_(advectionCFL),
       turbu_mu_(particles_->getVariableDataByName<Real>("TurbulentViscosity")),
-      fluid_(DynamicCast<Fluid>(this, particles_->getBaseMaterial()))
+      fluid_(DynamicCast<Fluid>(this, particles_->getBaseMaterial())),
+      viscosity_(DynamicCast<Viscosity>(this, particles_->getBaseMaterial()))
 {
-    Real viscous_speed = fluid_.ReferenceViscosity() / fluid_.ReferenceDensity() / smoothing_length_min_;
+    Real viscous_speed = viscosity_.ReferenceViscosity() / fluid_.ReferenceDensity() / smoothing_length_min_;
     speed_ref_turbu_ = SMAX(viscous_speed, speed_ref_turbu_);
 }
 //=================================================================================================//
 Real TurbulentAdvectionTimeStepSize::reduce(size_t index_i, Real dt)
 {
-    Real turbu_viscous_speed = (fluid_.ReferenceViscosity() + turbu_mu_[index_i]) / fluid_.ReferenceDensity() / smoothing_length_min_;
+    Real turbu_viscous_speed = (viscosity_.ReferenceViscosity() + turbu_mu_[index_i]) / fluid_.ReferenceDensity() / smoothing_length_min_;
     Real turbu_viscous_speed_squire = turbu_viscous_speed * turbu_viscous_speed;
     Real vel_n_squire = vel_[index_i].squaredNorm();
     Real vel_bigger = SMAX(turbu_viscous_speed_squire, vel_n_squire);
@@ -892,7 +877,8 @@ StandardWallFunctionCorrection::
       velo_tan_(particles_->registerStateVariable<Real>("TangentialVelocity")),
       velo_friction_(particles_->registerStateVariable<Vecd>("FrictionVelocity")),
       vel_(particles_->getVariableDataByName<Vecd>("Velocity")), rho_(particles_->getVariableDataByName<Real>("Density")),
-      molecular_viscosity_(DynamicCast<Fluid>(this, particles_->getBaseMaterial()).ReferenceViscosity()),
+      viscosity_(DynamicCast<Viscosity>(this, particles_->getBaseMaterial())),
+      molecular_viscosity_(viscosity_.ReferenceViscosity()),
       turbu_k_(particles_->getVariableDataByName<Real>("TurbulenceKineticEnergy")),
       turbu_epsilon_(particles_->getVariableDataByName<Real>("TurbulentDissipation")),
       turbu_mu_(particles_->getVariableDataByName<Real>("TurbulentViscosity")),
@@ -1107,45 +1093,6 @@ void ConstrainNormalVelocityInRegionP::update(size_t index_i, Real dt)
     if (is_near_wall_P1_[index_i] == 1)
     {
         vel_[index_i] = vel_[index_i] - (vel_[index_i].dot(e_nearest_normal_[index_i])) * e_nearest_normal_[index_i];
-    }
-}
-//=================================================================================================//
-
-//=================================================================================================//
-ConstrainVelocityAt_Y_Direction::
-    ConstrainVelocityAt_Y_Direction(SPHBody &sph_body, Real Length_channel)
-    : LocalDynamics(sph_body),
-      vel_(particles_->getVariableDataByName<Vecd>("Velocity")),
-      pos_(particles_->getVariableDataByName<Vecd>("Position")),
-      length_channel_(Length_channel) {}
-//=================================================================================================//
-void ConstrainVelocityAt_Y_Direction::update(size_t index_i, Real dt)
-{
-    if (pos_[index_i][0] > 0.5 * length_channel_) //** Very temporary treatment *
-    {
-        vel_[index_i][1] = 0.0;
-    }
-}
-//=================================================================================================//
-UpdateTurbulentPlugFlowIndicator::
-    UpdateTurbulentPlugFlowIndicator(SPHBody &sph_body, Real DH)
-    : LocalDynamics(sph_body),
-      turbu_plug_flow_indicator_(particles_->registerStateVariable<int>("TurbulentPlugFlowIndicator")),
-      pos_(particles_->getVariableDataByName<Vecd>("Position")), channel_width_(DH)
-{
-    particles_->addVariableToSort<int>("TurbulentPlugFlowIndicator");
-    particles_->addVariableToWrite<int>("TurbulentPlugFlowIndicator");
-}
-//=================================================================================================//
-void UpdateTurbulentPlugFlowIndicator::update(size_t index_i, Real dt)
-{
-    turbu_plug_flow_indicator_[index_i] = 0;
-    if (pos_[index_i][0] > 0.0) //** Buffer region is still applied tran.vel. Very temporary treatment *
-    {
-        if (pos_[index_i][1] > 0.25 * channel_width_ && pos_[index_i][1] < 0.75 * channel_width_) //** Very temporary treatment *
-        {
-            turbu_plug_flow_indicator_[index_i] = 1;
-        }
     }
 }
 //=================================================================================================//

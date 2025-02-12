@@ -4,6 +4,7 @@
 #include "update_body_relation.h"
 
 #include "cell_linked_list.hpp"
+#include "particle_iterators_ck.h"
 
 namespace SPH
 {
@@ -14,7 +15,6 @@ UpdateRelation<ExecutionPolicy, Inner<Parameters...>>::
     : Interaction<Inner<Parameters...>>(inner_relation),
       BaseDynamics<void>(), ex_policy_(ExecutionPolicy{}),
       cell_linked_list_(inner_relation.getCellLinkedList()),
-      particle_offset_list_size_(inner_relation.getParticleOffsetListSize()),
       kernel_implementation_(*this)
 {
     this->particles_->addVariableToWrite(this->dv_particle_offset_);
@@ -72,16 +72,16 @@ void UpdateRelation<ExecutionPolicy, Inner<Parameters...>>::exec(Real dt)
                  [=](size_t i)
                  { computing_kernel->incrementNeighborSize(i); });
 
-    UnsignedInt *neighbor_index = this->dv_neighbor_index_->DelegatedDataField(ex_policy_);
-    UnsignedInt *particle_offset = this->dv_particle_offset_->DelegatedDataField(ex_policy_);
+    UnsignedInt *neighbor_index = this->dv_neighbor_index_->DelegatedData(ex_policy_);
+    UnsignedInt *particle_offset = this->dv_particle_offset_->DelegatedData(ex_policy_);
+    UnsignedInt current_offset_list_size = total_real_particles + 1;
     UnsignedInt current_neighbor_index_size =
-        exclusive_scan(ex_policy_, neighbor_index, particle_offset,
-                       this->particle_offset_list_size_,
+        exclusive_scan(ex_policy_, neighbor_index, particle_offset, current_offset_list_size,
                        typename PlusUnsignedInt<ExecutionPolicy>::type());
 
-    if (current_neighbor_index_size > this->dv_neighbor_index_->getDataFieldSize())
+    if (current_neighbor_index_size > this->dv_neighbor_index_->getDataSize())
     {
-        this->dv_neighbor_index_->reallocateDataField(ex_policy_, current_neighbor_index_size);
+        this->dv_neighbor_index_->reallocateData(ex_policy_, current_neighbor_index_size);
         this->inner_relation_.resetComputingKernelUpdated();
         kernel_implementation_.overwriteComputingKernel();
     }
@@ -97,7 +97,6 @@ UpdateRelation<ExecutionPolicy, Contact<Parameters...>>::
     UpdateRelation(Relation<Contact<Parameters...>> &contact_relation)
     : Interaction<Contact<Parameters...>>(contact_relation),
       BaseDynamics<void>(), ex_policy_(ExecutionPolicy{}),
-      particle_offset_list_size_(contact_relation.getParticleOffsetListSize()),
       contact_cell_linked_list_(contact_relation.getContactCellLinkedList())
 {
     for (size_t k = 0; k != this->contact_bodies_.size(); ++k)
@@ -159,16 +158,16 @@ void UpdateRelation<ExecutionPolicy, Contact<Parameters...>>::exec(Real dt)
                      [=](size_t i)
                      { computing_kernel->incrementNeighborSize(i); });
 
-        UnsignedInt *neighbor_index = this->dv_contact_neighbor_index_[k]->DelegatedDataField(ex_policy_);
-        UnsignedInt *particle_offset = this->dv_contact_particle_offset_[k]->DelegatedDataField(ex_policy_);
+        UnsignedInt *neighbor_index = this->dv_contact_neighbor_index_[k]->DelegatedData(ex_policy_);
+        UnsignedInt *particle_offset = this->dv_contact_particle_offset_[k]->DelegatedData(ex_policy_);
+        UnsignedInt current_offset_list_size = total_real_particles + 1;
         UnsignedInt current_neighbor_index_size =
-            exclusive_scan(ex_policy_, neighbor_index, particle_offset,
-                           this->particle_offset_list_size_,
+            exclusive_scan(ex_policy_, neighbor_index, particle_offset, current_offset_list_size,
                            typename PlusUnsignedInt<ExecutionPolicy>::type());
 
-        if (current_neighbor_index_size > this->dv_contact_neighbor_index_[k]->getDataFieldSize())
+        if (current_neighbor_index_size > this->dv_contact_neighbor_index_[k]->getDataSize())
         {
-            this->dv_contact_neighbor_index_[k]->reallocateDataField(ex_policy_, current_neighbor_index_size);
+            this->dv_contact_neighbor_index_[k]->reallocateData(ex_policy_, current_neighbor_index_size);
             this->contact_relation_.resetComputingKernelUpdated(k);
             contact_kernel_implementation_[k]->overwriteComputingKernel(k);
         }
