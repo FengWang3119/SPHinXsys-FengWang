@@ -19,7 +19,7 @@ using namespace SPH;
 //	Basic geometry parameters and numerical setup.
 //----------------------------------------------------------------------
 Real DH = 2.0; /**< Channel height. */
-Real num_fluid_cross_section = 100.0;
+Real num_fluid_cross_section = 40.0;
 Real extend_in = 2.0;
 Real extend_out = 4.0;
 Real extend_compensate_relaxation = 0.0;
@@ -80,7 +80,7 @@ Real U_inlet = 1.0;
 Real Outlet_pressure = 0.0;
 Real U_f = U_inlet;         //*Characteristic velocity
 Real U_max = 3.0 * U_inlet; //** An estimated value, generally 1.5 U_inlet *
-Real c_f = 10.0 * U_max;
+Real c_f = 10.0 * U_max * 0.4;
 Real rho0_f = 1.0; /**< Density. */
 Real Re = 40000.0;
 //Real Re = 100.0;
@@ -331,7 +331,7 @@ class WallBoundary : public ComplexShape
 struct InflowVelocity
 {
     Real u_ref_, t_ref_;
-    AlignedBoxShape &aligned_box_;
+    AlignedBox &aligned_box_;
     Vecd halfsize_;
 
     template <class BoundaryConditionType>
@@ -343,7 +343,6 @@ struct InflowVelocity
     Vecd operator()(Vecd &position, Vecd &velocity, Real current_time)
     {
         Vecd target_velocity = velocity;
-        Real current_time = physical_time_;
         Real u_ave = current_time < t_ref_ ? 0.5 * u_ref_ * (1.0 - cos(Pi * current_time / t_ref_)) : u_ref_;
         //target_velocity[0] = 1.5 * u_ave * SMAX(0.0, 1.0 - position[1] * position[1] / halfsize_[1] / halfsize_[1]);
         //target_velocity[0] = 1.5 * u_ave * (1.0 - position[1] * position[1] / half_channel_height / half_channel_height);
@@ -356,24 +355,6 @@ struct InflowVelocity
         }
         target_velocity[1] = 0.0;
         return target_velocity;
-    }
-};
-//----------------------------------------------------------------------
-//	Define time dependent acceleration in x-direction
-//----------------------------------------------------------------------
-class TimeDependentAcceleration : public Gravity
-{
-    Real t_ref_, u_ref_, du_ave_dt_;
-
-  public:
-    explicit TimeDependentAcceleration(Vecd gravity_vector)
-        : Gravity(gravity_vector), t_ref_(2.0), u_ref_(U_inlet), du_ave_dt_(0) {}
-
-    virtual Vecd InducedAcceleration(const Vecd &position) override
-    {
-        Real run_time_ = physical_time_;
-        du_ave_dt_ = 0.5 * u_ref_ * (Pi / t_ref_) * sin(Pi * run_time_ / t_ref_);
-        return run_time_ < t_ref_ ? Vecd(du_ave_dt_, 0.0) : global_acceleration_;
     }
 };
 

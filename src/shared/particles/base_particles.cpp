@@ -10,20 +10,20 @@ namespace SPH
 {
 //=================================================================================================//
 BaseParticles::BaseParticles(SPHBody &sph_body, BaseMaterial *base_material)
-    : v_total_real_particles_(nullptr), real_particles_bound_(0), particles_bound_(0),
+    : sv_total_real_particles_(nullptr), real_particles_bound_(0), particles_bound_(0),
       original_id_(nullptr), sorted_id_(nullptr),
       pos_(nullptr), Vol_(nullptr), rho_(nullptr), mass_(nullptr),
       sph_body_(sph_body), body_name_(sph_body.getName()),
       base_material_(*base_material),
       restart_xml_parser_("xml_restart", "particles"),
       reload_xml_parser_("xml_particle_reload", "particles"),
-      copy_particle_state_(all_state_data_),
-      write_restart_variable_to_xml_(variables_to_restart_, restart_xml_parser_),
-      write_reload_variable_to_xml_(variables_to_reload_, reload_xml_parser_),
-      read_restart_variable_from_xml_(variables_to_restart_, restart_xml_parser_)
+      copy_particle_state_(),
+      write_restart_variable_to_xml_(restart_xml_parser_),
+      write_reload_variable_to_xml_(reload_xml_parser_),
+      read_restart_variable_from_xml_(restart_xml_parser_)
 {
     sph_body.assignBaseParticles(this);
-    v_total_real_particles_ = registerSingularVariable<UnsignedInt>("TotalRealParticles");
+    sv_total_real_particles_ = registerSingularVariable<UnsignedInt>("TotalRealParticles");
 }
 //=================================================================================================//
 void BaseParticles::initializeBasicParticleVariables()
@@ -58,7 +58,7 @@ void BaseParticles::registerPositionAndVolumetricMeasureFromReload()
 //=================================================================================================//
 void BaseParticles::initializeAllParticlesBounds(size_t number_of_particles)
 {
-    UnsignedInt *total_real_particles = v_total_real_particles_->ValueAddress();
+    UnsignedInt *total_real_particles = sv_total_real_particles_->Data();
     *total_real_particles = number_of_particles;
     real_particles_bound_ = number_of_particles;
     particles_bound_ = real_particles_bound_;
@@ -77,7 +77,7 @@ void BaseParticles::increaseAllParticlesBounds(size_t buffer_size)
 //=================================================================================================//
 void BaseParticles::copyFromAnotherParticle(size_t index, size_t another_index)
 {
-    copy_particle_state_(index, another_index);
+    copy_particle_state_(all_state_data_, index, another_index);
 }
 //=================================================================================================//
 size_t BaseParticles::allocateGhostParticles(size_t ghost_size)
@@ -132,20 +132,20 @@ void BaseParticles::resizeXmlDocForParticles(XmlParser &xml_parser)
 void BaseParticles::writeParticlesToXmlForRestart(std::string &filefullpath)
 {
     resizeXmlDocForParticles(restart_xml_parser_);
-    write_restart_variable_to_xml_();
+    write_restart_variable_to_xml_(variables_to_restart_);
     restart_xml_parser_.writeToXmlFile(filefullpath);
 }
 //=================================================================================================//
 void BaseParticles::readParticleFromXmlForRestart(std::string &filefullpath)
 {
     restart_xml_parser_.loadXmlFile(filefullpath);
-    read_restart_variable_from_xml_(this);
+    read_restart_variable_from_xml_(variables_to_restart_, this);
 }
 //=================================================================================================//
 void BaseParticles::writeToXmlForReloadParticle(std::string &filefullpath)
 {
     resizeXmlDocForParticles(reload_xml_parser_);
-    write_reload_variable_to_xml_();
+    write_reload_variable_to_xml_(variables_to_reload_);
     reload_xml_parser_.writeToXmlFile(filefullpath);
 }
 //=================================================================================================//
