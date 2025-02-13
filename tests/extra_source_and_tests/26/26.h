@@ -8,7 +8,7 @@
 #include "bidirectional_buffer.h"
 #include "density_correciton.h"
 #include "density_correciton.hpp"
-//#include "k-epsilon_turbulent_model.cpp"
+#include "k-epsilon_turbulent_model.cpp"
 #include "kernel_summation.h"
 #include "kernel_summation.hpp"
 #include "pressure_boundary.h"
@@ -23,20 +23,43 @@ Real DH = 2.0;  /**< Channel height. */
 Real DL = 30.0; /**< Channel length. */
 Real num_fluid_cross_section = 20.0;
 
+Real characteristic_length = DH; /**<It needs characteristic Length to determine Re and calculate turbulent length and the inflow turbulent epsilon>*/
 //----------------------------------------------------------------------
 //	Unique parameters for turbulence.
 //----------------------------------------------------------------------
+//** For K and Epsilon, type of the turbulent inlet, 0 is freestream, 1 is from interpolation from PY21 *
+int type_turbulent_inlet = 1;
+Real relaxation_rate_turbulent_inlet = 0.8;
+//** Tag for AMRD *
+int is_AMRD = 0;
+bool is_constrain_normal_velocity_in_P_region = false;
+//** Weight for correcting the velocity  gradient in the sub near wall region  *
+Real weight_vel_grad_sub_nearwall = 0.1;
+//** Tag for Source Term Linearisation *
+bool is_source_term_linearisation = false;
+//** Initial values for K, Epsilon and Mu_t *
+StdVec<Real> initial_turbu_values = {0.000180001, 3.326679e-5, 1.0e-9};
+//----------------------------------------------------------------------
+//	Resolution for turbulence.
+//----------------------------------------------------------------------
+Real y_p_constant = 0.05;
+//Real y_p_constant = DH/num_fluid_cross_section; //** For first try */
 
-Real resolution_ref = DH / num_fluid_cross_section; /**< Initial reference particle spacing. */
-
-Real BW = resolution_ref * 4; /**< Reference size of the emitter. */
+Real resolution_ref = (DH - 2.0 * y_p_constant) / (num_fluid_cross_section - 1.0); /**< Initial reference particle spacing. */
+Real offset_distance = y_p_constant - resolution_ref / 2.0;                        //** Basically offset distance is large than or equal to 0 *
+Real DH_C = DH - 2.0 * offset_distance;
+//----------------------------------------------------------------------
+//	Other parameters.
+//----------------------------------------------------------------------
+Real BW = resolution_ref * 4;
 Real DL_sponge = resolution_ref * 20;
 Real half_channel_height = DH / 2.0;
+Real buffer_thickness = 5.0 * resolution_ref;
+Vec2d buffer_normal = Vec2d(1.0, 0.0);
 //----------------------------------------------------------------------
 //	Domain bounds of the system.
 //----------------------------------------------------------------------
 BoundingBox system_domain_bounds(Vec2d(-DL_sponge - 2.0 * BW, -BW), Vec2d(DL + 2.0 * BW, DH + 2.0 * BW));
-
 //----------------------------------------------------------------------
 //	Material properties of the fluid.
 //----------------------------------------------------------------------
@@ -44,27 +67,24 @@ Real U_inlet = 1.0;
 Real U_f = U_inlet;         //*Characteristic velocity
 Real U_max = 1.5 * U_inlet; //** An estimated value, generally 1.5 U_inlet *
 Real c_f = 10.0 * U_max;
-Real rho0_f = 1000.0; /**< Density. */
-Real Re = 200.0;
+Real rho0_f = 1.0; /**< Density. */
+Real Re = 20000.0;
 
 Real Outlet_pressure = 0.0;
 
-Real mu_f = rho0_f * U_f * DH / Re;
+Real mu_f = rho0_f * U_f * characteristic_length / Re;
 
-Real Re_calculated = U_f * DH * rho0_f / mu_f;
-
+Real Re_calculated = U_f * characteristic_length * rho0_f / mu_f;
 //----------------------------------------------------------------------
-//	The emitter block with offset model.
+//	The buffer block with offset model.
 //----------------------------------------------------------------------
-// Vec2d left_buffer_halfsize = Vec2d(0.5 * BW, 0.5 * DH_C + BW);
-// Vec2d left_buffer_translation = Vec2d(-DL_sponge, 0.0) + left_buffer_halfsize + Vecd(0.0, offset_distance - BW);
-Vec2d left_buffer_halfsize = Vec2d(2.5 * resolution_ref, 0.5 * DH);
-Vec2d left_buffer_translation = left_buffer_halfsize + Vec2d(-DL_sponge, 0.0);
+//** Note that even if offset(reduce) the domain, the buffer region still cover the domain*/
+//** the horizontal boundary offset loss will be compensated specifically*/
+Vec2d left_buffer_halfsize = 0.5 * Vec2d(buffer_thickness, DH);
+Vec2d left_buffer_translation = left_buffer_halfsize + Vec2d(-DL_sponge, 0.0); //** old version, the latest one not use Sponge */
 
-// Vec2d right_buffer_halfsize = Vec2d(0.5 * BW, 0.75 * DH);
-// Vec2d right_buffer_translation = Vec2d(DL, DH + 0.25 * DH) - right_buffer_halfsize;
-Vec2d right_buffer_halfsize = Vec2d(2.5 * resolution_ref, 0.5 * DH);
-Vec2d right_buffer_translation = Vec2d(DL - 2.5 * resolution_ref, 0.5 * DH);
+Vec2d right_buffer_halfsize = 0.5 * Vec2d(buffer_thickness, DH);
+Vec2d right_buffer_translation = Vec2d(DL, 0.5 * DH) + Vec2d(-0.5 * buffer_thickness, 0.0);
 //----------------------------------------------------------------------
 // Observation with offset model.
 //----------------------------------------------------------------------
@@ -225,11 +245,11 @@ StdVec<Vecd> observer_location_center_point = {Vecd(0.5 * DL, 0.5 * DH)};
 std::vector<Vecd> createWaterBlockShape()
 {
     std::vector<Vecd> water_block_shape;
-    water_block_shape.push_back(Vecd(-DL_sponge, 0.0));
-    water_block_shape.push_back(Vecd(-DL_sponge, DH));
-    water_block_shape.push_back(Vecd(DL, DH));
-    water_block_shape.push_back(Vecd(DL, 0.0));
-    water_block_shape.push_back(Vecd(-DL_sponge, 0.0));
+    water_block_shape.push_back(Vecd(-DL_sponge - offset_distance, 0.0));
+    water_block_shape.push_back(Vecd(-DL_sponge - offset_distance, DH));
+    water_block_shape.push_back(Vecd(DL + offset_distance, DH));
+    water_block_shape.push_back(Vecd(DL + offset_distance, 0.0));
+    water_block_shape.push_back(Vecd(-DL_sponge - offset_distance, 0.0));
     return water_block_shape;
 }
 class WaterBlock : public ComplexShape
@@ -238,7 +258,7 @@ class WaterBlock : public ComplexShape
     explicit WaterBlock(const std::string &shape_name) : ComplexShape(shape_name)
     {
         MultiPolygon computational_domain(createWaterBlockShape());
-        add<ExtrudeShape<MultiPolygonShape>>(0.0, computational_domain, "ComputationalDomain");
+        add<ExtrudeShape<MultiPolygonShape>>(-offset_distance, computational_domain, "ComputationalDomain");
     }
 };
 
@@ -274,10 +294,10 @@ class WallBoundary : public ComplexShape
     explicit WallBoundary(const std::string &shape_name) : ComplexShape(shape_name)
     {
         MultiPolygon outer_dummy_boundary(createOuterWallShape());
-        add<ExtrudeShape<MultiPolygonShape>>(BW, outer_dummy_boundary, "OuterDummyBoundary");
+        add<ExtrudeShape<MultiPolygonShape>>(-offset_distance + BW, outer_dummy_boundary, "OuterDummyBoundary");
 
         MultiPolygon inner_dummy_boundary(createInnerWallShape());
-        subtract<ExtrudeShape<MultiPolygonShape>>(0.0, inner_dummy_boundary, "InnerDummyBoundary");
+        subtract<ExtrudeShape<MultiPolygonShape>>(-offset_distance, inner_dummy_boundary, "InnerDummyBoundary");
     }
 };
 
@@ -300,8 +320,47 @@ struct InflowVelocity
     {
         Vecd target_velocity = velocity;
         Real u_ave = current_time < t_ref_ ? 0.5 * u_ref_ * (1.0 - cos(Pi * current_time / t_ref_)) : u_ref_;
-        target_velocity[0] = 1.5 * u_ave * (1.0 - position[1] * position[1] / half_channel_height / half_channel_height);
-        //target_velocity[0] = u_ave;
+        //target_velocity[0] = 1.5 * u_ave * SMAX(0.0, 1.0 - position[1] * position[1] / halfsize_[1] / halfsize_[1]);
+        //target_velocity[0] = 1.5 * u_ave * (1.0 - position[1] * position[1] / half_channel_height / half_channel_height);
+        target_velocity[0] = u_ave;
+        if (1)
+        {
+            //** Impose fully-developed velocity from PYTHON result */
+            //** Calculate the distance to wall, Y. position[1] is the distance to the centerline */
+            Real Y = half_channel_height - std::abs(position[1]);
+            int polynomial_order = 8;
+            int num_coefficient = polynomial_order + 1;
+            //** Coefficient of the polynomial, 8th-order, from py21 dp=0.024 */
+            // Real coeff[] = {
+            //     6.153336e-01, 3.095679e+00, -1.399783e+01,
+            //     4.798221e+01, -1.100147e+02, 1.619762e+02,
+            //     -1.464631e+02, 7.373006e+01, -1.577924e+01
+            // };
+            //** Coefficient of the polynomial, 8th-order, from py21 dp=0.1 */
+            Real coeff[] = {
+                6.492006e-01, 2.145673e+00, -7.442681e+00,
+                2.148624e+01, -4.443593e+01, 6.171458e+01,
+                -5.439313e+01, 2.726584e+01, -5.887918e+00};
+            Real polynomial_value = 0.0;
+            for (int i = 0; i < num_coefficient; ++i)
+            {
+                polynomial_value += coeff[i] * std::pow(Y, i);
+            }
+
+            if (Y > half_channel_height || Y < 0.0)
+            {
+                std::cout << "position[1]=" << position[1] << std::endl;
+                std::cout << "Y=" << Y << std::endl;
+                std::cout << "polynomial_value=" << polynomial_value << std::endl;
+                std::cout << "Stop" << std::endl;
+                std::cout << "=================" << std::endl;
+                std::cin.get();
+            }
+
+            //** Impose inlet velocity gradually */
+            target_velocity[0] = current_time < t_ref_ ? 0.5 * polynomial_value * (1.0 - cos(Pi * current_time / t_ref_)) : polynomial_value;
+            //target_velocity[0] = polynomial_value;
+        }
 
         if (position[1] > half_channel_height)
         {
