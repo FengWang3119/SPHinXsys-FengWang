@@ -49,12 +49,15 @@ class BaseTurbuClosureCoeff
     Real C_mu_, C_mu_25_, C_mu_75_;
     Real turbulent_intensity_;
 
+    //** Closure coefficients for K *
     Real sigma_k_;
 
+    //** Closure coefficients for Epsilon *
     Real C_l_, C_2_;
     Real sigma_E_;
     Real turbulent_length_ratio_for_epsilon_inlet_;
 
+    //** Start time for laminar law *
     Real start_time_laminar_;
     Real y_star_threshold_laminar_;
 };
@@ -94,10 +97,10 @@ class GetVelocityGradient<DataDelegationType>
     int *is_near_wall_P2_;
 
     Matd *velocity_gradient_;
-
+    //**For test*
     Matd *velocity_gradient_wall;
 };
-
+//** Inner part *
 template <>
 class GetVelocityGradient<Inner<>> : public GetVelocityGradient<DataDelegateInner>
 {
@@ -115,6 +118,7 @@ class GetVelocityGradient<Inner<>> : public GetVelocityGradient<DataDelegateInne
 };
 using GetVelocityGradientInner = GetVelocityGradient<Inner<>>;
 
+//** Wall part *
 template <>
 class GetVelocityGradient<Contact<Wall>> : public InteractionWithWall<GetVelocityGradient>
 {
@@ -127,6 +131,7 @@ class GetVelocityGradient<Contact<Wall>> : public InteractionWithWall<GetVelocit
     Matd *velocity_gradient_;
 };
 
+//** Interface part *
 using GetVelocityGradientComplex = ComplexInteraction<GetVelocityGradient<Inner<>, Contact<Wall>>>;
 //=================================================================================================//
 template <typename... T>
@@ -142,7 +147,7 @@ class BaseTurbulentModel<Base, DataDelegationType>
     virtual ~BaseTurbulentModel(){};
 
   protected:
-    Matd *turbu_strain_rate_;
+    Matd *turbu_strain_rate_; //** temporary naming to distinguish the regular strain rate *
     Viscosity &viscosity_;
     Real mu_, smoothing_length_, particle_spacing_min_;
     Real *rho_, *Vol_;
@@ -177,6 +182,7 @@ class K_TurbulentModelInner : public BaseTurbulentModel<Base, DataDelegateInner>
     int *is_extra_viscous_dissipation_;
     bool is_STL_;
 
+    //** for test */
     int *turbu_indicator_;
     Real *k_diffusion_, *vel_x_;
 };
@@ -230,7 +236,7 @@ class TKEnergyForce<Base, DataDelegationType>
     Real *turbu_k_;
     Vecd *test_k_grad_rslt_;
 };
-
+//** Inner part *
 template <>
 class TKEnergyForce<Inner<>> : public TKEnergyForce<Base, DataDelegateInner>
 {
@@ -243,7 +249,7 @@ class TKEnergyForce<Inner<>> : public TKEnergyForce<Base, DataDelegateInner>
     Vecd *test_k_grad_rslt_;
     Matd *B_;
 };
-
+//** Wall part *
 template <>
 class TKEnergyForce<Contact<>> : public TKEnergyForce<Base, DataDelegateContact>
 {
@@ -257,6 +263,7 @@ class TKEnergyForce<Contact<>> : public TKEnergyForce<Base, DataDelegateContact>
     Matd *B_;
 };
 
+//** Interface part *
 template <class InnerInteractionType, class... ContactInteractionTypes>
 using BaseTKEnergyForceComplex = ComplexInteraction<TKEnergyForce<InnerInteractionType, ContactInteractionTypes...>>;
 
@@ -286,6 +293,7 @@ class TurbuViscousForce<DataDelegationType> : public ViscousForce<DataDelegation
     Real c0_;
 };
 
+//** Inner part *
 template <>
 class TurbuViscousForce<Inner<>> : public TurbuViscousForce<DataDelegateInner>
 {
@@ -300,6 +308,7 @@ class TurbuViscousForce<Inner<>> : public TurbuViscousForce<DataDelegateInner>
     Matd *B_;
 };
 
+//** Wall part *
 using BaseTurbuViscousForceWithWall = InteractionWithWall<TurbuViscousForce>;
 template <>
 class TurbuViscousForce<Contact<Wall>> : public BaseTurbuViscousForceWithWall, public WallFunction
@@ -315,6 +324,7 @@ class TurbuViscousForce<Contact<Wall>> : public BaseTurbuViscousForceWithWall, p
     Real *physical_time_;
 };
 
+//** Interface part *
 using TurbulentViscousForceWithWall = ComplexInteraction<TurbuViscousForce<Inner<>, Contact<Wall>>>;
 //=================================================================================================//
 class TurbulentEddyViscosity : public LocalDynamics, public BaseTurbuClosureCoeff
@@ -491,6 +501,22 @@ class TurbulentLinearGradientCorrectionMatrix<Inner<>>
     void update(size_t index_i, Real dt = 0.0);
 };
 using TurbulentLinearGradientCorrectionMatrixInner = TurbulentLinearGradientCorrectionMatrix<Inner<>>;
+
+//=================================================================================================//
+class GetLimiterOfTransportVelocityCorrection : public LocalDynamics
+{
+  public:
+    explicit GetLimiterOfTransportVelocityCorrection(SPHBody &sph_body, Real slope);
+    virtual ~GetLimiterOfTransportVelocityCorrection(){};
+
+    void update(size_t index_i, Real dt = 0.0);
+
+  protected:
+    const Real h_ref_;
+    Vecd *zero_gradient_residue_;
+    Real slope_;
+    Real *limiter_tvc_;
+};
 //=================================================================================================//
 template <class ParticleScope>
 using TVC_Limited_withLinearGradientCorrection =
@@ -512,10 +538,25 @@ class ModifiedTruncatedLinear : public Limiter
         return SMIN(slope_ * measure_scale, Real(1));
     };
 };
+template <class ParticleScope>
+using TVC_ModifiedLimited_NoRKGC =
+    BaseTransportVelocityCorrectionComplex<SingleResolution, ModifiedTruncatedLinear, NoKernelCorrection, ParticleScope>;
+
+template <class ParticleScope>
+using TVC_ModifiedLimited_withLinearGradientCorrection =
+    BaseTransportVelocityCorrectionComplex<SingleResolution, ModifiedTruncatedLinear, LinearGradientCorrection, ParticleScope>;
 
 template <class ParticleScope>
 using TVC_ModifiedLimited_RKGC_OBFCorrection =
     BaseTransportVelocityCorrectionComplex<SingleResolution, ModifiedTruncatedLinear, LinearGradientCorrectionWithBulkScope, ParticleScope>;
+
+template <class ParticleScope>
+using TVC_NotLimited_RKGC_OBFCorrection =
+    BaseTransportVelocityCorrectionComplex<SingleResolution, NoLimiter, LinearGradientCorrectionWithBulkScope, ParticleScope>;
+
+template <class ParticleScope>
+using TVC_ModifiedLimited_withoutLinearGradientCorrection =
+    BaseTransportVelocityCorrectionComplex<SingleResolution, ModifiedTruncatedLinear, NoKernelCorrection, ParticleScope>;
 //=================================================================================================//
 } // namespace fluid_dynamics
 } // namespace SPH

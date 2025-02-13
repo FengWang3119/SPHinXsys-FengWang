@@ -48,7 +48,7 @@ BaseTurbulentModel<Base, DataDelegationType>::BaseTurbulentModel(BaseRelationTyp
       Vol_(this->particles_->template getVariableDataByName<Real>("VolumetricMeasure")),
       vel_(this->particles_->template getVariableDataByName<Vecd>("Velocity")),
       dimension_(2) {}
-
+//** A temporarily treatment for dimension **
 //=================================================================================================//
 template <class DataDelegationType>
 template <class BaseRelationType>
@@ -89,6 +89,7 @@ TurbuViscousForce<DataDelegationType>::TurbuViscousForce(BaseRelationType &base_
       viscosity_(DynamicCast<Viscosity>(this, this->particles_->getBaseMaterial())),
       molecular_viscosity_(viscosity_.ReferenceViscosity()),
       c0_(DynamicCast<Fluid>(this, this->particles_->getBaseMaterial()).ReferenceSoundSpeed()) {}
+
 //=================================================================================================//
 template <class DataDelegationType>
 template <class BaseRelationType>
@@ -100,7 +101,9 @@ TurbulentLinearGradientCorrectionMatrix<DataDelegationType>::
           "TurbulentLinearGradientCorrectionMatrix", IdentityMatrix<Matd>::value)),
       B_(this->particles_->template getVariableDataByName<Matd>("LinearGradientCorrectionMatrix"))
 {
+    this->particles_->template addVariableToWrite<Matd>("TurbulentLinearGradientCorrectionMatrix");
     this->particles_->template addVariableToSort<Matd>("TurbulentLinearGradientCorrectionMatrix");
+    this->particles_->template addVariableToWrite<Matd>("LinearGradientCorrectionMatrix");
     this->particles_->template addVariableToSort<Matd>("LinearGradientCorrectionMatrix");
 }
 
