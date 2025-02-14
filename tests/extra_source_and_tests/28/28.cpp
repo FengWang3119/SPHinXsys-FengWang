@@ -39,13 +39,36 @@ Vec2d inner_wall_translation = inner_wall_halfsize;
 //	Complex shape for wall boundary, note that no partial overlap is allowed
 //	for the shapes in a complex shape.
 //----------------------------------------------------------------------
+std::vector<Vecd> createOuterWallShape()
+{
+    std::vector<Vecd> outer_wall_shape;
+    outer_wall_shape.push_back(Vecd(-BW, -BW));
+    outer_wall_shape.push_back(Vecd(-BW, DH + BW));
+    outer_wall_shape.push_back(Vecd(DL + BW, DH + BW));
+    outer_wall_shape.push_back(Vecd(DL + BW, -BW));
+    outer_wall_shape.push_back(Vecd(-BW, -BW));
+    return outer_wall_shape;
+}
+std::vector<Vecd> createInnerWallShape()
+{
+    std::vector<Vecd> inner_wall_shape;
+    inner_wall_shape.push_back(Vecd(0.0, 0.0));
+    inner_wall_shape.push_back(Vecd(0.0, DH));
+    inner_wall_shape.push_back(Vecd(DL, DH));
+    inner_wall_shape.push_back(Vecd(DL, 0.0));
+    inner_wall_shape.push_back(Vecd(0.0, 0.0));
+    return inner_wall_shape;
+}
 class WallBoundary : public ComplexShape
 {
   public:
     explicit WallBoundary(const std::string &shape_name) : ComplexShape(shape_name)
     {
-        add<TransformShape<GeometricShapeBox>>(Transform(outer_wall_translation), outer_wall_halfsize);
-        subtract<TransformShape<GeometricShapeBox>>(Transform(inner_wall_translation), inner_wall_halfsize);
+        MultiPolygon outer_dummy_boundary(createOuterWallShape());
+        add<ExtrudeShape<MultiPolygonShape>>(-offset_distance + BW, outer_dummy_boundary, "OuterDummyBoundary");
+
+        MultiPolygon inner_dummy_boundary(createInnerWallShape());
+        subtract<ExtrudeShape<MultiPolygonShape>>(-offset_distance, inner_dummy_boundary, "InnerDummyBoundary");
     }
 };
 std::vector<Vecd> createWaterBlockShape()
@@ -111,8 +134,11 @@ int main(int ac, char *av[])
         : water_block.generateParticles<BaseParticles, Lattice>();
 
     SolidBody wall_boundary(sph_system, makeShared<WallBoundary>("WallBoundary"));
+    wall_boundary.defineBodyLevelSetShape();
     wall_boundary.defineMaterial<Solid>();
-    wall_boundary.generateParticles<BaseParticles, Lattice>();
+    (!sph_system.RunParticleRelaxation() && sph_system.ReloadParticles())
+        ? wall_boundary.generateParticles<BaseParticles, Reload>(wall_boundary.getName())
+        : wall_boundary.generateParticles<BaseParticles, Lattice>();
 
     ObserverBody fluid_observer(sph_system, "FluidObserver");
     StdVec<Vecd> observation_location = {Vecd(DL, 0.2)};
