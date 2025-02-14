@@ -16,6 +16,9 @@ Real LL = 2.0;                      /**< Water column length. */
 Real LH = 1.0;                      /**< Water column height. */
 Real particle_spacing_ref = 0.02;   /**< Initial reference particle spacing. */
 Real BW = particle_spacing_ref * 4; /**< Thickness of tank wall. */
+
+Real offset_distance = 0.0;
+
 //----------------------------------------------------------------------
 //	Material parameters.
 //----------------------------------------------------------------------
@@ -45,6 +48,25 @@ class WallBoundary : public ComplexShape
         subtract<TransformShape<GeometricShapeBox>>(Transform(inner_wall_translation), inner_wall_halfsize);
     }
 };
+std::vector<Vecd> createWaterBlockShape()
+{
+    std::vector<Vecd> water_block_shape;
+    water_block_shape.push_back(Vecd(0.0, 0.0));
+    water_block_shape.push_back(Vecd(0.0, LH));
+    water_block_shape.push_back(Vecd(LL, LH));
+    water_block_shape.push_back(Vecd(LL, 0.0));
+    water_block_shape.push_back(Vecd(0.0, 0.0));
+    return water_block_shape;
+}
+class WaterBlock : public ComplexShape
+{
+  public:
+    explicit WaterBlock(const std::string &shape_name) : ComplexShape(shape_name)
+    {
+        MultiPolygon computational_domain(createWaterBlockShape());
+        add<ExtrudeShape<MultiPolygonShape>>(-offset_distance, computational_domain, "ComputationalDomain");
+    }
+};
 MultiPolygon createProbeShape()
 {
     std::vector<Vecd> pnts;
@@ -68,14 +90,25 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     BoundingBox system_domain_bounds(Vec2d(-BW, -BW), Vec2d(DL + BW, DH + BW));
     SPHSystem sph_system(system_domain_bounds, particle_spacing_ref);
+    /** Tag for run particle relaxation for the initial body fitted distribution. */
+    sph_system.setRunParticleRelaxation(false);
+    /** Tag for computation start with relaxed body fitted particles distribution. */
+    sph_system.setReloadParticles(false);
     sph_system.handleCommandlineOptions(ac, av)->setIOEnvironment();
     //----------------------------------------------------------------------
     //	Creating bodies with corresponding materials and particles.
     //----------------------------------------------------------------------
-    TransformShape<GeometricShapeBox> initial_water_block(Transform(water_block_translation), water_block_halfsize, "WaterBody");
-    FluidBody water_block(sph_system, initial_water_block);
+    // TransformShape<GeometricShapeBox> initial_water_block(Transform(water_block_translation), water_block_halfsize, "WaterBody");
+    // FluidBody water_block(sph_system, initial_water_block);
+    // water_block.defineMaterial<WeaklyCompressibleFluid>(rho0_f, c_f);
+    // water_block.generateParticles<BaseParticles, Lattice>();
+
+    FluidBody water_block(sph_system, makeShared<WaterBlock>("WaterBody"));
+    water_block.defineBodyLevelSetShape();
     water_block.defineMaterial<WeaklyCompressibleFluid>(rho0_f, c_f);
-    water_block.generateParticles<BaseParticles, Lattice>();
+    (!sph_system.RunParticleRelaxation() && sph_system.ReloadParticles())
+        ? water_block.generateParticles<BaseParticles, Reload>(water_block.getName())
+        : water_block.generateParticles<BaseParticles, Lattice>();
 
     SolidBody wall_boundary(sph_system, makeShared<WallBoundary>("WallBoundary"));
     wall_boundary.defineMaterial<Solid>();
