@@ -5,7 +5,7 @@
  * @author 	Xiangyu Hu, Chi Zhang and Luhui Han
  */
 
-//#include "k-epsilon_turbulent_model.cpp"
+#include "k-epsilon_turbulent_model.cpp"
 #include "sphinxsys.h"
 using namespace SPH;
 //----------------------------------------------------------------------
