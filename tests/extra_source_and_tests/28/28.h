@@ -11,15 +11,40 @@ using namespace SPH;
 //----------------------------------------------------------------------
 //	Basic geometry parameters and numerical setup.
 //----------------------------------------------------------------------
-Real DL = 5.366;                    /**< Water tank length. */
-Real DH = 5.366;                    /**< Water tank height. */
-Real LL = 2.0;                      /**< Water column length. */
-Real LH = 1.0;                      /**< Water column height. */
-Real particle_spacing_ref = 0.02;   /**< Initial reference particle spacing. */
+Real DL = 5.366; /**< Water tank length. */
+Real DH = 5.366; /**< Water tank height. */
+Real LL = 2.0;   /**< Water column length. */
+Real LH = 1.0;   /**< Water column height. */
+//Real particle_spacing_ref = 0.02;   /**< Initial reference particle spacing. */
+//Real BW = particle_spacing_ref * 4; /**< Thickness of tank wall. */
+//----------------------------------------------------------------------
+//	Resolution for turbulence.
+//----------------------------------------------------------------------
+Real num_fluid_cross_section = 50.0;
+Real particle_spacing_estimated = LH / num_fluid_cross_section;
+
+//Real y_p_constant = 0.05;
+Real y_p_constant = particle_spacing_estimated / 2.0; //** For first try */
+
+Real particle_spacing_ref = (LH - 2.0 * y_p_constant) / (num_fluid_cross_section - 1.0); /**< Initial reference particle spacing. */
+Real offset_distance = y_p_constant - particle_spacing_ref / 2.0;                        //** Basically offset distance is large than or equal to 0 *
+//----------------------------------------------------------------------
+//	Other parameters.
+//----------------------------------------------------------------------
 Real BW = particle_spacing_ref * 4; /**< Thickness of tank wall. */
-
-Real offset_distance = 0.0;
-
+//----------------------------------------------------------------------
+//	Unique parameters for turbulence.
+//----------------------------------------------------------------------
+Real relaxation_rate_turbulent_inlet = 0.8;
+//** Tag for AMRD *
+int is_AMRD = 0;
+bool is_constrain_normal_velocity_in_P_region = false;
+//** Weight for correcting the velocity  gradient in the sub near wall region  *
+Real weight_vel_grad_sub_nearwall = 0.1;
+//** Tag for Source Term Linearisation *
+bool is_source_term_linearisation = false;
+//** Initial values for K, Epsilon and Mu_t *
+StdVec<Real> initial_turbu_values = {0.000180001, 3.326679e-5, 1.0e-9};
 //----------------------------------------------------------------------
 //	Material parameters.
 //----------------------------------------------------------------------
@@ -30,12 +55,12 @@ Real c_f = 10.0 * U_ref;                 /**< Reference sound speed. */
 //----------------------------------------------------------------------
 //	Geometric shapes used in this case.
 //----------------------------------------------------------------------
-Vec2d water_block_halfsize = Vec2d(0.5 * LL, 0.5 * LH); // local center at origin
-Vec2d water_block_translation = water_block_halfsize;   // translation to global coordinates
-Vec2d outer_wall_halfsize = Vec2d(0.5 * DL + BW, 0.5 * DH + BW);
-Vec2d outer_wall_translation = Vec2d(-BW, -BW) + outer_wall_halfsize;
-Vec2d inner_wall_halfsize = Vec2d(0.5 * DL, 0.5 * DH);
-Vec2d inner_wall_translation = inner_wall_halfsize;
+// Vec2d water_block_halfsize = Vec2d(0.5 * LL, 0.5 * LH); // local center at origin
+// Vec2d water_block_translation = water_block_halfsize;   // translation to global coordinates
+// Vec2d outer_wall_halfsize = Vec2d(0.5 * DL + BW, 0.5 * DH + BW);
+// Vec2d outer_wall_translation = Vec2d(-BW, -BW) + outer_wall_halfsize;
+// Vec2d inner_wall_halfsize = Vec2d(0.5 * DL, 0.5 * DH);
+// Vec2d inner_wall_translation = inner_wall_halfsize;
 //----------------------------------------------------------------------
 //	Complex shape for wall boundary, note that no partial overlap is allowed
 //	for the shapes in a complex shape.
@@ -91,6 +116,9 @@ class WaterBlock : public ComplexShape
         add<ExtrudeShape<MultiPolygonShape>>(-offset_distance, computational_domain, "ComputationalDomain");
     }
 };
+//----------------------------------------------------------------------
+//	Observation
+//----------------------------------------------------------------------
 MultiPolygon createProbeShape()
 {
     std::vector<Vecd> pnts;
