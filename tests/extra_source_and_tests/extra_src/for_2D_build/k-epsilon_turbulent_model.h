@@ -231,7 +231,7 @@ class TKEnergyForce<Base, DataDelegationType>
   protected:
     Vecd *force_;
     Real *mass_;
-    int *indicator_;
+    //int *indicator_;
     Vecd *pos_;
     Real *turbu_k_;
     Vecd *test_k_grad_rslt_;

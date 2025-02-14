@@ -57,7 +57,6 @@ TKEnergyForce<Base, DataDelegationType>::
     : BaseTurbulentModel<Base, DataDelegationType>(base_relation),
       force_(this->particles_->template registerStateVariable<Vecd>("Force")),
       mass_(this->particles_->template getVariableDataByName<Real>("Mass")),
-      indicator_(this->particles_->template getVariableDataByName<int>("Indicator")),
       pos_(this->particles_->template getVariableDataByName<Vecd>("Position")),
       turbu_k_(this->particles_->template getVariableDataByName<Real>("TurbulenceKineticEnergy")),
       test_k_grad_rslt_(this->particles_->template registerStateVariable<Vecd>("TkeGradResult")) {}

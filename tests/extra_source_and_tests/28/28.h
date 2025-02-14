@@ -46,12 +46,16 @@ bool is_source_term_linearisation = false;
 //** Initial values for K, Epsilon and Mu_t *
 StdVec<Real> initial_turbu_values = {0.000180001, 3.326679e-5, 1.0e-9};
 //----------------------------------------------------------------------
-//	Material parameters.
+//	Material parameters, (10^6)kg (10)m s.
 //----------------------------------------------------------------------
 Real rho0_f = 1.0;                       /**< Reference density of fluid. */
 Real gravity_g = 1.0;                    /**< Gravity. */
 Real U_ref = 2.0 * sqrt(gravity_g * LH); /**< Characteristic velocity. */
 Real c_f = 10.0 * U_ref;                 /**< Reference sound speed. */
+
+//** Turbulence */
+Real mu_f = TinyReal;
+
 //----------------------------------------------------------------------
 //	Geometric shapes used in this case.
 //----------------------------------------------------------------------

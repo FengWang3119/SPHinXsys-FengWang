@@ -32,7 +32,11 @@ int main(int ac, char *av[])
 
     FluidBody water_block(sph_system, makeShared<WaterBlock>("WaterBody"));
     water_block.defineBodyLevelSetShape();
-    water_block.defineMaterial<WeaklyCompressibleFluid>(rho0_f, c_f);
+    //water_block.defineMaterial<WeaklyCompressibleFluid>(rho0_f, c_f);
+
+    //** Turbulence */
+    water_block.defineClosure<WeaklyCompressibleFluid, Viscosity>(ConstructArgs(rho0_f, c_f), mu_f);
+
     (!sph_system.RunParticleRelaxation() && sph_system.ReloadParticles())
         ? water_block.generateParticles<BaseParticles, Reload>(water_block.getName())
         : water_block.generateParticles<BaseParticles, Lattice>();
@@ -74,12 +78,39 @@ int main(int ac, char *av[])
     SimpleDynamics<GravityForce<Gravity>> constant_gravity(water_block, gravity);
     SimpleDynamics<NormalDirectionFromBodyShape> wall_boundary_normal_direction(wall_boundary);
 
-    Dynamics1Level<fluid_dynamics::Integration1stHalfWithWallRiemann> fluid_pressure_relaxation(water_block_inner, water_wall_contact);
-    Dynamics1Level<fluid_dynamics::Integration2ndHalfWithWallRiemann> fluid_density_relaxation(water_block_inner, water_wall_contact);
+    //** Turbulence */
+    InteractionWithUpdate<LinearGradientCorrectionMatrixComplex> corrected_configuration_fluid(water_block_inner, water_wall_contact);
+    InteractionWithUpdate<fluid_dynamics::TurbulentLinearGradientCorrectionMatrixInner> corrected_configuration_fluid_only_inner(water_block_inner);
+
+    //Dynamics1Level<fluid_dynamics::Integration1stHalfWithWallRiemann> fluid_pressure_relaxation(water_block_inner, water_wall_contact);
+    //** Turbulence */
+    Dynamics1Level<fluid_dynamics::Integration1stHalfCorrectionWithWallRiemann> fluid_pressure_relaxation(water_block_inner, water_wall_contact);
+
+    //Dynamics1Level<fluid_dynamics::Integration2ndHalfWithWallRiemann> fluid_density_relaxation(water_block_inner, water_wall_contact);
+    //** Turbulence */
+    Dynamics1Level<fluid_dynamics::Integration2ndHalfWithWallNoRiemann> fluid_density_relaxation(water_block_inner, water_wall_contact);
+
+    /** Turbulence.Note: When use wall function, K Epsilon calculation only consider inner */
+    InteractionDynamics<fluid_dynamics::DistanceFromWall> distance_to_wall(water_wall_contact);
+    InteractionWithUpdate<fluid_dynamics::JudgeIsNearWall> update_near_wall_status(water_block_inner, water_wall_contact);
+    InteractionWithUpdate<fluid_dynamics::GetVelocityGradientInner> get_velocity_gradient(water_block_inner, weight_vel_grad_sub_nearwall);
+    InteractionWithUpdate<fluid_dynamics::K_TurbulentModelInner> k_equation_relaxation(water_block_inner, initial_turbu_values, is_AMRD, is_source_term_linearisation);
+    InteractionWithUpdate<fluid_dynamics::E_TurbulentModelInner> epsilon_equation_relaxation(water_block_inner, is_source_term_linearisation);
+    InteractionDynamics<fluid_dynamics::TKEnergyForceComplex> turbulent_kinetic_energy_force(water_block_inner, water_wall_contact);
+    InteractionDynamics<fluid_dynamics::StandardWallFunctionCorrection> standard_wall_function_correction(water_block_inner, water_wall_contact, y_p_constant);
+    SimpleDynamics<fluid_dynamics::ConstrainNormalVelocityInRegionP> constrain_normal_velocity_in_P_region(water_block);
+    InteractionWithUpdate<fluid_dynamics::TurbulentViscousForceWithWall> turbulent_viscous_force(water_block_inner, water_wall_contact);
+
     InteractionWithUpdate<fluid_dynamics::DensitySummationComplexFreeSurface> fluid_density_by_summation(water_block_inner, water_wall_contact);
 
-    ReduceDynamics<fluid_dynamics::AdvectionTimeStep> fluid_advection_time_step(water_block, U_ref);
+    //ReduceDynamics<fluid_dynamics::AdvectionTimeStep> fluid_advection_time_step(water_block, U_ref);
+    //** Turbulence */
+    ReduceDynamics<fluid_dynamics::TurbulentAdvectionTimeStepSize> get_turbulent_fluid_advection_time_step_size(water_block, U_ref);
+
     ReduceDynamics<fluid_dynamics::AcousticTimeStep> fluid_acoustic_time_step(water_block);
+
+    /** Turbulence. eddy viscosity calculation needs values of Wall Y start. */
+    SimpleDynamics<fluid_dynamics::TurbulentEddyViscosity> update_eddy_viscosity(water_block);
     //----------------------------------------------------------------------
     //	Define the configuration related particles dynamics.
     //----------------------------------------------------------------------
@@ -126,7 +157,7 @@ int main(int ac, char *av[])
     int observation_sample_interval = screen_output_interval * 2;
     int restart_output_interval = screen_output_interval * 10;
     Real end_time = 2.5;
-    Real output_interval = 0.1;
+    Real output_interval = 0.01;
     //----------------------------------------------------------------------
     //	Statistics for CPU time
     //----------------------------------------------------------------------
@@ -154,8 +185,19 @@ int main(int ac, char *av[])
         {
             /** outer loop for dual-time criteria time-stepping. */
             time_instance = TickCount::now();
-            Real advection_dt = fluid_advection_time_step.exec();
+
+            //Real advection_dt = fluid_advection_time_step.exec();
+            //** Turbulence */
+            Real advection_dt = get_turbulent_fluid_advection_time_step_size.exec();
+
             fluid_density_by_summation.exec();
+
+            //** Turbulence */
+            corrected_configuration_fluid.exec();
+            corrected_configuration_fluid_only_inner.exec();
+            update_eddy_viscosity.exec();
+            turbulent_viscous_force.exec();
+
             interval_computing_time_step += TickCount::now() - time_instance;
 
             time_instance = TickCount::now();
@@ -165,8 +207,26 @@ int main(int ac, char *av[])
             {
                 /** inner loop for dual-time criteria time-stepping.  */
                 acoustic_dt = fluid_acoustic_time_step.exec();
+
+                //** Turbulence */
+                turbulent_kinetic_energy_force.exec();
+
                 fluid_pressure_relaxation.exec(acoustic_dt);
+
+                //** Turbulence */
+                if (is_constrain_normal_velocity_in_P_region)
+                    constrain_normal_velocity_in_P_region.exec();
+
                 fluid_density_relaxation.exec(acoustic_dt);
+
+                //** Turbulence */
+                distance_to_wall.exec();
+                update_near_wall_status.exec();
+                standard_wall_function_correction.exec();
+                get_velocity_gradient.exec(acoustic_dt);
+                k_equation_relaxation.exec(acoustic_dt);
+                epsilon_equation_relaxation.exec(acoustic_dt);
+
                 relaxation_time += acoustic_dt;
                 integration_time += acoustic_dt;
                 physical_time += acoustic_dt;
