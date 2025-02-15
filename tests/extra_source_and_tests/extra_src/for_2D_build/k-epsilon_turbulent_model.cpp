@@ -249,7 +249,19 @@ void K_TurbulentModelInner::interaction(size_t index_i, Real dt)
     Matd k_production_matrix = Re_stress.array() * velocity_gradient_[index_i].array();
     //** The near wall k production is updated in wall function part *
     if (is_near_wall_P1_[index_i] != 1)
-        k_production_[index_i] = k_production_matrix.sum();
+    {
+        Real C_production_limiter = 10.0;
+        bool is_limit_production = true; //** Temporary */
+        Real k_production_matrix_sum = k_production_matrix.sum();
+        if (is_limit_production)
+        {
+            k_production_[index_i] = SMIN(k_production_matrix_sum, C_production_limiter * turbu_epsilon_[index_i]);
+        }
+        else
+        {
+            k_production_[index_i] = k_production_matrix.sum();
+        }
+    }
 
     k_production = k_production_[index_i];
     k_dissipation = turbu_epsilon_[index_i];
