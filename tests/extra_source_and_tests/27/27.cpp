@@ -1,0 +1,367 @@
+#include "27.h"
+
+using namespace SPH;
+
+//----------------------------------------------------------------------
+//	Main program starts here.
+//----------------------------------------------------------------------
+int main(int ac, char *av[])
+{
+    //----------------------------------------------------------------------
+    //	Build up an SPHSystem and IO environment.
+    //----------------------------------------------------------------------
+    SPHSystem sph_system(system_domain_bounds, resolution_ref);
+    /** Tag for run particle relaxation for the initial body fitted distribution. */
+    sph_system.setRunParticleRelaxation(false);
+    /** Tag for computation start with relaxed body fitted particles distribution. */
+    sph_system.setReloadParticles(false);
+    sph_system.handleCommandlineOptions(ac, av)->setIOEnvironment();
+    //----------------------------------------------------------------------
+    //	Creating bodies with corresponding materials and particles.
+    //----------------------------------------------------------------------
+    FluidBody water_block(sph_system, makeShared<WaterBlock>("WaterBody"));
+    water_block.defineMaterial<WeaklyCompressibleFluid>(rho0_f, c_f, mu_f);
+    ParticleBuffer<ReserveSizeFactor> in_outlet_particle_buffer(0.5);
+    water_block.generateParticlesWithReserve<BaseParticles, Lattice>(in_outlet_particle_buffer);
+
+    // SolidBody wall_boundary(sph_system, makeShared<WallBoundary>("WallBoundary"));
+    // wall_boundary.defineBodyLevelSetShape();
+    // wall_boundary.defineMaterial<Solid>();
+    // (!sph_system.RunParticleRelaxation() && sph_system.ReloadParticles())
+    //     ? wall_boundary.generateParticles<BaseParticles, Reload>(wall_boundary.getName())
+    //     : wall_boundary.generateParticles<BaseParticles, Lattice>();
+
+    observe_centerline::getObservingLineLengthAndEndPoints();
+    observe_centerline::getPositionsOfMultipleObserveLines();
+    observe_centerline::output_observe_positions();
+    observe_centerline::output_observe_theoretical_x();
+    observe_centerline::output_number_observe_points_on_lines();
+    ObserverBody velocity_observer(sph_system, "CenterlineVelocityObserver");
+    velocity_observer.generateParticles<ObserverParticles>(observe_centerline::observation_locations);
+
+    observe_cross_sections::get_observe_start_coordinate();
+    observe_cross_sections::getPositionsOfMultipleObserveLines();
+    observe_cross_sections::output_observe_positions();
+    observe_cross_sections::output_observe_theoretical_y();
+    observe_cross_sections::output_observe_line_pos_x();
+    observe_cross_sections::output_number_observe_points_on_lines();
+    ObserverBody fluid_observer_cross_section(sph_system, "FluidObserverCrossSections");
+    fluid_observer_cross_section.generateParticles<ObserverParticles>(observe_cross_sections::observation_locations);
+    //----------------------------------------------------------------------
+    //	Define body relation map.
+    //	The contact map gives the topological connections between the bodies.
+    //	Basically the the range of bodies to build neighbor particle lists.
+    //  Generally, we first define all the inner relations, then the contact relations.
+    //----------------------------------------------------------------------
+    InnerRelation water_block_inner(water_block);
+    //ContactRelation water_block_contact(water_block, {&wall_boundary});
+    ContactRelation velocity_observer_contact(velocity_observer, {&water_block});
+    ContactRelation fluid_observer_cross_section_contact(fluid_observer_cross_section, {&water_block});
+    //----------------------------------------------------------------------
+    // Combined relations built from basic relations
+    // which is only used for update configuration.
+    //----------------------------------------------------------------------
+    //ComplexRelation water_block_complex(water_block_inner, water_block_contact);
+    //----------------------------------------------------------------------
+    //	Run particle relaxation for body-fitted distribution if chosen.
+    //----------------------------------------------------------------------
+    // if (sph_system.RunParticleRelaxation())
+    // {
+    //     /** body topology only for particle relaxation */
+    //     InnerRelation solid_inner(wall_boundary);
+    //     //----------------------------------------------------------------------
+    //     //	Methods used for particle relaxation.
+    //     //----------------------------------------------------------------------
+    //     using namespace relax_dynamics;
+    //     /** Random reset the insert body particle position. */
+    //     SimpleDynamics<RandomizeParticlePosition> random_inserted_body_particles(wall_boundary);
+    //     /** Write the body state to Vtp file. */
+    //     BodyStatesRecordingToVtp write_inserted_body_to_vtp(wall_boundary);
+    //     /** Write the particle reload files. */
+    //     ReloadParticleIO write_particle_reload_files(wall_boundary);
+    //     /** A  Physics relaxation step. */
+    //     RelaxationStepInner relaxation_step_inner(solid_inner);
+    //     //----------------------------------------------------------------------
+    //     //	Particle relaxation starts here.
+    //     //----------------------------------------------------------------------
+    //     random_inserted_body_particles.exec(0.25);
+    //     relaxation_step_inner.SurfaceBounding().exec();
+    //     write_inserted_body_to_vtp.writeToFile(0);
+    //     //----------------------------------------------------------------------
+    //     //	Relax particles of the insert body.
+    //     //----------------------------------------------------------------------
+    //     int ite_p = 0;
+    //     while (ite_p < 1000)
+    //     {
+    //         relaxation_step_inner.exec();
+    //         ite_p += 1;
+    //         if (ite_p % 200 == 0)
+    //         {
+    //             std::cout << std::fixed << std::setprecision(9) << "Relaxation steps for the inserted body N = " << ite_p << "\n";
+    //             write_inserted_body_to_vtp.writeToFile(ite_p);
+    //         }
+    //     }
+    //     std::cout << "The physics relaxation process of inserted body finish !" << std::endl;
+    //     /** Output results. */
+    //     write_particle_reload_files.writeToFile(0);
+    //     return 0;
+    // }
+    //----------------------------------------------------------------------
+    // Define the numerical methods used in the simulation.
+    // Note that there may be data dependence on the sequence of constructions.
+    // Generally, the geometric models or simple objects without data dependencies,
+    // such as gravity, should be initiated first.
+    // Then the major physical particle dynamics model should be introduced.
+    // Finally, the auxiliary models such as time step estimator, initial condition,
+    // boundary condition and other constraints should be defined.
+    //----------------------------------------------------------------------
+    //SimpleDynamics<NormalDirectionFromBodyShape> wall_boundary_normal_direction(wall_boundary);
+
+    //InteractionWithUpdate<SpatialTemporalFreeSurfaceIndicationComplex> boundary_indicator(water_block_inner, water_block_contact);
+    InteractionWithUpdate<SpatialTemporalFreeSurfaceIndicationInner> boundary_indicator(water_block_inner);
+
+    // Dynamics1Level<fluid_dynamics::Integration1stHalfWithWallRiemann> pressure_relaxation(water_block_inner, water_block_contact);
+    // Dynamics1Level<fluid_dynamics::Integration2ndHalfWithWallRiemann> density_relaxation(water_block_inner, water_block_contact);
+    // InteractionWithUpdate<fluid_dynamics::ViscousForceWithWall> viscous_acceleration(water_block_inner, water_block_contact);
+    Dynamics1Level<fluid_dynamics::Integration1stHalfInnerRiemann> pressure_relaxation(water_block_inner);
+    Dynamics1Level<fluid_dynamics::Integration2ndHalfInnerRiemann> density_relaxation(water_block_inner);
+    InteractionWithUpdate<fluid_dynamics::ViscousForceInner> viscous_acceleration(water_block_inner);
+
+    //InteractionWithUpdate<fluid_dynamics::TransportVelocityCorrectionComplex<BulkParticles>> transport_velocity_correction(water_block_inner, water_block_contact);
+
+    ReduceDynamics<fluid_dynamics::AdvectionViscousTimeStep> get_fluid_advection_time_step_size(water_block, U_f);
+    ReduceDynamics<fluid_dynamics::AcousticTimeStep> get_fluid_time_step_size(water_block);
+
+    BodyAlignedBoxByCell left_emitter(water_block, makeShared<AlignedBoxShape>(xAxis, Transform(Vec2d(left_bidirectional_translation)), left_bidirectional_buffer_halfsize));
+    fluid_dynamics::BidirectionalBuffer<LeftInflowPressure> left_bidirection_buffer(left_emitter, in_outlet_particle_buffer);
+    BodyAlignedBoxByCell right_emitter(water_block, makeShared<AlignedBoxShape>(xAxis, Transform(Rotation2d(Pi), Vec2d(right_bidirectional_translation)), right_bidirectional_buffer_halfsize));
+    fluid_dynamics::BidirectionalBuffer<RightInflowPressure> right_bidirection_buffer(right_emitter, in_outlet_particle_buffer);
+
+    BodyAlignedBoxByCell static_emitter_up(water_block, makeShared<AlignedBoxShape>(xAxis, Transform(Vec2d(static_translation_up)), static_buffer_halfsize_up));
+    fluid_dynamics::BidirectionalBuffer<LeftInflowPressure> static_buffer_up(static_emitter_up, in_outlet_particle_buffer);
+    BodyAlignedBoxByCell static_emitter_down(water_block, makeShared<AlignedBoxShape>(xAxis, Transform(Vec2d(static_translation_down)), static_buffer_halfsize_down));
+    fluid_dynamics::BidirectionalBuffer<LeftInflowPressure> static_buffer_down(static_emitter_down, in_outlet_particle_buffer);
+
+    BodyAlignedBoxByCell up_emitter(water_block, makeShared<AlignedBoxShape>(xAxis, Transform(Rotation2d(up_buffer_rotation_angle), Vec2d(up_buffer_translation)), up_buffer_halfsize));
+    fluid_dynamics::BidirectionalBuffer<FreestreamPressure> up_bidirection_buffer(up_emitter, in_outlet_particle_buffer);
+    BodyAlignedBoxByCell down_emitter(water_block, makeShared<AlignedBoxShape>(xAxis, Transform(Rotation2d(down_buffer_rotation_angle), Vec2d(down_buffer_translation)), down_buffer_halfsize));
+    fluid_dynamics::BidirectionalBuffer<FreestreamPressure> down_bidirection_buffer(down_emitter, in_outlet_particle_buffer);
+
+    //InteractionWithUpdate<fluid_dynamics::DensitySummationPressureComplex> update_fluid_density(water_block_inner, water_block_contact);
+    InteractionWithUpdate<fluid_dynamics::DensitySummationPressureInner> update_fluid_density(water_block_inner);
+
+    //InteractionDynamics<NablaWVComplex> kernel_summation(water_block_inner, water_block_contact);
+    InteractionDynamics<NablaWVInner> kernel_summation(water_block_inner);
+
+    SimpleDynamics<fluid_dynamics::PressureCondition<LeftInflowPressure>> left_inflow_pressure_condition(left_emitter);
+    SimpleDynamics<fluid_dynamics::PressureCondition<RightInflowPressure>> right_inflow_pressure_condition(right_emitter);
+    SimpleDynamics<fluid_dynamics::InflowVelocityCondition<InflowVelocity>> inflow_velocity_condition(left_emitter);
+
+    SimpleDynamics<fluid_dynamics::PressureCondition<LeftInflowPressure>> static_up_inflow_pressure_condition(static_emitter_up);
+    SimpleDynamics<fluid_dynamics::PressureCondition<LeftInflowPressure>> static_down_inflow_pressure_condition(static_emitter_down);
+    SimpleDynamics<fluid_dynamics::InflowVelocityCondition<StaticInflowVelocity>> static_up_inflow_velocity_condition(static_emitter_up);
+    SimpleDynamics<fluid_dynamics::InflowVelocityCondition<StaticInflowVelocity>> static_down_inflow_velocity_condition(static_emitter_down);
+
+    SimpleDynamics<fluid_dynamics::PressureCondition<FreestreamPressure>> up_pressure_condition(up_emitter);
+    SimpleDynamics<fluid_dynamics::PressureCondition<FreestreamPressure>> down_pressure_condition(down_emitter);
+
+    //InteractionWithUpdate<fluid_dynamics::TransportVelocityCorrectionComplex<BulkParticlesWithoutInlet>> transport_velocity_correction(water_block_inner, water_block_contact);
+    InteractionWithUpdate<fluid_dynamics::TransportVelocityCorrectionInner<NoLimiter, BulkParticlesWithoutInlet>> transport_velocity_correction(water_block_inner);
+
+    //BodyRegionByParticle inlet_buffer_constraint_part(water_block, makeShared<MultiPolygonShape>(createConstrainShape()));
+    //SimpleDynamics<FixBodyPartConstraint> inlet_buffer_constraint(inlet_buffer_constraint_part);
+    //----------------------------------------------------------------------
+    //	Define the configuration related particles dynamics.
+    //----------------------------------------------------------------------
+    ParticleSorting particle_sorting(water_block);
+    //----------------------------------------------------------------------
+    //	Define the methods for I/O operations, observations
+    //	and regression tests of the simulation.
+    //----------------------------------------------------------------------
+    BodyStatesRecordingToVtp body_states_recording(sph_system);
+    body_states_recording.addToWrite<Real>(water_block, "Pressure");
+    body_states_recording.addToWrite<int>(water_block, "Indicator");
+    body_states_recording.addToWrite<Real>(water_block, "Density");
+    body_states_recording.addToWrite<int>(water_block, "BufferParticleIndicator");
+    //body_states_recording.addToWrite<Vecd>(wall_boundary, "NormalDirection");
+    body_states_recording.addToWrite<Vecd>(water_block, "ZeroGradientResidue");
+    body_states_recording.addToWrite<Vecd>(water_block, "KernelSummation");
+    body_states_recording.addToWrite<Real>(water_block, "VolumetricMeasure");
+    ObservedQuantityRecording<Vecd> write_centerline_velocity("Velocity", velocity_observer_contact);
+    ObservedQuantityRecording<Vecd> write_recorded_water_velocity_cross_section("Velocity", fluid_observer_cross_section_contact);
+    //----------------------------------------------------------------------
+    //	Prepare the simulation with cell linked list, configuration
+    //	and case specified initial condition if necessary.
+    //----------------------------------------------------------------------
+    sph_system.initializeSystemCellLinkedLists();
+    sph_system.initializeSystemConfigurations();
+    boundary_indicator.exec();
+
+    static_buffer_up.tag_buffer_particles.exec();
+    static_buffer_down.tag_buffer_particles.exec();
+
+    left_bidirection_buffer.tag_buffer_particles.exec();
+    right_bidirection_buffer.tag_buffer_particles.exec();
+
+    up_bidirection_buffer.tag_buffer_particles.exec();
+    down_bidirection_buffer.tag_buffer_particles.exec();
+
+    //wall_boundary_normal_direction.exec();
+    //----------------------------------------------------------------------
+    //	Setup for time-stepping control
+    //----------------------------------------------------------------------
+    Real &physical_time = *sph_system.getSystemVariableDataByName<Real>("PhysicalTime");
+    size_t number_of_iterations = 0;
+    int screen_output_interval = 100;
+    //int observation_sample_interval = screen_output_interval * 2;
+    Real end_time = 800.0;                      /**< End time. */
+    Real cutoff_ratio = 0.9;                    //** cutoff_time should be a integral and the same as the PY script */
+    Real cutoff_time = cutoff_ratio * end_time; //** cutoff_time should be a integral and the same as the PY script */
+    Real num_output_files = 10.0;
+    Real Output_Time = end_time / num_output_files; /**< Time stamps for output of body states. */
+    Real index_check_file_fully_developed = num_output_files * cutoff_ratio;
+    Real dt = 0.0; /**< Default acoustic time step sizes. */
+    //----------------------------------------------------------------------
+    //	Statistics for CPU time
+    //----------------------------------------------------------------------
+    TickCount t1 = TickCount::now();
+    TimeInterval interval;
+    TimeInterval interval_computing_time_step;
+    TimeInterval interval_computing_pressure_relaxation;
+    TimeInterval interval_updating_configuration;
+    TickCount time_instance;
+    //----------------------------------------------------------------------
+    //	First output before the main loop.
+    //----------------------------------------------------------------------
+    body_states_recording.writeToFile();
+    //write_centerline_velocity.writeToFile(number_of_iterations);
+    //----------------------------------------------------------------------
+    //	Main loop starts here.
+    //----------------------------------------------------------------------
+    // std::cout << "Simulation starts?" << std::endl;
+    // std::cin.get();
+    while (physical_time < end_time)
+    {
+        Real integration_time = 0.0;
+        /** Integrate time (loop) until the next output time. */
+        while (integration_time < Output_Time)
+        {
+            time_instance = TickCount::now();
+            Real Dt = get_fluid_advection_time_step_size.exec();
+            update_fluid_density.exec();
+            viscous_acceleration.exec();
+            transport_velocity_correction.exec();
+            kernel_summation.exec();
+            interval_computing_time_step += TickCount::now() - time_instance;
+
+            time_instance = TickCount::now();
+            Real relaxation_time = 0.0;
+            while (relaxation_time < Dt)
+            {
+                dt = SMIN(get_fluid_time_step_size.exec(), Dt);
+                pressure_relaxation.exec(dt);
+
+                left_inflow_pressure_condition.exec(dt);
+                right_inflow_pressure_condition.exec(dt);
+                inflow_velocity_condition.exec();
+
+                static_up_inflow_pressure_condition.exec(dt);
+                static_down_inflow_pressure_condition.exec(dt);
+                static_up_inflow_velocity_condition.exec();
+                static_down_inflow_velocity_condition.exec();
+
+                up_pressure_condition.exec(dt);
+                down_pressure_condition.exec(dt);
+
+                //inlet_buffer_constraint.exec();
+
+                density_relaxation.exec(dt);
+                relaxation_time += dt;
+                integration_time += dt;
+                physical_time += dt;
+            }
+            interval_computing_pressure_relaxation += TickCount::now() - time_instance;
+            if (number_of_iterations % screen_output_interval == 0)
+            {
+                std::cout << std::fixed << std::setprecision(9) << "N=" << number_of_iterations << "	Time = "
+                          << physical_time
+                          << "	Dt = " << Dt << "	dt = " << dt << "\n";
+            }
+            number_of_iterations++;
+
+            time_instance = TickCount::now();
+
+            // first do injection for all buffers
+            left_bidirection_buffer.injection.exec();
+            right_bidirection_buffer.injection.exec();
+
+            up_bidirection_buffer.injection.exec();
+            down_bidirection_buffer.injection.exec();
+
+            // then do deletion for all buffers
+            left_bidirection_buffer.deletion.exec();
+            right_bidirection_buffer.deletion.exec();
+
+            up_bidirection_buffer.deletion.exec();
+            down_bidirection_buffer.deletion.exec();
+
+            if (number_of_iterations % 100 == 0 && number_of_iterations != 1)
+            {
+                particle_sorting.exec();
+            }
+            water_block.updateCellLinkedList();
+
+            //water_block_complex.updateConfiguration();
+            water_block_inner.updateConfiguration();
+            velocity_observer_contact.updateConfiguration();
+            fluid_observer_cross_section_contact.updateConfiguration();
+
+            interval_updating_configuration += TickCount::now() - time_instance;
+            boundary_indicator.exec();
+            left_bidirection_buffer.tag_buffer_particles.exec();
+            right_bidirection_buffer.tag_buffer_particles.exec();
+
+            static_buffer_up.tag_buffer_particles.exec();
+            static_buffer_down.tag_buffer_particles.exec();
+
+            up_bidirection_buffer.tag_buffer_particles.exec();
+            down_bidirection_buffer.tag_buffer_particles.exec();
+            if (physical_time > cutoff_time)
+            {
+                write_centerline_velocity.writeToFile(number_of_iterations);
+                write_recorded_water_velocity_cross_section.writeToFile(number_of_iterations);
+            }
+        }
+        TickCount t2 = TickCount::now();
+        body_states_recording.writeToFile();
+
+        TickCount t3 = TickCount::now();
+        interval += t3 - t2;
+    }
+    TickCount t4 = TickCount::now();
+
+    TimeInterval tt;
+    tt = t4 - t1 - interval;
+    std::cout << "Total wall time for computation: " << tt.seconds()
+              << " seconds." << std::endl;
+    std::cout << std::fixed << std::setprecision(9) << "interval_computing_time_step ="
+              << interval_computing_time_step.seconds() << "\n";
+    std::cout << std::fixed << std::setprecision(9) << "interval_computing_pressure_relaxation = "
+              << interval_computing_pressure_relaxation.seconds() << "\n";
+    std::cout << std::fixed << std::setprecision(9) << "interval_updating_configuration = "
+              << interval_updating_configuration.seconds() << "\n";
+
+    std::cout << "Cutoff_time: " << cutoff_time
+              << " seconds." << std::endl;
+    std::cout << "For checking fully-developed or not, index of the cutoff output file =  " << index_check_file_fully_developed << std::endl;
+    // if (sph_system.GenerateRegressionData())
+    // {
+    //     write_centerline_velocity.generateDataBase(1.0e-3);
+    // }
+    // else
+    // {
+    //     write_centerline_velocity.testResult();
+    // }
+
+    return 0;
+}
