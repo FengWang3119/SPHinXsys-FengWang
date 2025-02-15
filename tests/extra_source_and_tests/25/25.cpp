@@ -14,7 +14,7 @@ Real DL = 5.366;                    /**< Water tank length. */
 Real DH = 5.366;                    /**< Water tank height. */
 Real LL = 2.0;                      /**< Water column length. */
 Real LH = 1.0;                      /**< Water column height. */
-Real particle_spacing_ref = 0.005;  /**< Initial reference particle spacing. */
+Real particle_spacing_ref = 0.02;   /**< Initial reference particle spacing. */
 Real BW = particle_spacing_ref * 4; /**< Thickness of tank wall. */
 //----------------------------------------------------------------------
 //	Material parameters.
@@ -163,7 +163,7 @@ int main(int ac, char *av[])
     int observation_sample_interval = screen_output_interval * 2;
     int restart_output_interval = screen_output_interval * 10;
     Real end_time = 2.5;
-    Real output_interval = 0.1;
+    Real output_interval = 0.01;
     //----------------------------------------------------------------------
     //	Statistics for CPU time
     //----------------------------------------------------------------------
