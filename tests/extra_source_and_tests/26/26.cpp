@@ -231,6 +231,7 @@ int main(int ac, char *av[])
     body_states_recording.addToWrite<Vecd>(water_block, "ZeroGradientResidue"); // output for debug
     ObservedQuantityRecording<Vecd> write_recorded_water_velocity("Velocity", fluid_observer_contact);
     ObservedQuantityRecording<Vecd> write_recorded_water_velocity_cross_section("Velocity", fluid_observer_cross_section_contact);
+    ObservedQuantityRecording<Real> write_recorded_water_k_cross_section("TurbulenceKineticEnergy", fluid_observer_cross_section_contact);
     body_states_recording.addToWrite<int>(water_block, "BufferParticleIndicator");
     body_states_recording.addToWrite<Real>(water_block, "VolumetricMeasure");
     body_states_recording.addToWrite<Matd>(water_block, "LinearGradientCorrectionMatrix");
@@ -383,6 +384,7 @@ int main(int ac, char *av[])
             {
                 write_recorded_water_velocity.writeToFile(number_of_iterations);
                 write_recorded_water_velocity_cross_section.writeToFile(number_of_iterations);
+                write_recorded_water_k_cross_section.writeToFile(number_of_iterations);
             }
             //if (physical_time > end_time * 0.5)
             //body_states_recording.writeToFile();
