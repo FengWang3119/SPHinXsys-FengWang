@@ -111,7 +111,11 @@ int main(int ac, char *av[])
     SimpleDynamics<GravityForce<Gravity>> constant_gravity(water_block, gravity);
     SimpleDynamics<NormalDirectionFromBodyShape> wall_boundary_normal_direction(wall_boundary);
 
-    Dynamics1Level<fluid_dynamics::Integration1stHalfWithWallRiemann> fluid_pressure_relaxation(water_block_inner, water_wall_contact);
+    InteractionWithUpdate<LinearGradientCorrectionMatrixComplex> corrected_configuration_fluid(InteractArgs(water_block_inner, 0.5), water_wall_contact);
+
+    //Dynamics1Level<fluid_dynamics::Integration1stHalfWithWallRiemann> fluid_pressure_relaxation(water_block_inner, water_wall_contact);
+    Dynamics1Level<fluid_dynamics::Integration1stHalfCorrectionWithWallRiemann> fluid_pressure_relaxation(water_block_inner, water_wall_contact);
+
     Dynamics1Level<fluid_dynamics::Integration2ndHalfWithWallRiemann> fluid_density_relaxation(water_block_inner, water_wall_contact);
     InteractionWithUpdate<fluid_dynamics::DensitySummationComplexFreeSurface> fluid_density_by_summation(water_block_inner, water_wall_contact);
 
@@ -193,6 +197,9 @@ int main(int ac, char *av[])
             time_instance = TickCount::now();
             Real advection_dt = fluid_advection_time_step.exec();
             fluid_density_by_summation.exec();
+
+            corrected_configuration_fluid.exec();
+
             interval_computing_time_step += TickCount::now() - time_instance;
 
             time_instance = TickCount::now();
