@@ -251,7 +251,7 @@ void K_TurbulentModelInner::interaction(size_t index_i, Real dt)
     if (is_near_wall_P1_[index_i] != 1)
     {
         Real C_production_limiter = 10.0;
-        bool is_limit_production = true; //** Temporary */
+        bool is_limit_production = false; //** Temporary */
         Real k_production_matrix_sum = k_production_matrix.sum();
         if (is_limit_production)
         {
