@@ -45,8 +45,11 @@ StdVec<Real> initial_turbu_values = {0.000180001, 3.326679e-5, 1.0e-9};
 Real y_p_constant = 0.05;
 //Real y_p_constant = DH/num_fluid_cross_section; //** For first try */
 
-Real resolution_ref = (DH - 2.0 * y_p_constant) / (num_fluid_cross_section - 1.0); /**< Initial reference particle spacing. */
-Real offset_distance = y_p_constant - resolution_ref / 2.0;                        //** Basically offset distance is large than or equal to 0 *
+Real resolution_ref_temp = (DH - 2.0 * y_p_constant) / (num_fluid_cross_section - 1.0); /**< Initial reference particle spacing. */
+Real resolution_ref = round(resolution_ref_temp * 1.0e8) / 1.0e8;
+//Real resolution_ref = (DH - 2.0 * y_p_constant) / (num_fluid_cross_section - 1.0); /**< Initial reference particle spacing. */
+
+Real offset_distance = y_p_constant - resolution_ref / 2.0; //** Basically offset distance is large than or equal to 0 *
 Real DH_C = DH - 2.0 * offset_distance;
 //----------------------------------------------------------------------
 //	Other parameters.
