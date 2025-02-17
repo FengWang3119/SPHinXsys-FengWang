@@ -22,6 +22,7 @@ using namespace SPH;
 Real DH = 2.0;   /**< Channel height. */
 Real DL = 120.0; /**< Channel length. */
 Real num_fluid_cross_section = 20.0;
+Real extend_in = 20.0;
 
 Real characteristic_length = DH; /**<It needs characteristic Length to determine Re and calculate turbulent length and the inflow turbulent epsilon>*/
 //----------------------------------------------------------------------
@@ -62,7 +63,7 @@ Vec2d buffer_normal = Vec2d(1.0, 0.0);
 //----------------------------------------------------------------------
 //	Domain bounds of the system.
 //----------------------------------------------------------------------
-BoundingBox system_domain_bounds(Vec2d(-DL_sponge - 2.0 * BW, -BW), Vec2d(DL + 2.0 * BW, DH + 2.0 * BW));
+BoundingBox system_domain_bounds(Vec2d(-DL_sponge - extend_in - 2.0 * BW, -BW), Vec2d(DL + 2.0 * BW, DH + 2.0 * BW));
 //----------------------------------------------------------------------
 //	Material properties of the fluid.
 //----------------------------------------------------------------------
@@ -248,11 +249,11 @@ StdVec<Vecd> observer_location_center_point = {Vecd(0.5 * DL, 0.5 * DH)};
 std::vector<Vecd> createWaterBlockShape()
 {
     std::vector<Vecd> water_block_shape;
-    water_block_shape.push_back(Vecd(-DL_sponge - offset_distance, 0.0));
-    water_block_shape.push_back(Vecd(-DL_sponge - offset_distance, DH));
+    water_block_shape.push_back(Vecd(-DL_sponge - offset_distance - extend_in, 0.0));
+    water_block_shape.push_back(Vecd(-DL_sponge - offset_distance - extend_in, DH));
     water_block_shape.push_back(Vecd(DL + offset_distance, DH));
     water_block_shape.push_back(Vecd(DL + offset_distance, 0.0));
-    water_block_shape.push_back(Vecd(-DL_sponge - offset_distance, 0.0));
+    water_block_shape.push_back(Vecd(-DL_sponge - offset_distance - extend_in, 0.0));
     return water_block_shape;
 }
 class WaterBlock : public ComplexShape
