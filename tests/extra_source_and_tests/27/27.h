@@ -1,6 +1,7 @@
 #include "bidirectional_buffer.h"
 #include "density_correciton.h"
 #include "density_correciton.hpp"
+#include "k-epsilon_turbulent_model.cpp"
 #include "kernel_summation.h"
 #include "kernel_summation.hpp"
 #include "pressure_boundary.h"
@@ -12,13 +13,29 @@ using namespace SPH;
 //	Basic geometry parameters and numerical setup.
 //----------------------------------------------------------------------
 Real DH = 2.0; /**< Channel height. */
-Real half_channel_height = DH / 2.0;
 Real characteristic_length = DH;
 Real num_fluid_cross_section = 10.0;
+//----------------------------------------------------------------------
+//	Resolution for turbulence.
+//----------------------------------------------------------------------
+//** For this case, no wall */
 Real resolution_ref = DH / num_fluid_cross_section; /**< Initial reference particle spacing. */
-Real BW = resolution_ref * 4;                       /**< Extending width for BCs. */
-Real buffer_thickness = 5.0 * resolution_ref;
 
+//Real y_p_constant = 0.05;
+//Real y_p_constant = DH / num_fluid_cross_section / 2.0; //** For first try */
+
+//Real resolution_ref = (DH - 2.0 * y_p_constant) / (num_fluid_cross_section - 1.0); /**< Initial reference particle spacing. */
+//Real offset_distance = y_p_constant - resolution_ref / 2.0;                        //** Basically offset distance is large than or equal to 0 *
+//----------------------------------------------------------------------
+//	Other parameters.
+//----------------------------------------------------------------------
+Real BW = resolution_ref * 4;
+Real half_channel_height = DH / 2.0;
+Real buffer_thickness = 5.0 * resolution_ref;
+Vec2d buffer_normal = Vec2d(1.0, 0.0);
+//----------------------------------------------------------------------
+//	Case dependent geometry.
+//----------------------------------------------------------------------
 Real extend_in = 0.0;
 Real extend_out = 0.0;
 Real extend_compensate_relaxation = 0.0;
@@ -54,7 +71,24 @@ Vec2d point_J = point_H + Vec2d(0.0, -buffer_thickness);
 Vec2d point_K = point_B + Vec2d(-buffer_thickness, -buffer_thickness);
 
 Vec2d point_OC_half = (point_O + point_C) / 2.0;
-
+//----------------------------------------------------------------------
+//	Unique parameters for turbulence.
+//----------------------------------------------------------------------
+//** For K and Epsilon, type of the turbulent inlet, 0 is freestream, 1 is from interpolation from PY21 *
+int type_turbulent_inlet = 0; //** For k and epsilon */
+Real relaxation_rate_turbulent_inlet = 0.8;
+//** Tag for AMRD *
+int is_AMRD = 0;
+//bool is_constrain_normal_velocity_in_P_region = false;
+//** Weight for correcting the velocity  gradient in the sub near wall region  *
+Real weight_vel_grad_sub_nearwall = 0.1;
+//** Tag for Source Term Linearisation *
+bool is_source_term_linearisation = false;
+//** Initial values for K, Epsilon and Mu_t *
+StdVec<Real> initial_turbu_values = {0.000180001, 3.326679e-5, 1.0e-9};
+//----------------------------------------------------------------------
+//	Domain bounds of the system.
+//----------------------------------------------------------------------
 BoundingBox system_domain_bounds(Vec2d(point_O[0], point_O[1]) + Vec2d(-BW, -BW), point_B + Vec2d(BW, BW));
 //----------------------------------------------------------------------
 //	Material parameters.
@@ -65,7 +99,9 @@ Real U_max = 1.5 * U_inlet; //** An estimated value, generally 1.5 U_inlet *
 Real c_f = 10.0 * U_max;
 Real T_ref = 2.0;
 Real rho0_f = 1.0;
-Real Re = 40.0;
+
+Real Re = 40.0; //**First try laminar */
+//Real Re = 20000.0; //**First try laminar */
 
 Real Outlet_pressure = 0.0;
 Real Freestream_pressure = 0.0;
@@ -74,7 +110,7 @@ Real mu_f = rho0_f * U_f * characteristic_length / Re;
 
 Real Re_calculated = U_f * characteristic_length * rho0_f / mu_f;
 //----------------------------------------------------------------------
-//	Geometric shapes used in this case.
+//	Buffer setting for open boundary flow.
 //----------------------------------------------------------------------
 // Vec2d left_bidirectional_buffer_halfsize = 0.5 * Vec2d(buffer_thickness, (point_A[1] - point_O[1]));
 // Vec2d left_bidirectional_translation = point_AO_half + Vec2d(0.5 * buffer_thickness, 0.0);
