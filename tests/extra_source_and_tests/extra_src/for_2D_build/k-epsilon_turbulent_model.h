@@ -249,6 +249,8 @@ class TKEnergyForce<Inner<>> : public TKEnergyForce<Base, DataDelegateInner>
     Vecd *test_k_grad_rslt_;
     Matd *B_;
 };
+using TKEnergyForceInner = TKEnergyForce<Inner<>>;
+
 //** Wall part *
 template <>
 class TKEnergyForce<Contact<>> : public TKEnergyForce<Base, DataDelegateContact>
@@ -307,6 +309,7 @@ class TurbuViscousForce<Inner<>> : public TurbuViscousForce<DataDelegateInner>
     int *is_extra_viscous_dissipation_;
     Matd *B_;
 };
+using TurbulentViscousForceInner = TurbuViscousForce<Inner<>>;
 
 //** Wall part *
 using BaseTurbuViscousForceWithWall = InteractionWithWall<TurbuViscousForce>;
@@ -390,6 +393,33 @@ class InflowTurbulentCondition : public BaseFlowBoundaryCondition, public BaseTu
 
     virtual Real getTurbulentInflowK(Vecd &position, Vecd &velocity, Real &turbu_k);
     virtual Real getTurbulentInflowE(Vecd &position, Real &turbu_k, Real &turbu_E);
+};
+//=================================================================================================//
+class RegisterWallRelevantVariables : public LocalDynamics
+{
+  public:
+    explicit RegisterWallRelevantVariables(SPHBody &sph_body)
+        : LocalDynamics(sph_body),
+          is_near_wall_P1_(particles_->registerStateVariable<int>("IsNearWallP1", int(0))),
+          is_near_wall_P2_(particles_->registerStateVariable<int>("IsNearWallP2", int(0))),
+          wall_Y_plus_(particles_->registerStateVariable<Real>("WallYplus")),
+          wall_Y_star_(particles_->registerStateVariable<Real>("WallYstar")),
+          velo_friction_(particles_->registerStateVariable<Vecd>("FrictionVelocity")),
+          y_p_(particles_->registerStateVariable<Real>("Y_P")) {}
+    virtual ~RegisterWallRelevantVariables(){};
+
+    void update(size_t index_i, Real dt = 0.0) //** Useless */
+    {
+        is_near_wall_P1_[index_i] = 0;
+    }
+
+  protected:
+    int *is_near_wall_P1_;
+    int *is_near_wall_P2_;
+    Real *wall_Y_plus_;
+    Real *wall_Y_star_;
+    Vecd *velo_friction_;
+    Real *y_p_;
 };
 //=================================================================================================//
 class JudgeIsNearWall : public LocalDynamics, public DataDelegateContact, public BaseTurbuClosureCoeff
@@ -557,6 +587,13 @@ using TVC_NotLimited_RKGC_OBFCorrection =
 template <class ParticleScope>
 using TVC_ModifiedLimited_withoutLinearGradientCorrection =
     BaseTransportVelocityCorrectionComplex<SingleResolution, ModifiedTruncatedLinear, NoKernelCorrection, ParticleScope>;
+
+template <class ParticleScope>
+using TVC_ModifiedLimited_RKGC_Inner =
+    TransportVelocityCorrection<Inner<SingleResolution, ModifiedTruncatedLinear>, LinearGradientCorrectionWithBulkScope, ParticleScope>;
+template <class ParticleScope>
+using TVC_ModifiedLimited_NoRKGC_Inner =
+    TransportVelocityCorrection<Inner<SingleResolution, ModifiedTruncatedLinear>, NoKernelCorrection, ParticleScope>;
 //=================================================================================================//
 } // namespace fluid_dynamics
 } // namespace SPH

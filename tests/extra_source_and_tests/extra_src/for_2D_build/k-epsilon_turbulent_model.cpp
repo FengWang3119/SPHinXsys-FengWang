@@ -6,6 +6,7 @@ namespace SPH
 namespace fluid_dynamics
 {
 using TurbuIntegration2ndHalfWithWallDissipativeRiemann = ComplexInteraction<Integration2ndHalf<Inner<>, Contact<Wall>>, DissipativeRiemannSolver>;
+using Integration1stHalfCorrectionForOpenBoundaryFlowInnerRiemann = Integration1stHalf<Inner<>, AcousticRiemannSolver, LinearGradientCorrectionWithBulkScope>;
 //=================================================================================================//
 BaseTurbuClosureCoeff::BaseTurbuClosureCoeff()
     : Karman_(0.41), turbu_const_E_(9.8), C_mu_(0.09), turbulent_intensity_(5.0e-2),

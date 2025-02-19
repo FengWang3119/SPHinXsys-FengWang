@@ -117,11 +117,31 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     InteractionWithUpdate<SpatialTemporalFreeSurfaceIndicationInner> boundary_indicator(water_block_inner);
 
-    Dynamics1Level<fluid_dynamics::Integration1stHalfInnerRiemann> pressure_relaxation(water_block_inner);
-    Dynamics1Level<fluid_dynamics::Integration2ndHalfInnerRiemann> density_relaxation(water_block_inner);
-    InteractionWithUpdate<fluid_dynamics::ViscousForceInner> viscous_acceleration(water_block_inner);
+    //** Turbulence */
+    InteractionWithUpdate<LinearGradientCorrectionMatrixInner> corrected_configuration_fluid(water_block_inner);
+    InteractionWithUpdate<fluid_dynamics::TurbulentLinearGradientCorrectionMatrixInner> corrected_configuration_fluid_only_inner(water_block_inner);
 
-    ReduceDynamics<fluid_dynamics::AdvectionViscousTimeStep> get_fluid_advection_time_step_size(water_block, U_f);
+    Dynamics1Level<fluid_dynamics::Integration1stHalfInnerRiemann> pressure_relaxation(water_block_inner);
+    //** Turbulence */
+    //Dynamics1Level<fluid_dynamics::Integration1stHalfCorrectionForOpenBoundaryFlowInnerRiemann> pressure_relaxation(water_block_inner);
+
+    Dynamics1Level<fluid_dynamics::Integration2ndHalfInnerRiemann> density_relaxation(water_block_inner);
+
+    //** Turbulence */
+    SimpleDynamics<fluid_dynamics::RegisterWallRelevantVariables> register_wall_relevant_variables(water_block); //** Temporary Treatment */
+    InteractionWithUpdate<fluid_dynamics::GetVelocityGradientInner> get_velocity_gradient(water_block_inner, weight_vel_grad_sub_nearwall);
+    InteractionWithUpdate<fluid_dynamics::K_TurbulentModelInner> k_equation_relaxation(water_block_inner, initial_turbu_values, is_AMRD, is_source_term_linearisation);
+    InteractionWithUpdate<fluid_dynamics::E_TurbulentModelInner> epsilon_equation_relaxation(water_block_inner, is_source_term_linearisation);
+    InteractionDynamics<fluid_dynamics::TKEnergyForceInner> turbulent_kinetic_energy_force(water_block_inner);
+
+    //InteractionWithUpdate<fluid_dynamics::ViscousForceInner> viscous_acceleration(water_block_inner);
+    //** Turbulence */
+    InteractionWithUpdate<fluid_dynamics::TurbulentViscousForceInner> viscous_acceleration(water_block_inner);
+
+    //ReduceDynamics<fluid_dynamics::AdvectionViscousTimeStep> get_fluid_advection_time_step_size(water_block, U_f);
+    //** Turbulence */
+    ReduceDynamics<fluid_dynamics::TurbulentAdvectionTimeStepSize> get_fluid_advection_time_step_size(water_block, U_f);
+
     ReduceDynamics<fluid_dynamics::AcousticTimeStep> get_fluid_time_step_size(water_block);
 
     AlignedBoxPartByCell left_emitter(water_block, AlignedBox(xAxis, Transform(Vec2d(left_bidirectional_translation)), left_bidirectional_buffer_halfsize));
@@ -143,19 +163,35 @@ int main(int ac, char *av[])
 
     InteractionDynamics<NablaWVInner> kernel_summation(water_block_inner);
 
-    SimpleDynamics<fluid_dynamics::PressureCondition<LeftInflowPressure>> left_inflow_pressure_condition(left_emitter);
-    SimpleDynamics<fluid_dynamics::PressureCondition<RightInflowPressure>> right_inflow_pressure_condition(right_emitter);
     SimpleDynamics<fluid_dynamics::InflowVelocityCondition<InflowVelocity>> inflow_velocity_condition(left_emitter);
-
-    SimpleDynamics<fluid_dynamics::PressureCondition<LeftInflowPressure>> static_up_inflow_pressure_condition(static_emitter_up);
-    SimpleDynamics<fluid_dynamics::PressureCondition<LeftInflowPressure>> static_down_inflow_pressure_condition(static_emitter_down);
     SimpleDynamics<fluid_dynamics::InflowVelocityCondition<StaticInflowVelocity>> static_up_inflow_velocity_condition(static_emitter_up);
     SimpleDynamics<fluid_dynamics::InflowVelocityCondition<StaticInflowVelocity>> static_down_inflow_velocity_condition(static_emitter_down);
 
+    /** Turbulence InflowTurbulentCondition.It needs characteristic Length to calculate turbulent length  */
+    SimpleDynamics<fluid_dynamics::InflowTurbulentCondition> impose_turbulent_inflow_condition(left_emitter, characteristic_length, relaxation_rate_turbulent_inlet, type_turbulent_inlet);
+
+    SimpleDynamics<fluid_dynamics::PressureCondition<LeftInflowPressure>> left_inflow_pressure_condition(left_emitter);
+    SimpleDynamics<fluid_dynamics::PressureCondition<RightInflowPressure>> right_inflow_pressure_condition(right_emitter);
+    SimpleDynamics<fluid_dynamics::PressureCondition<LeftInflowPressure>> static_up_inflow_pressure_condition(static_emitter_up);
+    SimpleDynamics<fluid_dynamics::PressureCondition<LeftInflowPressure>> static_down_inflow_pressure_condition(static_emitter_down);
     SimpleDynamics<fluid_dynamics::PressureCondition<FreestreamPressure>> up_pressure_condition(up_emitter);
     SimpleDynamics<fluid_dynamics::PressureCondition<FreestreamPressure>> down_pressure_condition(down_emitter);
+    //** Turbulence */
+    // SimpleDynamics<fluid_dynamics::PressureConditionCorrection<LeftInflowPressure>> left_inflow_pressure_condition(left_emitter);
+    // SimpleDynamics<fluid_dynamics::PressureConditionCorrection<RightInflowPressure>> right_inflow_pressure_condition(right_emitter);
+    // SimpleDynamics<fluid_dynamics::PressureConditionCorrection<LeftInflowPressure>> static_up_inflow_pressure_condition(static_emitter_up);
+    // SimpleDynamics<fluid_dynamics::PressureConditionCorrection<LeftInflowPressure>> static_down_inflow_pressure_condition(static_emitter_down);
+    // SimpleDynamics<fluid_dynamics::PressureConditionCorrection<FreestreamPressure>> up_pressure_condition(up_emitter);
+    // SimpleDynamics<fluid_dynamics::PressureConditionCorrection<FreestreamPressure>> down_pressure_condition(down_emitter);
 
-    InteractionWithUpdate<fluid_dynamics::TransportVelocityCorrectionInner<NoLimiter, BulkParticlesWithoutInlet>> transport_velocity_correction(water_block_inner);
+    //InteractionWithUpdate<fluid_dynamics::TransportVelocityCorrectionInner<NoLimiter, BulkParticlesWithoutInlet>> transport_velocity_correction(water_block_inner);
+    //** Turbulence */
+    InteractionWithUpdate<fluid_dynamics::TVC_ModifiedLimited_NoRKGC_Inner<BulkParticlesWithoutInlet>> transport_velocity_correction(water_block_inner);
+    //InteractionWithUpdate<fluid_dynamics::TVC_ModifiedLimited_RKGC_Inner<BulkParticlesWithoutInlet>> transport_velocity_correction(water_block_inner);
+
+    /** Turbulence */
+    SimpleDynamics<fluid_dynamics::TurbulentEddyViscosity> update_eddy_viscosity(water_block);
+
     //----------------------------------------------------------------------
     //	Define the configuration related particles dynamics.
     //----------------------------------------------------------------------
@@ -199,7 +235,7 @@ int main(int ac, char *av[])
     Real end_time = 800.0;                      /**< End time. */
     Real cutoff_ratio = 0.9;                    //** cutoff_time should be a integral and the same as the PY script */
     Real cutoff_time = cutoff_ratio * end_time; //** cutoff_time should be a integral and the same as the PY script */
-    Real num_output_files = 10.0;
+    Real num_output_files = 200.0;
     Real Output_Time = end_time / num_output_files; /**< Time stamps for output of body states. */
     Real index_check_file_fully_developed = num_output_files * cutoff_ratio;
     Real dt = 0.0; /**< Default acoustic time step sizes. */
@@ -230,7 +266,14 @@ int main(int ac, char *av[])
         {
             time_instance = TickCount::now();
             Real Dt = get_fluid_advection_time_step_size.exec();
+
             update_fluid_density.exec();
+
+            corrected_configuration_fluid.exec();
+            corrected_configuration_fluid_only_inner.exec();
+
+            update_eddy_viscosity.exec();
+
             viscous_acceleration.exec();
             transport_velocity_correction.exec();
             kernel_summation.exec();
@@ -241,11 +284,16 @@ int main(int ac, char *av[])
             while (relaxation_time < Dt)
             {
                 dt = SMIN(get_fluid_time_step_size.exec(), Dt);
+
+                turbulent_kinetic_energy_force.exec();
+
                 pressure_relaxation.exec(dt);
 
                 left_inflow_pressure_condition.exec(dt);
                 right_inflow_pressure_condition.exec(dt);
                 inflow_velocity_condition.exec();
+
+                impose_turbulent_inflow_condition.exec();
 
                 static_up_inflow_pressure_condition.exec(dt);
                 static_down_inflow_pressure_condition.exec(dt);
@@ -256,6 +304,11 @@ int main(int ac, char *av[])
                 down_pressure_condition.exec(dt);
 
                 density_relaxation.exec(dt);
+
+                get_velocity_gradient.exec(dt);
+                k_equation_relaxation.exec(dt);
+                epsilon_equation_relaxation.exec(dt);
+
                 relaxation_time += dt;
                 integration_time += dt;
                 physical_time += dt;

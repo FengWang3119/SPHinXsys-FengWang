@@ -40,10 +40,10 @@ Real extend_in = 0.0;
 Real extend_out = 0.0;
 Real extend_compensate_relaxation = 0.0;
 
-// Real DH1 = 5.0 * DH;
-// Real DL2 = 10.0 * DH;
-Real DH1 = 20.0 * DH;
-Real DL2 = 50.0 * DH;
+Real DH1 = 5.0 * DH;
+Real DL2 = 10.0 * DH;
+// Real DH1 = 20.0 * DH;
+// Real DL2 = 50.0 * DH;
 
 Vec2d point_O(0.0, 0.0);
 Vec2d point_A = point_O + Vec2d(0.0, DH + 2.0 * DH1);
@@ -100,8 +100,8 @@ Real c_f = 10.0 * U_max;
 Real T_ref = 2.0;
 Real rho0_f = 1.0;
 
-Real Re = 40.0; //**First try laminar */
-//Real Re = 20000.0; //**First try laminar */
+//Real Re = 40.0; //**First try laminar */
+Real Re = 20000.0;
 
 Real Outlet_pressure = 0.0;
 Real Freestream_pressure = 0.0;
