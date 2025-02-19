@@ -115,19 +115,11 @@ int main(int ac, char *av[])
     // Finally, the auxiliary models such as time step estimator, initial condition,
     // boundary condition and other constraints should be defined.
     //----------------------------------------------------------------------
-    //SimpleDynamics<NormalDirectionFromBodyShape> wall_boundary_normal_direction(wall_boundary);
-
-    //InteractionWithUpdate<SpatialTemporalFreeSurfaceIndicationComplex> boundary_indicator(water_block_inner, water_block_contact);
     InteractionWithUpdate<SpatialTemporalFreeSurfaceIndicationInner> boundary_indicator(water_block_inner);
 
-    // Dynamics1Level<fluid_dynamics::Integration1stHalfWithWallRiemann> pressure_relaxation(water_block_inner, water_block_contact);
-    // Dynamics1Level<fluid_dynamics::Integration2ndHalfWithWallRiemann> density_relaxation(water_block_inner, water_block_contact);
-    // InteractionWithUpdate<fluid_dynamics::ViscousForceWithWall> viscous_acceleration(water_block_inner, water_block_contact);
     Dynamics1Level<fluid_dynamics::Integration1stHalfInnerRiemann> pressure_relaxation(water_block_inner);
     Dynamics1Level<fluid_dynamics::Integration2ndHalfInnerRiemann> density_relaxation(water_block_inner);
     InteractionWithUpdate<fluid_dynamics::ViscousForceInner> viscous_acceleration(water_block_inner);
-
-    //InteractionWithUpdate<fluid_dynamics::TransportVelocityCorrectionComplex<BulkParticles>> transport_velocity_correction(water_block_inner, water_block_contact);
 
     ReduceDynamics<fluid_dynamics::AdvectionViscousTimeStep> get_fluid_advection_time_step_size(water_block, U_f);
     ReduceDynamics<fluid_dynamics::AcousticTimeStep> get_fluid_time_step_size(water_block);
@@ -147,10 +139,8 @@ int main(int ac, char *av[])
     AlignedBoxPartByCell down_emitter(water_block, AlignedBox(xAxis, Transform(Rotation2d(down_buffer_rotation_angle), Vec2d(down_buffer_translation)), down_buffer_halfsize));
     fluid_dynamics::BidirectionalBuffer<FreestreamPressure> down_bidirection_buffer(down_emitter, in_outlet_particle_buffer);
 
-    //InteractionWithUpdate<fluid_dynamics::DensitySummationPressureComplex> update_fluid_density(water_block_inner, water_block_contact);
     InteractionWithUpdate<fluid_dynamics::DensitySummationPressureInner> update_fluid_density(water_block_inner);
 
-    //InteractionDynamics<NablaWVComplex> kernel_summation(water_block_inner, water_block_contact);
     InteractionDynamics<NablaWVInner> kernel_summation(water_block_inner);
 
     SimpleDynamics<fluid_dynamics::PressureCondition<LeftInflowPressure>> left_inflow_pressure_condition(left_emitter);
@@ -165,11 +155,7 @@ int main(int ac, char *av[])
     SimpleDynamics<fluid_dynamics::PressureCondition<FreestreamPressure>> up_pressure_condition(up_emitter);
     SimpleDynamics<fluid_dynamics::PressureCondition<FreestreamPressure>> down_pressure_condition(down_emitter);
 
-    //InteractionWithUpdate<fluid_dynamics::TransportVelocityCorrectionComplex<BulkParticlesWithoutInlet>> transport_velocity_correction(water_block_inner, water_block_contact);
     InteractionWithUpdate<fluid_dynamics::TransportVelocityCorrectionInner<NoLimiter, BulkParticlesWithoutInlet>> transport_velocity_correction(water_block_inner);
-
-    //BodyRegionByParticle inlet_buffer_constraint_part(water_block, makeShared<MultiPolygonShape>(createConstrainShape()));
-    //SimpleDynamics<FixBodyPartConstraint> inlet_buffer_constraint(inlet_buffer_constraint_part);
     //----------------------------------------------------------------------
     //	Define the configuration related particles dynamics.
     //----------------------------------------------------------------------
@@ -183,7 +169,6 @@ int main(int ac, char *av[])
     body_states_recording.addToWrite<int>(water_block, "Indicator");
     body_states_recording.addToWrite<Real>(water_block, "Density");
     body_states_recording.addToWrite<int>(water_block, "BufferParticleIndicator");
-    //body_states_recording.addToWrite<Vecd>(wall_boundary, "NormalDirection");
     body_states_recording.addToWrite<Vecd>(water_block, "ZeroGradientResidue");
     body_states_recording.addToWrite<Vecd>(water_block, "KernelSummation");
     body_states_recording.addToWrite<Real>(water_block, "VolumetricMeasure");
@@ -205,15 +190,12 @@ int main(int ac, char *av[])
 
     up_bidirection_buffer.tag_buffer_particles.exec();
     down_bidirection_buffer.tag_buffer_particles.exec();
-
-    //wall_boundary_normal_direction.exec();
     //----------------------------------------------------------------------
     //	Setup for time-stepping control
     //----------------------------------------------------------------------
     Real &physical_time = *sph_system.getSystemVariableDataByName<Real>("PhysicalTime");
     size_t number_of_iterations = 0;
     int screen_output_interval = 100;
-    //int observation_sample_interval = screen_output_interval * 2;
     Real end_time = 800.0;                      /**< End time. */
     Real cutoff_ratio = 0.9;                    //** cutoff_time should be a integral and the same as the PY script */
     Real cutoff_time = cutoff_ratio * end_time; //** cutoff_time should be a integral and the same as the PY script */
@@ -273,8 +255,6 @@ int main(int ac, char *av[])
                 up_pressure_condition.exec(dt);
                 down_pressure_condition.exec(dt);
 
-                //inlet_buffer_constraint.exec();
-
                 density_relaxation.exec(dt);
                 relaxation_time += dt;
                 integration_time += dt;
@@ -311,7 +291,6 @@ int main(int ac, char *av[])
             }
             water_block.updateCellLinkedList();
 
-            //water_block_complex.updateConfiguration();
             water_block_inner.updateConfiguration();
             velocity_observer_contact.updateConfiguration();
             fluid_observer_cross_section_contact.updateConfiguration();
