@@ -653,10 +653,10 @@ Real InflowTurbulentCondition::getTurbulentInflowK(Vecd &position, Vecd &velocit
 
         temp_in_turbu_k = polynomial_value;
     }
-    if (position[0] < 0.0) //** Temporarily treatment *
-    {
-        turbu_k_original = temp_in_turbu_k;
-    }
+    //if (position[0] < 0.0) //** Temporarily treatment *
+    //{
+    turbu_k_original = temp_in_turbu_k;
+    //}
     return turbu_k_original;
 }
 //=================================================================================================//
@@ -712,10 +712,10 @@ Real InflowTurbulentCondition::getTurbulentInflowE(Vecd &position, Real &turbu_k
 
         temp_in_turbu_E = polynomial_value;
     }
-    if (position[0] < 0.0) //** Temporarily treatment *
-    {
-        turbu_E_original = temp_in_turbu_E;
-    }
+    //if (position[0] < 0.0) //** Temporarily treatment *
+    //{
+    turbu_E_original = temp_in_turbu_E;
+    //}
     return turbu_E_original;
 }
 //=================================================================================================//
