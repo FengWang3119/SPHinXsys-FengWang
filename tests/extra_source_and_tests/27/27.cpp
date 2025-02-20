@@ -310,7 +310,7 @@ int main(int ac, char *av[])
 
                 density_relaxation.exec(dt);
 
-                get_velocity_gradient.exec(dt);
+                get_velocity_gradient.exec();
                 k_equation_relaxation.exec(dt);
                 epsilon_equation_relaxation.exec(dt);
 
