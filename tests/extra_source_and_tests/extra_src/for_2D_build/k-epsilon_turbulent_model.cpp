@@ -583,9 +583,9 @@ Real TurbulentAdvectionTimeStepSize::outputResult(Real reduced_value)
     return advectionCFL_ * smoothing_length_min_ / (SMAX(speed_max, speed_ref_turbu_) + TinyReal);
 }
 //=================================================================================================//
-InflowTurbulentCondition::InflowTurbulentCondition(BodyPartByCell &body_part, Real CharacteristicLength, Real relaxation_rate, int type_turbu_inlet)
+InflowTurbulentCondition::InflowTurbulentCondition(AlignedBoxPartByCell &body_part, Real CharacteristicLength, Real relaxation_rate, int type_turbu_inlet)
     : BaseFlowBoundaryCondition(body_part), type_turbu_inlet_(type_turbu_inlet),
-      relaxation_rate_(relaxation_rate),
+      relaxation_rate_(relaxation_rate), aligned_box_(body_part.getAlignedBox()),
       CharacteristicLength_(CharacteristicLength),
       turbu_k_(particles_->getVariableDataByName<Real>("TurbulenceKineticEnergy")),
       turbu_epsilon_(particles_->getVariableDataByName<Real>("TurbulentDissipation"))
@@ -595,10 +595,13 @@ InflowTurbulentCondition::InflowTurbulentCondition(BodyPartByCell &body_part, Re
 //=================================================================================================//
 void InflowTurbulentCondition::update(size_t index_i, Real dt)
 {
-    Real target_in_turbu_k = getTurbulentInflowK(pos_[index_i], vel_[index_i], turbu_k_[index_i]);
-    turbu_k_[index_i] += relaxation_rate_ * (target_in_turbu_k - turbu_k_[index_i]);
-    Real target_in_turbu_E = getTurbulentInflowE(pos_[index_i], turbu_k_[index_i], turbu_epsilon_[index_i]);
-    turbu_epsilon_[index_i] += relaxation_rate_ * (target_in_turbu_E - turbu_epsilon_[index_i]);
+    if (aligned_box_.checkContain(pos_[index_i]))
+    {
+        Real target_in_turbu_k = getTurbulentInflowK(pos_[index_i], vel_[index_i], turbu_k_[index_i]);
+        turbu_k_[index_i] += relaxation_rate_ * (target_in_turbu_k - turbu_k_[index_i]);
+        Real target_in_turbu_E = getTurbulentInflowE(pos_[index_i], turbu_k_[index_i], turbu_epsilon_[index_i]);
+        turbu_epsilon_[index_i] += relaxation_rate_ * (target_in_turbu_E - turbu_epsilon_[index_i]);
+    }
 }
 //=================================================================================================//
 Real InflowTurbulentCondition::getTurbulentInflowK(Vecd &position, Vecd &velocity, Real &turbu_k)

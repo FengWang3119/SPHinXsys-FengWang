@@ -378,7 +378,7 @@ class TurbulentAdvectionTimeStepSize : public LocalDynamicsReduce<ReduceMax>
 class InflowTurbulentCondition : public BaseFlowBoundaryCondition, public BaseTurbuClosureCoeff
 {
   public:
-    explicit InflowTurbulentCondition(BodyPartByCell &body_part,
+    explicit InflowTurbulentCondition(AlignedBoxPartByCell &body_part,
                                       Real CharacteristicLength, Real relaxation_rate, int type_turbu_inlet);
     virtual ~InflowTurbulentCondition(){};
     void update(size_t index_i, Real dt = 0.0);
@@ -386,6 +386,7 @@ class InflowTurbulentCondition : public BaseFlowBoundaryCondition, public BaseTu
   protected:
     int type_turbu_inlet_;
     Real relaxation_rate_;
+    AlignedBox &aligned_box_;
     Real CharacteristicLength_;
     Real *turbu_k_;
     Real *turbu_epsilon_;
