@@ -280,8 +280,8 @@ int main(int ac, char *av[])
 
             //k_equation_relaxation.exec(dt);
             //epsilon_equation_relaxation.exec(dt);
-            k_equation_relaxation.exec(Dt);
-            epsilon_equation_relaxation.exec(Dt);
+            // k_equation_relaxation.exec(Dt);
+            // epsilon_equation_relaxation.exec(Dt);
 
             transport_velocity_correction.exec();
             kernel_summation.exec();
@@ -313,9 +313,9 @@ int main(int ac, char *av[])
 
                 density_relaxation.exec(dt);
 
-                // get_velocity_gradient.exec();
-                // k_equation_relaxation.exec(dt);
-                // epsilon_equation_relaxation.exec(dt);
+                get_velocity_gradient.exec();
+                k_equation_relaxation.exec(dt);
+                epsilon_equation_relaxation.exec(dt);
 
                 relaxation_time += dt;
                 integration_time += dt;
