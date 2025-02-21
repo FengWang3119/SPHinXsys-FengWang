@@ -276,10 +276,7 @@ int main(int ac, char *av[])
 
             viscous_acceleration.exec();
 
-            get_velocity_gradient.exec();
-
-            //k_equation_relaxation.exec(dt);
-            //epsilon_equation_relaxation.exec(dt);
+            //get_velocity_gradient.exec();
             // k_equation_relaxation.exec(Dt);
             // epsilon_equation_relaxation.exec(Dt);
 
