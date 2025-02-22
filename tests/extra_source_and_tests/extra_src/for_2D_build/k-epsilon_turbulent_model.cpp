@@ -176,8 +176,7 @@ K_TurbulentModelInner::K_TurbulentModelInner(BaseInnerRelation &inner_relation, 
       is_extra_viscous_dissipation_(particles_->registerStateVariable<int>("TurbulentExtraViscousDissipation", is_extr_visc_dissipa)),
       is_STL_(is_STL),
       turbu_indicator_(particles_->registerStateVariable<int>("TurbulentIndicator")),
-      k_diffusion_(particles_->registerStateVariable<Real>("K_Diffusion")),
-      vel_x_(particles_->registerStateVariable<Real>("Velocity_X"))
+      k_diffusion_(particles_->registerStateVariable<Real>("K_Diffusion"))
 {
     particles_->addVariableToSort<Real>("ChangeRateOfTKE");
     particles_->addVariableToSort<Real>("ChangeRateOfTKEWithoutDissipation");
@@ -208,64 +207,45 @@ K_TurbulentModelInner::K_TurbulentModelInner(BaseInnerRelation &inner_relation, 
 
     particles_->addVariableToWrite<Real>("ChangeRateOfTKE");
 
-    particles_->addVariableToSort<Real>("Velocity_X");
-
     particles_->addVariableToSort<int>("TurbulentIndicator");
     particles_->addVariableToWrite<int>("TurbulentIndicator");
 
     //std::fill(is_extra_viscous_dissipation_.begin(), is_extra_viscous_dissipation_.end(), is_extr_visc_dissipa);
 }
 //=================================================================================================//
-void K_TurbulentModelInner::interaction(size_t index_i, Real dt)
+void K_TurbulentModelInner::update(size_t index_i, Real dt)
 {
     Real rho_i = rho_[index_i];
     Real turbu_mu_i = turbu_mu_[index_i];
     Real turbu_k_i = turbu_k_[index_i];
-
-    Real mu_eff_i = turbu_mu_[index_i] / sigma_k_ + mu_;
+    Real k_diffusion = k_diffusion_[index_i];
+    Real k_dissipation = turbu_epsilon_[index_i];
+    Matd vel_grad_i = velocity_gradient_[index_i];
 
     dk_dt_[index_i] = 0.0;
     dk_dt_without_dissipation_[index_i] = 0.0;
-    Real k_derivative(0.0);
-    Real k_lap(0.0);
     Matd strain_rate = Matd::Zero();
     Matd Re_stress = Matd::Zero();
 
     Real k_production(0.0);
-    Real k_dissipation(0.0);
-    const Neighborhood &inner_neighborhood = inner_configuration_[index_i];
-    for (size_t n = 0; n != inner_neighborhood.current_size_; ++n)
-    {
-        size_t index_j = inner_neighborhood.j_[n];
-        Real mu_eff_j = turbu_mu_[index_j] / sigma_k_ + mu_;
-        Real mu_harmo = 2 * mu_eff_i * mu_eff_j / (mu_eff_i + mu_eff_j);
-        k_derivative = (turbu_k_i - turbu_k_[index_j]) / (inner_neighborhood.r_ij_[n] + 0.01 * smoothing_length_);
-        k_lap += 2.0 * mu_harmo * k_derivative * inner_neighborhood.dW_ij_[n] * this->Vol_[index_j] / rho_i;
-    }
-    strain_rate = 0.5 * (velocity_gradient_[index_i].transpose() + velocity_gradient_[index_i]);
+
+    strain_rate = 0.5 * (vel_grad_i.transpose() + vel_grad_i);
 
     Re_stress = 2.0 * strain_rate * turbu_mu_i / rho_i - (2.0 / 3.0) * turbu_k_i * Matd::Identity();
     //Re_stress = 2.0 * strain_rate * turbu_mu_i / rho_i;
 
-    Matd k_production_matrix = Re_stress.array() * velocity_gradient_[index_i].array();
+    Matd k_production_matrix = Re_stress.array() * vel_grad_i.array();
+    k_production = k_production_matrix.sum();
+
+    dk_dt_[index_i] = k_production - k_dissipation + k_diffusion;
+    dk_dt_without_dissipation_[index_i] = k_production + k_diffusion;
+
     //** The near wall k production is updated in wall function part *
     if (is_near_wall_P1_[index_i] != 1)
-        k_production_[index_i] = k_production_matrix.sum();
+        k_production_[index_i] = k_production;
 
-    k_production = k_production_[index_i];
-    k_dissipation = turbu_epsilon_[index_i];
-
-    dk_dt_[index_i] = k_production - k_dissipation + k_lap;
-    dk_dt_without_dissipation_[index_i] = k_production + k_lap;
-
-    //** for test */
-    k_diffusion_[index_i] = k_lap;
-    vel_x_[index_i] = vel_[index_i][0];
     turbu_strain_rate_[index_i] = strain_rate;
-}
-//=================================================================================================//
-void K_TurbulentModelInner::update(size_t index_i, Real dt)
-{
+
     if (is_STL_)
     {
         //** If use source term linearisation *
@@ -277,6 +257,34 @@ void K_TurbulentModelInner::update(size_t index_i, Real dt)
     {
         turbu_k_[index_i] += dk_dt_[index_i] * dt;
     }
+}
+//=================================================================================================//
+TurbulentKineticEnergyDiffusion::TurbulentKineticEnergyDiffusion(BaseInnerRelation &inner_relation)
+    : BaseTurbulentModel<Base, DataDelegateInner>(inner_relation),
+      turbu_k_(particles_->getVariableDataByName<Real>("TurbulenceKineticEnergy")),
+      turbu_mu_(particles_->getVariableDataByName<Real>("TurbulentViscosity")),
+      k_diffusion_(particles_->getVariableDataByName<Real>("K_Diffusion")) {}
+//=================================================================================================//
+void TurbulentKineticEnergyDiffusion::interaction(size_t index_i, Real dt)
+{
+    Real rho_i = rho_[index_i];
+    Real turbu_k_i = turbu_k_[index_i];
+
+    Real mu_eff_i = turbu_mu_[index_i] / sigma_k_ + mu_;
+
+    Real k_derivative(0.0);
+    Real k_lap(0.0);
+
+    const Neighborhood &inner_neighborhood = inner_configuration_[index_i];
+    for (size_t n = 0; n != inner_neighborhood.current_size_; ++n)
+    {
+        size_t index_j = inner_neighborhood.j_[n];
+        Real mu_eff_j = turbu_mu_[index_j] / sigma_k_ + mu_;
+        Real mu_harmo = 2 * mu_eff_i * mu_eff_j / (mu_eff_i + mu_eff_j);
+        k_derivative = (turbu_k_i - turbu_k_[index_j]) / (inner_neighborhood.r_ij_[n] + 0.01 * smoothing_length_);
+        k_lap += 2.0 * mu_harmo * k_derivative * inner_neighborhood.dW_ij_[n] * this->Vol_[index_j] / rho_i;
+    }
+    k_diffusion_[index_i] = k_lap;
 }
 //=================================================================================================//
 E_TurbulentModelInner::E_TurbulentModelInner(BaseInnerRelation &inner_relation, bool is_STL)
@@ -306,45 +314,27 @@ E_TurbulentModelInner::E_TurbulentModelInner(BaseInnerRelation &inner_relation, 
     particles_->addVariableToWrite<Real>("Ep_Diffusion_");
 }
 //=================================================================================================//
-void E_TurbulentModelInner::
-    interaction(size_t index_i, Real dt)
+void E_TurbulentModelInner::update(size_t index_i, Real dt)
 {
-    Real rho_i = rho_[index_i];
     Real turbu_k_i = turbu_k_[index_i];
     Real turbu_epsilon_i = turbu_epsilon_[index_i];
-
-    Real mu_eff_i = turbu_mu_[index_i] / sigma_E_ + mu_;
+    Real epsilon_diffusion = ep_diffusion_[index_i];
+    Real k_production_i = k_production_[index_i];
 
     depsilon_dt_[index_i] = 0.0;
     depsilon_dt_without_dissipation_[index_i] = 0.0;
     Real epsilon_production(0.0);
-    Real epsilon_derivative(0.0);
-    Real epsilon_lap(0.0);
     Real epsilon_dissipation(0.0);
-    const Neighborhood &inner_neighborhood = inner_configuration_[index_i];
-    for (size_t n = 0; n != inner_neighborhood.current_size_; ++n)
-    {
-        size_t index_j = inner_neighborhood.j_[n];
-        Real mu_eff_j = turbu_mu_[index_j] / sigma_E_ + mu_;
-        Real mu_harmo = 2 * mu_eff_i * mu_eff_j / (mu_eff_i + mu_eff_j);
-        epsilon_derivative = (turbu_epsilon_i - turbu_epsilon_[index_j]) / (inner_neighborhood.r_ij_[n] + 0.01 * smoothing_length_);
-        epsilon_lap += 2.0 * mu_harmo * epsilon_derivative * inner_neighborhood.dW_ij_[n] * this->Vol_[index_j] / rho_i;
-    }
 
-    epsilon_production = C_l_ * turbu_epsilon_i * k_production_[index_i] / turbu_k_i;
+    epsilon_production = C_l_ * turbu_epsilon_i * k_production_i / turbu_k_i;
     epsilon_dissipation = C_2_ * turbu_epsilon_i * turbu_epsilon_i / turbu_k_i;
 
-    depsilon_dt_[index_i] = epsilon_production - epsilon_dissipation + epsilon_lap;
-    depsilon_dt_without_dissipation_[index_i] = epsilon_production + epsilon_lap;
+    depsilon_dt_[index_i] = epsilon_production - epsilon_dissipation + epsilon_diffusion;
+    depsilon_dt_without_dissipation_[index_i] = epsilon_production + epsilon_diffusion;
 
-    //** for test */
     ep_production[index_i] = epsilon_production;
     ep_dissipation_[index_i] = epsilon_dissipation;
-    ep_diffusion_[index_i] = epsilon_lap;
-}
-//=================================================================================================//
-void E_TurbulentModelInner::update(size_t index_i, Real dt)
-{
+
     //** The near wall epsilon value is updated in wall function part *
     if (is_near_wall_P1_[index_i] != 1)
     {
@@ -360,6 +350,33 @@ void E_TurbulentModelInner::update(size_t index_i, Real dt)
             turbu_epsilon_[index_i] += depsilon_dt_[index_i] * dt;
         }
     }
+}
+//=================================================================================================//
+TurbulentDissipationRateDiffusion::TurbulentDissipationRateDiffusion(BaseInnerRelation &inner_relation)
+    : BaseTurbulentModel<Base, DataDelegateInner>(inner_relation),
+      ep_diffusion_(particles_->getVariableDataByName<Real>("Ep_Diffusion_")),
+      turbu_mu_(particles_->getVariableDataByName<Real>("TurbulentViscosity")),
+      turbu_epsilon_(particles_->getVariableDataByName<Real>("TurbulentDissipation")) {}
+//=================================================================================================//
+void TurbulentDissipationRateDiffusion::interaction(size_t index_i, Real dt)
+{
+    Real rho_i = rho_[index_i];
+    Real turbu_epsilon_i = turbu_epsilon_[index_i];
+
+    Real mu_eff_i = turbu_mu_[index_i] / sigma_E_ + mu_;
+
+    Real epsilon_derivative(0.0);
+    Real epsilon_lap(0.0);
+    const Neighborhood &inner_neighborhood = inner_configuration_[index_i];
+    for (size_t n = 0; n != inner_neighborhood.current_size_; ++n)
+    {
+        size_t index_j = inner_neighborhood.j_[n];
+        Real mu_eff_j = turbu_mu_[index_j] / sigma_E_ + mu_;
+        Real mu_harmo = 2 * mu_eff_i * mu_eff_j / (mu_eff_i + mu_eff_j);
+        epsilon_derivative = (turbu_epsilon_i - turbu_epsilon_[index_j]) / (inner_neighborhood.r_ij_[n] + 0.01 * smoothing_length_);
+        epsilon_lap += 2.0 * mu_harmo * epsilon_derivative * inner_neighborhood.dW_ij_[n] * this->Vol_[index_j] / rho_i;
+    }
+    ep_diffusion_[index_i] = epsilon_lap;
 }
 //=================================================================================================//
 TKEnergyForce<Inner<>>::TKEnergyForce(BaseInnerRelation &inner_relation)

@@ -165,7 +165,7 @@ class K_TurbulentModelInner : public BaseTurbulentModel<Base, DataDelegateInner>
     explicit K_TurbulentModelInner(BaseInnerRelation &inner_relation, const StdVec<Real> &initial_values, int is_extr_visc_dissipa, bool is_STL);
     virtual ~K_TurbulentModelInner(){};
 
-    inline void interaction(size_t index_i, Real dt = 0.0);
+    //inline void interaction(size_t index_i, Real dt = 0.0);
     void update(size_t index_i, Real dt = 0.0);
 
   protected:
@@ -182,9 +182,22 @@ class K_TurbulentModelInner : public BaseTurbulentModel<Base, DataDelegateInner>
     int *is_extra_viscous_dissipation_;
     bool is_STL_;
 
-    //** for test */
     int *turbu_indicator_;
-    Real *k_diffusion_, *vel_x_;
+    Real *k_diffusion_;
+};
+//=================================================================================================//
+class TurbulentKineticEnergyDiffusion : public BaseTurbulentModel<Base, DataDelegateInner>
+{
+  public:
+    explicit TurbulentKineticEnergyDiffusion(BaseInnerRelation &inner_relation);
+    virtual ~TurbulentKineticEnergyDiffusion(){};
+
+    inline void interaction(size_t index_i, Real dt = 0.0);
+
+  protected:
+    Real *turbu_k_;
+    Real *turbu_mu_;
+    Real *k_diffusion_;
 };
 //=================================================================================================//
 /**
@@ -197,7 +210,7 @@ class E_TurbulentModelInner : public BaseTurbulentModel<Base, DataDelegateInner>
     explicit E_TurbulentModelInner(BaseInnerRelation &inner_relation, bool is_STL);
     virtual ~E_TurbulentModelInner(){};
 
-    inline void interaction(size_t index_i, Real dt = 0.0);
+    //inline void interaction(size_t index_i, Real dt = 0.0);
     void update(size_t index_i, Real dt = 0.0);
 
   protected:
@@ -215,7 +228,20 @@ class E_TurbulentModelInner : public BaseTurbulentModel<Base, DataDelegateInner>
     bool is_STL_;
 };
 //=================================================================================================//
+class TurbulentDissipationRateDiffusion : public BaseTurbulentModel<Base, DataDelegateInner>
+{
+  public:
+    explicit TurbulentDissipationRateDiffusion(BaseInnerRelation &inner_relation);
+    virtual ~TurbulentDissipationRateDiffusion(){};
 
+    inline void interaction(size_t index_i, Real dt = 0.0);
+
+  protected:
+    Real *ep_diffusion_;
+    Real *turbu_mu_;
+    Real *turbu_epsilon_;
+};
+//=================================================================================================//
 template <typename... InteractionTypes>
 class TKEnergyForce;
 

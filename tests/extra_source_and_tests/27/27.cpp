@@ -130,8 +130,11 @@ int main(int ac, char *av[])
     //** Turbulence */
     SimpleDynamics<fluid_dynamics::RegisterWallRelevantVariables> register_wall_relevant_variables(water_block); //** Temporary Treatment */
     InteractionWithUpdate<fluid_dynamics::GetVelocityGradientInner> get_velocity_gradient(water_block_inner, weight_vel_grad_sub_nearwall);
-    InteractionWithUpdate<fluid_dynamics::K_TurbulentModelInner> k_equation_relaxation(water_block_inner, initial_turbu_values, is_AMRD, is_source_term_linearisation);
-    InteractionWithUpdate<fluid_dynamics::E_TurbulentModelInner> epsilon_equation_relaxation(water_block_inner, is_source_term_linearisation);
+    SimpleDynamics<fluid_dynamics::K_TurbulentModelInner> k_equation_relaxation(water_block_inner, initial_turbu_values, is_AMRD, is_source_term_linearisation);
+    InteractionDynamics<fluid_dynamics::TurbulentKineticEnergyDiffusion> turbulent_kinetic_energy_diffusion(water_block_inner);
+    SimpleDynamics<fluid_dynamics::E_TurbulentModelInner> epsilon_equation_relaxation(water_block_inner, is_source_term_linearisation);
+    InteractionDynamics<fluid_dynamics::TurbulentDissipationRateDiffusion> turbulent_dissipation_rate_diffusion(water_block_inner);
+
     InteractionDynamics<fluid_dynamics::TKEnergyForceInner> turbulent_kinetic_energy_force(water_block_inner);
 
     //InteractionWithUpdate<fluid_dynamics::ViscousForceInner> viscous_acceleration(water_block_inner);
@@ -276,9 +279,9 @@ int main(int ac, char *av[])
 
             viscous_acceleration.exec();
 
-            //get_velocity_gradient.exec();
-            // k_equation_relaxation.exec(Dt);
-            // epsilon_equation_relaxation.exec(Dt);
+            get_velocity_gradient.exec();
+            turbulent_kinetic_energy_diffusion.exec();
+            turbulent_dissipation_rate_diffusion.exec();
 
             transport_velocity_correction.exec();
             kernel_summation.exec();
@@ -310,7 +313,6 @@ int main(int ac, char *av[])
 
                 density_relaxation.exec(dt);
 
-                get_velocity_gradient.exec();
                 k_equation_relaxation.exec(dt);
                 epsilon_equation_relaxation.exec(dt);
 
