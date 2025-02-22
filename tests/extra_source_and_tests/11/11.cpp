@@ -306,6 +306,9 @@ int main(int ac, char *av[])
             standard_wall_function_correction.exec();
 
             transport_velocity_correction.exec();
+
+            kernel_summation.exec();
+
             get_limiter_of_transport_velocity_correction.exec();
 
             /** Dynamics including pressure relaxation. */
@@ -319,7 +322,6 @@ int main(int ac, char *av[])
 
                 pressure_relaxation.exec(dt);
 
-                kernel_summation.exec();
                 left_inflow_pressure_condition.exec(dt);
                 right_outflow_pressure_condition.exec(dt);
 
