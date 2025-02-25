@@ -616,7 +616,7 @@ using TVC_ModifiedLimited_withoutLinearGradientCorrection =
     BaseTransportVelocityCorrectionComplex<SingleResolution, ModifiedTruncatedLinear, NoKernelCorrection, ParticleScope>;
 
 template <class ParticleScope>
-using TVC_ModifiedLimited_RKGC_Inner =
+using TVC_ModifiedLimited_RKGC_OBC_Inner =
     TransportVelocityCorrection<Inner<SingleResolution, ModifiedTruncatedLinear>, LinearGradientCorrectionWithBulkScope, ParticleScope>;
 template <class ParticleScope>
 using TVC_ModifiedLimited_NoRKGC_Inner =

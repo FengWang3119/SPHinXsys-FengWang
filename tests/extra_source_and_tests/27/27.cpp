@@ -190,7 +190,7 @@ int main(int ac, char *av[])
     //InteractionWithUpdate<fluid_dynamics::TransportVelocityCorrectionInner<NoLimiter, BulkParticlesWithoutInlet>> transport_velocity_correction(water_block_inner);
     //** Turbulence */
     //InteractionWithUpdate<fluid_dynamics::TVC_ModifiedLimited_NoRKGC_Inner<BulkParticlesWithoutInlet>> transport_velocity_correction(water_block_inner);
-    InteractionWithUpdate<fluid_dynamics::TVC_ModifiedLimited_RKGC_Inner<BulkParticlesWithoutInlet>> transport_velocity_correction(water_block_inner);
+    InteractionWithUpdate<fluid_dynamics::TVC_ModifiedLimited_RKGC_OBC_Inner<BulkParticlesWithoutInlet>> transport_velocity_correction(water_block_inner);
 
     /** Turbulence */
     SimpleDynamics<fluid_dynamics::TurbulentEddyViscosity> update_eddy_viscosity(water_block);
