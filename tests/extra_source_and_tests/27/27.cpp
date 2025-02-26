@@ -208,9 +208,9 @@ int main(int ac, char *av[])
     body_states_recording.addToWrite<int>(water_block, "Indicator");
     body_states_recording.addToWrite<Real>(water_block, "Density");
     body_states_recording.addToWrite<int>(water_block, "BufferParticleIndicator");
-    body_states_recording.addToWrite<Vecd>(water_block, "ZeroGradientResidue");
-    body_states_recording.addToWrite<Vecd>(water_block, "KernelSummation");
-    body_states_recording.addToWrite<Real>(water_block, "VolumetricMeasure");
+    // body_states_recording.addToWrite<Vecd>(water_block, "ZeroGradientResidue");
+    // body_states_recording.addToWrite<Vecd>(water_block, "KernelSummation");
+    // body_states_recording.addToWrite<Real>(water_block, "VolumetricMeasure");
     ObservedQuantityRecording<Vecd> write_centerline_velocity("Velocity", velocity_observer_contact);
     ObservedQuantityRecording<Vecd> write_recorded_water_velocity_cross_section("Velocity", fluid_observer_cross_section_contact);
     //----------------------------------------------------------------------
