@@ -293,12 +293,12 @@ int main(int ac, char *av[])
             {
                 dt = SMIN(get_fluid_time_step_size.exec(), Dt);
 
-                if (dt > 0.018)
-                {
-                    body_states_recording.writeToFile();
-                    std::cout << "too small dt=" << dt << std::endl;
-                    std::cin.get();
-                }
+                // if (dt > 0.018)
+                // {
+                //     body_states_recording.writeToFile();
+                //     std::cout << "too small dt=" << dt << std::endl;
+                //     std::cin.get();
+                // }
 
                 turbulent_kinetic_energy_force.exec();
 
