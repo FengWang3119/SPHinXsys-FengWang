@@ -19,10 +19,24 @@ using namespace SPH;
 //----------------------------------------------------------------------
 //	Basic geometry parameters and numerical setup.
 //----------------------------------------------------------------------
-Real DH = 2.0;   /**< Channel height. */
-Real DL = 120.0; /**< Channel length. */
+//** Dimension: mm s kg */
+Real DH = 12.0;  /**< Channel height. */
+Real DL = 200.0; /**< Channel length. */
 Real num_fluid_cross_section = 20.0;
 
+Real incline_angle = 10.0 * Pi / 180.0;
+Vecd point_O(0.0, 0.0);
+Vecd point_A = point_O + Vecd(0.0, 12.0);
+Vecd point_B = point_A + Vecd(37.315, 0.0);
+Vecd point_C = point_B + Vecd(4.0 / tan(incline_angle), -4.0);
+Vecd point_D = point_C + Vecd(40.0, 0.0);
+Vecd point_E = point_D + Vecd(0.0, 4.0);
+Vecd point_F = point_E + Vecd(100.0, 0.0);
+Vecd point_G = point_F + Vecd(0.0, -12.0);
+Vecd point_H = point_G + Vecd(-100.0, 0.0);
+Vecd point_I = point_H + Vecd(0.0, 4.0);
+Vecd point_G = point_I + Vecd(-40.0, 0.0);
+Vecd point_K = point_G + Vecd(-4.0 / tan(incline_angle), -4.0);
 //----------------------------------------------------------------------
 //	Unique parameters for turbulence.
 //----------------------------------------------------------------------
