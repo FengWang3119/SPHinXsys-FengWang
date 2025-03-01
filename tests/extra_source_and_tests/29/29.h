@@ -19,38 +19,35 @@ using namespace SPH;
 //----------------------------------------------------------------------
 //	Basic geometry parameters and numerical setup.
 //----------------------------------------------------------------------
-//** Dimension: mm s kg */
-Real DH = 12.0;  /**< Channel height. */
-Real DL = 200.0; /**< Channel length. */
+//** Dimension: m s kg */
+Real scale = 1.0e-3;
+Real DH = 12.0 * scale;  /**< Channel height. */
+Real DL = 200.0 * scale; /**< Channel length. */
 Real num_fluid_cross_section = 20.0;
 
 Real incline_angle = 10.0 * Pi / 180.0;
 Vecd point_O(0.0, 0.0);
-Vecd point_A = point_O + Vecd(0.0, 12.0);
-Vecd point_B = point_A + Vecd(37.315, 0.0);
-Vecd point_C = point_B + Vecd(4.0 / tan(incline_angle), -4.0);
-Vecd point_D = point_C + Vecd(40.0, 0.0);
-Vecd point_E = point_D + Vecd(0.0, 4.0);
-Vecd point_F = point_E + Vecd(100.0, 0.0);
-Vecd point_G = point_F + Vecd(0.0, -12.0);
-Vecd point_H = point_G + Vecd(-100.0, 0.0);
-Vecd point_I = point_H + Vecd(0.0, 4.0);
-Vecd point_G = point_I + Vecd(-40.0, 0.0);
-Vecd point_K = point_G + Vecd(-4.0 / tan(incline_angle), -4.0);
-//----------------------------------------------------------------------
-//	Unique parameters for turbulence.
-//----------------------------------------------------------------------
+Vecd point_A = point_O + Vecd(0.0, 12.0) * scale;
+Vecd point_B = point_A + Vecd(37.315, 0.0) * scale;
+Vecd point_C = point_B + Vecd(4.0 / tan(incline_angle), -4.0) * scale;
+Vecd point_D = point_C + Vecd(40.0, 0.0) * scale;
+Vecd point_E = point_D + Vecd(0.0, 4.0) * scale;
+Vecd point_F = point_E + Vecd(100.0, 0.0) * scale;
+Vecd point_G = point_F + Vecd(0.0, -12.0) * scale;
+Vecd point_H = point_G + Vecd(-100.0, 0.0) * scale;
+Vecd point_I = point_H + Vecd(0.0, 4.0) * scale;
+Vecd point_J = point_I + Vecd(-40.0, 0.0) * scale;
+Vecd point_K = point_J + Vecd(-4.0 / tan(incline_angle), -4.0) * scale;
 
 Real resolution_ref = DH / num_fluid_cross_section; /**< Initial reference particle spacing. */
-
-Real BW = resolution_ref * 4; /**< Reference size of the emitter. */
-Real DL_sponge = resolution_ref * 20;
+Real BW = resolution_ref * 4;                       /**< Reference size of the emitter. */
 Real half_channel_height = DH / 2.0;
+Real buffer_thickness = 5.0 * resolution_ref;
+Real DL_sponge = buffer_thickness;
 //----------------------------------------------------------------------
 //	Domain bounds of the system.
 //----------------------------------------------------------------------
-BoundingBox system_domain_bounds(Vec2d(-DL_sponge - 2.0 * BW, -BW), Vec2d(DL + 2.0 * BW, DH + 2.0 * BW));
-
+BoundingBox system_domain_bounds(point_O + Vecd(-DL_sponge - 2.0 * BW, -BW), point_F + Vec2d(2.0 * BW, 2.0 * BW));
 //----------------------------------------------------------------------
 //	Material properties of the fluid.
 //----------------------------------------------------------------------
