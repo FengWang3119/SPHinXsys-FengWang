@@ -61,8 +61,8 @@ BoundingBox system_domain_bounds(point_O + Vecd(-DL_sponge - 2.0 * BW, -BW), poi
 //	Material properties of the fluid.
 //----------------------------------------------------------------------
 Real U_inlet = 1.0;
-Real U_f = U_inlet;         //*Characteristic velocity
-Real U_max = 3.0 * U_inlet; //** An estimated value, generally 1.5 U_inlet *
+Real U_f = U_inlet;                        //*Characteristic velocity
+Real U_max = 1.5 * (DH / D_thr) * U_inlet; //** An estimated value, generally 1.5 U_inlet *
 Real c_f = 10.0 * U_max;
 Real rho0_f = 1000.0; /**< Density. */
 Real Re = 200.0;
