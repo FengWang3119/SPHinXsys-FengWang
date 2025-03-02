@@ -25,7 +25,7 @@ Real D_thr = 4.0 * scale;
 Real DH = 3.0 * D_thr; /**< Channel height. */
 Real incline_angle = 10.0 * Pi / 180.0;
 Real extend_inlet = 10.0 * D_thr;
-Real L_incline = D_thr / tan(incline_angle);
+Real L_incline = D_thr / tan(incline_angle); //** 1/tan(10)=5.6 */
 Real L_middle = 10.0 * D_thr;
 Real extend_outlet = 25.0 * D_thr;
 Real DL = extend_inlet + L_incline + L_middle + extend_outlet; /**< Channel length. */
@@ -65,7 +65,7 @@ Real U_f = U_inlet;                        //*Characteristic velocity
 Real U_max = 1.5 * (DH / D_thr) * U_inlet; //** An estimated value, generally 1.5 U_inlet *
 Real c_f = 10.0 * U_max;
 Real rho0_f = 1000.0; /**< Density. */
-Real Re = 40.0;
+Real Re = 30.0;
 
 Real Outlet_pressure = 0.0;
 
