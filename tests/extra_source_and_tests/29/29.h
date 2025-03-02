@@ -21,23 +21,27 @@ using namespace SPH;
 //----------------------------------------------------------------------
 //** Dimension: m s kg */
 Real scale = 1.0e-3;
-Real DH = 12.0 * scale;  /**< Channel height. */
-Real DL = 200.0 * scale; /**< Channel length. */
+Real D_thr = 4.0 * scale;
+Real DH = 3.0 * D_thr;  /**< Channel height. */
+Real DL = 50.0 * D_thr; /**< Channel length. */
+Real L_middle = 10.0 * D_thr;
+Real extend_inlet = 10.0 * D_thr;
+Real extend_outlet = 25.0 * D_thr;
 Real num_fluid_cross_section = 20.0;
 
 Real incline_angle = 10.0 * Pi / 180.0;
 Vecd point_O(0.0, 0.0);
-Vecd point_A = point_O + Vecd(0.0, 12.0) * scale;
-Vecd point_B = point_A + Vecd(37.315, 0.0) * scale;
-Vecd point_C = point_B + Vecd(4.0 / tan(incline_angle), -4.0) * scale;
-Vecd point_D = point_C + Vecd(40.0, 0.0) * scale;
-Vecd point_E = point_D + Vecd(0.0, 4.0) * scale;
-Vecd point_F = point_E + Vecd(100.0, 0.0) * scale;
-Vecd point_G = point_F + Vecd(0.0, -12.0) * scale;
-Vecd point_H = point_G + Vecd(-100.0, 0.0) * scale;
-Vecd point_I = point_H + Vecd(0.0, 4.0) * scale;
-Vecd point_J = point_I + Vecd(-40.0, 0.0) * scale;
-Vecd point_K = point_J + Vecd(-4.0 / tan(incline_angle), -4.0) * scale;
+Vecd point_A = point_O + Vecd(0.0, DH);
+Vecd point_B = point_A + Vecd(extend_inlet, 0.0);
+Vecd point_C = point_B + Vecd(D_thr / tan(incline_angle), -D_thr);
+Vecd point_D = point_C + Vecd(L_middle, 0.0);
+Vecd point_E = point_D + Vecd(0.0, D_thr);
+Vecd point_F = point_E + Vecd(extend_outlet, 0.0);
+Vecd point_G = point_F + Vecd(0.0, -DH);
+Vecd point_H = point_G + Vecd(-extend_outlet, 0.0);
+Vecd point_I = point_H + Vecd(0.0, D_thr);
+Vecd point_J = point_I + Vecd(-L_middle, 0.0);
+Vecd point_K = point_J + Vecd(-D_thr / tan(incline_angle), -D_thr);
 
 Real resolution_ref = DH / num_fluid_cross_section; /**< Initial reference particle spacing. */
 Real BW = resolution_ref * 4;                       /**< Reference size of the emitter. */
