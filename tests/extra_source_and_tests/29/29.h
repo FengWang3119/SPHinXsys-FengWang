@@ -20,20 +20,20 @@ using namespace SPH;
 //	Basic geometry parameters and numerical setup.
 //----------------------------------------------------------------------
 //** Dimension: m s kg */
-Real scale = 1.0e-3;
+Real scale = 1.0;
 Real D_thr = 4.0 * scale;
-Real DH = 3.0 * D_thr;  /**< Channel height. */
-Real DL = 50.0 * D_thr; /**< Channel length. */
-Real L_middle = 10.0 * D_thr;
-Real extend_inlet = 10.0 * D_thr;
-Real extend_outlet = 25.0 * D_thr;
-Real num_fluid_cross_section = 20.0;
-
+Real DH = 3.0 * D_thr; /**< Channel height. */
 Real incline_angle = 10.0 * Pi / 180.0;
+Real extend_inlet = 10.0 * D_thr;
+Real L_incline = D_thr / tan(incline_angle);
+Real L_middle = 10.0 * D_thr;
+Real extend_outlet = 25.0 * D_thr;
+Real DL = extend_inlet + L_incline + L_middle + extend_outlet; /**< Channel length. */
+
 Vecd point_O(0.0, 0.0);
 Vecd point_A = point_O + Vecd(0.0, DH);
 Vecd point_B = point_A + Vecd(extend_inlet, 0.0);
-Vecd point_C = point_B + Vecd(D_thr / tan(incline_angle), -D_thr);
+Vecd point_C = point_B + Vecd(L_incline, -D_thr);
 Vecd point_D = point_C + Vecd(L_middle, 0.0);
 Vecd point_E = point_D + Vecd(0.0, D_thr);
 Vecd point_F = point_E + Vecd(extend_outlet, 0.0);
@@ -41,10 +41,15 @@ Vecd point_G = point_F + Vecd(0.0, -DH);
 Vecd point_H = point_G + Vecd(-extend_outlet, 0.0);
 Vecd point_I = point_H + Vecd(0.0, D_thr);
 Vecd point_J = point_I + Vecd(-L_middle, 0.0);
-Vecd point_K = point_J + Vecd(-D_thr / tan(incline_angle), -D_thr);
+Vecd point_K = point_J + Vecd(-L_incline, -D_thr);
 
-Real resolution_ref = DH / num_fluid_cross_section; /**< Initial reference particle spacing. */
-Real BW = resolution_ref * 4;                       /**< Reference size of the emitter. */
+Vecd point_OA_half = (point_O + point_A) / 2.0;
+Vecd point_FG_half = (point_F + point_G) / 2.0;
+
+Real num_fluid_cross_section = 20.0;
+Real resolution_ref = DH / num_fluid_cross_section;        /**< Initial reference particle spacing. */
+Real resolution_ref_thr = D_thr / num_fluid_cross_section; /**< Initial reference particle spacing. */
+Real BW = resolution_ref * 4;                              /**< Reference size of the emitter. */
 Real half_channel_height = DH / 2.0;
 Real buffer_thickness = 5.0 * resolution_ref;
 Real DL_sponge = buffer_thickness;
@@ -57,12 +62,12 @@ BoundingBox system_domain_bounds(point_O + Vecd(-DL_sponge - 2.0 * BW, -BW), poi
 //----------------------------------------------------------------------
 Real U_inlet = 1.0;
 Real U_f = U_inlet;         //*Characteristic velocity
-Real U_max = 1.5 * U_inlet; //** An estimated value, generally 1.5 U_inlet *
+Real U_max = 3.0 * U_inlet; //** An estimated value, generally 1.5 U_inlet *
 Real c_f = 10.0 * U_max;
 Real rho0_f = 1000.0; /**< Density. */
 Real Re = 200.0;
 
-Real Outlet_pressure = 1500.0;
+Real Outlet_pressure = 0.0;
 
 Real mu_f = rho0_f * U_f * DH / Re;
 
@@ -71,15 +76,11 @@ Real Re_calculated = U_f * DH * rho0_f / mu_f;
 //----------------------------------------------------------------------
 //	The emitter block with offset model.
 //----------------------------------------------------------------------
-// Vec2d left_buffer_halfsize = Vec2d(0.5 * BW, 0.5 * DH_C + BW);
-// Vec2d left_buffer_translation = Vec2d(-DL_sponge, 0.0) + left_buffer_halfsize + Vecd(0.0, offset_distance - BW);
-Vec2d left_buffer_halfsize = Vec2d(2.5 * resolution_ref, 0.5 * DH);
-Vec2d left_buffer_translation = left_buffer_halfsize + Vec2d(-DL_sponge, 0.0);
+Vec2d left_buffer_halfsize = 0.5 * Vecd(buffer_thickness, DH);
+Vec2d left_buffer_translation = point_OA_half + Vecd(0.5 * buffer_thickness, 0.0) + Vecd(-DL_sponge, 0.0);
 
-// Vec2d right_buffer_halfsize = Vec2d(0.5 * BW, 0.75 * DH);
-// Vec2d right_buffer_translation = Vec2d(DL, DH + 0.25 * DH) - right_buffer_halfsize;
-Vec2d right_buffer_halfsize = Vec2d(2.5 * resolution_ref, 0.5 * DH);
-Vec2d right_buffer_translation = Vec2d(DL - 2.5 * resolution_ref, 0.5 * DH);
+Vec2d right_buffer_halfsize = 0.5 * Vecd(buffer_thickness, DH);
+Vec2d right_buffer_translation = point_FG_half + Vecd(-0.5 * buffer_thickness, 0.0);
 //----------------------------------------------------------------------
 // Observation with offset model.
 //----------------------------------------------------------------------
@@ -240,11 +241,19 @@ StdVec<Vecd> observer_location_center_point = {Vecd(0.5 * DL, 0.5 * DH)};
 std::vector<Vecd> createWaterBlockShape()
 {
     std::vector<Vecd> water_block_shape;
-    water_block_shape.push_back(Vecd(-DL_sponge, 0.0));
-    water_block_shape.push_back(Vecd(-DL_sponge, DH));
-    water_block_shape.push_back(Vecd(DL, DH));
-    water_block_shape.push_back(Vecd(DL, 0.0));
-    water_block_shape.push_back(Vecd(-DL_sponge, 0.0));
+    water_block_shape.push_back(point_O + Vecd(-DL_sponge, 0.0));
+    water_block_shape.push_back(point_A + Vecd(-DL_sponge, 0.0));
+    water_block_shape.push_back(point_B);
+    water_block_shape.push_back(point_C);
+    water_block_shape.push_back(point_D);
+    water_block_shape.push_back(point_E);
+    water_block_shape.push_back(point_F);
+    water_block_shape.push_back(point_G);
+    water_block_shape.push_back(point_H);
+    water_block_shape.push_back(point_I);
+    water_block_shape.push_back(point_J);
+    water_block_shape.push_back(point_K);
+    water_block_shape.push_back(point_O + Vecd(-DL_sponge, 0.0));
     return water_block_shape;
 }
 class WaterBlock : public ComplexShape
@@ -260,23 +269,37 @@ class WaterBlock : public ComplexShape
 std::vector<Vecd> createOuterWallShape()
 {
     std::vector<Vecd> water_block_shape;
-    water_block_shape.push_back(Vecd(-DL_sponge - BW, 0.0));
-    water_block_shape.push_back(Vecd(-DL_sponge - BW, DH));
-    water_block_shape.push_back(Vecd(DL + BW, DH));
-    water_block_shape.push_back(Vecd(DL + BW, 0.0));
-    water_block_shape.push_back(Vecd(-DL_sponge - BW, 0.0));
-
+    water_block_shape.push_back(point_O + Vecd(-DL_sponge, 0.0) + Vecd(-BW, 0.0));
+    water_block_shape.push_back(point_A + Vecd(-DL_sponge, 0.0) + Vecd(-BW, 0.0));
+    water_block_shape.push_back(point_B);
+    water_block_shape.push_back(point_C);
+    water_block_shape.push_back(point_D);
+    water_block_shape.push_back(point_E);
+    water_block_shape.push_back(point_F + Vecd(BW, 0.0));
+    water_block_shape.push_back(point_G + Vecd(BW, 0.0));
+    water_block_shape.push_back(point_H);
+    water_block_shape.push_back(point_I);
+    water_block_shape.push_back(point_J);
+    water_block_shape.push_back(point_K);
+    water_block_shape.push_back(point_O + Vecd(-DL_sponge, 0.0) + Vecd(-BW, 0.0));
     return water_block_shape;
 }
 std::vector<Vecd> createInnerWallShape()
 {
     std::vector<Vecd> water_block_shape;
-    water_block_shape.push_back(Vecd(-DL_sponge - 2.0 * BW, 0.0));
-    water_block_shape.push_back(Vecd(-DL_sponge - 2.0 * BW, DH));
-    water_block_shape.push_back(Vecd(DL + 2.0 * BW, DH));
-    water_block_shape.push_back(Vecd(DL + 2.0 * BW, 0.0));
-    water_block_shape.push_back(Vecd(-DL_sponge - 2.0 * BW, 0.0));
-
+    water_block_shape.push_back(point_O + Vecd(-DL_sponge, 0.0) + Vecd(-2.0 * BW, 0.0));
+    water_block_shape.push_back(point_A + Vecd(-DL_sponge, 0.0) + Vecd(-2.0 * BW, 0.0));
+    water_block_shape.push_back(point_B);
+    water_block_shape.push_back(point_C);
+    water_block_shape.push_back(point_D);
+    water_block_shape.push_back(point_E);
+    water_block_shape.push_back(point_F + Vecd(2.0 * BW, 0.0));
+    water_block_shape.push_back(point_G + Vecd(2.0 * BW, 0.0));
+    water_block_shape.push_back(point_H);
+    water_block_shape.push_back(point_I);
+    water_block_shape.push_back(point_J);
+    water_block_shape.push_back(point_K);
+    water_block_shape.push_back(point_O + Vecd(-DL_sponge, 0.0) + Vecd(-2.0 * BW, 0.0));
     return water_block_shape;
 }
 
