@@ -46,7 +46,7 @@ Vecd point_K = point_J + Vecd(-L_incline, -D_thr);
 Vecd point_OA_half = (point_O + point_A) / 2.0;
 Vecd point_FG_half = (point_F + point_G) / 2.0;
 
-Real num_fluid_cross_section = 20.0;
+Real num_fluid_cross_section = 30.0;
 Real resolution_ref = DH / num_fluid_cross_section;        /**< Initial reference particle spacing. */
 Real resolution_ref_thr = D_thr / num_fluid_cross_section; /**< Initial reference particle spacing. */
 Real BW = resolution_ref * 4;                              /**< Reference size of the emitter. */
