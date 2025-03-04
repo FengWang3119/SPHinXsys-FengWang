@@ -30,18 +30,32 @@ Real L_middle = 10.0 * D_thr;
 Real extend_outlet = 25.0 * D_thr;
 Real DL = extend_inlet + L_incline + L_middle + extend_outlet; /**< Channel length. */
 
+// Vecd point_O(0.0, 0.0);
+// Vecd point_A = point_O + Vecd(0.0, DH);
+// Vecd point_B = point_A + Vecd(extend_inlet, 0.0);
+// Vecd point_C = point_B + Vecd(0.0, -D_thr);
+// Vecd point_D = point_C + Vecd(L_middle, 0.0);
+// Vecd point_E = point_D + Vecd(L_incline, D_thr);
+// Vecd point_F = point_E + Vecd(extend_outlet, 0.0);
+// Vecd point_G = point_F + Vecd(0.0, -DH);
+// Vecd point_H = point_G + Vecd(-extend_outlet, 0.0);
+// Vecd point_I = point_H + Vecd(-L_incline, D_thr);
+// Vecd point_J = point_I + Vecd(-L_middle, 0.0);
+// Vecd point_K = point_J + Vecd(0.0, -D_thr);
+
+//** If return to straight */
 Vecd point_O(0.0, 0.0);
 Vecd point_A = point_O + Vecd(0.0, DH);
 Vecd point_B = point_A + Vecd(extend_inlet, 0.0);
-Vecd point_C = point_B + Vecd(0.0, -D_thr);
+Vecd point_C = point_B + Vecd(0.0, 0.0);
 Vecd point_D = point_C + Vecd(L_middle, 0.0);
-Vecd point_E = point_D + Vecd(L_incline, D_thr);
+Vecd point_E = point_D + Vecd(L_incline, 0.0);
 Vecd point_F = point_E + Vecd(extend_outlet, 0.0);
 Vecd point_G = point_F + Vecd(0.0, -DH);
 Vecd point_H = point_G + Vecd(-extend_outlet, 0.0);
-Vecd point_I = point_H + Vecd(-L_incline, D_thr);
+Vecd point_I = point_H + Vecd(-L_incline, 0.0);
 Vecd point_J = point_I + Vecd(-L_middle, 0.0);
-Vecd point_K = point_J + Vecd(0.0, -D_thr);
+Vecd point_K = point_J + Vecd(0.0, 0.0);
 
 Vecd point_OA_half = (point_O + point_A) / 2.0;
 Vecd point_FG_half = (point_F + point_G) / 2.0;
@@ -61,8 +75,12 @@ BoundingBox system_domain_bounds(point_O + Vecd(-DL_sponge - 2.0 * BW, -BW), poi
 //	Material properties of the fluid.
 //----------------------------------------------------------------------
 Real U_inlet = 1.0;
-Real U_f = U_inlet;                        //*Characteristic velocity
-Real U_max = 1.5 * (DH / D_thr) * U_inlet; //** An estimated value, generally 1.5 U_inlet *
+Real U_f = U_inlet; //*Characteristic velocity
+
+//Real U_max = 1.5 * (DH / D_thr) * U_inlet; //** An estimated value, generally 1.5 U_inlet *
+//** If return to straight */
+Real U_max = 1.5 * U_inlet; //** An estimated value, generally 1.5 U_inlet *
+
 Real c_f = 10.0 * U_max;
 Real rho0_f = 1000.0; /**< Density. */
 Real Re = 30.0;
