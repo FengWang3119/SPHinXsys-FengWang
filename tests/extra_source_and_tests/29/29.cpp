@@ -41,8 +41,8 @@ int main(int ac, char *av[])
 
     observe_centerline::get_observation_locations();
     observe_centerline::output_observer_theoretical_x();
-    ObserverBody fluid_observer(sph_system, "FluidObserver");
-    fluid_observer.generateParticles<ObserverParticles>(observe_centerline::observation_location);
+    ObserverBody fluid_observer_centerline(sph_system, "FluidObserverCenterline");
+    fluid_observer_centerline.generateParticles<ObserverParticles>(observe_centerline::observation_location);
 
     observe_cross_sections::getPositionsOfMultipleObserveLines();
     observe_cross_sections::output_observe_positions();
@@ -54,7 +54,7 @@ int main(int ac, char *av[])
     /** topology */
     InnerRelation water_block_inner(water_block);
     ContactRelation water_wall_contact(water_block, {&wall_boundary});
-    ContactRelation fluid_observer_contact(fluid_observer, {&water_block});
+    ContactRelation fluid_observer_centerline_contact(fluid_observer_centerline, {&water_block});
     ContactRelation fluid_observer_cross_section_contact(fluid_observer_cross_section, {&water_block});
     ContactRelation observer_centerpoint_contact(observer_center_point, {&water_block});
     //----------------------------------------------------------------------
@@ -206,7 +206,8 @@ int main(int ac, char *av[])
     body_states_recording.addToWrite<int>(water_block, "Indicator");            // output for debug
     body_states_recording.addToWrite<Real>(water_block, "Density");             // output for debug
     body_states_recording.addToWrite<Vecd>(water_block, "ZeroGradientResidue"); // output for debug
-    ObservedQuantityRecording<Vecd> write_recorded_water_velocity("Velocity", fluid_observer_contact);
+    ObservedQuantityRecording<Vecd> write_recorded_water_velocity("Velocity", fluid_observer_centerline_contact);
+    ObservedQuantityRecording<Real> write_recorded_water_centerline_pressure("Pressure", fluid_observer_centerline_contact);
     ObservedQuantityRecording<Vecd> write_recorded_water_velocity_cross_section("Velocity", fluid_observer_cross_section_contact);
     body_states_recording.addToWrite<int>(water_block, "BufferParticleIndicator");
     body_states_recording.addToWrite<Real>(water_block, "VolumetricMeasure");
@@ -331,7 +332,7 @@ int main(int ac, char *av[])
             }
             water_block.updateCellLinkedList();
             water_block_complex.updateConfiguration();
-            fluid_observer_contact.updateConfiguration();
+            fluid_observer_centerline_contact.updateConfiguration();
             fluid_observer_cross_section_contact.updateConfiguration();
 
             /** Tag truncated inlet/outlet particles*/
@@ -343,6 +344,7 @@ int main(int ac, char *av[])
             if (physical_time > cutoff_time)
             {
                 write_recorded_water_velocity.writeToFile(number_of_iterations);
+                write_recorded_water_centerline_pressure.writeToFile(number_of_iterations);
                 write_recorded_water_velocity_cross_section.writeToFile(number_of_iterations);
             }
             //if (physical_time > end_time * 0.5)
