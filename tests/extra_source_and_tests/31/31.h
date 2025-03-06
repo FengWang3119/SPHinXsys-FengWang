@@ -20,11 +20,14 @@ using namespace SPH;
 //	Basic geometry parameters and numerical setup.
 //----------------------------------------------------------------------
 //** Dimension: m s kg */
+//** Z along the channel length */
 Real scale = 1.0;
 Real D_thr = 4.0 * scale;
 
 //Real DH = 3.0 * D_thr; /**< Channel height. */
 Real DH = D_thr; /**< Channel height. */
+
+Real Radius_inlet = DH / 2.0;
 
 Real incline_angle = 10.0 * Pi / 180.0;
 Real extend_inlet = 10.0 * D_thr;
@@ -48,20 +51,20 @@ Real DL = extend_inlet + L_incline + L_middle + extend_outlet; /**< Channel leng
 
 //** If return to straight */
 Vecd point_O(0.0, 0.0);
-Vecd point_A = point_O + Vecd(0.0, DH);
-Vecd point_B = point_A + Vecd(extend_inlet, 0.0);
-Vecd point_C = point_B + Vecd(0.0, 0.0);
-Vecd point_D = point_C + Vecd(L_middle, 0.0);
-Vecd point_E = point_D + Vecd(L_incline, 0.0);
-Vecd point_F = point_E + Vecd(extend_outlet, 0.0);
-Vecd point_G = point_F + Vecd(0.0, -DH);
-Vecd point_H = point_G + Vecd(-extend_outlet, 0.0);
-Vecd point_I = point_H + Vecd(-L_incline, 0.0);
-Vecd point_J = point_I + Vecd(-L_middle, 0.0);
-Vecd point_K = point_J + Vecd(0.0, 0.0);
+Vecd point_A = point_O + Vecd(0.0, 0.0, DL);
+// Vecd point_B = point_A + Vecd(extend_inlet, 0.0);
+// Vecd point_C = point_B + Vecd(0.0, 0.0);
+// Vecd point_D = point_C + Vecd(L_middle, 0.0);
+// Vecd point_E = point_D + Vecd(L_incline, 0.0);
+// Vecd point_F = point_E + Vecd(extend_outlet, 0.0);
+// Vecd point_G = point_F + Vecd(0.0, -DH);
+// Vecd point_H = point_G + Vecd(-extend_outlet, 0.0);
+// Vecd point_I = point_H + Vecd(-L_incline, 0.0);
+// Vecd point_J = point_I + Vecd(-L_middle, 0.0);
+// Vecd point_K = point_J + Vecd(0.0, 0.0);
 
-Vecd point_OA_half = (point_O + point_A) / 2.0;
-Vecd point_FG_half = (point_F + point_G) / 2.0;
+// Vecd point_OA_half = (point_O + point_A) / 2.0;
+// Vecd point_FG_half = (point_F + point_G) / 2.0;
 
 Real num_fluid_cross_section = 30.0;
 Real resolution_ref = DH / num_fluid_cross_section;        /**< Initial reference particle spacing. */
@@ -73,7 +76,8 @@ Real DL_sponge = buffer_thickness;
 //----------------------------------------------------------------------
 //	Domain bounds of the system.
 //----------------------------------------------------------------------
-BoundingBox system_domain_bounds(point_O + Vecd(-DL_sponge - 2.0 * BW, -BW), point_F + Vec2d(2.0 * BW, 2.0 * BW));
+BoundingBox system_domain_bounds(point_O + Vecd(-Radius_inlet, -Radius_inlet, -DL_sponge) + 2.0 * Vecd(-BW, -BW, -BW),
+                                 point_A + Vecd(Radius_inlet, Radius_inlet, DL_sponge) + Vecd(BW, BW, BW));
 //----------------------------------------------------------------------
 //	Material properties of the fluid.
 //----------------------------------------------------------------------
