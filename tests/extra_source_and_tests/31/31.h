@@ -34,7 +34,7 @@ Real extend_inlet = 10.0 * D_thr;
 Real L_incline = D_thr / tan(incline_angle); //** 1/tan(10)=5.6 */
 Real L_middle = 10.0 * D_thr;
 Real extend_outlet = 25.0 * D_thr;
-Real DL = extend_inlet + L_incline + L_middle + extend_outlet; /**< Channel length. */
+Real DL = extend_inlet + L_incline + L_middle + extend_outlet; /**< Fluid domain length. */
 
 // Vecd point_O(0.0, 0.0);
 // Vecd point_A = point_O + Vecd(0.0, DH);
@@ -50,8 +50,11 @@ Real DL = extend_inlet + L_incline + L_middle + extend_outlet; /**< Channel leng
 // Vecd point_K = point_J + Vecd(0.0, -D_thr);
 
 //** If return to straight */
-Vecd point_O(0.0, 0.0);
+Vecd point_O(0.0, 0.0, 0.0);
 Vecd point_A = point_O + Vecd(0.0, 0.0, DL);
+
+Vecd point_OA_half = (point_O + point_A) / 2.0;
+
 // Vecd point_B = point_A + Vecd(extend_inlet, 0.0);
 // Vecd point_C = point_B + Vecd(0.0, 0.0);
 // Vecd point_D = point_C + Vecd(L_middle, 0.0);
@@ -73,6 +76,9 @@ Real BW = resolution_ref * 4;                              /**< Reference size o
 Real half_channel_height = DH / 2.0;
 Real buffer_thickness = 5.0 * resolution_ref;
 Real DL_sponge = buffer_thickness;
+
+const int SimTK_resolution = 20;
+//const Vec3d translation_fluid(0.0, 0.0, full_length * 0.5);
 //----------------------------------------------------------------------
 //	Domain bounds of the system.
 //----------------------------------------------------------------------
@@ -259,74 +265,75 @@ Vecd right_buffer_translation = point_A + Vecd(0.0, 0.0, DL_sponge);
 // } // namespace observe_cross_sections
 
 //** For regression test *
-StdVec<Vecd> observer_location_center_point = {Vecd(0.5 * DL, 0.5 * DH)};
+StdVec<Vecd> observer_location_center_point = {point_O + Vecd(0.0, 0.0, 0.5 * DL)};
 //----------------------------------------------------------------------
 //	Cases-dependent geometries
 //----------------------------------------------------------------------
-std::vector<Vecd> createWaterBlockShape()
-{
-    std::vector<Vecd> water_block_shape;
-    water_block_shape.push_back(point_O + Vecd(-DL_sponge, 0.0));
-    water_block_shape.push_back(point_A + Vecd(-DL_sponge, 0.0));
-    water_block_shape.push_back(point_B);
-    water_block_shape.push_back(point_C);
-    water_block_shape.push_back(point_D);
-    water_block_shape.push_back(point_E);
-    water_block_shape.push_back(point_F);
-    water_block_shape.push_back(point_G);
-    water_block_shape.push_back(point_H);
-    water_block_shape.push_back(point_I);
-    water_block_shape.push_back(point_J);
-    water_block_shape.push_back(point_K);
-    water_block_shape.push_back(point_O + Vecd(-DL_sponge, 0.0));
-    return water_block_shape;
-}
+// std::vector<Vecd> createWaterBlockShape()
+// {
+//     std::vector<Vecd> water_block_shape;
+//     water_block_shape.push_back(point_O + Vecd(-DL_sponge, 0.0));
+//     water_block_shape.push_back(point_A + Vecd(-DL_sponge, 0.0));
+//     water_block_shape.push_back(point_B);
+//     water_block_shape.push_back(point_C);
+//     water_block_shape.push_back(point_D);
+//     water_block_shape.push_back(point_E);
+//     water_block_shape.push_back(point_F);
+//     water_block_shape.push_back(point_G);
+//     water_block_shape.push_back(point_H);
+//     water_block_shape.push_back(point_I);
+//     water_block_shape.push_back(point_J);
+//     water_block_shape.push_back(point_K);
+//     water_block_shape.push_back(point_O + Vecd(-DL_sponge, 0.0));
+//     return water_block_shape;
+// }
 class WaterBlock : public ComplexShape
 {
   public:
     explicit WaterBlock(const std::string &shape_name) : ComplexShape(shape_name)
     {
-        MultiPolygon computational_domain(createWaterBlockShape());
-        add<ExtrudeShape<MultiPolygonShape>>(0.0, computational_domain, "ComputationalDomain");
+        add<TriangleMeshShapeCylinder>(SimTK::UnitVec3(0.0, 0.0, 1.0), Radius_inlet,
+                                       (DL + 2.0 * DL_Sponge) * 0.5, SimTK_resolution,
+                                       point_OA_half);
     }
 };
 
-std::vector<Vecd> createOuterWallShape()
-{
-    std::vector<Vecd> water_block_shape;
-    water_block_shape.push_back(point_O + Vecd(-DL_sponge, 0.0) + Vecd(-BW, 0.0));
-    water_block_shape.push_back(point_A + Vecd(-DL_sponge, 0.0) + Vecd(-BW, 0.0));
-    water_block_shape.push_back(point_B);
-    water_block_shape.push_back(point_C);
-    water_block_shape.push_back(point_D);
-    water_block_shape.push_back(point_E);
-    water_block_shape.push_back(point_F + Vecd(BW, 0.0));
-    water_block_shape.push_back(point_G + Vecd(BW, 0.0));
-    water_block_shape.push_back(point_H);
-    water_block_shape.push_back(point_I);
-    water_block_shape.push_back(point_J);
-    water_block_shape.push_back(point_K);
-    water_block_shape.push_back(point_O + Vecd(-DL_sponge, 0.0) + Vecd(-BW, 0.0));
-    return water_block_shape;
-}
-std::vector<Vecd> createInnerWallShape()
-{
-    std::vector<Vecd> water_block_shape;
-    water_block_shape.push_back(point_O + Vecd(-DL_sponge, 0.0) + Vecd(-2.0 * BW, 0.0));
-    water_block_shape.push_back(point_A + Vecd(-DL_sponge, 0.0) + Vecd(-2.0 * BW, 0.0));
-    water_block_shape.push_back(point_B);
-    water_block_shape.push_back(point_C);
-    water_block_shape.push_back(point_D);
-    water_block_shape.push_back(point_E);
-    water_block_shape.push_back(point_F + Vecd(2.0 * BW, 0.0));
-    water_block_shape.push_back(point_G + Vecd(2.0 * BW, 0.0));
-    water_block_shape.push_back(point_H);
-    water_block_shape.push_back(point_I);
-    water_block_shape.push_back(point_J);
-    water_block_shape.push_back(point_K);
-    water_block_shape.push_back(point_O + Vecd(-DL_sponge, 0.0) + Vecd(-2.0 * BW, 0.0));
-    return water_block_shape;
-}
+// std::vector<Vecd> createOuterWallShape()
+// {
+//     std::vector<Vecd> water_block_shape;
+//     water_block_shape.push_back(point_O + Vecd(-DL_sponge, 0.0) + Vecd(-BW, 0.0));
+//     water_block_shape.push_back(point_A + Vecd(-DL_sponge, 0.0) + Vecd(-BW, 0.0));
+//     water_block_shape.push_back(point_B);
+//     water_block_shape.push_back(point_C);
+//     water_block_shape.push_back(point_D);
+//     water_block_shape.push_back(point_E);
+//     water_block_shape.push_back(point_F + Vecd(BW, 0.0));
+//     water_block_shape.push_back(point_G + Vecd(BW, 0.0));
+//     water_block_shape.push_back(point_H);
+//     water_block_shape.push_back(point_I);
+//     water_block_shape.push_back(point_J);
+//     water_block_shape.push_back(point_K);
+//     water_block_shape.push_back(point_O + Vecd(-DL_sponge, 0.0) + Vecd(-BW, 0.0));
+//     return water_block_shape;
+// }
+// std::vector<Vecd> createInnerWallShape()
+// {
+//     std::vector<Vecd> water_block_shape;
+//     water_block_shape.push_back(point_O + Vecd(-DL_sponge, 0.0) + Vecd(-2.0 * BW, 0.0));
+//     water_block_shape.push_back(point_A + Vecd(-DL_sponge, 0.0) + Vecd(-2.0 * BW, 0.0));
+//     water_block_shape.push_back(point_B);
+//     water_block_shape.push_back(point_C);
+//     water_block_shape.push_back(point_D);
+//     water_block_shape.push_back(point_E);
+//     water_block_shape.push_back(point_F + Vecd(2.0 * BW, 0.0));
+//     water_block_shape.push_back(point_G + Vecd(2.0 * BW, 0.0));
+//     water_block_shape.push_back(point_H);
+//     water_block_shape.push_back(point_I);
+//     water_block_shape.push_back(point_J);
+//     water_block_shape.push_back(point_K);
+//     water_block_shape.push_back(point_O + Vecd(-DL_sponge, 0.0) + Vecd(-2.0 * BW, 0.0));
+//     return water_block_shape;
+// }
 
 /**
  * @brief 	Wall boundary body definition.
@@ -336,11 +343,12 @@ class WallBoundary : public ComplexShape
   public:
     explicit WallBoundary(const std::string &shape_name) : ComplexShape(shape_name)
     {
-        MultiPolygon outer_dummy_boundary(createOuterWallShape());
-        add<ExtrudeShape<MultiPolygonShape>>(BW, outer_dummy_boundary, "OuterDummyBoundary");
-
-        MultiPolygon inner_dummy_boundary(createInnerWallShape());
-        subtract<ExtrudeShape<MultiPolygonShape>>(0.0, inner_dummy_boundary, "InnerDummyBoundary");
+        add<TriangleMeshShapeCylinder>(SimTK::UnitVec3(0.0, 0.0, 1.0), Radius_inlet + BW,
+                                       (DL + 2.0 * DL_Sponge + 2.0 * BW) * 0.5, SimTK_resolution,
+                                       point_OA_half);
+        substract<TriangleMeshShapeCylinder>(SimTK::UnitVec3(0.0, 0.0, 1.0), Radius_inlet,
+                                             (DL + 2.0 * DL_Sponge + 4.0 * BW) * 0.5, SimTK_resolution,
+                                             point_OA_half);
     }
 };
 
