@@ -86,7 +86,7 @@ Real U_f = U_inlet; //*Characteristic velocity
 
 //Real U_max = 1.5 * (DH / D_thr) * U_inlet; //** An estimated value, generally 1.5 U_inlet *
 //** If return to straight */
-Real U_max = 1.5 * U_inlet; //** An estimated value, generally 1.5 U_inlet *
+Real U_max = 2.0 * U_inlet; //** An estimated value, generally 1.5 U_inlet *
 
 Real c_f = 10.0 * U_max;
 Real rho0_f = 1000.0; /**< Density. */
@@ -99,13 +99,13 @@ Real mu_f = rho0_f * U_f * DH / Re;
 Real Re_calculated = U_f * DH * rho0_f / mu_f;
 
 //----------------------------------------------------------------------
-//	The emitter block with offset model.
+//	The open boundary setting.
 //----------------------------------------------------------------------
-Vec2d left_buffer_halfsize = 0.5 * Vecd(buffer_thickness, DH);
-Vec2d left_buffer_translation = point_OA_half + Vecd(0.5 * buffer_thickness, 0.0) + Vecd(-DL_sponge, 0.0);
+Vecd left_buffer_halfsize = Vecd(Radius_inlet, Radius_inlet, buffer_thickness);
+Vecd left_buffer_translation = point_O + Vecd(0.0, 0.0, -DL_sponge);
 
-Vec2d right_buffer_halfsize = 0.5 * Vecd(buffer_thickness, DH);
-Vec2d right_buffer_translation = point_FG_half + Vecd(-0.5 * buffer_thickness, 0.0);
+Vecd right_buffer_halfsize = Vecd(Radius_inlet, Radius_inlet, buffer_thickness);
+Vecd right_buffer_translation = point_A + Vecd(0.0, 0.0, DL_sponge);
 //----------------------------------------------------------------------
 // Observation with offset model.
 //----------------------------------------------------------------------
