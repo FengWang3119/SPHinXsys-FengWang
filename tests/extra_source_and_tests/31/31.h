@@ -107,9 +107,9 @@ Real Re_calculated = U_f * DH * rho0_f / mu_f;
 //----------------------------------------------------------------------
 //	The open boundary setting.
 //----------------------------------------------------------------------
+Vecd flow_direction(0.0, 0.0, 1.0);
 Vecd left_buffer_halfsize = Vecd(Radius_inlet, Radius_inlet, buffer_thickness);
 Vecd left_buffer_translation = point_O + Vecd(0.0, 0.0, -DL_sponge);
-
 Vecd right_buffer_halfsize = Vecd(Radius_inlet, Radius_inlet, buffer_thickness);
 Vecd right_buffer_translation = point_A + Vecd(0.0, 0.0, DL_sponge);
 //----------------------------------------------------------------------
@@ -293,7 +293,7 @@ class WaterBlock : public ComplexShape
     explicit WaterBlock(const std::string &shape_name) : ComplexShape(shape_name)
     {
         add<TriangleMeshShapeCylinder>(SimTK::UnitVec3(0.0, 0.0, 1.0), Radius_inlet,
-                                       (DL + 2.0 * DL_Sponge) * 0.5, SimTK_resolution,
+                                       (DL + 2.0 * DL_sponge) * 0.5, SimTK_resolution,
                                        point_OA_half);
     }
 };
@@ -344,11 +344,11 @@ class WallBoundary : public ComplexShape
     explicit WallBoundary(const std::string &shape_name) : ComplexShape(shape_name)
     {
         add<TriangleMeshShapeCylinder>(SimTK::UnitVec3(0.0, 0.0, 1.0), Radius_inlet + BW,
-                                       (DL + 2.0 * DL_Sponge + 2.0 * BW) * 0.5, SimTK_resolution,
+                                       (DL + 2.0 * DL_sponge + 2.0 * BW) * 0.5, SimTK_resolution,
                                        point_OA_half);
-        substract<TriangleMeshShapeCylinder>(SimTK::UnitVec3(0.0, 0.0, 1.0), Radius_inlet,
-                                             (DL + 2.0 * DL_Sponge + 4.0 * BW) * 0.5, SimTK_resolution,
-                                             point_OA_half);
+        subtract<TriangleMeshShapeCylinder>(SimTK::UnitVec3(0.0, 0.0, 1.0), Radius_inlet,
+                                            (DL + 2.0 * DL_sponge + 4.0 * BW) * 0.5, SimTK_resolution,
+                                            point_OA_half);
     }
 };
 

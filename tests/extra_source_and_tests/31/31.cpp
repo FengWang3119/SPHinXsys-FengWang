@@ -165,7 +165,7 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     // Left/Inlet buffer
     //----------------------------------------------------------------------
-    AlignedBoxShape left_emitter_shape(xAxis, Transform(Vecd(left_buffer_translation)), left_buffer_halfsize);
+    AlignedBoxShape left_emitter_shape(zAxis, Transform(Vecd(left_buffer_translation)), left_buffer_halfsize);
     BodyAlignedBoxByCell left_emitter(water_block, left_emitter_shape);
     fluid_dynamics::BidirectionalBuffer<LeftInflowPressure> left_bidirection_buffer(left_emitter, inlet_particle_buffer);
 
@@ -177,7 +177,8 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     // Right/Outlet buffer
     //----------------------------------------------------------------------
-    AlignedBoxShape right_emitter_shape(xAxis, Transform(Rotation2d(Pi), Vecd(right_buffer_translation)), right_buffer_halfsize);
+    Rotation3d right_buffer_rotation(Pi, flow_direction);
+    AlignedBoxShape right_emitter_shape(zAxis, Transform(Rotation3d(right_buffer_rotation), Vecd(right_buffer_translation)), right_buffer_halfsize);
     BodyAlignedBoxByCell right_emitter(water_block, right_emitter_shape);
     fluid_dynamics::BidirectionalBuffer<RightOutflowPressure> right_bidirection_buffer(right_emitter, inlet_particle_buffer);
 
