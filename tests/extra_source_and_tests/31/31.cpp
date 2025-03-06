@@ -252,8 +252,8 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------------------------------------
     //	Main loop starts here.
     //----------------------------------------------------------------------------------------------------
-    // std::cout << "Simulation starts?" << std::endl;
-    // std::cin.get();
+    std::cout << "Simulation starts?" << std::endl;
+    std::cin.get();
     int num_output_file = 0;
     while (physical_time < end_time)
     {

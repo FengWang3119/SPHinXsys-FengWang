@@ -34,7 +34,8 @@ Real extend_inlet = 10.0 * D_thr;
 Real L_incline = D_thr / tan(incline_angle); //** 1/tan(10)=5.6 */
 Real L_middle = 10.0 * D_thr;
 Real extend_outlet = 25.0 * D_thr;
-Real DL = extend_inlet + L_incline + L_middle + extend_outlet; /**< Fluid domain length. */
+//Real DL = extend_inlet + L_incline + L_middle + extend_outlet; /**< Fluid domain length. */
+Real DL = 4.0 * DH; /**< Fluid domain length. */
 
 // Vecd point_O(0.0, 0.0);
 // Vecd point_A = point_O + Vecd(0.0, DH);
