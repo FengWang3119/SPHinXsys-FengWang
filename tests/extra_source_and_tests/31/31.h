@@ -37,38 +37,11 @@ Real extend_outlet = 25.0 * D_thr;
 //Real DL = extend_inlet + L_incline + L_middle + extend_outlet; /**< Fluid domain length. */
 Real DL = 4.0 * DH; /**< Fluid domain length. */
 
-// Vecd point_O(0.0, 0.0);
-// Vecd point_A = point_O + Vecd(0.0, DH);
-// Vecd point_B = point_A + Vecd(extend_inlet, 0.0);
-// Vecd point_C = point_B + Vecd(0.0, -D_thr);
-// Vecd point_D = point_C + Vecd(L_middle, 0.0);
-// Vecd point_E = point_D + Vecd(L_incline, D_thr);
-// Vecd point_F = point_E + Vecd(extend_outlet, 0.0);
-// Vecd point_G = point_F + Vecd(0.0, -DH);
-// Vecd point_H = point_G + Vecd(-extend_outlet, 0.0);
-// Vecd point_I = point_H + Vecd(-L_incline, D_thr);
-// Vecd point_J = point_I + Vecd(-L_middle, 0.0);
-// Vecd point_K = point_J + Vecd(0.0, -D_thr);
-
 //** If return to straight */
 Vecd point_O(0.0, 0.0, 0.0);
 Vecd point_A = point_O + Vecd(0.0, 0.0, DL);
 
 Vecd point_OA_half = (point_O + point_A) / 2.0;
-
-// Vecd point_B = point_A + Vecd(extend_inlet, 0.0);
-// Vecd point_C = point_B + Vecd(0.0, 0.0);
-// Vecd point_D = point_C + Vecd(L_middle, 0.0);
-// Vecd point_E = point_D + Vecd(L_incline, 0.0);
-// Vecd point_F = point_E + Vecd(extend_outlet, 0.0);
-// Vecd point_G = point_F + Vecd(0.0, -DH);
-// Vecd point_H = point_G + Vecd(-extend_outlet, 0.0);
-// Vecd point_I = point_H + Vecd(-L_incline, 0.0);
-// Vecd point_J = point_I + Vecd(-L_middle, 0.0);
-// Vecd point_K = point_J + Vecd(0.0, 0.0);
-
-// Vecd point_OA_half = (point_O + point_A) / 2.0;
-// Vecd point_FG_half = (point_F + point_G) / 2.0;
 
 Real num_fluid_cross_section = 10.0;
 Real resolution_ref = DH / num_fluid_cross_section;        /**< Initial reference particle spacing. */
@@ -113,6 +86,97 @@ Vecd left_buffer_halfsize = Vecd(Radius_inlet, Radius_inlet, 0.5 * buffer_thickn
 Vecd left_buffer_translation = point_O + Vecd(0.0, 0.0, -DL_sponge) + Vecd(0.0, 0.0, 0.5 * buffer_thickness);
 Vecd right_buffer_halfsize = Vecd(Radius_inlet, Radius_inlet, 0.5 * buffer_thickness);
 Vecd right_buffer_translation = point_A + Vecd(0.0, 0.0, DL_sponge) + Vecd(0.0, 0.0, -0.5 * buffer_thickness);
+//----------------------------------------------------------------------
+//	Cases-dependent geometries
+//----------------------------------------------------------------------
+class WaterBlock : public ComplexShape
+{
+  public:
+    explicit WaterBlock(const std::string &shape_name) : ComplexShape(shape_name)
+    {
+        add<TriangleMeshShapeCylinder>(SimTK::UnitVec3(0.0, 0.0, 1.0), Radius_inlet,
+                                       (DL + 2.0 * DL_sponge) * 0.5, SimTK_resolution,
+                                       point_OA_half);
+    }
+};
+
+/**
+ * @brief 	Wall boundary body definition.
+ */
+class WallBoundary : public ComplexShape
+{
+  public:
+    explicit WallBoundary(const std::string &shape_name) : ComplexShape(shape_name)
+    {
+        add<TriangleMeshShapeCylinder>(SimTK::UnitVec3(0.0, 0.0, 1.0), Radius_inlet + BW,
+                                       (DL + 2.0 * DL_sponge + 2.0 * BW) * 0.5, SimTK_resolution,
+                                       point_OA_half);
+        subtract<TriangleMeshShapeCylinder>(SimTK::UnitVec3(0.0, 0.0, 1.0), Radius_inlet,
+                                            (DL + 2.0 * DL_sponge + 4.0 * BW) * 0.5, SimTK_resolution,
+                                            point_OA_half);
+    }
+};
+
+//----------------------------------------------------------------------
+//	Inflow velocity
+//----------------------------------------------------------------------
+struct InflowVelocity
+{
+    Real u_ref_, t_ref_;
+    AlignedBoxShape &aligned_box_;
+    Vecd halfsize_;
+
+    template <class BoundaryConditionType>
+    InflowVelocity(BoundaryConditionType &boundary_condition)
+        : u_ref_(U_inlet), t_ref_(2.0),
+          aligned_box_(boundary_condition.getAlignedBox()),
+          halfsize_(aligned_box_.HalfSize()) {}
+
+    Vecd operator()(Vecd &position, Vecd &velocity, Real current_time)
+    {
+        Vecd target_velocity = velocity;
+        Real u_ave = current_time < t_ref_ ? 0.5 * u_ref_ * (1.0 - cos(Pi * current_time / t_ref_)) : u_ref_;
+        //** 3D modification */
+        Real local_radius_square = position[0] * position[0] + position[1] * position[1];
+        Real Radius_inlet_square = Radius_inlet * Radius_inlet;
+        target_velocity[2] = 2.0 * u_ave * (1.0 - local_radius_square / Radius_inlet_square);
+        //target_velocity[2] = u_ave;
+
+        if (local_radius_square > Radius_inlet_square)
+        {
+            std::cout << "Particles out of domain, wrong inlet velocity." << std::endl;
+            std::cout << "local_radius_square=" << local_radius_square << std::endl;
+            std::cout << "Radius_inlet=" << Radius_inlet << std::endl;
+            std::cin.get();
+        }
+        target_velocity[0] = 0.0;
+        target_velocity[1] = 0.0;
+        return target_velocity;
+    }
+};
+
+struct RightOutflowPressure
+{
+    template <class BoundaryConditionType>
+    RightOutflowPressure(BoundaryConditionType &boundary_condition) {}
+
+    Real operator()(Real p, Real current_time)
+    {
+        /*constant pressure*/
+        Real pressure = Outlet_pressure;
+        return pressure;
+    }
+};
+struct LeftInflowPressure
+{
+    template <class BoundaryConditionType>
+    LeftInflowPressure(BoundaryConditionType &boundary_condition) {}
+
+    Real operator()(Real p, Real current_time)
+    {
+        return p;
+    }
+};
 //----------------------------------------------------------------------
 // Observation with offset model.
 //----------------------------------------------------------------------
@@ -267,94 +331,3 @@ Vecd right_buffer_translation = point_A + Vecd(0.0, 0.0, DL_sponge) + Vecd(0.0, 
 
 //** For regression test *
 StdVec<Vecd> observer_location_center_point = {point_O + Vecd(0.0, 0.0, 0.5 * DL)};
-//----------------------------------------------------------------------
-//	Cases-dependent geometries
-//----------------------------------------------------------------------
-class WaterBlock : public ComplexShape
-{
-  public:
-    explicit WaterBlock(const std::string &shape_name) : ComplexShape(shape_name)
-    {
-        add<TriangleMeshShapeCylinder>(SimTK::UnitVec3(0.0, 0.0, 1.0), Radius_inlet,
-                                       (DL + 2.0 * DL_sponge) * 0.5, SimTK_resolution,
-                                       point_OA_half);
-    }
-};
-
-/**
- * @brief 	Wall boundary body definition.
- */
-class WallBoundary : public ComplexShape
-{
-  public:
-    explicit WallBoundary(const std::string &shape_name) : ComplexShape(shape_name)
-    {
-        add<TriangleMeshShapeCylinder>(SimTK::UnitVec3(0.0, 0.0, 1.0), Radius_inlet + BW,
-                                       (DL + 2.0 * DL_sponge + 2.0 * BW) * 0.5, SimTK_resolution,
-                                       point_OA_half);
-        subtract<TriangleMeshShapeCylinder>(SimTK::UnitVec3(0.0, 0.0, 1.0), Radius_inlet,
-                                            (DL + 2.0 * DL_sponge + 4.0 * BW) * 0.5, SimTK_resolution,
-                                            point_OA_half);
-    }
-};
-
-//----------------------------------------------------------------------
-//	Inflow velocity
-//----------------------------------------------------------------------
-struct InflowVelocity
-{
-    Real u_ref_, t_ref_;
-    AlignedBoxShape &aligned_box_;
-    Vecd halfsize_;
-
-    template <class BoundaryConditionType>
-    InflowVelocity(BoundaryConditionType &boundary_condition)
-        : u_ref_(U_inlet), t_ref_(2.0),
-          aligned_box_(boundary_condition.getAlignedBox()),
-          halfsize_(aligned_box_.HalfSize()) {}
-
-    Vecd operator()(Vecd &position, Vecd &velocity, Real current_time)
-    {
-        Vecd target_velocity = velocity;
-        Real u_ave = current_time < t_ref_ ? 0.5 * u_ref_ * (1.0 - cos(Pi * current_time / t_ref_)) : u_ref_;
-        //** 3D modification */
-        Real local_radius_square = position[0] * position[0] + position[1] * position[1];
-        Real Radius_inlet_square = Radius_inlet * Radius_inlet;
-        target_velocity[2] = 2.0 * u_ave * (1.0 - local_radius_square / Radius_inlet_square);
-        //target_velocity[2] = u_ave;
-
-        if (local_radius_square > Radius_inlet_square)
-        {
-            std::cout << "Particles out of domain, wrong inlet velocity." << std::endl;
-            std::cout << "local_radius_square=" << local_radius_square << std::endl;
-            std::cout << "Radius_inlet=" << Radius_inlet << std::endl;
-            std::cin.get();
-        }
-        target_velocity[0] = 0.0;
-        target_velocity[1] = 0.0;
-        return target_velocity;
-    }
-};
-
-struct RightOutflowPressure
-{
-    template <class BoundaryConditionType>
-    RightOutflowPressure(BoundaryConditionType &boundary_condition) {}
-
-    Real operator()(Real p, Real current_time)
-    {
-        /*constant pressure*/
-        Real pressure = Outlet_pressure;
-        return pressure;
-    }
-};
-struct LeftInflowPressure
-{
-    template <class BoundaryConditionType>
-    LeftInflowPressure(BoundaryConditionType &boundary_condition) {}
-
-    Real operator()(Real p, Real current_time)
-    {
-        return p;
-    }
-};
