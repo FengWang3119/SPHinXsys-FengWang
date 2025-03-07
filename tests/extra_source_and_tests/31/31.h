@@ -38,7 +38,7 @@ Real extend_outlet = 25.0 * D_thr;
 Real DL = 4.0 * DH; /**< Fluid domain length. */
 
 //** If return to straight */
-Vecd point_O(0.0, 0.0, 0.0);
+Vecd point_O(0.0, 0.0, 0.0); //** O A are the start and end point of the computational domain */
 Vecd point_A = point_O + Vecd(0.0, 0.0, DL);
 
 Vecd point_OA_half = (point_O + point_A) / 2.0;
@@ -51,13 +51,17 @@ Real half_channel_height = DH / 2.0;
 Real buffer_thickness = 5.0 * resolution_ref;
 Real DL_sponge = buffer_thickness;
 
+Vecd point_B = point_O + Vecd(0.0, 0.0, -DL_sponge); //** The total domain is tagged as B C */
+Vecd point_C = point_A + Vecd(0.0, 0.0, DL_sponge);
+Real DL_total = point_C[zAxis] - point_B[zAxis];
+
 const int SimTK_resolution = 20;
 //const Vec3d translation_fluid(0.0, 0.0, full_length * 0.5);
 //----------------------------------------------------------------------
 //	Domain bounds of the system.
 //----------------------------------------------------------------------
-BoundingBox system_domain_bounds(point_O + Vecd(-Radius_inlet, -Radius_inlet, -DL_sponge) + 2.0 * Vecd(-BW, -BW, -BW),
-                                 point_A + Vecd(Radius_inlet, Radius_inlet, DL_sponge) + Vecd(BW, BW, BW));
+BoundingBox system_domain_bounds(point_B + Vecd(-Radius_inlet, -Radius_inlet, 0.0) + 2.0 * Vecd(-BW, -BW, -BW),
+                                 point_C + Vecd(Radius_inlet, Radius_inlet, 0.0) + 2.0 * Vecd(BW, BW, BW));
 //----------------------------------------------------------------------
 //	Material properties of the fluid.
 //----------------------------------------------------------------------
@@ -83,9 +87,9 @@ Real Re_calculated = U_f * DH * rho0_f / mu_f;
 //----------------------------------------------------------------------
 Vecd rotation_axis(1.0, 0.0, 0.0);
 Vecd left_buffer_halfsize = Vecd(Radius_inlet, Radius_inlet, 0.5 * buffer_thickness);
-Vecd left_buffer_translation = point_O + Vecd(0.0, 0.0, -DL_sponge) + Vecd(0.0, 0.0, 0.5 * buffer_thickness);
+Vecd left_buffer_translation = point_B + Vecd(0.0, 0.0, 0.5 * buffer_thickness);
 Vecd right_buffer_halfsize = Vecd(Radius_inlet, Radius_inlet, 0.5 * buffer_thickness);
-Vecd right_buffer_translation = point_A + Vecd(0.0, 0.0, DL_sponge) + Vecd(0.0, 0.0, -0.5 * buffer_thickness);
+Vecd right_buffer_translation = point_C + Vecd(0.0, 0.0, -0.5 * buffer_thickness);
 //----------------------------------------------------------------------
 //	Cases-dependent geometries
 //----------------------------------------------------------------------
@@ -95,7 +99,7 @@ class WaterBlock : public ComplexShape
     explicit WaterBlock(const std::string &shape_name) : ComplexShape(shape_name)
     {
         add<TriangleMeshShapeCylinder>(SimTK::UnitVec3(0.0, 0.0, 1.0), Radius_inlet,
-                                       (DL + 2.0 * DL_sponge) * 0.5, SimTK_resolution,
+                                       DL_total * 0.5, SimTK_resolution,
                                        point_OA_half);
     }
 };
@@ -109,10 +113,10 @@ class WallBoundary : public ComplexShape
     explicit WallBoundary(const std::string &shape_name) : ComplexShape(shape_name)
     {
         add<TriangleMeshShapeCylinder>(SimTK::UnitVec3(0.0, 0.0, 1.0), Radius_inlet + BW,
-                                       (DL + 2.0 * DL_sponge + 2.0 * BW) * 0.5, SimTK_resolution,
+                                       (DL_total + 2.0 * BW) * 0.5, SimTK_resolution,
                                        point_OA_half);
         subtract<TriangleMeshShapeCylinder>(SimTK::UnitVec3(0.0, 0.0, 1.0), Radius_inlet,
-                                            (DL + 2.0 * DL_sponge + 4.0 * BW) * 0.5, SimTK_resolution,
+                                            (DL_total + 4.0 * BW) * 0.5, SimTK_resolution,
                                             point_OA_half);
     }
 };
