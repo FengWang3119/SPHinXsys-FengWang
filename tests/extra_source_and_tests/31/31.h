@@ -70,7 +70,7 @@ Vecd point_OA_half = (point_O + point_A) / 2.0;
 // Vecd point_OA_half = (point_O + point_A) / 2.0;
 // Vecd point_FG_half = (point_F + point_G) / 2.0;
 
-Real num_fluid_cross_section = 30.0;
+Real num_fluid_cross_section = 10.0;
 Real resolution_ref = DH / num_fluid_cross_section;        /**< Initial reference particle spacing. */
 Real resolution_ref_thr = D_thr / num_fluid_cross_section; /**< Initial reference particle spacing. */
 Real BW = resolution_ref * 4;                              /**< Reference size of the emitter. */
@@ -108,11 +108,11 @@ Real Re_calculated = U_f * DH * rho0_f / mu_f;
 //----------------------------------------------------------------------
 //	The open boundary setting.
 //----------------------------------------------------------------------
-Vecd flow_direction(0.0, 0.0, 1.0);
-Vecd left_buffer_halfsize = Vecd(Radius_inlet, Radius_inlet, buffer_thickness);
-Vecd left_buffer_translation = point_O + Vecd(0.0, 0.0, -DL_sponge);
-Vecd right_buffer_halfsize = Vecd(Radius_inlet, Radius_inlet, buffer_thickness);
-Vecd right_buffer_translation = point_A + Vecd(0.0, 0.0, DL_sponge);
+Vecd rotation_axis(1.0, 0.0, 0.0);
+Vecd left_buffer_halfsize = Vecd(Radius_inlet, Radius_inlet, 0.5 * buffer_thickness);
+Vecd left_buffer_translation = point_O + Vecd(0.0, 0.0, -DL_sponge) + Vecd(0.0, 0.0, 0.5 * buffer_thickness);
+Vecd right_buffer_halfsize = Vecd(Radius_inlet, Radius_inlet, 0.5 * buffer_thickness);
+Vecd right_buffer_translation = point_A + Vecd(0.0, 0.0, DL_sponge) + Vecd(0.0, 0.0, -0.5 * buffer_thickness);
 //----------------------------------------------------------------------
 // Observation with offset model.
 //----------------------------------------------------------------------
@@ -372,15 +372,20 @@ struct InflowVelocity
     {
         Vecd target_velocity = velocity;
         Real u_ave = current_time < t_ref_ ? 0.5 * u_ref_ * (1.0 - cos(Pi * current_time / t_ref_)) : u_ref_;
-        target_velocity[0] = 1.5 * u_ave * (1.0 - position[1] * position[1] / half_channel_height / half_channel_height);
-        //target_velocity[0] = u_ave;
+        //** 3D modification */
+        Real local_radius_square = position[0] * position[0] + position[1] * position[1];
+        Real Radius_inlet_square = Radius_inlet * Radius_inlet;
+        target_velocity[2] = 2.0 * u_ave * (1.0 - local_radius_square / Radius_inlet_square);
+        //target_velocity[2] = u_ave;
 
-        if (position[1] > half_channel_height)
+        if (local_radius_square > Radius_inlet_square)
         {
             std::cout << "Particles out of domain, wrong inlet velocity." << std::endl;
-            std::cout << position[1] << std::endl;
+            std::cout << "local_radius_square=" << local_radius_square << std::endl;
+            std::cout << "Radius_inlet=" << Radius_inlet << std::endl;
             std::cin.get();
         }
+        target_velocity[0] = 0.0;
         target_velocity[1] = 0.0;
         return target_velocity;
     }
