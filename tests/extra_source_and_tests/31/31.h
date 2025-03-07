@@ -270,24 +270,6 @@ StdVec<Vecd> observer_location_center_point = {point_O + Vecd(0.0, 0.0, 0.5 * DL
 //----------------------------------------------------------------------
 //	Cases-dependent geometries
 //----------------------------------------------------------------------
-// std::vector<Vecd> createWaterBlockShape()
-// {
-//     std::vector<Vecd> water_block_shape;
-//     water_block_shape.push_back(point_O + Vecd(-DL_sponge, 0.0));
-//     water_block_shape.push_back(point_A + Vecd(-DL_sponge, 0.0));
-//     water_block_shape.push_back(point_B);
-//     water_block_shape.push_back(point_C);
-//     water_block_shape.push_back(point_D);
-//     water_block_shape.push_back(point_E);
-//     water_block_shape.push_back(point_F);
-//     water_block_shape.push_back(point_G);
-//     water_block_shape.push_back(point_H);
-//     water_block_shape.push_back(point_I);
-//     water_block_shape.push_back(point_J);
-//     water_block_shape.push_back(point_K);
-//     water_block_shape.push_back(point_O + Vecd(-DL_sponge, 0.0));
-//     return water_block_shape;
-// }
 class WaterBlock : public ComplexShape
 {
   public:
@@ -298,43 +280,6 @@ class WaterBlock : public ComplexShape
                                        point_OA_half);
     }
 };
-
-// std::vector<Vecd> createOuterWallShape()
-// {
-//     std::vector<Vecd> water_block_shape;
-//     water_block_shape.push_back(point_O + Vecd(-DL_sponge, 0.0) + Vecd(-BW, 0.0));
-//     water_block_shape.push_back(point_A + Vecd(-DL_sponge, 0.0) + Vecd(-BW, 0.0));
-//     water_block_shape.push_back(point_B);
-//     water_block_shape.push_back(point_C);
-//     water_block_shape.push_back(point_D);
-//     water_block_shape.push_back(point_E);
-//     water_block_shape.push_back(point_F + Vecd(BW, 0.0));
-//     water_block_shape.push_back(point_G + Vecd(BW, 0.0));
-//     water_block_shape.push_back(point_H);
-//     water_block_shape.push_back(point_I);
-//     water_block_shape.push_back(point_J);
-//     water_block_shape.push_back(point_K);
-//     water_block_shape.push_back(point_O + Vecd(-DL_sponge, 0.0) + Vecd(-BW, 0.0));
-//     return water_block_shape;
-// }
-// std::vector<Vecd> createInnerWallShape()
-// {
-//     std::vector<Vecd> water_block_shape;
-//     water_block_shape.push_back(point_O + Vecd(-DL_sponge, 0.0) + Vecd(-2.0 * BW, 0.0));
-//     water_block_shape.push_back(point_A + Vecd(-DL_sponge, 0.0) + Vecd(-2.0 * BW, 0.0));
-//     water_block_shape.push_back(point_B);
-//     water_block_shape.push_back(point_C);
-//     water_block_shape.push_back(point_D);
-//     water_block_shape.push_back(point_E);
-//     water_block_shape.push_back(point_F + Vecd(2.0 * BW, 0.0));
-//     water_block_shape.push_back(point_G + Vecd(2.0 * BW, 0.0));
-//     water_block_shape.push_back(point_H);
-//     water_block_shape.push_back(point_I);
-//     water_block_shape.push_back(point_J);
-//     water_block_shape.push_back(point_K);
-//     water_block_shape.push_back(point_O + Vecd(-DL_sponge, 0.0) + Vecd(-2.0 * BW, 0.0));
-//     return water_block_shape;
-// }
 
 /**
  * @brief 	Wall boundary body definition.
