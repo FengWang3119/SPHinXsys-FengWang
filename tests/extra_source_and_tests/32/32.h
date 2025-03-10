@@ -120,7 +120,18 @@ class WallBoundary : public ComplexShape
                                             point_OA_half);
     }
 };
-
+/** Set the file path to the stl file. */
+std::string stl_structure_path = "./input/tube.stl";
+Real scale_factor = 1.0e-3;
+Vecd translation_stl(0.0, 0.0, 0.0);
+class WallBoundaryFromSTL : public ComplexShape
+{
+  public:
+    explicit WallBoundaryFromSTL(const std::string &shape_name) : ComplexShape(shape_name)
+    {
+        add<TriangleMeshShapeSTL>(stl_structure_path, translation_stl, scale_factor);
+    }
+};
 //----------------------------------------------------------------------
 //	Inflow velocity
 //----------------------------------------------------------------------
