@@ -121,8 +121,9 @@ class WallBoundary : public ComplexShape
     }
 };
 /** Set the file path to the stl file. */
-std::string stl_structure_path = "./input/tube.stl";
-std::string stl_structure_path_volume = "./input/tube_volume.stl";
+//std::string stl_structure_path = "./input/tube.stl";
+//std::string stl_structure_path_volume = "./input/tube_volume.stl";
+std::string stl_structure_path_volume2 = "./input/tube_volume3.stl";
 Real scale_factor = 1.0e-3;
 Vecd translation_stl(0.0, 0.0, 0.0);
 class WallBoundaryFromSTL : public ComplexShape
@@ -130,16 +131,16 @@ class WallBoundaryFromSTL : public ComplexShape
   public:
     explicit WallBoundaryFromSTL(const std::string &shape_name) : ComplexShape(shape_name)
     {
-        add<TriangleMeshShapeSTL>(stl_structure_path, translation_stl, scale_factor);
-        // add<ExtrudeShape<TriangleMeshShapeSTL>>(BW, stl_structure_path_volume, translation_stl, scale_factor);
-        // subtract<TriangleMeshShapeSTL>(stl_structure_path, translation_stl, scale_factor);
-        // //** Inlet/outlet sponge */
-        // subtract<TriangleMeshShapeCylinder>(SimTK::UnitVec3(0.0, 0.0, 1.0), Radius_inlet,
-        //                                     (2.0 * BW) * 0.5, SimTK_resolution,
-        //                                     point_B);
-        // subtract<TriangleMeshShapeCylinder>(SimTK::UnitVec3(0.0, 0.0, 1.0), Radius_inlet,
-        //                                     (2.0 * BW) * 0.5, SimTK_resolution,
-        //                                     point_C);
+        //add<TriangleMeshShapeSTL>(stl_structure_path, translation_stl, scale_factor);
+        add<ExtrudeShape<TriangleMeshShapeSTL>>(BW, stl_structure_path_volume2, translation_stl, scale_factor);
+        subtract<TriangleMeshShapeSTL>(stl_structure_path_volume2, translation_stl, scale_factor);
+        //** Inlet/outlet sponge */
+        subtract<TriangleMeshShapeCylinder>(SimTK::UnitVec3(0.0, 0.0, 1.0), Radius_inlet,
+                                            (2.0 * BW) * 0.5, SimTK_resolution,
+                                            point_B);
+        subtract<TriangleMeshShapeCylinder>(SimTK::UnitVec3(0.0, 0.0, 1.0), Radius_inlet,
+                                            (2.0 * BW) * 0.5, SimTK_resolution,
+                                            point_C);
     }
 };
 //----------------------------------------------------------------------
