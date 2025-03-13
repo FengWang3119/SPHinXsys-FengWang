@@ -21,126 +21,89 @@ using namespace SPH;
 //----------------------------------------------------------------------
 //** Dimension: m s kg */
 //** Z along the channel length */
-Real scale = 1.0;
+Real scale = 1.0e-3;
 Real D_thr = 4.0 * scale;
-
-//Real DH = 3.0 * D_thr; /**< Channel height. */
-Real DH = D_thr; /**< Channel height. */
+Real DH = 3.0 * D_thr; /**< Channel height. */
 
 Real Radius_inlet = DH / 2.0;
 
-Real incline_angle = 10.0 * Pi / 180.0;
-Real extend_inlet = 10.0 * D_thr;
-Real L_incline = D_thr / tan(incline_angle); //** 1/tan(10)=5.6 */
-Real L_middle = 10.0 * D_thr;
-Real extend_outlet = 25.0 * D_thr;
-//Real DL = extend_inlet + L_incline + L_middle + extend_outlet; /**< Fluid domain length. */
-Real DL = 4.0 * DH; /**< Fluid domain length. */
+Real DL = 50.0 * D_thr; /**< Total domain length, note that this is determined by the INPUT geometry. */
 
-//** If return to straight */
-Vecd point_O(0.0, 0.0, 0.0); //** O A are the start and end point of the computational domain */
+Vecd point_O(0.0, 0.0, 0.0); //** O A are the start and end point of the total domain */
 Vecd point_A = point_O + Vecd(0.0, 0.0, DL);
-
 Vecd point_OA_half = (point_O + point_A) / 2.0;
 
-Real num_fluid_cross_section = 20.0;
-Real resolution_ref = DH / num_fluid_cross_section;        /**< Initial reference particle spacing. */
-Real resolution_ref_thr = D_thr / num_fluid_cross_section; /**< Initial reference particle spacing. */
-Real BW = resolution_ref * 4;                              /**< Reference size of the emitter. */
+Real num_fluid_cross_section = 20.0;                //** On inlet */
+Real resolution_ref = DH / num_fluid_cross_section; /**< Initial reference particle spacing. */
+Real BW = resolution_ref * 4;                       /**< Reference size of the emitter. */
 Real half_channel_height = DH / 2.0;
 Real buffer_thickness = 5.0 * resolution_ref;
-Real DL_sponge = buffer_thickness;
-
-Vecd point_B = point_O + Vecd(0.0, 0.0, -DL_sponge); //** The total domain is tagged as B C */
-Vecd point_C = point_A + Vecd(0.0, 0.0, DL_sponge);
-Real DL_total = point_C[zAxis] - point_B[zAxis];
+//Real DL_sponge = buffer_thickness; //** Note, no pre-left sponge since the geometry is already extended, and the quantitative data is obtained from the throat */
 
 const int SimTK_resolution = 20;
-//const Vec3d translation_fluid(0.0, 0.0, full_length * 0.5);
 //----------------------------------------------------------------------
 //	Domain bounds of the system.
 //----------------------------------------------------------------------
-BoundingBox system_domain_bounds(point_B + Vecd(-Radius_inlet, -Radius_inlet, 0.0) + 2.0 * Vecd(-BW, -BW, -BW),
-                                 point_C + Vecd(Radius_inlet, Radius_inlet, 0.0) + 2.0 * Vecd(BW, BW, BW));
+BoundingBox system_domain_bounds(point_O + Vecd(-Radius_inlet, -Radius_inlet, 0.0) + 2.0 * Vecd(-BW, -BW, -BW),
+                                 point_A + Vecd(Radius_inlet, Radius_inlet, 0.0) + 2.0 * Vecd(BW, BW, BW));
 //----------------------------------------------------------------------
 //	Material properties of the fluid.
 //----------------------------------------------------------------------
-Real U_inlet = 1.0;
+Real U_inlet = 0.046;
 Real U_f = U_inlet; //*Characteristic velocity
-
-//Real U_max = 1.5 * (DH / D_thr) * U_inlet; //** An estimated value, generally 1.5 U_inlet *
-//** If return to straight */
-Real U_max = 2.0 * U_inlet; //** An estimated value, generally 1.5 U_inlet *
+Real U_thr = (DH / D_thr) * (DH / D_thr) * U_inlet;
+Real U_max = 2.0 * U_thr; //** An estimated value, generally 2.0 U_inlet for 3D *
 
 Real c_f = 10.0 * U_max;
-Real rho0_f = 1000.0; /**< Density. */
-Real Re = 30.0;
+Real rho0_f = 1056.0; /**< Density. */
+Real Re = 500.0;
+
+Real mu_f = rho0_f * U_thr * D_thr / Re;
+
+Real start_up_time_ref = 0.025;
 
 Real Outlet_pressure = 0.0;
-
-Real mu_f = rho0_f * U_f * DH / Re;
-
-Real Re_calculated = U_f * DH * rho0_f / mu_f;
-
 //----------------------------------------------------------------------
 //	The open boundary setting.
 //----------------------------------------------------------------------
 Vecd rotation_axis(1.0, 0.0, 0.0);
 Vecd left_buffer_halfsize = Vecd(Radius_inlet, Radius_inlet, 0.5 * buffer_thickness);
-Vecd left_buffer_translation = point_B + Vecd(0.0, 0.0, 0.5 * buffer_thickness);
+Vecd left_buffer_translation = point_O + Vecd(0.0, 0.0, 0.5 * buffer_thickness);
 Vecd right_buffer_halfsize = Vecd(Radius_inlet, Radius_inlet, 0.5 * buffer_thickness);
-Vecd right_buffer_translation = point_C + Vecd(0.0, 0.0, -0.5 * buffer_thickness);
+Vecd right_buffer_translation = point_A + Vecd(0.0, 0.0, -0.5 * buffer_thickness);
 //----------------------------------------------------------------------
 //	Cases-dependent geometries
 //----------------------------------------------------------------------
-class WaterBlock : public ComplexShape
+/** Set the file path to the stl file. */
+std::string stl_fluid_path_volume = "./input/fda_nozzle.stl";
+Real scale_factor = 1.0e-3;
+Vecd translation_stl(0.0, 0.0, 0.0);
+class WaterBlockFromSTL : public ComplexShape
 {
   public:
-    explicit WaterBlock(const std::string &shape_name) : ComplexShape(shape_name)
+    explicit WaterBlockFromSTL(const std::string &shape_name) : ComplexShape(shape_name)
     {
-        add<TriangleMeshShapeCylinder>(SimTK::UnitVec3(0.0, 0.0, 1.0), Radius_inlet,
-                                       DL_total * 0.5, SimTK_resolution,
-                                       point_OA_half);
+        add<TriangleMeshShapeSTL>(stl_fluid_path_volume, translation_stl, scale_factor);
     }
 };
 
-/**
- * @brief 	Wall boundary body definition.
- */
-class WallBoundary : public ComplexShape
-{
-  public:
-    explicit WallBoundary(const std::string &shape_name) : ComplexShape(shape_name)
-    {
-        add<TriangleMeshShapeCylinder>(SimTK::UnitVec3(0.0, 0.0, 1.0), Radius_inlet + BW,
-                                       (DL_total + 2.0 * BW) * 0.5, SimTK_resolution,
-                                       point_OA_half);
-        subtract<TriangleMeshShapeCylinder>(SimTK::UnitVec3(0.0, 0.0, 1.0), Radius_inlet,
-                                            (DL_total + 4.0 * BW) * 0.5, SimTK_resolution,
-                                            point_OA_half);
-    }
-};
 /** Set the file path to the stl file. */
-//std::string stl_structure_path = "./input/tube.stl";
-//std::string stl_structure_path_volume = "./input/tube_volume.stl";
-std::string stl_structure_path_volume2 = "./input/tube_volume3.stl";
-Real scale_factor = 1.0e-3;
-Vecd translation_stl(0.0, 0.0, 0.0);
+std::string stl_wall_path_volume = "./input/fda_nozzle.stl";
+Real scale_factor_wall = 1.0e-3;
+Vecd translation_stl_wall(0.0, 0.0, 0.0);
 class WallBoundaryFromSTL : public ComplexShape
 {
   public:
     explicit WallBoundaryFromSTL(const std::string &shape_name) : ComplexShape(shape_name)
     {
-        //add<TriangleMeshShapeSTL>(stl_structure_path, translation_stl, scale_factor);
-        add<ExtrudeShape<TriangleMeshShapeSTL>>(BW, stl_structure_path_volume2, translation_stl, scale_factor);
-        subtract<TriangleMeshShapeSTL>(stl_structure_path_volume2, translation_stl, scale_factor);
-        //** Inlet/outlet sponge */
+        add<ExtrudeShape<TriangleMeshShapeSTL>>(BW, stl_wall_path_volume, translation_stl_wall, scale_factor_wall);
+        subtract<TriangleMeshShapeSTL>(stl_wall_path_volume, translation_stl_wall, scale_factor_wall);
         subtract<TriangleMeshShapeCylinder>(SimTK::UnitVec3(0.0, 0.0, 1.0), Radius_inlet,
                                             (2.0 * BW) * 0.5, SimTK_resolution,
-                                            point_B);
+                                            point_O);
         subtract<TriangleMeshShapeCylinder>(SimTK::UnitVec3(0.0, 0.0, 1.0), Radius_inlet,
                                             (2.0 * BW) * 0.5, SimTK_resolution,
-                                            point_C);
+                                            point_A);
     }
 };
 //----------------------------------------------------------------------
@@ -154,7 +117,7 @@ struct InflowVelocity
 
     template <class BoundaryConditionType>
     InflowVelocity(BoundaryConditionType &boundary_condition)
-        : u_ref_(U_inlet), t_ref_(2.0),
+        : u_ref_(U_inlet), t_ref_(start_up_time_ref),
           aligned_box_(boundary_condition.getAlignedBox()),
           halfsize_(aligned_box_.HalfSize()) {}
 
@@ -256,17 +219,18 @@ void output_observer_theoretical_pos_on_line()
 //** For getting cross-section velocity *
 namespace observe_cross_sections
 {
+Real observe_base_x = 25.0 * D_thr;
 constexpr const char *namespace_prefix = "cross_sections";
 const int number_observe_line = 5;
 Real observer_offset_distance = 2.0 * resolution_ref;
 Vecd unit_direction_observe(0.0, 1.0, 0.0);
 // ** Determine the observing start point. *
 Real observe_start_z[number_observe_line] = {
-    0.0 * DL + observer_offset_distance,
-    0.25 * DL,
-    0.50 * DL,
-    0.75 * DL,
-    0.99 * DL - observer_offset_distance};
+    observe_base_x - 0.064,
+    observe_base_x - 0.008,
+    observe_base_x + 0.008,
+    observe_base_x + 0.024,
+    observe_base_x + 0.08};
 
 Real observe_start_x[number_observe_line] = {
     0.0,

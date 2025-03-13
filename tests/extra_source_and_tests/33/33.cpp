@@ -19,8 +19,10 @@ int main(int ac, char *av[])
      * @brief Material property, particles and body creation of fluid.
      */
 
-    FluidBody water_block(sph_system, makeShared<WaterBlock>("WaterBody"));
+    FluidBody water_block(sph_system, makeShared<WaterBlockFromSTL>("WaterBody"));
+    std::cout << "water_block.defineBodyLevelSetShape starts" << std::endl;
     water_block.defineBodyLevelSetShape();
+    std::cout << "water_block.defineBodyLevelSetShape ends" << std::endl;
     water_block.defineMaterial<WeaklyCompressibleFluid>(rho0_f, c_f, mu_f);
     ParticleBuffer<ReserveSizeFactor> inlet_particle_buffer(0.5);
     (!sph_system.RunParticleRelaxation() && sph_system.ReloadParticles())
@@ -168,7 +170,7 @@ int main(int ac, char *av[])
     //InteractionWithUpdate<fluid_dynamics::DensitySummationFreeStreamComplex> update_density_by_summation(water_block_inner, water_wall_contact);
 
     /** Initialize particle acceleration. */
-    StartupAcceleration time_dependent_acceleration(Vecd(0.0, 0.0, U_f), 2.0);
+    StartupAcceleration time_dependent_acceleration(Vecd(0.0, 0.0, U_f), start_up_time_ref);
     SimpleDynamics<GravityForce<StartupAcceleration>> apply_gravity_force(water_block, time_dependent_acceleration);
 
     //----------------------------------------------------------------------
@@ -242,7 +244,7 @@ int main(int ac, char *av[])
     Real &physical_time = *sph_system.getSystemVariableDataByName<Real>("PhysicalTime");
     size_t number_of_iterations = sph_system.RestartStep();
     int screen_output_interval = 100;
-    Real end_time = 200.0;                      /**< End time. */
+    Real end_time = 1.0;                        /**< End time. */
     Real cutoff_ratio = 0.92;                   //** cutoff_time should be a integral and the same as the PY script */
     Real cutoff_time = cutoff_ratio * end_time; //** cutoff_time should be a integral and the same as the PY script */
     Real num_output_files = 3.0;
