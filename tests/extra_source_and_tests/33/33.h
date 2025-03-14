@@ -219,18 +219,18 @@ void output_observer_theoretical_pos_on_line()
 //** For getting cross-section velocity *
 namespace observe_cross_sections
 {
-Real observe_base_x = 25.0 * D_thr;
+Real observe_base_z = 25.0 * D_thr;
 constexpr const char *namespace_prefix = "cross_sections";
 const int number_observe_line = 5;
 Real observer_offset_distance = 2.0 * resolution_ref;
 Vecd unit_direction_observe(0.0, 1.0, 0.0);
 // ** Determine the observing start point. *
 Real observe_start_z[number_observe_line] = {
-    observe_base_x - 0.064,
-    observe_base_x - 0.008,
-    observe_base_x + 0.008,
-    observe_base_x + 0.024,
-    observe_base_x + 0.08};
+    observe_base_z - 0.064,
+    observe_base_z - 0.008,
+    observe_base_z + 0.008,
+    observe_base_z + 0.024,
+    observe_base_z + 0.08};
 
 Real observe_start_x[number_observe_line] = {
     0.0,
