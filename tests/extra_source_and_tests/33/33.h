@@ -33,7 +33,7 @@ Vecd point_O(0.0, 0.0, 0.0); //** O A are the start and end point of the total d
 Vecd point_A = point_O + Vecd(0.0, 0.0, DL);
 Vecd point_OA_half = (point_O + point_A) / 2.0;
 
-Real num_fluid_cross_section = 30.0;                //** On inlet */
+Real num_fluid_cross_section = 20.0;                //** On inlet */
 Real resolution_ref = DH / num_fluid_cross_section; /**< Initial reference particle spacing. */
 Real BW = resolution_ref * 4;                       /**< Reference size of the emitter. */
 Real half_channel_height = DH / 2.0;
@@ -337,7 +337,7 @@ void output_number_observe_points_on_lines()
 namespace observe_cross_sections_Y0
 {
 Real observe_base_z = 25.0 * D_thr;
-constexpr const char *namespace_prefix = "cross_sections";
+constexpr const char *namespace_prefix = "cross_sections_Y0";
 const int number_observe_line = 5;
 Real observer_offset_distance = 2.0 * resolution_ref;
 Vecd unit_direction_observe(1.0, 0.0, 0.0);
