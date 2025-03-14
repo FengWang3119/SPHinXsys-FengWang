@@ -33,7 +33,7 @@ Vecd point_O(0.0, 0.0, 0.0); //** O A are the start and end point of the total d
 Vecd point_A = point_O + Vecd(0.0, 0.0, DL);
 Vecd point_OA_half = (point_O + point_A) / 2.0;
 
-Real num_fluid_cross_section = 20.0;                //** On inlet */
+Real num_fluid_cross_section = 30.0;                //** On inlet */
 Real resolution_ref = DH / num_fluid_cross_section; /**< Initial reference particle spacing. */
 Real BW = resolution_ref * 4;                       /**< Reference size of the emitter. */
 Real half_channel_height = DH / 2.0;
@@ -60,7 +60,7 @@ Real Re = 500.0;
 
 Real mu_f = rho0_f * U_thr * D_thr / Re;
 
-Real start_up_time_ref = 0.025;
+Real start_up_time_ref = 0.05;
 
 Real Outlet_pressure = 0.0;
 //----------------------------------------------------------------------
@@ -99,10 +99,10 @@ class WallBoundaryFromSTL : public ComplexShape
         add<ExtrudeShape<TriangleMeshShapeSTL>>(BW, stl_wall_path_volume, translation_stl_wall, scale_factor_wall);
         subtract<TriangleMeshShapeSTL>(stl_wall_path_volume, translation_stl_wall, scale_factor_wall);
         subtract<TriangleMeshShapeCylinder>(SimTK::UnitVec3(0.0, 0.0, 1.0), Radius_inlet,
-                                            (2.0 * BW) * 0.5, SimTK_resolution,
+                                            (1.8 * BW) * 0.5, SimTK_resolution,
                                             point_O);
         subtract<TriangleMeshShapeCylinder>(SimTK::UnitVec3(0.0, 0.0, 1.0), Radius_inlet,
-                                            (2.0 * BW) * 0.5, SimTK_resolution,
+                                            (1.8 * BW) * 0.5, SimTK_resolution,
                                             point_A);
     }
 };
@@ -128,15 +128,15 @@ struct InflowVelocity
         //** 3D modification */
         Real local_radius_square = position[0] * position[0] + position[1] * position[1];
         Real Radius_inlet_square = Radius_inlet * Radius_inlet;
-        target_velocity[2] = 2.0 * u_ave * (1.0 - local_radius_square / Radius_inlet_square);
+        target_velocity[2] = SMAX(2.0 * u_ave * (1.0 - local_radius_square / Radius_inlet_square), 0.0);
         //target_velocity[2] = u_ave;
 
         if (local_radius_square > Radius_inlet_square)
         {
             std::cout << "Particles out of domain, wrong inlet velocity." << std::endl;
             std::cout << "local_radius_square=" << local_radius_square << std::endl;
-            std::cout << "Radius_inlet=" << Radius_inlet << std::endl;
-            std::cin.get();
+            std::cout << "Radius_inlet=" << Radius_inlet_square << std::endl;
+            //std::this_thread::sleep_for(std::chrono::seconds(10));
         }
         target_velocity[0] = 0.0;
         target_velocity[1] = 0.0;
