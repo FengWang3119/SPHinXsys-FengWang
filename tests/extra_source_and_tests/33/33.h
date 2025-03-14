@@ -333,6 +333,122 @@ void output_number_observe_points_on_lines()
     outfile.close();
 }
 } // namespace observe_cross_sections
+//** For getting cross-section velocity on Y=0 *
+namespace observe_cross_sections_Y0
+{
+Real observe_base_z = 25.0 * D_thr;
+constexpr const char *namespace_prefix = "cross_sections";
+const int number_observe_line = 5;
+Real observer_offset_distance = 2.0 * resolution_ref;
+Vecd unit_direction_observe(1.0, 0.0, 0.0);
+// ** Determine the observing start point. *
+Real observe_start_z[number_observe_line] = {
+    observe_base_z - 0.064,
+    observe_base_z - 0.008,
+    observe_base_z + 0.008,
+    observe_base_z + 0.024,
+    observe_base_z + 0.08};
 
+Real observe_start_y[number_observe_line] = {
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0};
+
+Real observe_start_x[number_observe_line] = {
+    0.5 * resolution_ref - Radius_inlet,
+    0.5 * resolution_ref - Radius_inlet,
+    0.5 * resolution_ref - Radius_inlet,
+    0.5 * resolution_ref - Radius_inlet,
+    0.5 * resolution_ref - Radius_inlet};
+
+// ** Determine the length of the observing line and other information. *
+Real observe_line_length[number_observe_line] = {0.0};
+int num_observer_points[number_observe_line] = {0};
+
+void getObservingLineLengthAndEndPoints()
+{
+    for (int i = 0; i < number_observe_line; ++i)
+    {
+        observe_line_length[i] = DH;
+        num_observer_points[i] = std::round(observe_line_length[i] / resolution_ref);
+    }
+}
+
+StdVec<Vecd> observation_locations;
+StdVec<Vecd> observation_theoretical_locations;
+void getPositionsOfMultipleObserveLines()
+{
+    getObservingLineLengthAndEndPoints();
+    for (int k = 0; k < number_observe_line; ++k)
+    {
+        Vecd pos_observe_start(observe_start_x[k], observe_start_y[k], observe_start_z[k]);
+        int num_observer_point = num_observer_points[k];
+        Real observe_spacing = observe_line_length[k] / num_observer_point;
+        for (int i = 0; i < num_observer_point; ++i)
+        {
+            Real offset = 0.0;
+            offset = (i == 0 ? -observer_offset_distance : (i == num_observer_point - 1 ? observer_offset_distance : 0.0));
+            Vecd pos_observer_i = pos_observe_start + (i * observe_spacing + offset) * unit_direction_observe;
+            Vecd pos_observer_i_no_offset = pos_observe_start + i * observe_spacing * unit_direction_observe;
+            observation_locations.push_back(pos_observer_i);
+            observation_theoretical_locations.push_back(pos_observer_i_no_offset);
+        }
+    }
+}
+void output_observe_positions()
+{
+    std::string filename = "../bin/output/" + std::string(namespace_prefix) + "_observer_positions.dat";
+    std::ofstream outfile(filename);
+    if (!outfile.is_open())
+    {
+        std::cerr << "Error: Unable to open file " << filename << " for writing." << std::endl;
+        return;
+    }
+    for (const Vecd &position : observation_locations)
+    {
+        for (int i = 0; i < position.size(); ++i)
+        {
+            outfile << position[i] << " ";
+        }
+        outfile << "\n";
+    }
+    outfile.close();
+}
+void output_observer_theoretical_pos_on_line()
+{
+    std::string filename = "../bin/output/" + std::string(namespace_prefix) + "_theoretical_pos_on_line.dat";
+    std::ofstream outfile(filename);
+    if (!outfile.is_open())
+    {
+        std::cerr << "Error: Unable to open file " << filename << " for writing." << std::endl;
+        return;
+    }
+    for (int j = 0; j < number_observe_line; ++j)
+    {
+        for (int i = 0; i < num_observer_points[j]; ++i)
+        {
+            outfile << observation_theoretical_locations[i].dot(unit_direction_observe) << "\n";
+        }
+    }
+    outfile.close();
+}
+void output_number_observe_points_on_lines()
+{
+    std::string filename = "../bin/output/" + std::string(namespace_prefix) + "_observer_num_points_on_lines.dat";
+    std::ofstream outfile(filename);
+    if (!outfile.is_open())
+    {
+        std::cerr << "Error: Unable to open file " << filename << " for writing." << std::endl;
+        return;
+    }
+    for (const int &number : num_observer_points)
+    {
+        outfile << number << "\n";
+    }
+    outfile.close();
+}
+} // namespace observe_cross_sections_Y0
 //** For regression test *
 StdVec<Vecd> observer_location_center_point = {point_O + Vecd(0.0, 0.0, 0.5 * DL)};
