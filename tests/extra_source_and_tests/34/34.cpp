@@ -55,7 +55,7 @@ std::vector<Vecd> createWaterBlockShape()
     std::vector<Vecd> water_block_shape;
     water_block_shape.push_back(Vecd(0.0, 0.0));
     std::vector<Vecd> pnts;
-    Real wave_amplitude = 0.2 * LH;
+    Real wave_amplitude = 0.3 * LH;
     for (int n = 0; n <= Nh; n++)
     {
         Real x = n * Lstep;
