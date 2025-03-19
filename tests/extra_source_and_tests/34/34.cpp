@@ -10,10 +10,16 @@ using namespace SPH;   // Namespace cite here.
 //----------------------------------------------------------------------
 //	Basic geometry parameters and numerical setup.
 //----------------------------------------------------------------------
-Real DL = 2.0;                      /**< Tank length. */
-Real DH = 2.0;                      /**< Tank height. */
-Real LL = 2.0;                      /**< Liquid column length. */
-Real LH = 1.0;                      /**< Liquid column height. */
+Real DL = 2.0; /**< Tank length. */
+
+//Real DH = 2.0; /**< Tank height. */
+Real DH = 2.5;
+
+Real LL = 2.0; /**< Liquid column length. */
+
+//Real LH = 1.0; /**< Liquid column height. */
+Real LH = 1.5;
+
 Real particle_spacing_ref = 0.01;   /**< Initial reference particle spacing. */
 Real BW = particle_spacing_ref * 4; /**< Extending width for boundary conditions. */
 BoundingBox system_domain_bounds(Vec2d(-BW, -BW), Vec2d(DL + BW, DH + BW));
@@ -55,7 +61,10 @@ std::vector<Vecd> createWaterBlockShape()
     std::vector<Vecd> water_block_shape;
     water_block_shape.push_back(Vecd(0.0, 0.0));
     std::vector<Vecd> pnts;
-    Real wave_amplitude = 0.3 * LH;
+
+    //Real wave_amplitude = 0.1 * LH;
+    Real wave_amplitude = 0.1;
+
     for (int n = 0; n <= Nh; n++)
     {
         Real x = n * Lstep;
@@ -65,7 +74,7 @@ std::vector<Vecd> createWaterBlockShape()
     }
     for (int n = 0; n <= Nh - 0; n++)
     {
-        water_block_shape.push_back(Vecd(pnts[n][0], pnts[n][1] + 1.0));
+        water_block_shape.push_back(Vecd(pnts[n][0], pnts[n][1] + LH));
     }
     water_block_shape.push_back(Vecd(LL, 0.0));
     water_block_shape.push_back(Vecd(0.0, 0.0));
