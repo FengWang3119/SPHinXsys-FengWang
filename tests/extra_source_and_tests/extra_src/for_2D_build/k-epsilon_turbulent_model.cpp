@@ -5,7 +5,8 @@ namespace SPH
 //=================================================================================================//
 namespace fluid_dynamics
 {
-using Integration2ndHalfOnlyWallDissipativeRiemann = Integration2ndHalf<Contact<Wall>, AcousticRiemannSolver>;
+using Integration2ndHalfOnlyWallAcousticRiemann = Integration2ndHalf<Contact<Wall>, AcousticRiemannSolver>;
+using Integration2ndHalfOnlyWallDissipativeRiemann = Integration2ndHalf<Contact<Wall>, DissipativeRiemannSolver>;
 
 using TurbuIntegration2ndHalfWithWallDissipativeRieman = ComplexInteraction<Integration2ndHalf<Inner<>, Contact<Wall>>, DissipativeRiemannSolver>;
 //=================================================================================================//
