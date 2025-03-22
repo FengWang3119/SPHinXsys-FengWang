@@ -735,6 +735,23 @@ template <class ParticleScope>
 using TVC_ModifiedLimited_withoutLinearGradientCorrection =
     BaseTransportVelocityCorrectionComplex<SingleResolution, ModifiedTruncatedLinear, NoKernelCorrection, ParticleScope>;
 //=================================================================================================//
+template <typename... InteractionTypes>
+class TurbulentIntegration2ndHalf;
+
+template <class RiemannSolverType>
+class TurbulentIntegration2ndHalf<Contact<Wall>, RiemannSolverType>
+    : public BaseIntegrationWithWall
+{
+  public:
+    explicit TurbulentIntegration2ndHalf(BaseContactRelation &wall_contact_relation);
+    virtual ~TurbulentIntegration2ndHalf(){};
+    inline void interaction(size_t index_i, Real dt = 0.0);
+
+  protected:
+    RiemannSolverType riemann_solver_;
+};
+using Integration2ndHalfOnlyWallAcousticRiemannAdjusted = TurbulentIntegration2ndHalf<Contact<Wall>, AcousticRiemannSolver>;
+//=================================================================================================//
 //*********************TESTING MODULES*********************
 //=================================================================================================//
 /** Note this is a temporary treatment *
