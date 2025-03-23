@@ -208,7 +208,7 @@ int main(int ac, char *av[])
     int screen_output_interval = 100;
     int observation_sample_interval = screen_output_interval * 2;
     int restart_output_interval = screen_output_interval * 10;
-    Real end_time = 10.0;
+    Real end_time = 30.0;
     Real output_interval = 0.05;
     //----------------------------------------------------------------------
     //	Statistics for CPU time
