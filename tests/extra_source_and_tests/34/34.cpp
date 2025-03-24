@@ -12,12 +12,12 @@ using namespace SPH;   // Namespace cite here.
 //----------------------------------------------------------------------
 Real DL = 2.0; /**< Tank length. */
 
-Real DH = 2.0; /**< Tank height. */
+Real DH = 2.5; /**< Tank height. */
 //Real DH = 3.0;
 
 Real LL = 2.0; /**< Liquid column length. */
 
-Real LH = 1.0; /**< Liquid column height. */
+Real LH = 1.5; /**< Liquid column height. */
 //Real LH = 2.0;
 
 Real particle_spacing_ref = 0.01;   /**< Initial reference particle spacing. */
