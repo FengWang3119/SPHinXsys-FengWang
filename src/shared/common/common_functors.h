@@ -57,10 +57,10 @@ class NoLimiter : public Limiter
 {
   public:
     template <typename... Args>
-    NoLimiter(Args &&...args) : Limiter(){};
+    NoLimiter(Args &&... args) : Limiter(){};
 
     template <typename... Args>
-    Real operator()(Args &&...args)
+    Real operator()(Args &&... args)
     {
         return 1.0;
     };
@@ -71,7 +71,7 @@ class TruncatedLinear : public Limiter
     Real ref_, slope_;
 
   public:
-    TruncatedLinear(Real ref, Real slope = 100.0)
+    TruncatedLinear(Real ref, Real slope = 1000.0)
         : Limiter(), ref_(ref), slope_(slope){};
     Real operator()(Real measure)
     {
