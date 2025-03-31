@@ -336,11 +336,12 @@ int main(int ac, char *av[])
                 integration_time += dt;
                 GlobalStaticVariables::physical_time_ += dt;
                 inner_itr++;
-                //std::cout << "num_output_file=" << num_output_file << std::endl;
-                //if (GlobalStaticVariables::physical_time_ >9.3)
-                //{
-                //body_states_recording.writeToFile();
-                //}
+
+                // if (dt < 0.00003)
+                // {
+                //     body_states_recording.writeToFile();
+                //     std::cout << "num_output_file=" << num_output_file << std::endl;
+                // }
             }
             if (number_of_iterations % screen_output_interval == 0)
             {

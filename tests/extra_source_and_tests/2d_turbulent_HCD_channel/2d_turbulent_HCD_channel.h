@@ -19,10 +19,10 @@ using namespace SPH;
 //	Basic geometry parameters and numerical setup.
 //----------------------------------------------------------------------
 Real DH = 2.0; /**< Channel height. */
-Real num_fluid_cross_section = 120.0;
+Real num_fluid_cross_section = 160.0;
 Real extend_in = 2.0;
 Real extend_out = 4.0;
-Real extend_compensate_relaxation = 1.0;
+Real extend_compensate_relaxation = 0.0;
 Real DL1 = 1.0 + extend_in;
 Real DL2 = 1.5;
 Real DL3 = 1.0;
@@ -54,7 +54,7 @@ bool is_always_lattice_arrange_fluid = false;
 //** Empirical parameter for initial stability*
 Real turbulent_module_activate_time = 2.5;
 //** Intial values for K, Epsilon and Mu_t *
-StdVec<Real> initial_turbu_values = {0.000180001, 3.326679e-5, 1.0e-3};
+StdVec<Real> initial_turbu_values = {0.000180001, 3.326679e-5, 1.0e-4};
 
 //Real y_p_constant = DH / 2.0 / num_fluid_cross_section; //** For the first try *
 Real y_p_constant = 0.025;
@@ -132,9 +132,9 @@ BoundingBox system_domain_bounds(left_bottom_point + Vec2d(-2.0 * BW, -2.0 * BW)
 // Output and time average control.
 //----------------------------------------------------------------------
 int screen_output_interval = 100;
-Real end_time = 100.0;              /**< End time. */
-Real Output_Time = end_time / 40.0; /**< Time stamps for output of body states. */
-Real cutoff_time = 50.0;            //** cutoff_time should be a integral and the same as the PY script */
+Real end_time = 100.0;               /**< End time. */
+Real Output_Time = end_time / 200.0; /**< Time stamps for output of body states. */
+Real cutoff_time = 50.0;             //** cutoff_time should be a integral and the same as the PY script */
 //----------------------------------------------------------------------
 // Observation with offset model.
 //----------------------------------------------------------------------
