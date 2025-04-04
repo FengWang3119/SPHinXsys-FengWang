@@ -94,21 +94,20 @@ Vecd right_buffer_translation = point_C + Vecd(0.0, 0.0, -0.5 * buffer_thickness
 //----------------------------------------------------------------------
 //	Cases-dependent geometries
 //----------------------------------------------------------------------
+std::string stl_fluid_path = "./input/tube_volume3.stl";
+Real scale_factor_fluid = 1.0e-3;
+Vecd translation_stl_fluid(0.0, 0.0, 0.0);
 class WaterBlock : public ComplexShape
 {
   public:
     explicit WaterBlock(const std::string &shape_name) : ComplexShape(shape_name)
     {
-        add<TriangleMeshShapeCylinder>(SimTK::UnitVec3(0.0, 0.0, 1.0), Radius_inlet,
-                                       DL_total * 0.5, SimTK_resolution,
-                                       point_OA_half);
+        add<TriangleMeshShapeSTL>(stl_fluid_path, translation_stl_fluid, scale_factor_fluid);
     }
 };
 
 /** Set the file path to the stl file. */
-//std::string stl_structure_path = "./input/tube.stl";
-//std::string stl_structure_path_volume = "./input/tube_volume.stl";
-std::string stl_structure_path_volume2 = "./input/tube_volume3.stl";
+std::string stl_structure_path = "./input/tube_volume3.stl";
 Real scale_factor = 1.0e-3;
 Vecd translation_stl(0.0, 0.0, 0.0);
 class WallBoundaryFromSTL : public ComplexShape
@@ -116,9 +115,8 @@ class WallBoundaryFromSTL : public ComplexShape
   public:
     explicit WallBoundaryFromSTL(const std::string &shape_name) : ComplexShape(shape_name)
     {
-        //add<TriangleMeshShapeSTL>(stl_structure_path, translation_stl, scale_factor);
-        add<ExtrudeShape<TriangleMeshShapeSTL>>(BW, stl_structure_path_volume2, translation_stl, scale_factor);
-        subtract<TriangleMeshShapeSTL>(stl_structure_path_volume2, translation_stl, scale_factor);
+        add<ExtrudeShape<TriangleMeshShapeSTL>>(BW, stl_structure_path, translation_stl, scale_factor);
+        subtract<TriangleMeshShapeSTL>(stl_structure_path, translation_stl, scale_factor);
         //** Inlet/outlet sponge */
         subtract<TriangleMeshShapeCylinder>(SimTK::UnitVec3(0.0, 0.0, 1.0), Radius_inlet,
                                             (2.0 * BW) * 0.5, SimTK_resolution,

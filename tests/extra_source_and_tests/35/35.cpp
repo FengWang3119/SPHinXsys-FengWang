@@ -17,9 +17,12 @@ int main(int ac, char *av[])
     IOEnvironment io_environment(sph_system);
 
     FluidBody water_block(sph_system, makeShared<WaterBlock>("WaterBody"));
-    std::cout << "water_block.defineBodyLevelSetShape starts" << std::endl;
-    water_block.defineBodyLevelSetShape();
-    std::cout << "water_block.defineBodyLevelSetShape ends" << std::endl;
+    if (sph_system.RunParticleRelaxation())
+    {
+        std::cout << "water_block.defineBodyLevelSetShape starts" << std::endl;
+        water_block.defineBodyLevelSetShape();
+        std::cout << "water_block.defineBodyLevelSetShape ends" << std::endl;
+    }
     water_block.defineMaterial<WeaklyCompressibleFluid>(rho0_f, c_f, mu_f);
     ParticleBuffer<ReserveSizeFactor> inlet_particle_buffer(0.5);
     (!sph_system.RunParticleRelaxation() && sph_system.ReloadParticles())
@@ -27,9 +30,12 @@ int main(int ac, char *av[])
         : water_block.generateParticlesWithReserve<BaseParticles, Lattice>(inlet_particle_buffer);
 
     SolidBody wall_boundary(sph_system, makeShared<WallBoundaryFromSTL>("WallFromSTL"));
-    std::cout << "wall_boundary.defineBodyLevelSetShape starts" << std::endl;
-    wall_boundary.defineBodyLevelSetShape();
-    std::cout << "wall_boundary.defineBodyLevelSetShape ends" << std::endl;
+    if (sph_system.RunParticleRelaxation())
+    {
+        std::cout << "wall_boundary.defineBodyLevelSetShape starts" << std::endl;
+        wall_boundary.defineBodyLevelSetShape();
+        std::cout << "wall_boundary.defineBodyLevelSetShape ends" << std::endl;
+    }
     wall_boundary.defineMaterial<Solid>();
     (!sph_system.RunParticleRelaxation() && sph_system.ReloadParticles())
         ? wall_boundary.generateParticles<BaseParticles, Reload>(wall_boundary.getName())
