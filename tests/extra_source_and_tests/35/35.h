@@ -20,56 +20,50 @@ using namespace SPH;
 //	Basic geometry parameters and numerical setup.
 //----------------------------------------------------------------------
 //** Dimension: m s kg */
-//** Z along the channel length */
 Real scale = 1.0;
-Real D_thr = 4.0 * scale;
+Real H_inlet = 1.0;
+Real L_inlet = 2.0 * H_inlet;
+Real Radius_chamber = 8.0 * H_inlet;
+Real H_outlet = H_inlet;
+Real L_outlet = L_inlet;
+Real H_total = 4.0 * H_inlet;
 
-//Real DH = 3.0 * D_thr; /**< Channel height. */
-Real DH = D_thr; /**< Channel height. */
+Real D_hydraulic = 2.0 * L_inlet * H_inlet / (L_inlet + H_inlet);
 
-Real Radius_inlet = DH / 2.0;
+Real num_fluid_cross_H_inlet = 5.0;
+Real resolution_ref = H_inlet / num_fluid_cross_H_inlet; /**< Initial reference particle spacing. */
 
-Real incline_angle = 10.0 * Pi / 180.0;
-Real extend_inlet = 10.0 * D_thr;
-Real L_incline = D_thr / tan(incline_angle); //** 1/tan(10)=5.6 */
-Real L_middle = 10.0 * D_thr;
-Real extend_outlet = 25.0 * D_thr;
-//Real DL = extend_inlet + L_incline + L_middle + extend_outlet; /**< Fluid domain length. */
-Real DL = 4.0 * DH; /**< Fluid domain length. */
+Real BW = resolution_ref * 4; /**< Reference size of the emitter. */
+Real buffer_thickness = 5.0 * resolution_ref;
 
-//** If return to straight */
-Vecd point_O(0.0, 0.0, 0.0); //** O A are the start and end point of the computational domain */
-Vecd point_A = point_O + Vecd(0.0, 0.0, DL);
+//** STL relevant parameters */
+Vecd point_O(0.0, 0.0, 0.0);
+Vecd point_A = point_O + Vecd(0.0, 0.0, H_total);
+Vecd point_B(0.0, 0.0, 0.0);
 
 Vecd point_OA_half = (point_O + point_A) / 2.0;
 
-Real num_fluid_cross_section = 20.0;
-Real resolution_ref = DH / num_fluid_cross_section;        /**< Initial reference particle spacing. */
-Real resolution_ref_thr = D_thr / num_fluid_cross_section; /**< Initial reference particle spacing. */
-Real BW = resolution_ref * 4;                              /**< Reference size of the emitter. */
-Real half_channel_height = DH / 2.0;
-Real buffer_thickness = 5.0 * resolution_ref;
-Real DL_sponge = buffer_thickness;
-
-Vecd point_B = point_O + Vecd(0.0, 0.0, -DL_sponge); //** The total domain is tagged as B C */
-Vecd point_C = point_A + Vecd(0.0, 0.0, DL_sponge);
-Real DL_total = point_C[zAxis] - point_B[zAxis];
-
-const int SimTK_resolution = 20;
-//const Vec3d translation_fluid(0.0, 0.0, full_length * 0.5);
+Real length_outlet = 4.0 * H_inlet;
 //----------------------------------------------------------------------
-//	Domain bounds of the system.
+//	Domain bounds of the system, STL relevant.
 //----------------------------------------------------------------------
-BoundingBox system_domain_bounds(point_B + Vecd(-Radius_inlet, -Radius_inlet, 0.0) + 2.0 * Vecd(-BW, -BW, -BW),
-                                 point_C + Vecd(Radius_inlet, Radius_inlet, 0.0) + 2.0 * Vecd(BW, BW, BW));
+Real extend_domain_length = 2.0; //** Decided by the  g1_in_out_substract_space.stl*/
+BoundingBox system_domain_bounds(point_O +
+                                     Vecd(-Radius_chamber, -Radius_chamber, 0.0) +
+                                     Vecd(-length_outlet, -length_outlet, 0.0) +
+                                     2.0 * Vecd(-BW, -BW, -BW) +
+                                     Vecd(-extend_domain_length, -extend_domain_length, 0.0),
+                                 point_A +
+                                     Vecd(Radius_chamber, Radius_chamber, 0.0) +
+                                     Vecd(length_outlet, length_outlet, 0.0) +
+                                     2.0 * Vecd(BW, BW, BW) +
+                                     Vecd(extend_domain_length, extend_domain_length, 0.0));
 //----------------------------------------------------------------------
 //	Material properties of the fluid.
 //----------------------------------------------------------------------
 Real U_inlet = 1.0;
 Real U_f = U_inlet; //*Characteristic velocity
 
-//Real U_max = 1.5 * (DH / D_thr) * U_inlet; //** An estimated value, generally 1.5 U_inlet *
-//** If return to straight */
 Real U_max = 2.0 * U_inlet; //** An estimated value, generally 1.5 U_inlet *
 
 Real c_f = 10.0 * U_max;
@@ -78,24 +72,27 @@ Real Re = 30.0;
 
 Real Outlet_pressure = 0.0;
 
-Real mu_f = rho0_f * U_f * DH / Re;
-
-Real Re_calculated = U_f * DH * rho0_f / mu_f;
+Real mu_f = rho0_f * U_f * D_hydraulic / Re;
+Real Re_calculated = U_f * D_hydraulic * rho0_f / mu_f;
 
 Real t_ref = 2.0;
 //----------------------------------------------------------------------
 //	The open boundary setting.
 //----------------------------------------------------------------------
 Vecd rotation_axis(1.0, 0.0, 0.0);
-Vecd left_buffer_halfsize = Vecd(Radius_inlet, Radius_inlet, 0.5 * buffer_thickness);
-Vecd left_buffer_translation = point_B + Vecd(0.0, 0.0, 0.5 * buffer_thickness);
-Vecd right_buffer_halfsize = Vecd(Radius_inlet, Radius_inlet, 0.5 * buffer_thickness);
-Vecd right_buffer_translation = point_C + Vecd(0.0, 0.0, -0.5 * buffer_thickness);
+//** L_inlet for X, H_inlet for Z, axis-FLOW for Y, */
+Vecd inlet_buffer_halfsize = 0.5 * Vecd(L_inlet, H_inlet, buffer_thickness);
+
+Vecd inlet_1_buffer_translation = Vecd(0.0, 0.0, 0.0); //** STL relevant */
+
+Vecd left_buffer_translation = Vecd(0.0, 0.0, 0.0); //** STL relevant */
+Vecd right_buffer_halfsize = 0.5 * Vecd(L_outlet, H_outlet, buffer_thickness);
+Vecd right_buffer_translation = Vecd(0.0, 0.0, 0.0); //** STL relevant */
 //----------------------------------------------------------------------
 //	Cases-dependent geometries
 //----------------------------------------------------------------------
-std::string stl_fluid_path = "./input/tube_volume3.stl";
-Real scale_factor_fluid = 1.0e-3;
+std::string stl_fluid_path = "./input/g1.stl";
+Real scale_factor_fluid = 1.0;
 Vecd translation_stl_fluid(0.0, 0.0, 0.0);
 class WaterBlock : public ComplexShape
 {
@@ -107,8 +104,9 @@ class WaterBlock : public ComplexShape
 };
 
 /** Set the file path to the stl file. */
-std::string stl_structure_path = "./input/tube_volume3.stl";
-Real scale_factor = 1.0e-3;
+std::string stl_structure_path = "./input/g1.stl";
+std::string stl_structure_in_out_path = "./input/g1_in_out_substract_space.stl";
+Real scale_factor = 1.0;
 Vecd translation_stl(0.0, 0.0, 0.0);
 class WallBoundaryFromSTL : public ComplexShape
 {
@@ -118,12 +116,7 @@ class WallBoundaryFromSTL : public ComplexShape
         add<ExtrudeShape<TriangleMeshShapeSTL>>(BW, stl_structure_path, translation_stl, scale_factor);
         subtract<TriangleMeshShapeSTL>(stl_structure_path, translation_stl, scale_factor);
         //** Inlet/outlet sponge */
-        subtract<TriangleMeshShapeCylinder>(SimTK::UnitVec3(0.0, 0.0, 1.0), Radius_inlet,
-                                            (2.0 * BW) * 0.5, SimTK_resolution,
-                                            point_B);
-        subtract<TriangleMeshShapeCylinder>(SimTK::UnitVec3(0.0, 0.0, 1.0), Radius_inlet,
-                                            (2.0 * BW) * 0.5, SimTK_resolution,
-                                            point_C);
+        subtract<TriangleMeshShapeSTL>(stl_structure_in_out_path, translation_stl, scale_factor);
     }
 };
 //----------------------------------------------------------------------
@@ -146,18 +139,18 @@ struct InflowVelocity
         Vecd target_velocity = velocity;
         Real u_ave = current_time < t_ref ? 0.5 * u_ref_ * (1.0 - cos(Pi * current_time / t_ref)) : u_ref_;
         //** 3D modification */
-        Real local_radius_square = position[0] * position[0] + position[1] * position[1];
-        Real Radius_inlet_square = Radius_inlet * Radius_inlet;
-        target_velocity[2] = 2.0 * u_ave * (1.0 - local_radius_square / Radius_inlet_square);
-        //target_velocity[2] = u_ave;
+        // Real local_radius_square = position[0] * position[0] + position[1] * position[1];
+        // Real Radius_inlet_square = Radius_inlet * Radius_inlet;
+        // target_velocity[2] = 2.0 * u_ave * (1.0 - local_radius_square / Radius_inlet_square);
+        target_velocity[2] = u_ave;
 
-        if (local_radius_square > Radius_inlet_square)
-        {
-            std::cout << "Particles out of domain, wrong inlet velocity." << std::endl;
-            std::cout << "local_radius_square=" << local_radius_square << std::endl;
-            std::cout << "Radius_inlet=" << Radius_inlet << std::endl;
-            std::cin.get();
-        }
+        // if (local_radius_square > Radius_inlet_square)
+        // {
+        //     std::cout << "Particles out of domain, wrong inlet velocity." << std::endl;
+        //     std::cout << "local_radius_square=" << local_radius_square << std::endl;
+        //     std::cout << "Radius_inlet=" << Radius_inlet << std::endl;
+        //     std::cin.get();
+        // }
         target_velocity[0] = 0.0;
         target_velocity[1] = 0.0;
         return target_velocity;
@@ -190,168 +183,168 @@ struct LeftInflowPressure
 // Observation with offset model.
 //----------------------------------------------------------------------
 //** For getting centerline velocity *
-namespace observe_centerline
-{
-constexpr const char *namespace_prefix = "centerline";
-Vecd pos_observe_start = point_O;
-Real sparsity_ratio = 5.0;
-Real length_observing_line = DL;
-Vecd unit_direction_observe = Vecd(0.0, 0.0, 1.0);
-Real observer_offset_distance = 0.0;
+// namespace observe_centerline
+// {
+// constexpr const char *namespace_prefix = "centerline";
+// Vecd pos_observe_start = point_O;
+// Real sparsity_ratio = 5.0;
+// Real length_observing_line = DL;
+// Vecd unit_direction_observe = Vecd(0.0, 0.0, 1.0);
+// Real observer_offset_distance = 0.0;
 
-int num_observer_points = std::round(length_observing_line / resolution_ref / sparsity_ratio); //**Every particle is regarded as a cell monitor*
-Real observe_spacing = length_observing_line / num_observer_points;
+// int num_observer_points = std::round(length_observing_line / resolution_ref / sparsity_ratio); //**Every particle is regarded as a cell monitor*
+// Real observe_spacing = length_observing_line / num_observer_points;
 
-StdVec<Vecd> observation_location;
-void get_observation_locations()
-{
-    for (int i = 0; i < num_observer_points; ++i)
-    {
-        Vecd pos_observer_i = pos_observe_start + i * observe_spacing * unit_direction_observe;
-        if (i == 0)
-        {
-            pos_observer_i -= observer_offset_distance * unit_direction_observe;
-        }
-        if (i == num_observer_points - 1)
-        {
-            pos_observer_i += observer_offset_distance * unit_direction_observe;
-        }
-        observation_location.push_back(pos_observer_i);
-    }
-}
-void output_observer_theoretical_pos_on_line()
-{
-    std::string filename = "../bin/output/" + std::string(namespace_prefix) + "_theoretical_pos_on_line.dat";
-    std::ofstream outfile(filename);
-    if (!outfile.is_open())
-    {
-        std::cerr << "Error: Unable to open file " << filename << " for writing." << std::endl;
-        return;
-    }
-    for (int i = 0; i < num_observer_points; ++i)
-    {
-        outfile << observation_location[i].dot(unit_direction_observe) << "\n";
-    }
-    outfile.close();
-}
-} // namespace observe_centerline
+// StdVec<Vecd> observation_location;
+// void get_observation_locations()
+// {
+//     for (int i = 0; i < num_observer_points; ++i)
+//     {
+//         Vecd pos_observer_i = pos_observe_start + i * observe_spacing * unit_direction_observe;
+//         if (i == 0)
+//         {
+//             pos_observer_i -= observer_offset_distance * unit_direction_observe;
+//         }
+//         if (i == num_observer_points - 1)
+//         {
+//             pos_observer_i += observer_offset_distance * unit_direction_observe;
+//         }
+//         observation_location.push_back(pos_observer_i);
+//     }
+// }
+// void output_observer_theoretical_pos_on_line()
+// {
+//     std::string filename = "../bin/output/" + std::string(namespace_prefix) + "_theoretical_pos_on_line.dat";
+//     std::ofstream outfile(filename);
+//     if (!outfile.is_open())
+//     {
+//         std::cerr << "Error: Unable to open file " << filename << " for writing." << std::endl;
+//         return;
+//     }
+//     for (int i = 0; i < num_observer_points; ++i)
+//     {
+//         outfile << observation_location[i].dot(unit_direction_observe) << "\n";
+//     }
+//     outfile.close();
+// }
+// } // namespace observe_centerline
 
-//** For getting cross-section velocity *
-namespace observe_cross_sections
-{
-constexpr const char *namespace_prefix = "cross_sections";
-const int number_observe_line = 5;
-Real observer_offset_distance = 2.0 * resolution_ref;
-Vecd unit_direction_observe(0.0, 1.0, 0.0);
-// ** Determine the observing start point. *
-Real observe_start_z[number_observe_line] = {
-    0.0 * DL + observer_offset_distance,
-    0.25 * DL,
-    0.50 * DL,
-    0.75 * DL,
-    0.99 * DL - observer_offset_distance};
+// //** For getting cross-section velocity *
+// namespace observe_cross_sections
+// {
+// constexpr const char *namespace_prefix = "cross_sections";
+// const int number_observe_line = 5;
+// Real observer_offset_distance = 2.0 * resolution_ref;
+// Vecd unit_direction_observe(0.0, 1.0, 0.0);
+// // ** Determine the observing start point. *
+// Real observe_start_z[number_observe_line] = {
+//     0.0 * DL + observer_offset_distance,
+//     0.25 * DL,
+//     0.50 * DL,
+//     0.75 * DL,
+//     0.99 * DL - observer_offset_distance};
 
-Real observe_start_x[number_observe_line] = {
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0};
+// Real observe_start_x[number_observe_line] = {
+//     0.0,
+//     0.0,
+//     0.0,
+//     0.0,
+//     0.0};
 
-Real observe_start_y[number_observe_line] = {
-    0.5 * resolution_ref - Radius_inlet,
-    0.5 * resolution_ref - Radius_inlet,
-    0.5 * resolution_ref - Radius_inlet,
-    0.5 * resolution_ref - Radius_inlet,
-    0.5 * resolution_ref - Radius_inlet};
+// Real observe_start_y[number_observe_line] = {
+//     0.5 * resolution_ref - Radius_inlet,
+//     0.5 * resolution_ref - Radius_inlet,
+//     0.5 * resolution_ref - Radius_inlet,
+//     0.5 * resolution_ref - Radius_inlet,
+//     0.5 * resolution_ref - Radius_inlet};
 
-// ** Determine the length of the observing line and other information. *
-Real observe_line_length[number_observe_line] = {0.0};
-int num_observer_points[number_observe_line] = {0};
+// // ** Determine the length of the observing line and other information. *
+// Real observe_line_length[number_observe_line] = {0.0};
+// int num_observer_points[number_observe_line] = {0};
 
-void getObservingLineLengthAndEndPoints()
-{
-    for (int i = 0; i < number_observe_line; ++i)
-    {
-        observe_line_length[i] = DH;
-        num_observer_points[i] = std::round(observe_line_length[i] / resolution_ref);
-    }
-}
+// void getObservingLineLengthAndEndPoints()
+// {
+//     for (int i = 0; i < number_observe_line; ++i)
+//     {
+//         observe_line_length[i] = DH;
+//         num_observer_points[i] = std::round(observe_line_length[i] / resolution_ref);
+//     }
+// }
 
-StdVec<Vecd> observation_locations;
-StdVec<Vecd> observation_theoretical_locations;
-void getPositionsOfMultipleObserveLines()
-{
-    getObservingLineLengthAndEndPoints();
-    for (int k = 0; k < number_observe_line; ++k)
-    {
-        Vecd pos_observe_start(observe_start_x[k], observe_start_y[k], observe_start_z[k]);
-        int num_observer_point = num_observer_points[k];
-        Real observe_spacing = observe_line_length[k] / num_observer_point;
-        for (int i = 0; i < num_observer_point; ++i)
-        {
-            Real offset = 0.0;
-            offset = (i == 0 ? -observer_offset_distance : (i == num_observer_point - 1 ? observer_offset_distance : 0.0));
-            Vecd pos_observer_i = pos_observe_start + (i * observe_spacing + offset) * unit_direction_observe;
-            Vecd pos_observer_i_no_offset = pos_observe_start + i * observe_spacing * unit_direction_observe;
-            observation_locations.push_back(pos_observer_i);
-            observation_theoretical_locations.push_back(pos_observer_i_no_offset);
-        }
-    }
-}
-void output_observe_positions()
-{
-    std::string filename = "../bin/output/" + std::string(namespace_prefix) + "_observer_positions.dat";
-    std::ofstream outfile(filename);
-    if (!outfile.is_open())
-    {
-        std::cerr << "Error: Unable to open file " << filename << " for writing." << std::endl;
-        return;
-    }
-    for (const Vecd &position : observation_locations)
-    {
-        for (int i = 0; i < position.size(); ++i)
-        {
-            outfile << position[i] << " ";
-        }
-        outfile << "\n";
-    }
-    outfile.close();
-}
-void output_observer_theoretical_pos_on_line()
-{
-    std::string filename = "../bin/output/" + std::string(namespace_prefix) + "_theoretical_pos_on_line.dat";
-    std::ofstream outfile(filename);
-    if (!outfile.is_open())
-    {
-        std::cerr << "Error: Unable to open file " << filename << " for writing." << std::endl;
-        return;
-    }
-    for (int j = 0; j < number_observe_line; ++j)
-    {
-        for (int i = 0; i < num_observer_points[j]; ++i)
-        {
-            outfile << observation_theoretical_locations[i].dot(unit_direction_observe) << "\n";
-        }
-    }
-    outfile.close();
-}
-void output_number_observe_points_on_lines()
-{
-    std::string filename = "../bin/output/" + std::string(namespace_prefix) + "_observer_num_points_on_lines.dat";
-    std::ofstream outfile(filename);
-    if (!outfile.is_open())
-    {
-        std::cerr << "Error: Unable to open file " << filename << " for writing." << std::endl;
-        return;
-    }
-    for (const int &number : num_observer_points)
-    {
-        outfile << number << "\n";
-    }
-    outfile.close();
-}
-} // namespace observe_cross_sections
+// StdVec<Vecd> observation_locations;
+// StdVec<Vecd> observation_theoretical_locations;
+// void getPositionsOfMultipleObserveLines()
+// {
+//     getObservingLineLengthAndEndPoints();
+//     for (int k = 0; k < number_observe_line; ++k)
+//     {
+//         Vecd pos_observe_start(observe_start_x[k], observe_start_y[k], observe_start_z[k]);
+//         int num_observer_point = num_observer_points[k];
+//         Real observe_spacing = observe_line_length[k] / num_observer_point;
+//         for (int i = 0; i < num_observer_point; ++i)
+//         {
+//             Real offset = 0.0;
+//             offset = (i == 0 ? -observer_offset_distance : (i == num_observer_point - 1 ? observer_offset_distance : 0.0));
+//             Vecd pos_observer_i = pos_observe_start + (i * observe_spacing + offset) * unit_direction_observe;
+//             Vecd pos_observer_i_no_offset = pos_observe_start + i * observe_spacing * unit_direction_observe;
+//             observation_locations.push_back(pos_observer_i);
+//             observation_theoretical_locations.push_back(pos_observer_i_no_offset);
+//         }
+//     }
+// }
+// void output_observe_positions()
+// {
+//     std::string filename = "../bin/output/" + std::string(namespace_prefix) + "_observer_positions.dat";
+//     std::ofstream outfile(filename);
+//     if (!outfile.is_open())
+//     {
+//         std::cerr << "Error: Unable to open file " << filename << " for writing." << std::endl;
+//         return;
+//     }
+//     for (const Vecd &position : observation_locations)
+//     {
+//         for (int i = 0; i < position.size(); ++i)
+//         {
+//             outfile << position[i] << " ";
+//         }
+//         outfile << "\n";
+//     }
+//     outfile.close();
+// }
+// void output_observer_theoretical_pos_on_line()
+// {
+//     std::string filename = "../bin/output/" + std::string(namespace_prefix) + "_theoretical_pos_on_line.dat";
+//     std::ofstream outfile(filename);
+//     if (!outfile.is_open())
+//     {
+//         std::cerr << "Error: Unable to open file " << filename << " for writing." << std::endl;
+//         return;
+//     }
+//     for (int j = 0; j < number_observe_line; ++j)
+//     {
+//         for (int i = 0; i < num_observer_points[j]; ++i)
+//         {
+//             outfile << observation_theoretical_locations[i].dot(unit_direction_observe) << "\n";
+//         }
+//     }
+//     outfile.close();
+// }
+// void output_number_observe_points_on_lines()
+// {
+//     std::string filename = "../bin/output/" + std::string(namespace_prefix) + "_observer_num_points_on_lines.dat";
+//     std::ofstream outfile(filename);
+//     if (!outfile.is_open())
+//     {
+//         std::cerr << "Error: Unable to open file " << filename << " for writing." << std::endl;
+//         return;
+//     }
+//     for (const int &number : num_observer_points)
+//     {
+//         outfile << number << "\n";
+//     }
+//     outfile.close();
+// }
+// } // namespace observe_cross_sections
 
 //** For regression test *
-StdVec<Vecd> observer_location_center_point = {point_O + Vecd(0.0, 0.0, 0.5 * DL)};
+StdVec<Vecd> observer_location_center_point = {point_O + Vecd(0.0, 0.0, 0.5 * H_total)};
