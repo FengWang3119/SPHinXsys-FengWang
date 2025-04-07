@@ -105,7 +105,7 @@ class WaterBlock : public ComplexShape
 
 /** Set the file path to the stl file. */
 std::string stl_structure_path = "./input/g1.stl";
-std::string stl_structure_in_out_path = "./input/g1_in_out_substract_space.stl";
+std::string stl_structure_in_out_path = "./input/g1_in_out_sub_space_nooverlap.stl";
 Real scale_factor = 1.0;
 Vecd translation_stl(0.0, 0.0, 0.0);
 class WallBoundaryFromSTL : public ComplexShape

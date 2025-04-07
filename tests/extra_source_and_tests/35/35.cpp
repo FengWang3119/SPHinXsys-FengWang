@@ -20,7 +20,7 @@ int main(int ac, char *av[])
     if (sph_system.RunParticleRelaxation())
     {
         std::cout << "water_block.defineBodyLevelSetShape starts" << std::endl;
-        water_block.defineBodyLevelSetShape();
+        water_block.defineBodyLevelSetShape()->cleanLevelSet();
         std::cout << "water_block.defineBodyLevelSetShape ends" << std::endl;
     }
     water_block.defineMaterial<WeaklyCompressibleFluid>(rho0_f, c_f, mu_f);
@@ -33,7 +33,7 @@ int main(int ac, char *av[])
     if (sph_system.RunParticleRelaxation())
     {
         std::cout << "wall_boundary.defineBodyLevelSetShape starts" << std::endl;
-        wall_boundary.defineBodyLevelSetShape();
+        wall_boundary.defineBodyLevelSetShape()->correctLevelSetSign();
         std::cout << "wall_boundary.defineBodyLevelSetShape ends" << std::endl;
     }
     wall_boundary.defineMaterial<Solid>();
