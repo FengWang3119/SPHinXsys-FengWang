@@ -131,13 +131,13 @@ struct InflowVelocity
         target_velocity[2] = SMAX(2.0 * u_ave * (1.0 - local_radius_square / Radius_inlet_square), 0.0);
         //target_velocity[2] = u_ave;
 
-        if (local_radius_square > Radius_inlet_square)
-        {
-            std::cout << "Particles out of domain, wrong inlet velocity." << std::endl;
-            std::cout << "local_radius_square=" << local_radius_square << std::endl;
-            std::cout << "Radius_inlet=" << Radius_inlet_square << std::endl;
-            //std::this_thread::sleep_for(std::chrono::seconds(10));
-        }
+        // if (local_radius_square > Radius_inlet_square)
+        // {
+        //     std::cout << "Particles out of domain, wrong inlet velocity." << std::endl;
+        //     std::cout << "local_radius_square=" << local_radius_square << std::endl;
+        //     std::cout << "Radius_inlet=" << Radius_inlet_square << std::endl;
+        //     //std::this_thread::sleep_for(std::chrono::seconds(10));
+        // }
         target_velocity[0] = 0.0;
         target_velocity[1] = 0.0;
         return target_velocity;
