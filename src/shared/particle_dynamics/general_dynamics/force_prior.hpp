@@ -35,7 +35,8 @@ GravityForce<GravityType>::GravityForce(SPHBody &sph_body, const GravityType &gr
 template <class GravityType>
 void GravityForce<GravityType>::GravityForce::update(size_t index_i, Real dt)
 {
-    if(pos_[index_i][1]>=0.004 && pos_[index_i][1]<=0.008) //** Temporary */
+    Real radius = sqrt(pos_[index_i][0] * pos_[index_i][0] + pos_[index_i][1] * pos_[index_i][1]);
+    if(radius <= 0.002) //** Temporary */
     {
         current_force_[index_i] =
         mass_[index_i] * gravity_.InducedAcceleration(pos_[index_i], *physical_time_);

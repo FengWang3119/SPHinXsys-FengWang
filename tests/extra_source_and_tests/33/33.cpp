@@ -160,8 +160,8 @@ int main(int ac, char *av[])
     //Dynamics1Level<fluid_dynamics::Integration1stHalfWithWallRiemann_RKGC_OBC> pressure_relaxation(water_block_inner, water_wall_contact);
 
     /** Density relaxation algorithm by using position verlet time stepping. */
-    Dynamics1Level<fluid_dynamics::Integration2ndHalfWithWallNoRiemann> density_relaxation(water_block_inner, water_wall_contact);
-    //Dynamics1Level<fluid_dynamics::Integration2ndHalfWithWallRiemann> density_relaxation(water_block_inner, water_wall_contact);
+    //Dynamics1Level<fluid_dynamics::Integration2ndHalfWithWallNoRiemann> density_relaxation(water_block_inner, water_wall_contact);
+    Dynamics1Level<fluid_dynamics::Integration2ndHalfWithWallRiemann> density_relaxation(water_block_inner, water_wall_contact);
     //Dynamics1Level<fluid_dynamics::Integration2ndHalfWithWall<DissipativeRiemannSolver>> density_relaxation(water_block_inner, water_wall_contact);
 
     /** Choose one, ordinary or turbulent. Computing viscous force, */
@@ -174,11 +174,11 @@ int main(int ac, char *av[])
     //InteractionWithUpdate<fluid_dynamics::TVC_RKGC_OBC<BulkParticles>> transport_velocity_correction(water_block_inner, water_wall_contact);
 
     /** A temporarily test for the limiter . */
-    SimpleDynamics<GetLimiterOfTransportVelocityCorrection> get_limiter_of_transport_velocity_correction(water_block);
+    //SimpleDynamics<GetLimiterOfTransportVelocityCorrection> get_limiter_of_transport_velocity_correction(water_block);
 
-    SimpleDynamics<GetPressureGradientResidue> get_pressure_gradient_residue(water_block);
-    InteractionDynamics<GetPressureGradientResidueComplex_RKGC> get_RKGC_pressure_gradient_residue(water_block_inner, water_wall_contact);
-    SimpleDynamics<NonDimensionalisePressure> get_dimensionless_pressure(water_block);
+    //SimpleDynamics<GetPressureGradientResidue> get_pressure_gradient_residue(water_block);
+    //InteractionDynamics<GetPressureGradientResidueComplex_RKGC> get_RKGC_pressure_gradient_residue(water_block_inner, water_wall_contact);
+    //SimpleDynamics<NonDimensionalisePressure> get_dimensionless_pressure(water_block);
 
     /** Evaluation of density by summation approach. */
     //InteractionWithUpdate<fluid_dynamics::DensitySummationFreeStreamComplex> update_density_by_summation(water_block_inner, water_wall_contact);
@@ -228,24 +228,24 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     /** Output the body states. */
     BodyStatesRecordingToVtp body_states_recording(sph_system);
-    body_states_recording.addToWrite<Real>(water_block, "Pressure");            // output for debug
-    body_states_recording.addToWrite<int>(water_block, "Indicator");            // output for debug
-    body_states_recording.addToWrite<Real>(water_block, "Density");             // output for debug
-    body_states_recording.addToWrite<Vecd>(water_block, "ZeroGradientResidue"); // output for debug
+    //body_states_recording.addToWrite<Real>(water_block, "Pressure");            // output for debug
+    //body_states_recording.addToWrite<int>(water_block, "Indicator");            // output for debug
+    //body_states_recording.addToWrite<Real>(water_block, "Density");             // output for debug
+    //body_states_recording.addToWrite<Vecd>(water_block, "ZeroGradientResidue"); // output for debug
     ObservedQuantityRecording<Vecd> write_recorded_water_centerline_velocity("Velocity", fluid_observer_centerline_contact);
     ObservedQuantityRecording<Real> write_recorded_water_centerline_pressure("Pressure", fluid_observer_centerline_contact);
     ObservedQuantityRecording<Vecd> write_recorded_water_velocity_cross_section("Velocity", fluid_observer_cross_section_contact);
     ObservedQuantityRecording<Vecd> write_recorded_water_velocity_cross_section_Y0("Velocity", fluid_observer_cross_section_contact_Y0);
-    body_states_recording.addToWrite<int>(water_block, "BufferParticleIndicator");
-    body_states_recording.addToWrite<Real>(water_block, "VolumetricMeasure");
-    body_states_recording.addToWrite<Matd>(water_block, "LinearGradientCorrectionMatrix");
+    //body_states_recording.addToWrite<int>(water_block, "BufferParticleIndicator");
+    //body_states_recording.addToWrite<Real>(water_block, "VolumetricMeasure");
+    //body_states_recording.addToWrite<Matd>(water_block, "LinearGradientCorrectionMatrix");
     /**
      * @brief Setup geometry and initial conditions.
      */
     sph_system.initializeSystemCellLinkedLists();
     sph_system.initializeSystemConfigurations();
     wall_boundary_normal_direction.exec();
-    body_states_recording.addToWrite<Vecd>(wall_boundary, "NormalDirection");
+    //body_states_recording.addToWrite<Vecd>(wall_boundary, "NormalDirection");
 
     /** Tag inlet/outlet truncated particles */
     inlet_outlet_surface_particle_indicator.exec();
@@ -262,7 +262,7 @@ int main(int ac, char *av[])
     Real end_time = 1.8;                        /**< End time. */
     Real cutoff_ratio = 0.92;                   //** cutoff_time should be a integral and the same as the PY script */
     Real cutoff_time = cutoff_ratio * end_time; //** cutoff_time should be a integral and the same as the PY script */
-    Real num_output_files = 10.0;
+    Real num_output_files = 500.0;
     Real Output_Time = end_time / num_output_files; /**< Time stamps for output of body states. */
     Real index_check_file_fully_developed = num_output_files * cutoff_ratio;
     Real dt = 0.0; /**< Default acoustic time step sizes. */
