@@ -239,6 +239,8 @@ int main(int ac, char *av[])
     //body_states_recording.addToWrite<int>(water_block, "BufferParticleIndicator");
     //body_states_recording.addToWrite<Real>(water_block, "VolumetricMeasure");
     //body_states_recording.addToWrite<Matd>(water_block, "LinearGradientCorrectionMatrix");
+    
+    WriteToVtpIfVelocityOutOfBound abnornal_velocity_recording(sph_system, 1.5);
     /**
      * @brief Setup geometry and initial conditions.
      */
@@ -336,6 +338,7 @@ int main(int ac, char *av[])
                 //{
                 //body_states_recording.writeToFile();
                 //}
+                abnornal_velocity_recording.writeToFile();
             }
             if (number_of_iterations % screen_output_interval == 0)
             {
