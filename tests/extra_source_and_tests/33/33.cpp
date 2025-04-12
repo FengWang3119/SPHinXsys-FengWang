@@ -240,7 +240,7 @@ int main(int ac, char *av[])
     //body_states_recording.addToWrite<Real>(water_block, "VolumetricMeasure");
     //body_states_recording.addToWrite<Matd>(water_block, "LinearGradientCorrectionMatrix");
     
-    WriteToVtpIfVelocityOutOfBound abnornal_velocity_recording(sph_system, 1.5);
+    WriteToVtpIfVelocityOutOfBound abnornal_velocity_recording(sph_system, 10);
     /**
      * @brief Setup geometry and initial conditions.
      */
