@@ -173,7 +173,8 @@ Integration2ndHalf<Inner<>, RiemannSolverType>::
     Integration2ndHalf(BaseInnerRelation &inner_relation)
     : BaseIntegration<DataDelegateInner>(inner_relation), riemann_solver_(this->fluid_, this->fluid_),
       mass_(particles_->getVariableDataByName<Real>("Mass")),
-      Vol_(particles_->getVariableDataByName<Real>("VolumetricMeasure")) {}
+      Vol_(particles_->getVariableDataByName<Real>("VolumetricMeasure")),
+      physical_time_(this->sph_system_.template getSystemVariableDataByName<Real>("PhysicalTime")) {}
 //=================================================================================================//
 template <class RiemannSolverType>
 void Integration2ndHalf<Inner<>, RiemannSolverType>::initialization(size_t index_i, Real dt)

@@ -167,6 +167,7 @@ class Integration2ndHalf<Inner<>, RiemannSolverType>
   protected:
     RiemannSolverType riemann_solver_;
     Real *mass_, *Vol_;
+    Real *physical_time_;
 };
 using Integration2ndHalfInnerRiemann = Integration2ndHalf<Inner<>, AcousticRiemannSolver>;
 using Integration2ndHalfInnerNoRiemann = Integration2ndHalf<Inner<>, NoRiemannSolver>;
