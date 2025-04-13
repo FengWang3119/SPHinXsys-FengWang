@@ -24,9 +24,9 @@ Real scale = 1.0;
 Real D_thr = 4.0 * scale;
 Real DH = 3.0 * D_thr; /**< Channel height. */
 Real incline_angle = 10.0 * Pi / 180.0;
-Real extend_inlet = 10.0 * D_thr;
 Real L_incline = D_thr / tan(incline_angle); //** 1/tan(10)=5.6 */
 Real L_middle = 10.0 * D_thr;
+Real extend_inlet = 25.0 * D_thr - L_middle - L_incline;
 Real extend_outlet = 25.0 * D_thr;
 Real DL = extend_inlet + L_incline + L_middle + extend_outlet; /**< Channel length. */
 
