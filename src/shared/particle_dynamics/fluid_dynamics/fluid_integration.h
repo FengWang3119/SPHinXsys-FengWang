@@ -206,7 +206,7 @@ template <class RiemannSolverType>
 using Integration2ndHalfWithWall = ComplexInteraction<Integration2ndHalf<Inner<>, Contact<Wall>>, RiemannSolverType>;
 
 using Integration2ndHalfWithWallNoRiemann = Integration2ndHalfWithWall<NoRiemannSolver>;
-using Integration2ndHalfWithWallRiemann = Integration2ndHalfWithWall<AcousticRiemannSolver>;
+using Integration2ndHalfWithWallRiemann = Integration2ndHalfWithWall<DissipativeRiemannSolver>;
 
 using MultiPhaseIntegration2ndHalfWithWallRiemann =
     ComplexInteraction<Integration2ndHalf<Inner<>, Contact<>, Contact<Wall>>, AcousticRiemannSolver>;
