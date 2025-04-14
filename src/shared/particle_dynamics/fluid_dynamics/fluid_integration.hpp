@@ -203,7 +203,7 @@ void Integration2ndHalf<Inner<>, RiemannSolverType>::interaction(size_t index_i,
         Real u_jump = (vel_[index_i] - vel_[index_j]).dot(e_ij);
         density_change_rate += u_jump * dW_ijV_j;
         
-        if(*physical_time_ < 0.5)
+        if(*physical_time_ < 0.05)
         {
             p_dissipation += riemann_solver_.DissipativePJump(u_jump) * dW_ijV_j * e_ij;
         }
@@ -241,7 +241,7 @@ void Integration2ndHalf<Contact<Wall>, RiemannSolverType>::interaction(size_t in
             density_change_rate += (vel_[index_i] - vel_in_wall).dot(e_ij) * dW_ijV_j;
             Real u_jump = 2.0 * (vel_[index_i] - vel_ave_k[index_j]).dot(n_k[index_j]);
             
-            if(*physical_time_ < 0.5)
+            if(*physical_time_ < 0.05)
             {
                 p_dissipation += riemann_solver_.DissipativePJump(u_jump) * dW_ijV_j * n_k[index_j];
             }
