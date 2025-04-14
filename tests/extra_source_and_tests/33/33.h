@@ -60,7 +60,7 @@ Real Re = 500.0;
 
 Real mu_f = rho0_f * U_thr * D_thr / Re;
 
-Real start_up_time_ref = 0.1;
+Real start_up_time_ref = 0.05;
 
 Real Outlet_pressure = 0.0;
 //----------------------------------------------------------------------

@@ -202,7 +202,12 @@ void Integration2ndHalf<Inner<>, RiemannSolverType>::interaction(size_t index_i,
 
         Real u_jump = (vel_[index_i] - vel_[index_j]).dot(e_ij);
         density_change_rate += u_jump * dW_ijV_j;
-        p_dissipation += riemann_solver_.DissipativePJump(u_jump) * dW_ijV_j * e_ij;
+        
+        if(*physical_time_ < 0.5)
+        {
+            p_dissipation += riemann_solver_.DissipativePJump(u_jump) * dW_ijV_j * e_ij;
+        }
+
     }
     drho_dt_[index_i] += density_change_rate * rho_[index_i];
     force_[index_i] = p_dissipation * Vol_[index_i];
@@ -212,7 +217,8 @@ template <class RiemannSolverType>
 Integration2ndHalf<Contact<Wall>, RiemannSolverType>::
     Integration2ndHalf(BaseContactRelation &wall_contact_relation)
     : BaseIntegrationWithWall(wall_contact_relation),
-      riemann_solver_(this->fluid_, this->fluid_) {}
+      riemann_solver_(this->fluid_, this->fluid_),
+      physical_time_(this->sph_system_.template getSystemVariableDataByName<Real>("PhysicalTime")) {}
 //=================================================================================================//
 template <class RiemannSolverType>
 void Integration2ndHalf<Contact<Wall>, RiemannSolverType>::interaction(size_t index_i, Real dt)
@@ -234,7 +240,12 @@ void Integration2ndHalf<Contact<Wall>, RiemannSolverType>::interaction(size_t in
             Vecd vel_in_wall = 2.0 * vel_ave_k[index_j] - vel_[index_i];
             density_change_rate += (vel_[index_i] - vel_in_wall).dot(e_ij) * dW_ijV_j;
             Real u_jump = 2.0 * (vel_[index_i] - vel_ave_k[index_j]).dot(n_k[index_j]);
-            p_dissipation += riemann_solver_.DissipativePJump(u_jump) * dW_ijV_j * n_k[index_j];
+            
+            if(*physical_time_ < 0.5)
+            {
+                p_dissipation += riemann_solver_.DissipativePJump(u_jump) * dW_ijV_j * n_k[index_j];
+            }
+            
         }
     }
     drho_dt_[index_i] += density_change_rate * this->rho_[index_i];

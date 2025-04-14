@@ -184,6 +184,7 @@ class Integration2ndHalf<Contact<Wall>, RiemannSolverType>
 
   protected:
     RiemannSolverType riemann_solver_;
+    Real *physical_time_;
 };
 
 template <class RiemannSolverType>
