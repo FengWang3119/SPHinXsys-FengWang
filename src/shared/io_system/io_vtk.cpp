@@ -159,6 +159,7 @@ void WriteToVtpIfVelocityOutOfBound::writeWithFileName(const std::string &sequen
         BodyStatesRecordingToVtp::writeWithFileName(sequence);
         std::cout << "\n Velocity is out of bound at iteration step " << sequence
                   << "\n The body states have been outputted and the simulation terminates here. \n";
+        std::cin.get();
     }
 }
 //=============================================================================================//
