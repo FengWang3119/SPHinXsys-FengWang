@@ -226,11 +226,11 @@ Real observer_offset_distance = 2.0 * resolution_ref;
 Vecd unit_direction_observe(0.0, 1.0, 0.0);
 // ** Determine the observing start point. *
 Real observe_start_z[number_observe_line] = {
-    observe_base_z - 0.088,
+    observe_base_z - 0.064,
     observe_base_z - 0.02,
     observe_base_z + 0.0,
-    observe_base_z + 0.032,
-    observe_base_z + 0.06};
+    observe_base_z + 0.06,
+    observe_base_z + 0.08};
 
 Real observe_start_x[number_observe_line] = {
     0.0,
