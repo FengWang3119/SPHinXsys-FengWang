@@ -1,10 +1,3 @@
-/**
- * @file 	2d_turbulent_channel_PBC.h
- * @brief 	This is the case file for the test of flow passing by a cylinder.
- * @details  We consider a flow passing by a cylinder in 2D.
- * @author 	Xiangyu Hu, Chi Zhang and Luhui Han
- */
-
 #include "bidirectional_buffer.h"
 #include "density_correciton.h"
 #include "density_correciton.hpp"
