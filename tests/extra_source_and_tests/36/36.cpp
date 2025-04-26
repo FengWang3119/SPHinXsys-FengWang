@@ -176,7 +176,7 @@ int main(int ac, char *av[])
 
     /** Initialize particle acceleration. */
     StartupAcceleration time_dependent_acceleration(Vec2d(U_f, 0.0), 2.0);
-    SimpleDynamics<GravityForce<StartupAcceleration>> apply_gravity_force(water_block, time_dependent_acceleration);
+    SimpleDynamics<GravityForce<StartupAcceleration>> apply_startup_gravity_force(water_block, time_dependent_acceleration);
 
     //----------------------------------------------------------------------
     // Left/Inlet buffer
@@ -278,7 +278,7 @@ int main(int ac, char *av[])
         /** Integrate time (loop) until the next output time. */
         while (integration_time < Output_Time)
         {
-            apply_gravity_force.exec();
+            apply_startup_gravity_force.exec();
 
             //Real Dt = get_fluid_advection_time_step_size.exec();
             Real Dt = get_turbulent_fluid_advection_time_step_size.exec();
