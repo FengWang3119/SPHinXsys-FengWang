@@ -285,7 +285,10 @@ int main(int ac, char *av[])
         /** Integrate time (loop) until the next output time. */
         while (integration_time < Output_Time)
         {
-            apply_startup_gravity_force.exec();
+            if (physical_time <= 2.0)
+            {
+                apply_startup_gravity_force.exec();
+            }
 
             //Real Dt = get_fluid_advection_time_step_size.exec();
             Real Dt = get_turbulent_fluid_advection_time_step_size.exec();
