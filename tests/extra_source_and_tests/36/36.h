@@ -61,6 +61,8 @@ Real mu_f = rho0_f * U_f * DH / Re;
 Real Re_calculated = U_f * DH * rho0_f / mu_f;
 
 Real DH_C = DH - 2.0 * offset_distance;
+
+Real gravity_g = 9.8;
 //----------------------------------------------------------------------
 //	The emitter block with offset model.
 //----------------------------------------------------------------------

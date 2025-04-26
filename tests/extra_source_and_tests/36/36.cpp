@@ -178,6 +178,9 @@ int main(int ac, char *av[])
     StartupAcceleration time_dependent_acceleration(Vec2d(U_f, 0.0), 2.0);
     SimpleDynamics<GravityForce<StartupAcceleration>> apply_startup_gravity_force(water_block, time_dependent_acceleration);
 
+    Gravity gravity(Vecd(0.0, -gravity_g));
+    SimpleDynamics<GravityForce<Gravity>> constant_gravity(water_block, gravity);
+
     //----------------------------------------------------------------------
     // Left/Inlet buffer
     //----------------------------------------------------------------------
@@ -228,6 +231,7 @@ int main(int ac, char *av[])
     body_states_recording.addToWrite<int>(water_block, "Indicator");            // output for debug
     body_states_recording.addToWrite<Real>(water_block, "Density");             // output for debug
     body_states_recording.addToWrite<Vecd>(water_block, "ZeroGradientResidue"); // output for debug
+    body_states_recording.addToWrite<Vecd>(water_block, "ForcePrior");
     ObservedQuantityRecording<Vecd> write_recorded_water_velocity("Velocity", fluid_observer_contact);
     ObservedQuantityRecording<Real> write_recorded_water_k("TurbulenceKineticEnergy", fluid_observer_contact);
     ObservedQuantityRecording<Real> write_recorded_water_mut("TurbulentViscosity", fluid_observer_contact);
@@ -240,6 +244,9 @@ int main(int ac, char *av[])
     sph_system.initializeSystemCellLinkedLists();
     sph_system.initializeSystemConfigurations();
     wall_boundary_normal_direction.exec();
+
+    //constant_gravity.exec();
+
     body_states_recording.addToWrite<Vecd>(wall_boundary, "NormalDirection");
 
     /** Tag inlet/outlet truncated particles */
