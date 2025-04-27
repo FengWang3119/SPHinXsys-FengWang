@@ -106,7 +106,21 @@ TurbulentLinearGradientCorrectionMatrix<DataDelegationType>::
     this->particles_->template addVariableToWrite<Matd>("LinearGradientCorrectionMatrix");
     this->particles_->template addVariableToSort<Matd>("LinearGradientCorrectionMatrix");
 }
-
+//=================================================================================================//
+template <class ExternalForceType>
+StartUpForce<ExternalForceType>::StartUpForce(SPHBody &sph_body, const ExternalForceType &external_force)
+    : ForcePrior(sph_body, "StartUpForce"), external_force_(external_force),
+      pos_(particles_->getVariableDataByName<Vecd>("Position")),
+      mass_(particles_->registerStateVariable<Real>("Mass")),
+      physical_time_(sph_system_.getSystemVariableDataByName<Real>("PhysicalTime")) {}
+//=================================================================================================//
+template <class ExternalForceType>
+void StartUpForce<ExternalForceType>::StartUpForce::update(size_t index_i, Real dt)
+{
+    current_force_[index_i] =
+        mass_[index_i] * external_force_.InducedAcceleration(pos_[index_i], *physical_time_);
+    ForcePrior::update(index_i, dt);
+}
 //=================================================================================================//
 } // namespace fluid_dynamics
 //=================================================================================================//

@@ -176,7 +176,7 @@ int main(int ac, char *av[])
 
     /** Initialize particle acceleration. */
     StartupAcceleration time_dependent_acceleration(Vec2d(U_f, 0.0), 2.0);
-    SimpleDynamics<GravityForce<StartupAcceleration>> apply_startup_gravity_force(water_block, time_dependent_acceleration);
+    SimpleDynamics<fluid_dynamics::StartUpForce<StartupAcceleration>> apply_startup_gravity_force(water_block, time_dependent_acceleration);
 
     Gravity gravity(Vecd(0.0, -gravity_g));
     SimpleDynamics<GravityForce<Gravity>> constant_gravity(water_block, gravity);
@@ -238,14 +238,14 @@ int main(int ac, char *av[])
     ObservedQuantityRecording<Real> write_recorded_water_epsilon("TurbulentDissipation", fluid_observer_contact);
     body_states_recording.addToWrite<int>(water_block, "BufferParticleIndicator");
     RegressionTestDynamicTimeWarping<ObservedQuantityRecording<Real>> write_centerpoint_quantity("TurbulentViscosity", observer_centerpoint_contact);
+
+    WriteToVtpIfVelocityOutOfBound abnormal_velocity_recording(sph_system, 10);
     /**
      * @brief Setup geometry and initial conditions.
      */
     sph_system.initializeSystemCellLinkedLists();
     sph_system.initializeSystemConfigurations();
     wall_boundary_normal_direction.exec();
-
-    //constant_gravity.exec();
 
     body_states_recording.addToWrite<Vecd>(wall_boundary, "NormalDirection");
 
@@ -285,9 +285,11 @@ int main(int ac, char *av[])
         /** Integrate time (loop) until the next output time. */
         while (integration_time < Output_Time)
         {
-            if (physical_time <= 2.0)
+            apply_startup_gravity_force.exec();
+
+            if (physical_time > 10.0)
             {
-                apply_startup_gravity_force.exec();
+                constant_gravity.exec();
             }
 
             //Real Dt = get_fluid_advection_time_step_size.exec();
@@ -348,10 +350,11 @@ int main(int ac, char *av[])
                 physical_time += dt;
                 inner_itr++;
                 //std::cout << "num_output_file=" << num_output_file << std::endl;
-                //if (physical_time >9.3)
-                //{
-                //body_states_recording.writeToFile();
-                //}
+                if (physical_time > 10.0)
+                {
+                    body_states_recording.writeToFile();
+                }
+                //abnormal_velocity_recording.writeToFile();
             }
             if (number_of_iterations % screen_output_interval == 0)
             {

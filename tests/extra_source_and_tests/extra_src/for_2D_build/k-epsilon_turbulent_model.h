@@ -557,6 +557,21 @@ using TVC_NotLimited_RKGC_OBFCorrection =
 template <class ParticleScope>
 using TVC_ModifiedLimited_withoutLinearGradientCorrection =
     BaseTransportVelocityCorrectionComplex<SingleResolution, ModifiedTruncatedLinear, NoKernelCorrection, ParticleScope>;
+
+template <class ExternalForceType>
+class StartUpForce : public ForcePrior
+{
+  protected:
+    const ExternalForceType external_force_;
+    Vecd *pos_;
+    Real *mass_;
+    Real *physical_time_;
+
+  public:
+    StartUpForce(SPHBody &sph_body, const ExternalForceType &external_force);
+    virtual ~StartUpForce(){};
+    void update(size_t index_i, Real dt = 0.0);
+};
 //=================================================================================================//
 } // namespace fluid_dynamics
 } // namespace SPH
