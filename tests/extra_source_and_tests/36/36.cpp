@@ -207,7 +207,7 @@ int main(int ac, char *av[])
     SimpleDynamics<fluid_dynamics::PressureConditionCorrection<RightOutflowPressure>> right_outflow_pressure_condition(right_emitter);
     //----------------------------------------------------------------------
 
-    InteractionWithUpdate<fluid_dynamics::DensitySummationPressureComplex> update_fluid_density_pressure(water_block_inner, water_wall_contact);
+    InteractionWithUpdate<fluid_dynamics::DensitySummationFreeStreamComplex> update_fluid_density_pressure(water_block_inner, water_wall_contact);
 
     /** Choose one, ordinary or turbulent. Time step size without considering sound wave speed. */
     ReduceDynamics<fluid_dynamics::TurbulentAdvectionTimeStepSize> get_turbulent_fluid_advection_time_step_size(water_block, U_f);
@@ -354,7 +354,7 @@ int main(int ac, char *av[])
                 {
                     body_states_recording.writeToFile();
                 }
-                //abnormal_velocity_recording.writeToFile();
+                abnormal_velocity_recording.writeToFile();
             }
             if (number_of_iterations % screen_output_interval == 0)
             {
