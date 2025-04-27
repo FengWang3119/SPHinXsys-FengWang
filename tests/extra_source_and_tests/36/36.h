@@ -52,7 +52,9 @@ Real U_f = U_inlet;         //*Characteristic velocity
 Real U_max = 1.5 * U_inlet; //** An estimated value, generally 1.5 U_inlet *
 Real c_f = 10.0 * U_max;
 Real rho0_f = 1.0; /**< Density. */
-Real Re = 20000.0;
+
+//Real Re = 20000.0;
+Real Re = 200.0;
 
 Real Outlet_pressure = 0.0;
 
@@ -172,9 +174,9 @@ struct InflowVelocity
         Vecd target_velocity = velocity;
         Real u_ave = current_time < t_ref_ ? 0.5 * u_ref_ * (1.0 - cos(Pi * current_time / t_ref_)) : u_ref_;
         //target_velocity[0] = 1.5 * u_ave * SMAX(0.0, 1.0 - position[1] * position[1] / halfsize_[1] / halfsize_[1]);
-        //target_velocity[0] = 1.5 * u_ave * (1.0 - position[1] * position[1] / half_channel_height / half_channel_height);
-        target_velocity[0] = u_ave;
-        if (1)
+        target_velocity[0] = 1.5 * u_ave * (1.0 - position[1] * position[1] / half_channel_height / half_channel_height);
+        //target_velocity[0] = u_ave;
+        if (0)
         {
             //** Impose fully-developed velocity from PYTHON result */
             //** Calculate the distance to wall, Y. position[1] is the distance to the centerline */
