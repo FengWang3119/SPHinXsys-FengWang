@@ -1137,6 +1137,10 @@ void GetLimiterOfTransportVelocityCorrection::update(size_t index_i, Real dt)
     limiter_tvc_[index_i] = SMIN(slope_ * squared_norm * h_ref_ * h_ref_, Real(1));
 }
 //=================================================================================================//
+ConstantExternalForce::ConstantExternalForce(Vecd gravity_vector, Vecd reference_position)
+    : reference_acceleration_(gravity_vector),
+      zero_potential_reference_(reference_position) {}
+//=================================================================================================//
 } // namespace fluid_dynamics
 //=================================================================================================//
 } // namespace SPH

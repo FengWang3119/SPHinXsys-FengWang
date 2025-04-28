@@ -572,6 +572,27 @@ class ExternalBodyForce : public ForcePrior
     virtual ~ExternalBodyForce(){};
     void update(size_t index_i, Real dt = 0.0);
 };
+
+class ConstantExternalForce
+{
+  protected:
+    Vecd reference_acceleration_;
+    Vecd zero_potential_reference_;
+
+  public:
+    ConstantExternalForce(Vecd gravity_vector, Vecd reference_position = Vecd::Zero());
+    ~ConstantExternalForce(){};
+
+    Vecd InducedAcceleration(const Vecd &position = Vecd::Zero(), Real physical_time = 0.0) const
+    {
+        return reference_acceleration_;
+    };
+
+    Real getPotential(const Vecd &position) const
+    {
+        return reference_acceleration_.dot(zero_potential_reference_ - position);
+    };
+};
 //=================================================================================================//
 } // namespace fluid_dynamics
 } // namespace SPH

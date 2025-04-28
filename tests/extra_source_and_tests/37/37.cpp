@@ -175,8 +175,8 @@ int main(int ac, char *av[])
     InteractionWithUpdate<fluid_dynamics::DensitySummationComplexFreeSurface> update_density_by_summation(water_block_inner, water_wall_contact);
 
     /** Initialize particle acceleration. */
-    StartupAcceleration time_dependent_acceleration(Vec2d(U_f, 0.0), 2.0);
-    SimpleDynamics<fluid_dynamics::ExternalBodyForce<StartupAcceleration>> apply_startup_gravity_force(water_block, time_dependent_acceleration);
+    fluid_dynamics::ConstantExternalForce constant_external_force(Vec2d(0.001, 0.0));
+    SimpleDynamics<fluid_dynamics::ExternalBodyForce<fluid_dynamics::ConstantExternalForce>> impose_constant_external_force(water_block, constant_external_force);
 
     Gravity gravity(Vecd(0.0, -gravity_g));
     SimpleDynamics<GravityForce<Gravity>> constant_gravity(water_block, gravity);
@@ -275,7 +275,7 @@ int main(int ac, char *av[])
     size_t number_of_iterations = sph_system.RestartStep();
     int screen_output_interval = 100;
     int observation_sample_interval = screen_output_interval * 2;
-    Real end_time = 200.0;               /**< End time. */
+    Real end_time = 1200.0;              /**< End time. */
     Real Output_Time = end_time / 200.0; /**< Time stamps for output of body states. */
     Real dt = 0.0;                       /**< Default acoustic time step sizes. */
     //----------------------------------------------------------------------
@@ -298,7 +298,7 @@ int main(int ac, char *av[])
         /** Integrate time (loop) until the next output time. */
         while (integration_time < Output_Time)
         {
-            apply_startup_gravity_force.exec();
+            impose_constant_external_force.exec();
 
             if (physical_time > 10.0)
             {
