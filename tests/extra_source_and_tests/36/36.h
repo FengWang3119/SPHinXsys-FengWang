@@ -137,7 +137,17 @@ std::vector<Vecd> createInnerWallShape()
 
     return water_block_shape;
 }
+std::vector<Vecd> createDownsideWallShape()
+{
+    std::vector<Vecd> water_block_shape;
+    water_block_shape.push_back(Vecd(-DL_sponge - BW, -BW));
+    water_block_shape.push_back(Vecd(-DL_sponge - BW, 0.0));
+    water_block_shape.push_back(Vecd(DL + BW, 0.0));
+    water_block_shape.push_back(Vecd(DL + BW, -BW));
+    water_block_shape.push_back(Vecd(-DL_sponge - BW, -BW));
 
+    return water_block_shape;
+}
 /**
  * @brief 	Wall boundary body definition.
  */
@@ -146,11 +156,14 @@ class WallBoundary : public ComplexShape
   public:
     explicit WallBoundary(const std::string &shape_name) : ComplexShape(shape_name)
     {
-        MultiPolygon outer_dummy_boundary(createOuterWallShape());
-        add<ExtrudeShape<MultiPolygonShape>>(-offset_distance + BW, outer_dummy_boundary, "OuterDummyBoundary");
+        //MultiPolygon outer_dummy_boundary(createOuterWallShape());
+        //add<ExtrudeShape<MultiPolygonShape>>(-offset_distance + BW, outer_dummy_boundary, "OuterDummyBoundary");
 
-        MultiPolygon inner_dummy_boundary(createInnerWallShape());
-        subtract<ExtrudeShape<MultiPolygonShape>>(-offset_distance, inner_dummy_boundary, "InnerDummyBoundary");
+        //MultiPolygon inner_dummy_boundary(createInnerWallShape());
+        //subtract<ExtrudeShape<MultiPolygonShape>>(-offset_distance, inner_dummy_boundary, "InnerDummyBoundary");
+
+        MultiPolygon dummy_boundary(createDownsideWallShape());
+        add<MultiPolygonShape>(dummy_boundary, "DummyBoundary");
     }
 };
 

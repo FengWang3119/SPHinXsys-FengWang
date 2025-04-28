@@ -262,9 +262,9 @@ int main(int ac, char *av[])
     size_t number_of_iterations = sph_system.RestartStep();
     int screen_output_interval = 100;
     int observation_sample_interval = screen_output_interval * 2;
-    Real end_time = 200.0;             /**< End time. */
-    Real Output_Time = end_time / 4.0; /**< Time stamps for output of body states. */
-    Real dt = 0.0;                     /**< Default acoustic time step sizes. */
+    Real end_time = 200.0;                /**< End time. */
+    Real Output_Time = end_time / 2000.0; /**< Time stamps for output of body states. */
+    Real dt = 0.0;                        /**< Default acoustic time step sizes. */
     //----------------------------------------------------------------------
     //	Statistics for CPU time
     //----------------------------------------------------------------------
@@ -289,7 +289,7 @@ int main(int ac, char *av[])
 
             if (physical_time > 10.0)
             {
-                constant_gravity.exec();
+                //constant_gravity.exec();
             }
 
             Real Dt = get_fluid_advection_time_step_size.exec();
