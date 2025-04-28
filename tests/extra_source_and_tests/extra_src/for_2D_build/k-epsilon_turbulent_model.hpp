@@ -108,14 +108,14 @@ TurbulentLinearGradientCorrectionMatrix<DataDelegationType>::
 }
 //=================================================================================================//
 template <class ExternalForceType>
-StartUpForce<ExternalForceType>::StartUpForce(SPHBody &sph_body, const ExternalForceType &external_force)
-    : ForcePrior(sph_body, "StartUpForce"), external_force_(external_force),
+ExternalBodyForce<ExternalForceType>::ExternalBodyForce(SPHBody &sph_body, const ExternalForceType &external_force)
+    : ForcePrior(sph_body, "ExternalBodyForce"), external_force_(external_force),
       pos_(particles_->getVariableDataByName<Vecd>("Position")),
       mass_(particles_->registerStateVariable<Real>("Mass")),
       physical_time_(sph_system_.getSystemVariableDataByName<Real>("PhysicalTime")) {}
 //=================================================================================================//
 template <class ExternalForceType>
-void StartUpForce<ExternalForceType>::StartUpForce::update(size_t index_i, Real dt)
+void ExternalBodyForce<ExternalForceType>::ExternalBodyForce::update(size_t index_i, Real dt)
 {
     current_force_[index_i] =
         mass_[index_i] * external_force_.InducedAcceleration(pos_[index_i], *physical_time_);

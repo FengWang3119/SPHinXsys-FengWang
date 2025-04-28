@@ -559,7 +559,7 @@ using TVC_ModifiedLimited_withoutLinearGradientCorrection =
     BaseTransportVelocityCorrectionComplex<SingleResolution, ModifiedTruncatedLinear, NoKernelCorrection, ParticleScope>;
 
 template <class ExternalForceType>
-class StartUpForce : public ForcePrior
+class ExternalBodyForce : public ForcePrior
 {
   protected:
     const ExternalForceType external_force_;
@@ -568,8 +568,8 @@ class StartUpForce : public ForcePrior
     Real *physical_time_;
 
   public:
-    StartUpForce(SPHBody &sph_body, const ExternalForceType &external_force);
-    virtual ~StartUpForce(){};
+    ExternalBodyForce(SPHBody &sph_body, const ExternalForceType &external_force);
+    virtual ~ExternalBodyForce(){};
     void update(size_t index_i, Real dt = 0.0);
 };
 //=================================================================================================//

@@ -176,7 +176,7 @@ int main(int ac, char *av[])
 
     /** Initialize particle acceleration. */
     StartupAcceleration time_dependent_acceleration(Vec2d(U_f, 0.0), 2.0);
-    SimpleDynamics<fluid_dynamics::StartUpForce<StartupAcceleration>> apply_startup_gravity_force(water_block, time_dependent_acceleration);
+    SimpleDynamics<fluid_dynamics::ExternalBodyForce<StartupAcceleration>> apply_startup_gravity_force(water_block, time_dependent_acceleration);
 
     Gravity gravity(Vecd(0.0, -gravity_g));
     SimpleDynamics<GravityForce<Gravity>> constant_gravity(water_block, gravity);
