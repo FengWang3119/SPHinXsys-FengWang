@@ -11,8 +11,8 @@ using namespace SPH;
 //----------------------------------------------------------------------
 //	Basic geometry parameters and numerical setup.
 //----------------------------------------------------------------------
-Real DH = 2.0;  /**< Channel height. */
-Real DL = 30.0; /**< Channel length. */
+Real DH = 2.0; /**< Channel height. */
+Real DL = DH;  /**< Channel length. */
 Real num_fluid_cross_section = 20.0;
 
 //----------------------------------------------------------------------
@@ -37,7 +37,10 @@ Real resolution_ref = (DH - 2.0 * y_p_constant) / (num_fluid_cross_section - 1.0
 Real offset_distance = y_p_constant - resolution_ref / 2.0;                        //** Basically offset distance is large than or equal to 0 *
 
 Real BW = resolution_ref * 4; /**< Reference size of the emitter. */
-Real DL_sponge = resolution_ref * 20;
+
+//Real DL_sponge = resolution_ref * 20;
+Real DL_sponge = 0.0;
+
 Real half_channel_height = DH / 2.0;
 //----------------------------------------------------------------------
 //	Domain bounds of the system.
