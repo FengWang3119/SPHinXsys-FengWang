@@ -11,7 +11,7 @@ using namespace SPH;
 //----------------------------------------------------------------------
 //	Basic geometry parameters and numerical setup.
 //----------------------------------------------------------------------
-Real DH = 2.0; /**< Channel height. */
+Real DH = 0.4; /**< Channel height. */
 Real DL = DH;  /**< Channel length. */
 Real num_fluid_cross_section = 20.0;
 
@@ -32,7 +32,9 @@ bool is_source_term_linearisation = false;
 //** Initial values for K, Epsilon and Mu_t *
 StdVec<Real> initial_turbu_values = {0.000180001, 3.326679e-5, 1.0e-9};
 
-Real y_p_constant = 0.05;
+Real y_p_constant = DH / 2.0 / num_fluid_cross_section; //** For the first try *
+//Real y_p_constant = 0.05;
+
 Real resolution_ref = (DH - 2.0 * y_p_constant) / (num_fluid_cross_section - 1.0); /**< Initial reference particle spacing. */
 Real offset_distance = y_p_constant - resolution_ref / 2.0;                        //** Basically offset distance is large than or equal to 0 *
 
@@ -51,7 +53,7 @@ BoundingBox system_domain_bounds(Vec2d(-DL_sponge - 2.0 * BW, -BW), Vec2d(DL + 2
 //	Material properties of the fluid.
 //----------------------------------------------------------------------
 Real gravity_g = 9.8;
-Real Acc_f = 0.001; //** Reference external acceleration */
+Real Acc_f = 0.00625; //** Reference external acceleration */
 
 Real U_inlet = 1.0;
 Real U_f = U_inlet;         //*Characteristic velocity
@@ -60,13 +62,14 @@ Real c_f = 10.0 * U_max;
 Real rho0_f = 1.0; /**< Density. */
 
 //Real Re = 20000.0;
-Real Re = 200.0;
+//Real Re = 200.0;
 
 Real Outlet_pressure = 0.0;
 
-Real mu_f = rho0_f * U_f * DH / Re;
+//Real mu_f = rho0_f * U_f * DH / Re;
+Real mu_f = 1.0e-6 * rho0_f;
 
-Real Re_calculated = U_f * DH * rho0_f / mu_f;
+//Real Re_calculated = U_f * DH * rho0_f / mu_f;
 
 Real DH_C = DH - 2.0 * offset_distance;
 //----------------------------------------------------------------------
