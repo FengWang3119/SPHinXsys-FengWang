@@ -50,6 +50,9 @@ BoundingBox system_domain_bounds(Vec2d(-DL_sponge - 2.0 * BW, -BW), Vec2d(DL + 2
 //----------------------------------------------------------------------
 //	Material properties of the fluid.
 //----------------------------------------------------------------------
+Real gravity_g = 9.8;
+Real Acc_f = 0.001; //** Reference external acceleration */
+
 Real U_inlet = 1.0;
 Real U_f = U_inlet;         //*Characteristic velocity
 Real U_max = 1.5 * U_inlet; //** An estimated value, generally 1.5 U_inlet *
@@ -66,8 +69,6 @@ Real mu_f = rho0_f * U_f * DH / Re;
 Real Re_calculated = U_f * DH * rho0_f / mu_f;
 
 Real DH_C = DH - 2.0 * offset_distance;
-
-Real gravity_g = 9.8;
 //----------------------------------------------------------------------
 //	The emitter block with offset model.
 //----------------------------------------------------------------------

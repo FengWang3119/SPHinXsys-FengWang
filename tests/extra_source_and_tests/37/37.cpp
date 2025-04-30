@@ -175,7 +175,7 @@ int main(int ac, char *av[])
     InteractionWithUpdate<fluid_dynamics::DensitySummationComplexFreeSurface> update_density_by_summation(water_block_inner, water_wall_contact);
 
     /** Initialize particle acceleration. */
-    fluid_dynamics::ConstantExternalForce constant_external_force(Vec2d(0.001, 0.0));
+    fluid_dynamics::ConstantExternalForce constant_external_force(Vec2d(Acc_f, 0.0));
     SimpleDynamics<fluid_dynamics::ExternalBodyForce<fluid_dynamics::ConstantExternalForce>> impose_constant_external_force(water_block, constant_external_force);
 
     Gravity gravity(Vecd(0.0, -gravity_g));
