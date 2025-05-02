@@ -331,7 +331,7 @@ int main(int ac, char *av[])
             {
                 dt = SMIN(get_fluid_time_step_size.exec(), Dt);
 
-                turbulent_kinetic_energy_force.exec();
+                //turbulent_kinetic_energy_force.exec();
 
                 pressure_relaxation.exec(dt);
 
