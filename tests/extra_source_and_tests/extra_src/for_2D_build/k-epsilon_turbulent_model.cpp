@@ -1094,7 +1094,6 @@ void ConstrainNormalVelocityInRegionP::update(size_t index_i, Real dt)
     {
         vel_[index_i] = vel_[index_i] - (vel_[index_i].dot(e_nearest_normal_[index_i])) * e_nearest_normal_[index_i];
     }
-    vel_[index_i][1] = 0.0;
 }
 //=================================================================================================//
 void TurbulentLinearGradientCorrectionMatrix<Inner<>>::interaction(size_t index_i, Real dt)
