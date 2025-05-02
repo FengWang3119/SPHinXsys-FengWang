@@ -53,7 +53,7 @@ BoundingBox system_domain_bounds(Vec2d(-DL_sponge - 2.0 * BW, -BW), Vec2d(DL + 2
 //	Material properties of the fluid.
 //----------------------------------------------------------------------
 Real gravity_g = 9.8;
-Real Acc_f = 0.00625; //** Reference external acceleration */
+Real Acc_f = 0.002; //** Reference external acceleration */
 
 Real U_inlet = 1.0;
 Real U_f = U_inlet;         //*Characteristic velocity
