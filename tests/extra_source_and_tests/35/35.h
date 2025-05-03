@@ -116,7 +116,7 @@ class WallBoundaryFromSTL : public ComplexShape
         add<ExtrudeShape<TriangleMeshShapeSTL>>(BW, stl_structure_path, translation_stl, scale_factor);
         subtract<TriangleMeshShapeSTL>(stl_structure_path, translation_stl, scale_factor);
         //** Inlet/outlet sponge */
-        subtract<TriangleMeshShapeSTL>(stl_structure_in_out_path, translation_stl, scale_factor);
+        //subtract<TriangleMeshShapeSTL>(stl_structure_in_out_path, translation_stl, scale_factor);
     }
 };
 //----------------------------------------------------------------------
