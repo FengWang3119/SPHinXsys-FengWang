@@ -82,5 +82,21 @@ void NonDimensionalisePressure::update(size_t index_i, Real dt)
     p_dimensionless_[index_i] = p_[index_i] / rho_[index_i];
 }
 //=================================================================================================//
+DisposerInBufferDeletion::
+    DisposerInBufferDeletion(BodyAlignedBoxByCell &aligned_box_part)
+    : BaseLocalDynamics<BodyPartByCell>(aligned_box_part),
+      pos_(particles_->getVariableDataByName<Vecd>("Position")),
+      aligned_box_(aligned_box_part.getAlignedBoxShape()) {}
+//=================================================================================================//
+void DisposerInBufferDeletion::update(size_t index_i, Real dt)
+{
+    mutex_switch_to_buffer_.lock();
+    while (aligned_box_.checkContain(pos_[index_i]) && index_i < particles_->TotalRealParticles())
+    {
+        particles_->switchToBufferParticle(index_i);
+    }
+    mutex_switch_to_buffer_.unlock();
+}
+//=================================================================================================//
 } // namespace SPH
   //=================================================================================================//

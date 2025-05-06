@@ -9,7 +9,7 @@ int main(int ac, char *av[])
     SPHSystem sph_system(system_domain_bounds, resolution_ref);
 
     /** Tag for run particle relaxation for the initial body fitted distribution. */
-    sph_system.setRunParticleRelaxation(true);
+    sph_system.setRunParticleRelaxation(false);
     /** Tag for computation start with relaxed body fitted particles distribution. */
     sph_system.setReloadParticles(true);
 
@@ -75,6 +75,23 @@ int main(int ac, char *av[])
         using namespace relax_dynamics;
         /** body topology only for particle relaxation */
         InnerRelation wall_boundary_inner(wall_boundary);
+
+        BodyAlignedBoxByCell inlet_1_detection_box(wall_boundary,
+                                                   makeShared<AlignedBoxShape>(yAxis, Transform(Rotation3d(inlet_1_rotation), Vec3d(inlet_1_sub_buffer_translation)), inlet_buffer_halfsize));
+        BodyAlignedBoxByCell inlet_2_detection_box(wall_boundary,
+                                                   makeShared<AlignedBoxShape>(yAxis, Transform(Rotation3d(inlet_2_rotation), Vec3d(inlet_2_sub_buffer_translation)), inlet_buffer_halfsize));
+        BodyAlignedBoxByCell inlet_3_detection_box(wall_boundary,
+                                                   makeShared<AlignedBoxShape>(yAxis, Transform(Rotation3d(inlet_3_rotation), Vec3d(inlet_3_sub_buffer_translation)), inlet_buffer_halfsize));
+        BodyAlignedBoxByCell inlet_4_detection_box(wall_boundary,
+                                                   makeShared<AlignedBoxShape>(yAxis, Transform(Rotation3d(inlet_4_rotation), Vec3d(inlet_4_sub_buffer_translation)), inlet_buffer_halfsize));
+        BodyAlignedBoxByCell inlet_5_detection_box(wall_boundary,
+                                                   makeShared<AlignedBoxShape>(yAxis, Transform(Rotation3d(inlet_5_rotation), Vec3d(inlet_5_sub_buffer_translation)), inlet_buffer_halfsize));
+        BodyAlignedBoxByCell inlet_6_detection_box(wall_boundary,
+                                                   makeShared<AlignedBoxShape>(yAxis, Transform(Rotation3d(inlet_6_rotation), Vec3d(inlet_6_sub_buffer_translation)), inlet_buffer_halfsize));
+        BodyAlignedBoxByCell inlet_7_detection_box(wall_boundary,
+                                                   makeShared<AlignedBoxShape>(yAxis, Transform(Rotation3d(inlet_7_rotation), Vec3d(inlet_7_sub_buffer_translation)), inlet_buffer_halfsize));
+        BodyAlignedBoxByCell inlet_8_detection_box(wall_boundary,
+                                                   makeShared<AlignedBoxShape>(yAxis, Transform(Rotation3d(inlet_8_rotation), Vec3d(inlet_8_sub_buffer_translation)), inlet_buffer_halfsize));
         //----------------------------------------------------------------------
         //	Methods used for particle relaxation.
         //----------------------------------------------------------------------
@@ -90,6 +107,17 @@ int main(int ac, char *av[])
         /** A  Physics relaxation step. */
         RelaxationStepLevelSetCorrectionInner relaxation_step_inner(wall_boundary_inner);
         RelaxationStepLevelSetCorrectionInner relaxation_step_inner_water(water_block_inner);
+
+        SimpleDynamics<DisposerInBufferDeletion> inlet_1_particles_deletion(inlet_1_detection_box);
+        SimpleDynamics<DisposerInBufferDeletion> inlet_2_particles_deletion(inlet_2_detection_box);
+        SimpleDynamics<DisposerInBufferDeletion> inlet_3_particles_deletion(inlet_3_detection_box);
+        SimpleDynamics<DisposerInBufferDeletion> inlet_4_particles_deletion(inlet_4_detection_box);
+        SimpleDynamics<DisposerInBufferDeletion> inlet_5_particles_deletion(inlet_5_detection_box);
+        SimpleDynamics<DisposerInBufferDeletion> inlet_6_particles_deletion(inlet_6_detection_box);
+        SimpleDynamics<DisposerInBufferDeletion> inlet_7_particles_deletion(inlet_7_detection_box);
+        SimpleDynamics<DisposerInBufferDeletion> inlet_8_particles_deletion(inlet_8_detection_box);
+
+        ParticleSorting particle_sorting_wall(wall_boundary);
         //----------------------------------------------------------------------
         //	Particle relaxation starts here.
         //----------------------------------------------------------------------
@@ -103,7 +131,8 @@ int main(int ac, char *av[])
         write_inserted_body_to_vtp_water.writeToFile(0);
 
         int ite_p = 0;
-        while (ite_p < 1000)
+        int ite_max_step = 1000;
+        while (ite_p < ite_max_step)
         {
             relaxation_step_inner.exec();
             relaxation_step_inner_water.exec();
@@ -117,6 +146,23 @@ int main(int ac, char *av[])
         }
         std::cout << "The physics relaxation process of the wall_boundary finish !" << std::endl;
         std::cout << "The physics relaxation process of the water_block finish !" << std::endl;
+
+        inlet_1_particles_deletion.exec();
+        inlet_2_particles_deletion.exec();
+        inlet_3_particles_deletion.exec();
+        inlet_4_particles_deletion.exec();
+        inlet_5_particles_deletion.exec();
+        inlet_6_particles_deletion.exec();
+        inlet_7_particles_deletion.exec();
+        inlet_8_particles_deletion.exec();
+
+        write_inserted_body_to_vtp.writeToFile((ite_max_step + 200));
+        write_inserted_body_to_vtp_water.writeToFile((ite_max_step + 200));
+
+        //particle_sorting_wall.exec();
+        //wall_boundary.updateCellLinkedList();
+        //write_inserted_body_to_vtp.writeToFile((ite_max_step + 400));
+        //write_inserted_body_to_vtp_water.writeToFile((ite_max_step + 400));
 
         /** Output results. */
         write_particle_reload_files.writeToFile(0);
@@ -196,6 +242,7 @@ int main(int ac, char *av[])
     //	Define the configuration related particles dynamics.
     //----------------------------------------------------------------------
     ParticleSorting particle_sorting(water_block);
+    ParticleSorting particle_sorting_wall(wall_boundary);
     //----------------------------------------------------------------------
     //	File output and regression check.
     //----------------------------------------------------------------------
@@ -250,8 +297,8 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------------------------------------
     //	Main loop starts here.
     //----------------------------------------------------------------------------------------------------
-    // std::cout << "Simulation starts?" << std::endl;
-    // std::cin.get();
+    std::cout << "Simulation starts?" << std::endl;
+    std::cin.get();
     int num_output_file = 0;
     while (physical_time < end_time)
     {

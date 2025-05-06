@@ -124,5 +124,19 @@ class NonDimensionalisePressure : public LocalDynamics
     Real *p_;
     Real *p_dimensionless_;
 };
+class DisposerInBufferDeletion : public BaseLocalDynamics<BodyPartByCell>
+{
+  public:
+    DisposerInBufferDeletion(BodyAlignedBoxByCell &aligned_box_part);
+    virtual ~DisposerInBufferDeletion(){};
+
+    void update(size_t index_i, Real dt = 0.0);
+
+  protected:
+    std::mutex mutex_switch_to_buffer_; /**< mutex exclusion for memory conflict */
+    Vecd *pos_;
+    AlignedBoxShape &aligned_box_;
+};
+
 } // namespace SPH
 #endif // K_EPSILON_TURBULENT_MODEL_H

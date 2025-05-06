@@ -79,11 +79,78 @@ Real t_ref = 2.0;
 //----------------------------------------------------------------------
 //	The open boundary setting.
 //----------------------------------------------------------------------
+Vecd point_1(7.0, -8.0, 0.5);
+Vecd point_2(10.6066, -0.707107, 0.5);
+Vecd point_3(8.0, 7.0, 0.5);
+Vecd point_4(0.707107, 10.6066, 0.5);
+Vecd point_5(-7.0, 8.0, 0.5);
+Vecd point_6(-10.6066, 0.707107, 0.5);
+Vecd point_7(-8.0, -7.0, 0.5);
+Vecd point_8(-0.707107, -10.6066, 0.5);
+Vecd point_out(11.9373, 0.0, 3.5);
+
 Vecd rotation_axis(1.0, 0.0, 0.0);
+Vecd axis_vector_z(0.0, 0.0, 1.0);
+Vecd axis_vector_y(0.0, 1.0, 0.0);
+
 //** L_inlet for X, H_inlet for Z, axis-FLOW for Y, */
 Vecd inlet_buffer_halfsize = 0.5 * Vecd(L_inlet, H_inlet, buffer_thickness);
 
-Vecd inlet_1_buffer_translation = Vecd(0.0, 0.0, 0.0); //** STL relevant */
+Real inlet_1_rotation_angle = 0.0;
+Rotation3d inlet_1_rotation(inlet_1_rotation_angle, axis_vector_z);
+Eigen::AngleAxisd rotation_1(inlet_1_rotation_angle, axis_vector_z);
+Vecd inlet_1_flow_unit_vector = rotation_1 * axis_vector_y;
+Vecd inlet_1_buffer_translation = point_1 + 0.5 * buffer_thickness * inlet_1_flow_unit_vector;
+Vecd inlet_1_sub_buffer_translation = inlet_1_buffer_translation - buffer_thickness * inlet_1_flow_unit_vector;
+
+Real inlet_2_rotation_angle = 45.0 * M_PI / 180.0;
+Rotation3d inlet_2_rotation(inlet_2_rotation_angle, axis_vector_z);
+Eigen::AngleAxisd rotation_2(inlet_2_rotation_angle, axis_vector_z);
+Vecd inlet_2_flow_unit_vector = rotation_2 * axis_vector_y;
+Vecd inlet_2_buffer_translation = point_2 + 0.5 * buffer_thickness * inlet_2_flow_unit_vector;
+Vecd inlet_2_sub_buffer_translation = inlet_2_buffer_translation - buffer_thickness * inlet_2_flow_unit_vector;
+
+Real inlet_3_rotation_angle = 45.0 * 2.0 * M_PI / 180.0;
+Rotation3d inlet_3_rotation(inlet_3_rotation_angle, axis_vector_z);
+Eigen::AngleAxisd rotation_3(inlet_3_rotation_angle, axis_vector_z);
+Vecd inlet_3_flow_unit_vector = rotation_3 * axis_vector_y;
+Vecd inlet_3_buffer_translation = point_3 + 0.5 * buffer_thickness * inlet_3_flow_unit_vector;
+Vecd inlet_3_sub_buffer_translation = inlet_3_buffer_translation - buffer_thickness * inlet_3_flow_unit_vector;
+
+Real inlet_4_rotation_angle = 45.0 * 3.0 * M_PI / 180.0;
+Rotation3d inlet_4_rotation(inlet_4_rotation_angle, axis_vector_z);
+Eigen::AngleAxisd rotation_4(inlet_4_rotation_angle, axis_vector_z);
+Vecd inlet_4_flow_unit_vector = rotation_4 * axis_vector_y;
+Vecd inlet_4_buffer_translation = point_4 + 0.5 * buffer_thickness * inlet_4_flow_unit_vector;
+Vecd inlet_4_sub_buffer_translation = inlet_4_buffer_translation - buffer_thickness * inlet_4_flow_unit_vector;
+
+Real inlet_5_rotation_angle = 45.0 * 4.0 * M_PI / 180.0;
+Rotation3d inlet_5_rotation(inlet_5_rotation_angle, axis_vector_z);
+Eigen::AngleAxisd rotation_5(inlet_5_rotation_angle, axis_vector_z);
+Vecd inlet_5_flow_unit_vector = rotation_5 * axis_vector_y;
+Vecd inlet_5_buffer_translation = point_5 + 0.5 * buffer_thickness * inlet_5_flow_unit_vector;
+Vecd inlet_5_sub_buffer_translation = inlet_5_buffer_translation - buffer_thickness * inlet_5_flow_unit_vector;
+
+Real inlet_6_rotation_angle = 45.0 * 5.0 * M_PI / 180.0;
+Rotation3d inlet_6_rotation(inlet_6_rotation_angle, axis_vector_z);
+Eigen::AngleAxisd rotation_6(inlet_6_rotation_angle, axis_vector_z);
+Vecd inlet_6_flow_unit_vector = rotation_6 * axis_vector_y;
+Vecd inlet_6_buffer_translation = point_6 + 0.5 * buffer_thickness * inlet_6_flow_unit_vector;
+Vecd inlet_6_sub_buffer_translation = inlet_6_buffer_translation - buffer_thickness * inlet_6_flow_unit_vector;
+
+Real inlet_7_rotation_angle = 45.0 * 6.0 * M_PI / 180.0;
+Rotation3d inlet_7_rotation(inlet_7_rotation_angle, axis_vector_z);
+Eigen::AngleAxisd rotation_7(inlet_7_rotation_angle, axis_vector_z);
+Vecd inlet_7_flow_unit_vector = rotation_7 * axis_vector_y;
+Vecd inlet_7_buffer_translation = point_7 + 0.5 * buffer_thickness * inlet_7_flow_unit_vector;
+Vecd inlet_7_sub_buffer_translation = inlet_7_buffer_translation - buffer_thickness * inlet_7_flow_unit_vector;
+
+Real inlet_8_rotation_angle = 45.0 * 7.0 * M_PI / 180.0;
+Rotation3d inlet_8_rotation(inlet_8_rotation_angle, axis_vector_z);
+Eigen::AngleAxisd rotation_8(inlet_8_rotation_angle, axis_vector_z);
+Vecd inlet_8_flow_unit_vector = rotation_8 * axis_vector_y;
+Vecd inlet_8_buffer_translation = point_8 + 0.5 * buffer_thickness * inlet_8_flow_unit_vector;
+Vecd inlet_8_sub_buffer_translation = inlet_8_buffer_translation - buffer_thickness * inlet_8_flow_unit_vector;
 
 Vecd left_buffer_translation = Vecd(0.0, 0.0, 0.0); //** STL relevant */
 Vecd right_buffer_halfsize = 0.5 * Vecd(L_outlet, H_outlet, buffer_thickness);
