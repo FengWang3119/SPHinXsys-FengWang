@@ -12,12 +12,12 @@ using namespace SPH;   // Namespace cite here.
 //----------------------------------------------------------------------
 Real DL = 2.0; /**< Tank length. */
 
-Real DH = 6.0; /**< Tank height. */
+Real DH = 2.0; /**< Tank height. */
 //Real DH = 3.0;
 
 Real LL = 2.0; /**< Liquid column length. */
 
-Real LH = 3.0; /**< Liquid column height. */
+Real LH = 1.0; /**< Liquid column height. */
 //Real LH = 2.0;
 
 Real particle_spacing_ref = 0.01;   /**< Initial reference particle spacing. */
@@ -209,7 +209,7 @@ int main(int ac, char *av[])
     int observation_sample_interval = screen_output_interval * 2;
     int restart_output_interval = screen_output_interval * 10;
     Real end_time = 30.0;
-    Real output_interval = 0.05;
+    Real output_interval = 5.0;
     //----------------------------------------------------------------------
     //	Statistics for CPU time
     //----------------------------------------------------------------------
