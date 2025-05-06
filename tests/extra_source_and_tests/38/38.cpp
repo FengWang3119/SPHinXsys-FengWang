@@ -149,8 +149,8 @@ int main(int ac, char *av[])
     SimpleDynamics<fluid_dynamics::ConstrainNormalVelocityInRegionP> constrain_normal_velocity_in_P_region(water_block);
 
     /** Choose one, ordinary or turbulent. Computing viscous force, */
-    InteractionWithUpdate<fluid_dynamics::TurbulentViscousForceWithWall> turbulent_viscous_force(water_block_inner, water_wall_contact);
-    //InteractionWithUpdate<fluid_dynamics::ViscousForceWithWall> viscous_force(water_block_inner, water_wall_contact);
+    //InteractionWithUpdate<fluid_dynamics::TurbulentViscousForceWithWall> turbulent_viscous_force(water_block_inner, water_wall_contact);
+    InteractionWithUpdate<fluid_dynamics::ViscousForceWithWall> viscous_force(water_block_inner, water_wall_contact);
 
     /** Impose transport velocity. */
     InteractionWithUpdate<fluid_dynamics::TVC_ModifiedLimited_RKGC_OBFCorrection<BulkParticles>> transport_velocity_correction(water_block_inner, water_wall_contact);
@@ -159,9 +159,10 @@ int main(int ac, char *av[])
     SimpleDynamics<fluid_dynamics::GetLimiterOfTransportVelocityCorrection> get_limiter_of_transport_velocity_correction(water_block, 1000);
 
     /** Initialize particle acceleration. */
-    StartupAcceleration time_dependent_acceleration(Vec2d::Zero(), 2.0);
+    IncreaseToFullGravity time_dependent_acceleration(external_acc, external_acc_gradually_impose_t);
     SimpleDynamics<GravityForce<Gravity>> apply_gravity_force(water_block, time_dependent_acceleration);
 
+    /*
     //----------------------------------------------------------------------
     // Left/Inlet buffer
     //----------------------------------------------------------------------
@@ -174,7 +175,7 @@ int main(int ac, char *av[])
 
     SimpleDynamics<fluid_dynamics::InflowVelocityCondition<InflowVelocity>> inflow_velocity_condition(left_emitter);
 
-    /** Turbulent InflowTurbulentCondition.It needs characteristic Length to calculate turbulent length  */
+    /%% Turbulent InflowTurbulentCondition.It needs characteristic Length to calculate turbulent length  %/
     SimpleDynamics<fluid_dynamics::InflowTurbulentCondition> impose_turbulent_inflow_condition(left_emitter, characteristic_length, relaxation_rate_turbulent_inlet, type_turbulent_inlet);
 
     //----------------------------------------------------------------------
@@ -186,14 +187,21 @@ int main(int ac, char *av[])
 
     //SimpleDynamics<fluid_dynamics::PressureCondition<RightOutflowPressure>> right_outflow_pressure_condition(right_emitter);
     SimpleDynamics<fluid_dynamics::PressureConditionCorrection<RightOutflowPressure>> right_outflow_pressure_condition(right_emitter);
+    */
+
+    //----------------------------------------------------------------------
+    // Periodic BC
+    //----------------------------------------------------------------------
+    PeriodicAlongAxis periodic_along_x(water_block.getSPHBodyBounds(), xAxis);
+    PeriodicConditionUsingCellLinkedList periodic_condition_x(water_block, periodic_along_x);
 
     /** Temporary treatment for Pressure outlet module  */
-    InteractionWithUpdate<fluid_dynamics::DensitySummationPressureComplex> update_fluid_density_pressure(water_block_inner, water_wall_contact);
-    //InteractionWithUpdate<fluid_dynamics::DensitySummationFreeStreamComplex> update_density_by_summation(water_block_inner, water_wall_contact);
+    //InteractionWithUpdate<fluid_dynamics::DensitySummationPressureComplex> update_fluid_density_pressure(water_block_inner, water_wall_contact);
+    InteractionWithUpdate<fluid_dynamics::DensitySummationComplex> update_density_by_summation(water_block_inner, water_wall_contact);
 
     /** Choose one, ordinary or turbulent. Time step size without considering sound wave speed. */
-    ReduceDynamics<fluid_dynamics::TurbulentAdvectionTimeStepSize> get_turbulent_fluid_advection_time_step_size(water_block, U_f);
-    //ReduceDynamics<fluid_dynamics::AdvectionViscousTimeStep> get_fluid_advection_time_step_size(water_block, U_f);
+    //ReduceDynamics<fluid_dynamics::TurbulentAdvectionTimeStepSize> get_turbulent_fluid_advection_time_step_size(water_block, U_f);
+    ReduceDynamics<fluid_dynamics::AdvectionViscousTimeStep> get_fluid_advection_time_step_size(water_block, U_f);
 
     /** Time step size with considering sound wave speed. */
     ReduceDynamics<fluid_dynamics::AcousticTimeStep> get_fluid_time_step_size(water_block);
@@ -217,12 +225,17 @@ int main(int ac, char *av[])
     ObservedQuantityRecording<Real> write_recorded_water_k("TurbulenceKineticEnergy", fluid_observer_contact);
     ObservedQuantityRecording<Real> write_recorded_water_mut("TurbulentViscosity", fluid_observer_contact);
     ObservedQuantityRecording<Real> write_recorded_water_epsilon("TurbulentDissipation", fluid_observer_contact);
-    body_states_recording.addToWrite<int>(water_block, "BufferParticleIndicator");
+    //body_states_recording.addToWrite<int>(water_block, "BufferParticleIndicator");
 
     /**
      * @brief Setup geometry and initial conditions.
      */
     sph_system.initializeSystemCellLinkedLists();
+
+    /** periodic condition applied after the mesh cell linked list build up
+     * but before the configuration build up. */
+    periodic_condition_x.update_cell_linked_list_.exec();
+
     sph_system.initializeSystemConfigurations();
     wall_boundary_normal_direction.exec();
     body_states_recording.addToWrite<Vecd>(wall_boundary, "NormalDirection");
@@ -230,8 +243,8 @@ int main(int ac, char *av[])
     /** Tag inlet/outlet truncated particles */
     inlet_outlet_surface_particle_indicator.exec();
     /** Tag in/outlet buffer particles */
-    left_bidirection_buffer.tag_buffer_particles.exec();
-    right_bidirection_buffer.tag_buffer_particles.exec();
+    // left_bidirection_buffer.tag_buffer_particles.exec();
+    // right_bidirection_buffer.tag_buffer_particles.exec();
 
     /** Output the start states of bodies. */
     body_states_recording.writeToFile();
@@ -261,22 +274,24 @@ int main(int ac, char *av[])
         {
             apply_gravity_force.exec();
 
-            //Real Dt = get_fluid_advection_time_step_size.exec();
-            Real Dt = get_turbulent_fluid_advection_time_step_size.exec();
+            Real Dt = get_fluid_advection_time_step_size.exec();
+            //Real Dt = get_turbulent_fluid_advection_time_step_size.exec();
 
             //inlet_outlet_surface_particle_indicator.exec();
 
-            //update_density_by_summation.exec();
-            update_fluid_density_pressure.exec();
+            update_density_by_summation.exec();
+            //update_fluid_density_pressure.exec();
 
             corrected_configuration_fluid.exec();
             corrected_configuration_fluid_only_inner.exec();
-            if (physical_time > turbulent_module_activate_time) //** A temporary treatment *
-            {
-                update_eddy_viscosity.exec();
-            }
-            //viscous_force.exec();
-            turbulent_viscous_force.exec();
+
+            //if (physical_time > turbulent_module_activate_time) //** A temporary treatment *
+            //{
+            //update_eddy_viscosity.exec();
+            //}
+
+            viscous_force.exec();
+            //turbulent_viscous_force.exec();
 
             transport_velocity_correction.exec();
             get_limiter_of_transport_velocity_correction.exec();
@@ -293,40 +308,40 @@ int main(int ac, char *av[])
 
                 dt = SMIN(get_fluid_time_step_size.exec(), Dt);
 
-                if (physical_time > turbulent_module_activate_time) //** A temporary treatment *
-                {
-                    turbulent_kinetic_energy_force.exec();
-                }
+                //if (physical_time > turbulent_module_activate_time) //** A temporary treatment *
+                //{
+                //turbulent_kinetic_energy_force.exec();
+                //}
                 pressure_relaxation.exec(dt);
 
                 kernel_summation.exec();
-                left_inflow_pressure_condition.exec(dt);
-                right_outflow_pressure_condition.exec(dt);
+                //left_inflow_pressure_condition.exec(dt);
+                //right_outflow_pressure_condition.exec(dt);
 
-                if (is_constrain_normal_velocity_in_P_region)
-                {
-                    constrain_normal_velocity_in_P_region.exec();
-                }
+                // if (is_constrain_normal_velocity_in_P_region)
+                // {
+                //     constrain_normal_velocity_in_P_region.exec();
+                // }
 
-                inflow_velocity_condition.exec();
+                //inflow_velocity_condition.exec();
 
-                if (physical_time > turbulent_module_activate_time) //** A temporary treatment *
-                {
-                    impose_turbulent_inflow_condition.exec();
-                }
+                //if (physical_time > turbulent_module_activate_time) //** A temporary treatment *
+                //{
+                //impose_turbulent_inflow_condition.exec();
+                //}
 
                 density_relaxation.exec(dt);
 
-                distance_to_wall.exec();
-                update_near_wall_status.exec();
+                // distance_to_wall.exec();
+                // update_near_wall_status.exec();
 
-                if (physical_time > turbulent_module_activate_time) //** A temporary treatment *
-                {
-                    standard_wall_function_correction.exec();
-                    get_velocity_gradient.exec(dt);
-                    k_equation_relaxation.exec(dt);
-                    epsilon_equation_relaxation.exec(dt);
-                }
+                // if (physical_time > turbulent_module_activate_time) //** A temporary treatment *
+                // {
+                //     standard_wall_function_correction.exec();
+                //     get_velocity_gradient.exec(dt);
+                //     k_equation_relaxation.exec(dt);
+                //     epsilon_equation_relaxation.exec(dt);
+                // }
                 relaxation_time += dt;
                 integration_time += dt;
                 physical_time += dt;
@@ -346,26 +361,34 @@ int main(int ac, char *av[])
             number_of_iterations++;
 
             // ** First do injection for all buffers *
-            left_bidirection_buffer.injection.exec();
-            right_bidirection_buffer.injection.exec();
+            //left_bidirection_buffer.injection.exec();
+            //right_bidirection_buffer.injection.exec();
             // ** Then do deletion for all buffers *
-            left_bidirection_buffer.deletion.exec();
-            right_bidirection_buffer.deletion.exec();
+            //left_bidirection_buffer.deletion.exec();
+            //right_bidirection_buffer.deletion.exec();
 
-            /** Update cell linked list and configuration. */
+            /** Periodic condition. */
+            periodic_condition_x.bounding_.exec();
+
             if (number_of_iterations % 100 == 0 && number_of_iterations != 1)
             {
                 particle_sorting.exec();
             }
+
+            /** Update cell linked list and configuration. */
             water_block.updateCellLinkedList();
+
+            /** Periodic condition. */
+            periodic_condition_x.update_cell_linked_list_.exec();
+
             water_block_complex.updateConfiguration();
             fluid_observer_contact.updateConfiguration();
 
             /** Tag truncated inlet/outlet particles*/
             inlet_outlet_surface_particle_indicator.exec();
             /** Tag in/outlet buffer particles that suffer pressure condition*/
-            left_bidirection_buffer.tag_buffer_particles.exec();
-            right_bidirection_buffer.tag_buffer_particles.exec();
+            //left_bidirection_buffer.tag_buffer_particles.exec();
+            //right_bidirection_buffer.tag_buffer_particles.exec();
 
             if (physical_time > cutoff_time)
             {

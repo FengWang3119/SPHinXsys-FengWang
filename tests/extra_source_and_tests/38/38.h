@@ -76,15 +76,24 @@ Real offset_distance = y_p_constant - resolution_ref / 2.0; //** Basically offse
 //Real mu_f = 0.01;
 
 //** Same parameter as SPH_4 *
-Real U_inlet = 1.0;
-Real Outlet_pressure = 0.0;
-Real U_f = U_inlet;         //*Characteristic velocity
-Real U_max = 3.0 * U_inlet; //** An estimated value, generally 1.5 U_inlet *
+//Real U_inlet = 1.0;
+//Real Outlet_pressure = 0.0;
+//Real U_f = U_inlet;         //*Characteristic velocity
+//Real U_max = 3.0 * U_inlet; //** An estimated value, generally 1.5 U_inlet *
+
+Vecd external_acc = Vecd(1.885, 0.0);
+Real external_acc_gradually_impose_t = 2.0;
+
+Real U_max = 3.0; //** An estimated value, Periodic BC *
+Real U_f = U_max; // * Characteristic velocity, Periodic BC
+
 Real c_f = 10.0 * U_max;
 Real rho0_f = 1.0; /**< Density. */
-Real Re = 40000.0;
+//Real Re = 40000.0;
 //Real Re = 100.0;
-Real mu_f = rho0_f * U_f * DH / Re;
+//Real mu_f = rho0_f * U_f * DH / Re;
+
+Real mu_f = 1.0e-1; //** Periodic BC */
 
 Real Re_calculated = U_f * DH * rho0_f / mu_f;
 
@@ -325,6 +334,7 @@ class WallBoundary : public ComplexShape
     }
 };
 
+/*
 //----------------------------------------------------------------------
 //	Inflow velocity
 //----------------------------------------------------------------------
@@ -365,7 +375,6 @@ struct RightOutflowPressure
 
     Real operator()(Real p, Real current_time)
     {
-        /*constant pressure*/
         Real pressure = Outlet_pressure;
         return pressure;
     }
@@ -380,3 +389,4 @@ struct LeftInflowPressure
         return p;
     }
 };
+*/
