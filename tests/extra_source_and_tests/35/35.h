@@ -89,7 +89,7 @@ Vecd point_7(-8.0, -7.0, 0.5);
 Vecd point_8(-0.707107, -10.6066, 0.5);
 Vecd point_out(11.9373, 0.0, 3.5);
 
-Vecd rotation_axis(1.0, 0.0, 0.0);
+Vecd axis_vector_x(1.0, 0.0, 0.0);
 Vecd axis_vector_z(0.0, 0.0, 1.0);
 Vecd axis_vector_y(0.0, 1.0, 0.0);
 

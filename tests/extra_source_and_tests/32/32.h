@@ -85,7 +85,7 @@ Real Re_calculated = U_f * DH * rho0_f / mu_f;
 //----------------------------------------------------------------------
 //	The open boundary setting.
 //----------------------------------------------------------------------
-Vecd rotation_axis(1.0, 0.0, 0.0);
+Vecd axis_vector_x(1.0, 0.0, 0.0);
 Vecd left_buffer_halfsize = Vecd(Radius_inlet, Radius_inlet, 0.5 * buffer_thickness);
 Vecd left_buffer_translation = point_B + Vecd(0.0, 0.0, 0.5 * buffer_thickness);
 Vecd right_buffer_halfsize = Vecd(Radius_inlet, Radius_inlet, 0.5 * buffer_thickness);

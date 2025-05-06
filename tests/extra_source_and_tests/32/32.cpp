@@ -186,7 +186,7 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     // Right/Outlet buffer
     //----------------------------------------------------------------------
-    Rotation3d right_buffer_rotation(Pi, rotation_axis);
+    Rotation3d right_buffer_rotation(Pi, axis_vector_x);
     AlignedBoxShape right_emitter_shape(zAxis, Transform(Rotation3d(right_buffer_rotation), Vecd(right_buffer_translation)), right_buffer_halfsize);
     BodyAlignedBoxByCell right_emitter(water_block, right_emitter_shape);
     fluid_dynamics::BidirectionalBuffer<RightOutflowPressure> right_bidirection_buffer(right_emitter, inlet_particle_buffer);
