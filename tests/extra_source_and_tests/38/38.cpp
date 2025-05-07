@@ -9,7 +9,7 @@ int main(int ac, char *av[])
     SPHSystem sph_system(system_domain_bounds, resolution_ref);
 
     /** Tag for run particle relaxation for the initial body fitted distribution. */
-    sph_system.setRunParticleRelaxation(false);
+    sph_system.setRunParticleRelaxation(true);
     /** Tag for computation start with relaxed body fitted particles distribution. */
     sph_system.setReloadParticles(true);
 
@@ -36,17 +36,19 @@ int main(int ac, char *av[])
         ? wall_boundary.generateParticles<BaseParticles, Reload>(wall_boundary.getName())
         : wall_boundary.generateParticles<BaseParticles, Lattice>();
 
+    /*
     getPositionsOfMultipleObserveLines();
     output_observe_positions();
     output_observe_theoretical_y();
     output_number_observe_points_on_lines();
     ObserverBody fluid_observer(sph_system, "FluidObserver");
     fluid_observer.generateParticles<ObserverParticles>(observation_locations);
+    */
 
     /** topology */
     InnerRelation water_block_inner(water_block);
     ContactRelation water_wall_contact(water_block, {&wall_boundary});
-    ContactRelation fluid_observer_contact(fluid_observer, {&water_block});
+    //ContactRelation fluid_observer_contact(fluid_observer, {&water_block});
     //----------------------------------------------------------------------
     // Combined relations built from basic relations
     // which is only used for update configuration.
@@ -221,10 +223,10 @@ int main(int ac, char *av[])
     body_states_recording.addToWrite<int>(water_block, "Indicator");            // output for debug
     body_states_recording.addToWrite<Real>(water_block, "Density");             // output for debug
     body_states_recording.addToWrite<Vecd>(water_block, "ZeroGradientResidue"); // output for debug
-    ObservedQuantityRecording<Vecd> write_recorded_water_velocity("Velocity", fluid_observer_contact);
-    ObservedQuantityRecording<Real> write_recorded_water_k("TurbulenceKineticEnergy", fluid_observer_contact);
-    ObservedQuantityRecording<Real> write_recorded_water_mut("TurbulentViscosity", fluid_observer_contact);
-    ObservedQuantityRecording<Real> write_recorded_water_epsilon("TurbulentDissipation", fluid_observer_contact);
+    // ObservedQuantityRecording<Vecd> write_recorded_water_velocity("Velocity", fluid_observer_contact);
+    // ObservedQuantityRecording<Real> write_recorded_water_k("TurbulenceKineticEnergy", fluid_observer_contact);
+    // ObservedQuantityRecording<Real> write_recorded_water_mut("TurbulentViscosity", fluid_observer_contact);
+    // ObservedQuantityRecording<Real> write_recorded_water_epsilon("TurbulentDissipation", fluid_observer_contact);
     //body_states_recording.addToWrite<int>(water_block, "BufferParticleIndicator");
 
     /**
@@ -382,7 +384,7 @@ int main(int ac, char *av[])
             periodic_condition_x.update_cell_linked_list_.exec();
 
             water_block_complex.updateConfiguration();
-            fluid_observer_contact.updateConfiguration();
+            // fluid_observer_contact.updateConfiguration();
 
             /** Tag truncated inlet/outlet particles*/
             inlet_outlet_surface_particle_indicator.exec();
@@ -390,13 +392,13 @@ int main(int ac, char *av[])
             //left_bidirection_buffer.tag_buffer_particles.exec();
             //right_bidirection_buffer.tag_buffer_particles.exec();
 
-            if (physical_time > cutoff_time)
-            {
-                write_recorded_water_velocity.writeToFile(number_of_iterations);
-                write_recorded_water_k.writeToFile(number_of_iterations);
-                write_recorded_water_mut.writeToFile(number_of_iterations);
-                write_recorded_water_epsilon.writeToFile(number_of_iterations);
-            }
+            // if (physical_time > cutoff_time)
+            // {
+            //     write_recorded_water_velocity.writeToFile(number_of_iterations);
+            //     write_recorded_water_k.writeToFile(number_of_iterations);
+            //     write_recorded_water_mut.writeToFile(number_of_iterations);
+            //     write_recorded_water_epsilon.writeToFile(number_of_iterations);
+            // }
             //if (physical_time > end_time * 0.5)
             //body_states_recording.writeToFile();
         }

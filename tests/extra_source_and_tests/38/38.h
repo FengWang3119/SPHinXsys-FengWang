@@ -19,25 +19,60 @@ using namespace SPH;
 //	Basic geometry parameters and numerical setup.
 //----------------------------------------------------------------------
 Real DH = 2.0; /**< Channel height. */
-Real num_fluid_cross_section = 40.0;
-Real extend_in = 2.0;
-Real extend_out = 4.0;
-Real extend_compensate_relaxation = 0.0;
-Real DL1 = 1.0 + extend_in;
-Real DL2 = 1.5;
-Real DL3 = 1.0;
-Real DL4 = 1.5;
-Real DL5 = 1.0 + extend_out;
-Real DL = DL1 + DL2 + DL3 + DL4 + DL5;
-Real incline_angle = 30.0 * (2.0 * Pi / 360.0);
-Real DH1 = DL2 * tan(incline_angle);
-Vec2d point_A(0.0, DH);
-Vec2d point_B(DL, DH);
-Vec2d point_C(DL, 0.0);
-Vec2d point_D(DL - DL5, 0.0);
-Vec2d point_E(DL - DL5 - DL4, DH1);
-Vec2d point_F(DL1 + DL2, DH1);
-Vec2d point_G(DL1, 0.0);
+Real num_fluid_cross_section = 200.0;
+Real DL = 3.0;
+
+Real y_p_constant = DH / 2.0 / num_fluid_cross_section; //%% For the first try *
+//Real y_p_constant = 0.025;
+
+Real resolution_ref_temp = (DH - 2.0 * y_p_constant) / (num_fluid_cross_section - 1.0); /**< Initial reference particle spacing. */
+Real resolution_ref = round(resolution_ref_temp * 1.0e8) / 1.0e8;
+Real offset_distance = y_p_constant - resolution_ref / 2.0; //%% Basically offset distance is large than or equal to 0 *
+Real BW = resolution_ref * 4;
+
+// Real extend_in = 2.0;
+// Real extend_out = 4.0;
+// Real extend_compensate_relaxation = 0.0;
+// Real DL1 = 1.0 + extend_in;
+// Real DL2 = 1.5;
+// Real DL3 = 1.0;
+// Real DL4 = 1.5;
+// Real DL5 = 1.0 + extend_out;
+// Real DL = DL1 + DL2 + DL3 + DL4 + DL5;
+// Real incline_angle = 30.0 * (2.0 * Pi / 360.0);
+// Real DH1 = DL2 * tan(incline_angle);
+// Vec2d point_A(0.0, DH);
+// Vec2d point_B(DL, DH);
+// Vec2d point_C(DL, 0.0);
+// Vec2d point_D(DL - DL5, 0.0);
+// Vec2d point_E(DL - DL5 - DL4, DH1);
+// Vec2d point_F(DL1 + DL2, DH1);
+// Vec2d point_G(DL1, 0.0);
+
+Vec2d point_O(0.0, 0.0);
+
+Vec2d point_1(2.42139, 0.95617);
+Vec2d point_2(1.82129, 0.95617);
+Vec2d point_3(1.82129, 0.844755);
+Vec2d point_4(2.41774, 0.612);
+Vec2d point_5(2.498, 0.692264);
+Vec2d point_6(2.63, 0.0);
+Vec2d point_7(2.63, 0.4);
+Vec2d point_8(2.705, 0.475);
+Vec2d point_9(2.78, 0.4);
+Vec2d point_10(2.78, 0.0);
+
+Vec2d point_11 = point_O + Vec2d(-BW, DH);
+Vec2d point_12(point_1[xAxis], point_11[yAxis]);
+Vec2d point_13(point_5[xAxis], point_11[yAxis]);
+Vec2d point_14 = point_11 + Vec2d(2.0 * BW + DL, 0.0);
+Vec2d point_15 = point_14 + Vec2d(0.0, BW);
+Vec2d point_16 = point_15 + Vec2d(-2.0 * BW - DL, 0.0);
+
+Vec2d point_17 = point_O + Vec2d(-BW, -BW);
+Vec2d point_18 = point_17 + Vec2d(2.0 * BW + DL, 0.0);
+Vec2d point_19 = point_18 + Vec2d(0.0, BW);
+Vec2d point_20 = point_O + Vec2d(-BW, 0.0);
 //----------------------------------------------------------------------
 //	Unique parameters for turbulence.
 //----------------------------------------------------------------------
@@ -57,13 +92,6 @@ bool is_source_term_linearisation = true;
 Real turbulent_module_activate_time = 2.5;
 //** Initial values for K, Epsilon and Mu_t *
 StdVec<Real> initial_turbu_values = {0.000180001, 3.326679e-5, 1.0e-3};
-
-//Real y_p_constant = DH / 2.0 / num_fluid_cross_section; //** For the first try *
-Real y_p_constant = 0.025;
-Real resolution_ref_temp = (DH - 2.0 * y_p_constant) / (num_fluid_cross_section - 1.0); /**< Initial reference particle spacing. */
-Real resolution_ref = round(resolution_ref_temp * 1.0e8) / 1.0e8;
-Real offset_distance = y_p_constant - resolution_ref / 2.0; //** Basically offset distance is large than or equal to 0 *
-
 //----------------------------------------------------------------------
 //	Material properties of the fluid.
 //----------------------------------------------------------------------
@@ -105,7 +133,8 @@ Real DH_C = DH - 2.0 * offset_distance;
 //----------------------------------------------------------------------
 //	The emitter block with offset model.
 //----------------------------------------------------------------------
-Real BW = resolution_ref * 4; /**< Reference size of the emitter. */
+/*
+Real BW = resolution_ref * 4; /% Reference size of the emitter. /
 Real DL_sponge = resolution_ref * 20;
 Real half_channel_height = DH / 2.0;
 
@@ -115,14 +144,14 @@ Vec2d left_buffer_translation = Vec2d(-DL_sponge, 0.0) + left_buffer_halfsize + 
 Real outlet_buffer_length = BW;
 Real outlet_buffer_height = DH_C + 2.0 * BW;
 
-Real outlet_disposer_rotation_angel = 0.0; //** By default, counter-clockwise is positive *
+Real outlet_disposer_rotation_angel = 0.0; //%% By default, counter-clockwise is positive *
 Vec2d outlet_buffer_center_translation = (point_B + point_C) / 2.0 + Vecd(-1.0, 0.0) * outlet_buffer_length / 2.0;
 
-Real outlet_emitter_rotation_angel = Pi + outlet_disposer_rotation_angel; //** By default, counter-clockwise is positive *
+Real outlet_emitter_rotation_angel = Pi + outlet_disposer_rotation_angel; //%% By default, counter-clockwise is positive *
 
-//** If return to the straight channel *
-// Real outlet_disposer_rotation_angel = 0.0 * Pi ; //** By default, counter-clockwise is positive *
-// Real outlet_emitter_rotation_angel =  Pi ; //** By default, counter-clockwise is positive *
+//% If return to the straight channel 
+// Real outlet_disposer_rotation_angel = 0.0 * Pi ; //%% By default, counter-clockwise is positive *
+// Real outlet_emitter_rotation_angel =  Pi ; //%% By default, counter-clockwise is positive *
 // Vec2d outlet_buffer_center_translation = Vec2d(DL_domain - 0.5 * outlet_buffer_length , 0.5 * DH) ;
 
 Vec2d right_buffer_halfsize = Vec2d(0.5 * outlet_buffer_length, 0.75 * outlet_buffer_height);
@@ -130,14 +159,15 @@ Vec2d right_buffer_translation = outlet_buffer_center_translation;
 
 //Vec2d disposer_halfsize = Vec2d(0.75 * DH, 0.5 * BW);
 //Vec2d disposer_translation = Vec2d(DL_domain + 0.25 * DH, DH_domain ) - disposer_halfsize;
+*/
 
 //----------------------------------------------------------------------
 //	Domain bounds of the system.
 //----------------------------------------------------------------------
-Real DL_domain = DL;
-Real DH_domain = DH;
-Vec2d left_bottom_point(-DL_sponge - offset_distance - extend_compensate_relaxation, 0.0);
-Vec2d right_up_point(DL_domain, DH_domain);
+// Real DL_domain = DL;
+// Real DH_domain = DH;
+Vec2d left_bottom_point = point_17;
+Vec2d right_up_point = point_15;
 BoundingBox system_domain_bounds(left_bottom_point + Vec2d(-2.0 * BW, -2.0 * BW), right_up_point + Vec2d(2.0 * BW, 2.0 * BW));
 //----------------------------------------------------------------------
 // Output and time average control.
@@ -145,10 +175,11 @@ BoundingBox system_domain_bounds(left_bottom_point + Vec2d(-2.0 * BW, -2.0 * BW)
 int screen_output_interval = 100;
 Real end_time = 100.0;              /**< End time. */
 Real Output_Time = end_time / 40.0; /**< Time stamps for output of body states. */
-Real cutoff_time = 50.0;            //** cutoff_time should be a integral and the same as the PY script */
+Real cutoff_time = 50.0;            //%% cutoff_time should be a integral and the same as the PY script */
 //----------------------------------------------------------------------
 // Observation with offset model.
 //----------------------------------------------------------------------
+/*
 // ** By kernel weight. *
 int number_observe_line = 2;
 Real observer_offset_distance = 2.0 * resolution_ref;
@@ -246,10 +277,12 @@ void output_number_observe_points_on_lines()
     }
     outfile.close();
 }
+*/
+
 //----------------------------------------------------------------------
 //	Cases-dependent geometries
 //----------------------------------------------------------------------
-
+/*
 std::vector<Vecd> createWaterBlockShape()
 {
     std::vector<Vecd> water_block_shape;
@@ -269,16 +302,71 @@ std::vector<Vecd> createWaterBlockShape()
 
     return water_block_shape;
 }
+*/
+std::vector<Vecd> createWaterBlockShape()
+{
+    std::vector<Vecd> water_block_shape;
+
+    water_block_shape.push_back(point_O);
+    water_block_shape.push_back(point_O + Vec2d(0.0, DH));
+    water_block_shape.push_back(point_O + Vec2d(DL, DH));
+    water_block_shape.push_back(point_O + Vec2d(DL, 0.0));
+    water_block_shape.push_back(point_O);
+
+    return water_block_shape;
+}
+std::vector<Vecd> createUpperWallShape()
+{
+    std::vector<Vecd> shape;
+
+    shape.push_back(point_11);
+    shape.push_back(point_16);
+    shape.push_back(point_15);
+    shape.push_back(point_14);
+    shape.push_back(point_13);
+    shape.push_back(point_5);
+    shape.push_back(point_4);
+    shape.push_back(point_3);
+    shape.push_back(point_2);
+    shape.push_back(point_1);
+    shape.push_back(point_12);
+    shape.push_back(point_11);
+
+    return shape;
+}
+std::vector<Vecd> createBottomWallShape()
+{
+    std::vector<Vecd> shape;
+
+    shape.push_back(point_17);
+    shape.push_back(point_20);
+    shape.push_back(point_6);
+    shape.push_back(point_7);
+    shape.push_back(point_8);
+    shape.push_back(point_9);
+    shape.push_back(point_10);
+    shape.push_back(point_19);
+    shape.push_back(point_18);
+    shape.push_back(point_17);
+
+    return shape;
+}
 class WaterBlock : public ComplexShape
 {
   public:
     explicit WaterBlock(const std::string &shape_name) : ComplexShape(shape_name)
     {
         MultiPolygon computational_domain(createWaterBlockShape());
-        add<ExtrudeShape<MultiPolygonShape>>(-offset_distance, computational_domain, "ComputationalDomain");
+        //add<ExtrudeShape<MultiPolygonShape>>(-offset_distance, computational_domain, "ComputationalDomain");
+        add<MultiPolygonShape>(computational_domain, "ComputationalDomain");
+
+        MultiPolygon sub_upper_dummy_boundary(createUpperWallShape());
+        subtract<MultiPolygonShape>(sub_upper_dummy_boundary, "SubUpperDummyBoundary");
+        MultiPolygon sub_bottom_dummy_boundary(createBottomWallShape());
+        subtract<MultiPolygonShape>(sub_bottom_dummy_boundary, "SubBottomDummyBoundary");
     }
 };
-
+/*
 std::vector<Vecd> createOuterWallShape()
 {
     std::vector<Vecd> water_block_shape;
@@ -317,6 +405,7 @@ std::vector<Vecd> createInnerWallShape()
 
     return water_block_shape;
 }
+*/
 
 /**
  * @brief 	Wall boundary body definition.
@@ -326,11 +415,15 @@ class WallBoundary : public ComplexShape
   public:
     explicit WallBoundary(const std::string &shape_name) : ComplexShape(shape_name)
     {
-        MultiPolygon outer_dummy_boundary(createOuterWallShape());
-        add<ExtrudeShape<MultiPolygonShape>>(-offset_distance + BW, outer_dummy_boundary, "OuterDummyBoundary");
+        // MultiPolygon outer_dummy_boundary(createOuterWallShape());
+        // add<ExtrudeShape<MultiPolygonShape>>(-offset_distance + BW, outer_dummy_boundary, "OuterDummyBoundary");
 
-        MultiPolygon inner_dummy_boundary(createInnerWallShape());
-        subtract<ExtrudeShape<MultiPolygonShape>>(-offset_distance, inner_dummy_boundary, "InnerDummyBoundary");
+        // MultiPolygon inner_dummy_boundary(createInnerWallShape());
+        // subtract<ExtrudeShape<MultiPolygonShape>>(-offset_distance, inner_dummy_boundary, "InnerDummyBoundary");
+        MultiPolygon upper_dummy_boundary(createUpperWallShape());
+        add<MultiPolygonShape>(upper_dummy_boundary, "UpperDummyBoundary");
+        MultiPolygon bottom_dummy_boundary(createBottomWallShape());
+        add<MultiPolygonShape>(bottom_dummy_boundary, "BottomDummyBoundary");
     }
 };
 
