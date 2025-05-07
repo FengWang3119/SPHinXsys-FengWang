@@ -19,7 +19,7 @@ using namespace SPH;
 //	Basic geometry parameters and numerical setup.
 //----------------------------------------------------------------------
 Real DH = 2.0; /**< Channel height. */
-Real num_fluid_cross_section = 200.0;
+Real num_fluid_cross_section = 100.0;
 Real DL = 3.0;
 
 Real y_p_constant = DH / 2.0 / num_fluid_cross_section; //%% For the first try *
@@ -351,6 +351,34 @@ std::vector<Vecd> createBottomWallShape()
 
     return shape;
 }
+std::vector<Vecd> createHookWallShape()
+{
+    std::vector<Vecd> shape;
+
+    shape.push_back(point_12);
+    shape.push_back(point_13);
+    shape.push_back(point_5);
+    shape.push_back(point_4);
+    shape.push_back(point_3);
+    shape.push_back(point_2);
+    shape.push_back(point_1);
+    shape.push_back(point_12);
+
+    return shape;
+}
+std::vector<Vecd> createPencilWallShape()
+{
+    std::vector<Vecd> shape;
+
+    shape.push_back(point_6);
+    shape.push_back(point_7);
+    shape.push_back(point_8);
+    shape.push_back(point_9);
+    shape.push_back(point_10);
+    shape.push_back(point_6);
+
+    return shape;
+}
 class WaterBlock : public ComplexShape
 {
   public:
@@ -360,9 +388,9 @@ class WaterBlock : public ComplexShape
         //add<ExtrudeShape<MultiPolygonShape>>(-offset_distance, computational_domain, "ComputationalDomain");
         add<MultiPolygonShape>(computational_domain, "ComputationalDomain");
 
-        MultiPolygon sub_upper_dummy_boundary(createUpperWallShape());
+        MultiPolygon sub_upper_dummy_boundary(createHookWallShape());
         subtract<MultiPolygonShape>(sub_upper_dummy_boundary, "SubUpperDummyBoundary");
-        MultiPolygon sub_bottom_dummy_boundary(createBottomWallShape());
+        MultiPolygon sub_bottom_dummy_boundary(createPencilWallShape());
         subtract<MultiPolygonShape>(sub_bottom_dummy_boundary, "SubBottomDummyBoundary");
     }
 };
