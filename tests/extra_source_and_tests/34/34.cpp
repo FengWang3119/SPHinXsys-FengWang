@@ -12,12 +12,12 @@ using namespace SPH;   // Namespace cite here.
 //----------------------------------------------------------------------
 Real DL = 2.0; /**< Tank length. */
 
-Real DH = 4.0; /**< Tank height. */
+Real DH = 2.0; /**< Tank height. */
 //Real DH = 3.0;
 
 Real LL = 2.0; /**< Liquid column length. */
 
-Real LH = 2.0; /**< Liquid column height. */
+Real LH = 1.0; /**< Liquid column height. */
 //Real LH = 2.0;
 
 Real particle_spacing_ref = 0.01;   /**< Initial reference particle spacing. */
@@ -63,7 +63,7 @@ std::vector<Vecd> createWaterBlockShape()
     std::vector<Vecd> pnts;
 
     //Real wave_amplitude = 0.1 * LH;
-    Real wave_amplitude = 0.1;
+    Real wave_amplitude = 0.2;
 
     for (int n = 0; n <= Nh; n++)
     {
