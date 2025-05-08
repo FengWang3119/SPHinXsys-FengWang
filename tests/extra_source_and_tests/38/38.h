@@ -76,10 +76,10 @@ Vec2d point_20 = point_O + Vec2d(-BW, 0.0);
 //----------------------------------------------------------------------
 //	Unique parameters for turbulence.
 //----------------------------------------------------------------------
-Real characteristic_length = DH; /**<It needs characteristic Length to calculate turbulent length and the inflow turbulent epsilon>*/
+//Real characteristic_length = DH; /**<It needs characteristic Length to calculate turbulent length and the inflow turbulent epsilon>*/
 //** For K and Epsilon, type of the turbulent inlet, 0 is freestream, 1 is from interpolation from PY21 *
-int type_turbulent_inlet = 0;
-Real relaxation_rate_turbulent_inlet = 0.8;
+//int type_turbulent_inlet = 0;
+//Real relaxation_rate_turbulent_inlet = 0.8;
 //** Tag for AMRD *
 int is_AMRD = 1;
 bool is_constrain_normal_velocity_in_P_region = true;
@@ -121,7 +121,7 @@ Real rho0_f = 1.0; /**< Density. */
 //Real Re = 100.0;
 //Real mu_f = rho0_f * U_f * DH / Re;
 
-Real mu_f = 1.0e-1; //** Periodic BC */
+Real mu_f = 1.0e-6; //** Periodic BC */
 
 Real Re_calculated = U_f * DH * rho0_f / mu_f;
 

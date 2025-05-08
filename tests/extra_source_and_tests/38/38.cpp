@@ -151,8 +151,8 @@ int main(int ac, char *av[])
     SimpleDynamics<fluid_dynamics::ConstrainNormalVelocityInRegionP> constrain_normal_velocity_in_P_region(water_block);
 
     /** Choose one, ordinary or turbulent. Computing viscous force, */
-    //InteractionWithUpdate<fluid_dynamics::TurbulentViscousForceWithWall> turbulent_viscous_force(water_block_inner, water_wall_contact);
-    InteractionWithUpdate<fluid_dynamics::ViscousForceWithWall> viscous_force(water_block_inner, water_wall_contact);
+    InteractionWithUpdate<fluid_dynamics::TurbulentViscousForceWithWall> turbulent_viscous_force(water_block_inner, water_wall_contact);
+    //InteractionWithUpdate<fluid_dynamics::ViscousForceWithWall> viscous_force(water_block_inner, water_wall_contact);
 
     /** Impose transport velocity. */
     InteractionWithUpdate<fluid_dynamics::TVC_ModifiedLimited_RKGC_OBFCorrection<BulkParticles>> transport_velocity_correction(water_block_inner, water_wall_contact);
@@ -202,8 +202,8 @@ int main(int ac, char *av[])
     InteractionWithUpdate<fluid_dynamics::DensitySummationComplex> update_density_by_summation(water_block_inner, water_wall_contact);
 
     /** Choose one, ordinary or turbulent. Time step size without considering sound wave speed. */
-    //ReduceDynamics<fluid_dynamics::TurbulentAdvectionTimeStepSize> get_turbulent_fluid_advection_time_step_size(water_block, U_f);
-    ReduceDynamics<fluid_dynamics::AdvectionViscousTimeStep> get_fluid_advection_time_step_size(water_block, U_f);
+    ReduceDynamics<fluid_dynamics::TurbulentAdvectionTimeStepSize> get_turbulent_fluid_advection_time_step_size(water_block, U_f);
+    //ReduceDynamics<fluid_dynamics::AdvectionViscousTimeStep> get_fluid_advection_time_step_size(water_block, U_f);
 
     /** Time step size with considering sound wave speed. */
     ReduceDynamics<fluid_dynamics::AcousticTimeStep> get_fluid_time_step_size(water_block);
@@ -276,8 +276,8 @@ int main(int ac, char *av[])
         {
             apply_gravity_force.exec();
 
-            Real Dt = get_fluid_advection_time_step_size.exec();
-            //Real Dt = get_turbulent_fluid_advection_time_step_size.exec();
+            //Real Dt = get_fluid_advection_time_step_size.exec();
+            Real Dt = get_turbulent_fluid_advection_time_step_size.exec();
 
             //inlet_outlet_surface_particle_indicator.exec();
 
@@ -292,8 +292,8 @@ int main(int ac, char *av[])
             //update_eddy_viscosity.exec();
             //}
 
-            viscous_force.exec();
-            //turbulent_viscous_force.exec();
+            //viscous_force.exec();
+            turbulent_viscous_force.exec();
 
             transport_velocity_correction.exec();
             get_limiter_of_transport_velocity_correction.exec();
@@ -310,20 +310,20 @@ int main(int ac, char *av[])
 
                 dt = SMIN(get_fluid_time_step_size.exec(), Dt);
 
-                //if (physical_time > turbulent_module_activate_time) //** A temporary treatment *
-                //{
-                //turbulent_kinetic_energy_force.exec();
-                //}
+                if (physical_time > turbulent_module_activate_time) //** A temporary treatment *
+                {
+                    turbulent_kinetic_energy_force.exec();
+                }
                 pressure_relaxation.exec(dt);
 
                 kernel_summation.exec();
                 //left_inflow_pressure_condition.exec(dt);
                 //right_outflow_pressure_condition.exec(dt);
 
-                // if (is_constrain_normal_velocity_in_P_region)
-                // {
-                //     constrain_normal_velocity_in_P_region.exec();
-                // }
+                if (is_constrain_normal_velocity_in_P_region)
+                {
+                    constrain_normal_velocity_in_P_region.exec();
+                }
 
                 //inflow_velocity_condition.exec();
 
@@ -335,15 +335,15 @@ int main(int ac, char *av[])
                 density_relaxation.exec(dt);
 
                 // distance_to_wall.exec();
-                // update_near_wall_status.exec();
+                update_near_wall_status.exec();
 
-                // if (physical_time > turbulent_module_activate_time) //** A temporary treatment *
-                // {
-                //     standard_wall_function_correction.exec();
-                //     get_velocity_gradient.exec(dt);
-                //     k_equation_relaxation.exec(dt);
-                //     epsilon_equation_relaxation.exec(dt);
-                // }
+                if (physical_time > turbulent_module_activate_time) //** A temporary treatment *
+                {
+                    standard_wall_function_correction.exec();
+                    get_velocity_gradient.exec(dt);
+                    k_equation_relaxation.exec(dt);
+                    epsilon_equation_relaxation.exec(dt);
+                }
                 relaxation_time += dt;
                 integration_time += dt;
                 physical_time += dt;
