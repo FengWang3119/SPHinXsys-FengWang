@@ -94,7 +94,7 @@ Vecd axis_vector_z(0.0, 0.0, 1.0);
 Vecd axis_vector_y(0.0, 1.0, 0.0);
 
 //** L_inlet for X, H_inlet for Z, axis-FLOW for Y, */
-Vecd inlet_buffer_halfsize = 0.5 * Vecd(L_inlet, H_inlet, buffer_thickness);
+Vecd inlet_buffer_halfsize = 0.5 * Vecd(L_inlet, buffer_thickness, H_inlet);
 
 Real inlet_1_rotation_angle = 0.0;
 Rotation3d inlet_1_rotation(inlet_1_rotation_angle, axis_vector_z);
@@ -152,9 +152,18 @@ Vecd inlet_8_flow_unit_vector = rotation_8 * axis_vector_y;
 Vecd inlet_8_buffer_translation = point_8 + 0.5 * buffer_thickness * inlet_8_flow_unit_vector;
 Vecd inlet_8_sub_buffer_translation = inlet_8_buffer_translation - buffer_thickness * inlet_8_flow_unit_vector;
 
-Vecd left_buffer_translation = Vecd(0.0, 0.0, 0.0); //** STL relevant */
-Vecd right_buffer_halfsize = 0.5 * Vecd(L_outlet, H_outlet, buffer_thickness);
-Vecd right_buffer_translation = Vecd(0.0, 0.0, 0.0); //** STL relevant */
+//** L_outlet for Y, H_outlet for Z, axis-FLOW for X, */
+Vecd outlet_buffer_halfsize = 0.5 * Vecd(buffer_thickness, L_outlet, H_outlet);
+Real outlet_rotation_angle = 0.0 * M_PI / 180.0;
+Rotation3d outlet_rotation(outlet_rotation_angle, axis_vector_z);
+Eigen::AngleAxisd rotation_outlet(outlet_rotation_angle, axis_vector_z);
+Vecd outlet_flow_unit_vector = rotation_outlet * axis_vector_x;
+Vecd outlet_buffer_translation = point_out - 0.5 * buffer_thickness * outlet_flow_unit_vector;
+Vecd outlet_sub_buffer_translation = outlet_buffer_translation + buffer_thickness * outlet_flow_unit_vector;
+
+// Vecd left_buffer_translation = Vecd(0.0, 0.0, 0.0); //** STL relevant */
+// Vecd right_buffer_halfsize = 0.5 * Vecd(L_outlet, H_outlet, buffer_thickness);
+// Vecd right_buffer_translation = Vecd(0.0, 0.0, 0.0); //** STL relevant */
 //----------------------------------------------------------------------
 //	Cases-dependent geometries
 //----------------------------------------------------------------------

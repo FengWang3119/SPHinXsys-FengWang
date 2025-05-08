@@ -92,6 +92,8 @@ int main(int ac, char *av[])
                                                    makeShared<AlignedBoxShape>(yAxis, Transform(Rotation3d(inlet_7_rotation), Vec3d(inlet_7_sub_buffer_translation)), inlet_buffer_halfsize));
         BodyAlignedBoxByCell inlet_8_detection_box(wall_boundary,
                                                    makeShared<AlignedBoxShape>(yAxis, Transform(Rotation3d(inlet_8_rotation), Vec3d(inlet_8_sub_buffer_translation)), inlet_buffer_halfsize));
+        BodyAlignedBoxByCell outlet_detection_box(wall_boundary,
+                                                  makeShared<AlignedBoxShape>(xAxis, Transform(Rotation3d(outlet_rotation), Vec3d(outlet_sub_buffer_translation)), outlet_buffer_halfsize));
         //----------------------------------------------------------------------
         //	Methods used for particle relaxation.
         //----------------------------------------------------------------------
@@ -116,6 +118,7 @@ int main(int ac, char *av[])
         SimpleDynamics<DisposerInBufferDeletion> inlet_6_particles_deletion(inlet_6_detection_box);
         SimpleDynamics<DisposerInBufferDeletion> inlet_7_particles_deletion(inlet_7_detection_box);
         SimpleDynamics<DisposerInBufferDeletion> inlet_8_particles_deletion(inlet_8_detection_box);
+        SimpleDynamics<DisposerInBufferDeletion> outlet_particles_deletion(outlet_detection_box);
 
         ParticleSorting particle_sorting_wall(wall_boundary);
         //----------------------------------------------------------------------
@@ -144,20 +147,48 @@ int main(int ac, char *av[])
                 write_inserted_body_to_vtp_water.writeToFile(ite_p);
             }
         }
-        std::cout << "The physics relaxation process of the wall_boundary finish !" << std::endl;
-        std::cout << "The physics relaxation process of the water_block finish !" << std::endl;
 
         inlet_1_particles_deletion.exec();
+        particle_sorting_wall.exec();
+        wall_boundary.updateCellLinkedList();
+
         inlet_2_particles_deletion.exec();
+        particle_sorting_wall.exec();
+        wall_boundary.updateCellLinkedList();
+
         inlet_3_particles_deletion.exec();
+        particle_sorting_wall.exec();
+        wall_boundary.updateCellLinkedList();
+
         inlet_4_particles_deletion.exec();
+        particle_sorting_wall.exec();
+        wall_boundary.updateCellLinkedList();
+
         inlet_5_particles_deletion.exec();
+        particle_sorting_wall.exec();
+        wall_boundary.updateCellLinkedList();
+
         inlet_6_particles_deletion.exec();
+        particle_sorting_wall.exec();
+        wall_boundary.updateCellLinkedList();
+
         inlet_7_particles_deletion.exec();
+        particle_sorting_wall.exec();
+        wall_boundary.updateCellLinkedList();
+
         inlet_8_particles_deletion.exec();
+        particle_sorting_wall.exec();
+        wall_boundary.updateCellLinkedList();
+
+        outlet_particles_deletion.exec();
+        particle_sorting_wall.exec();
+        wall_boundary.updateCellLinkedList();
 
         write_inserted_body_to_vtp.writeToFile((ite_max_step + 200));
         write_inserted_body_to_vtp_water.writeToFile((ite_max_step + 200));
+
+        std::cout << "The physics relaxation process of the wall_boundary finish !" << std::endl;
+        std::cout << "The physics relaxation process of the water_block finish !" << std::endl;
 
         //particle_sorting_wall.exec();
         //wall_boundary.updateCellLinkedList();
@@ -203,30 +234,30 @@ int main(int ac, char *av[])
     //InteractionWithUpdate<fluid_dynamics::DensitySummationFreeStreamComplex> update_density_by_summation(water_block_inner, water_wall_contact);
 
     /** Initialize particle acceleration. */
-    StartupAcceleration time_dependent_acceleration(Vecd(0.0, 0.0, U_f), t_ref);
-    SimpleDynamics<GravityForce<StartupAcceleration>> apply_gravity_force(water_block, time_dependent_acceleration);
+    // StartupAcceleration time_dependent_acceleration(Vecd(0.0, 0.0, U_f), t_ref);
+    // SimpleDynamics<GravityForce<StartupAcceleration>> apply_gravity_force(water_block, time_dependent_acceleration);
 
     //----------------------------------------------------------------------
-    // Left/Inlet buffer
+    // Inlet buffers
     //----------------------------------------------------------------------
-    AlignedBoxShape left_emitter_shape(zAxis, Transform(Vecd(left_buffer_translation)), inlet_buffer_halfsize);
-    BodyAlignedBoxByCell left_emitter(water_block, left_emitter_shape);
-    fluid_dynamics::BidirectionalBuffer<LeftInflowPressure> left_bidirection_buffer(left_emitter, inlet_particle_buffer);
+    AlignedBoxShape buffer_1_shape(yAxis, Transform(Rotation3d(inlet_1_rotation), Vec3d(inlet_1_buffer_translation)), inlet_buffer_halfsize);
+    BodyAlignedBoxByCell buffer_1(water_block, buffer_1_shape);
+    fluid_dynamics::BidirectionalBuffer<LeftInflowPressure> bidirection_buffer_1(buffer_1, inlet_particle_buffer);
 
-    SimpleDynamics<fluid_dynamics::PressureCondition<LeftInflowPressure>> left_inflow_pressure_condition(left_emitter);
+    SimpleDynamics<fluid_dynamics::PressureCondition<LeftInflowPressure>> buffer_1_inflow_pressure_condition(buffer_1);
     //SimpleDynamics<fluid_dynamics::PressureConditionCorrection<LeftInflowPressure>> left_inflow_pressure_condition(left_emitter);
 
-    SimpleDynamics<fluid_dynamics::InflowVelocityCondition<InflowVelocity>> inflow_velocity_condition(left_emitter);
+    SimpleDynamics<fluid_dynamics::InflowVelocityCondition<InflowVelocity>> buffer_1_inflow_velocity_condition(buffer_1);
 
     //----------------------------------------------------------------------
     // Right/Outlet buffer
     //----------------------------------------------------------------------
-    Rotation3d right_buffer_rotation(Pi, axis_vector_x);
-    AlignedBoxShape right_emitter_shape(zAxis, Transform(Rotation3d(right_buffer_rotation), Vecd(right_buffer_translation)), right_buffer_halfsize);
-    BodyAlignedBoxByCell right_emitter(water_block, right_emitter_shape);
-    fluid_dynamics::BidirectionalBuffer<RightOutflowPressure> right_bidirection_buffer(right_emitter, inlet_particle_buffer);
+    // Rotation3d right_buffer_rotation(Pi, axis_vector_x);
+    // AlignedBoxShape right_emitter_shape(zAxis, Transform(Rotation3d(right_buffer_rotation), Vecd(right_buffer_translation)), right_buffer_halfsize);
+    // BodyAlignedBoxByCell right_emitter(water_block, right_emitter_shape);
+    // fluid_dynamics::BidirectionalBuffer<RightOutflowPressure> right_bidirection_buffer(right_emitter, inlet_particle_buffer);
 
-    SimpleDynamics<fluid_dynamics::PressureCondition<RightOutflowPressure>> right_outflow_pressure_condition(right_emitter);
+    // SimpleDynamics<fluid_dynamics::PressureCondition<RightOutflowPressure>> right_outflow_pressure_condition(right_emitter);
     //SimpleDynamics<fluid_dynamics::PressureConditionCorrection<RightOutflowPressure>> right_outflow_pressure_condition(right_emitter);
     //----------------------------------------------------------------------
 
@@ -269,8 +300,8 @@ int main(int ac, char *av[])
     /** Tag inlet/outlet truncated particles */
     inlet_outlet_surface_particle_indicator.exec();
     /** Tag in/outlet buffer particles */
-    left_bidirection_buffer.tag_buffer_particles.exec();
-    right_bidirection_buffer.tag_buffer_particles.exec();
+    bidirection_buffer_1.tag_buffer_particles.exec();
+    //right_bidirection_buffer.tag_buffer_particles.exec();
 
     //----------------------------------------------------------------------
     //	Setup computing and initial conditions.
@@ -281,7 +312,7 @@ int main(int ac, char *av[])
     Real end_time = 200.0;                      /**< End time. */
     Real cutoff_ratio = 0.92;                   //** cutoff_time should be a integral and the same as the PY script */
     Real cutoff_time = cutoff_ratio * end_time; //** cutoff_time should be a integral and the same as the PY script */
-    Real num_output_files = 3.0;
+    Real num_output_files = 2000.0;
     Real Output_Time = end_time / num_output_files; /**< Time stamps for output of body states. */
     Real index_check_file_fully_developed = num_output_files * cutoff_ratio;
     Real dt = 0.0; /**< Default acoustic time step sizes. */
@@ -293,6 +324,7 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     //	First output before the main loop.
     //----------------------------------------------------------------------
+    particle_sorting_wall.exec();
     body_states_recording.writeToFile();
     //----------------------------------------------------------------------------------------------------
     //	Main loop starts here.
@@ -306,7 +338,7 @@ int main(int ac, char *av[])
         /** Integrate time (loop) until the next output time. */
         while (integration_time < Output_Time)
         {
-            apply_gravity_force.exec();
+            //apply_gravity_force.exec();
 
             Real Dt = get_fluid_advection_time_step_size.exec();
             //Real Dt = get_turbulent_fluid_advection_time_step_size.exec();
@@ -334,10 +366,10 @@ int main(int ac, char *av[])
 
                 pressure_relaxation.exec(dt);
 
-                left_inflow_pressure_condition.exec(dt);
-                right_outflow_pressure_condition.exec(dt);
+                buffer_1_inflow_pressure_condition.exec(dt);
+                //right_outflow_pressure_condition.exec(dt);
 
-                inflow_velocity_condition.exec();
+                buffer_1_inflow_velocity_condition.exec();
 
                 density_relaxation.exec(dt);
 
@@ -360,11 +392,11 @@ int main(int ac, char *av[])
             number_of_iterations++;
 
             // ** First do injection for all buffers *
-            left_bidirection_buffer.injection.exec();
-            right_bidirection_buffer.injection.exec();
+            bidirection_buffer_1.injection.exec();
+            //right_bidirection_buffer.injection.exec();
             // ** Then do deletion for all buffers *
-            left_bidirection_buffer.deletion.exec();
-            right_bidirection_buffer.deletion.exec();
+            bidirection_buffer_1.deletion.exec();
+            //right_bidirection_buffer.deletion.exec();
 
             /** Update cell linked list and configuration. */
             if (number_of_iterations % 100 == 0 && number_of_iterations != 1)
@@ -379,8 +411,8 @@ int main(int ac, char *av[])
             /** Tag truncated inlet/outlet particles*/
             inlet_outlet_surface_particle_indicator.exec();
             /** Tag in/outlet buffer particles that suffer pressure condition*/
-            left_bidirection_buffer.tag_buffer_particles.exec();
-            right_bidirection_buffer.tag_buffer_particles.exec();
+            bidirection_buffer_1.tag_buffer_particles.exec();
+            //right_bidirection_buffer.tag_buffer_particles.exec();
 
             // if (physical_time > cutoff_time)
             // {
