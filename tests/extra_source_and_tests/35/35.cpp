@@ -152,33 +152,33 @@ int main(int ac, char *av[])
         particle_sorting_wall.exec();
         wall_boundary.updateCellLinkedList();
 
-        inlet_2_particles_deletion.exec();
-        particle_sorting_wall.exec();
-        wall_boundary.updateCellLinkedList();
+        // inlet_2_particles_deletion.exec();
+        // particle_sorting_wall.exec();
+        // wall_boundary.updateCellLinkedList();
 
-        inlet_3_particles_deletion.exec();
-        particle_sorting_wall.exec();
-        wall_boundary.updateCellLinkedList();
+        // inlet_3_particles_deletion.exec();
+        // particle_sorting_wall.exec();
+        // wall_boundary.updateCellLinkedList();
 
-        inlet_4_particles_deletion.exec();
-        particle_sorting_wall.exec();
-        wall_boundary.updateCellLinkedList();
+        // inlet_4_particles_deletion.exec();
+        // particle_sorting_wall.exec();
+        // wall_boundary.updateCellLinkedList();
 
-        inlet_5_particles_deletion.exec();
-        particle_sorting_wall.exec();
-        wall_boundary.updateCellLinkedList();
+        // inlet_5_particles_deletion.exec();
+        // particle_sorting_wall.exec();
+        // wall_boundary.updateCellLinkedList();
 
-        inlet_6_particles_deletion.exec();
-        particle_sorting_wall.exec();
-        wall_boundary.updateCellLinkedList();
+        // inlet_6_particles_deletion.exec();
+        // particle_sorting_wall.exec();
+        // wall_boundary.updateCellLinkedList();
 
-        inlet_7_particles_deletion.exec();
-        particle_sorting_wall.exec();
-        wall_boundary.updateCellLinkedList();
+        // inlet_7_particles_deletion.exec();
+        // particle_sorting_wall.exec();
+        // wall_boundary.updateCellLinkedList();
 
-        inlet_8_particles_deletion.exec();
-        particle_sorting_wall.exec();
-        wall_boundary.updateCellLinkedList();
+        // inlet_8_particles_deletion.exec();
+        // particle_sorting_wall.exec();
+        // wall_boundary.updateCellLinkedList();
 
         outlet_particles_deletion.exec();
         particle_sorting_wall.exec();
@@ -250,15 +250,14 @@ int main(int ac, char *av[])
     SimpleDynamics<fluid_dynamics::InflowVelocityCondition<InflowVelocity>> buffer_1_inflow_velocity_condition(buffer_1);
 
     //----------------------------------------------------------------------
-    // Right/Outlet buffer
+    // Outlet buffer
     //----------------------------------------------------------------------
-    // Rotation3d right_buffer_rotation(Pi, axis_vector_x);
-    // AlignedBoxShape right_emitter_shape(zAxis, Transform(Rotation3d(right_buffer_rotation), Vecd(right_buffer_translation)), right_buffer_halfsize);
-    // BodyAlignedBoxByCell right_emitter(water_block, right_emitter_shape);
-    // fluid_dynamics::BidirectionalBuffer<RightOutflowPressure> right_bidirection_buffer(right_emitter, inlet_particle_buffer);
+    AlignedBoxShape outlet_buffer_shape(xAxis, Transform(Rotation3d(outlet_rotation_reverse), Vecd(outlet_buffer_translation)), outlet_buffer_halfsize);
+    BodyAlignedBoxByCell outlet_buffer(water_block, outlet_buffer_shape);
+    fluid_dynamics::BidirectionalBuffer<RightOutflowPressure> outlet_bidirection_buffer(outlet_buffer, inlet_particle_buffer);
 
-    // SimpleDynamics<fluid_dynamics::PressureCondition<RightOutflowPressure>> right_outflow_pressure_condition(right_emitter);
-    //SimpleDynamics<fluid_dynamics::PressureConditionCorrection<RightOutflowPressure>> right_outflow_pressure_condition(right_emitter);
+    SimpleDynamics<fluid_dynamics::PressureCondition<RightOutflowPressure>> outflow_pressure_condition(outlet_buffer);
+    //SimpleDynamics<fluid_dynamics::PressureConditionCorrection<RightOutflowPressure>> outflow_pressure_condition(outlet_buffer);
     //----------------------------------------------------------------------
 
     InteractionWithUpdate<fluid_dynamics::DensitySummationPressureComplex> update_fluid_density_pressure(water_block_inner, water_wall_contact);
@@ -301,7 +300,7 @@ int main(int ac, char *av[])
     inlet_outlet_surface_particle_indicator.exec();
     /** Tag in/outlet buffer particles */
     bidirection_buffer_1.tag_buffer_particles.exec();
-    //right_bidirection_buffer.tag_buffer_particles.exec();
+    outlet_bidirection_buffer.tag_buffer_particles.exec();
 
     //----------------------------------------------------------------------
     //	Setup computing and initial conditions.
@@ -312,7 +311,7 @@ int main(int ac, char *av[])
     Real end_time = 200.0;                      /**< End time. */
     Real cutoff_ratio = 0.92;                   //** cutoff_time should be a integral and the same as the PY script */
     Real cutoff_time = cutoff_ratio * end_time; //** cutoff_time should be a integral and the same as the PY script */
-    Real num_output_files = 2000.0;
+    Real num_output_files = 200.0;
     Real Output_Time = end_time / num_output_files; /**< Time stamps for output of body states. */
     Real index_check_file_fully_developed = num_output_files * cutoff_ratio;
     Real dt = 0.0; /**< Default acoustic time step sizes. */
@@ -329,8 +328,8 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------------------------------------
     //	Main loop starts here.
     //----------------------------------------------------------------------------------------------------
-    std::cout << "Simulation starts?" << std::endl;
-    std::cin.get();
+    // std::cout << "Simulation starts?" << std::endl;
+    // std::cin.get();
     int num_output_file = 0;
     while (physical_time < end_time)
     {
@@ -342,8 +341,6 @@ int main(int ac, char *av[])
 
             Real Dt = get_fluid_advection_time_step_size.exec();
             //Real Dt = get_turbulent_fluid_advection_time_step_size.exec();
-
-            //inlet_outlet_surface_particle_indicator.exec();
 
             //update_density_by_summation.exec();
             update_fluid_density_pressure.exec();
@@ -367,7 +364,7 @@ int main(int ac, char *av[])
                 pressure_relaxation.exec(dt);
 
                 buffer_1_inflow_pressure_condition.exec(dt);
-                //right_outflow_pressure_condition.exec(dt);
+                outflow_pressure_condition.exec(dt);
 
                 buffer_1_inflow_velocity_condition.exec();
 
@@ -393,10 +390,10 @@ int main(int ac, char *av[])
 
             // ** First do injection for all buffers *
             bidirection_buffer_1.injection.exec();
-            //right_bidirection_buffer.injection.exec();
+            outlet_bidirection_buffer.injection.exec();
             // ** Then do deletion for all buffers *
             bidirection_buffer_1.deletion.exec();
-            //right_bidirection_buffer.deletion.exec();
+            outlet_bidirection_buffer.deletion.exec();
 
             /** Update cell linked list and configuration. */
             if (number_of_iterations % 100 == 0 && number_of_iterations != 1)
@@ -412,7 +409,7 @@ int main(int ac, char *av[])
             inlet_outlet_surface_particle_indicator.exec();
             /** Tag in/outlet buffer particles that suffer pressure condition*/
             bidirection_buffer_1.tag_buffer_particles.exec();
-            //right_bidirection_buffer.tag_buffer_particles.exec();
+            outlet_bidirection_buffer.tag_buffer_particles.exec();
 
             // if (physical_time > cutoff_time)
             // {

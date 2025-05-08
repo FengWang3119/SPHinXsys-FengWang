@@ -93,7 +93,7 @@ Vecd axis_vector_x(1.0, 0.0, 0.0);
 Vecd axis_vector_z(0.0, 0.0, 1.0);
 Vecd axis_vector_y(0.0, 1.0, 0.0);
 
-//** L_inlet for X, H_inlet for Z, axis-FLOW for Y, */
+//** L_inlet for X, axis-FLOW for Y, H_inlet for Z, */
 Vecd inlet_buffer_halfsize = 0.5 * Vecd(L_inlet, buffer_thickness, H_inlet);
 
 Real inlet_1_rotation_angle = 0.0;
@@ -152,10 +152,15 @@ Vecd inlet_8_flow_unit_vector = rotation_8 * axis_vector_y;
 Vecd inlet_8_buffer_translation = point_8 + 0.5 * buffer_thickness * inlet_8_flow_unit_vector;
 Vecd inlet_8_sub_buffer_translation = inlet_8_buffer_translation - buffer_thickness * inlet_8_flow_unit_vector;
 
-//** L_outlet for Y, H_outlet for Z, axis-FLOW for X, */
+//** axis-FLOW for X, L_outlet for Y, H_outlet for Z,  */
 Vecd outlet_buffer_halfsize = 0.5 * Vecd(buffer_thickness, L_outlet, H_outlet);
+
 Real outlet_rotation_angle = 0.0 * M_PI / 180.0;
+Real outlet_rotation_angle_reverse = M_PI + outlet_rotation_angle; //%% In this code, the outlet is defined by the inflow direction
+
 Rotation3d outlet_rotation(outlet_rotation_angle, axis_vector_z);
+Rotation3d outlet_rotation_reverse(outlet_rotation_angle_reverse, axis_vector_z);
+
 Eigen::AngleAxisd rotation_outlet(outlet_rotation_angle, axis_vector_z);
 Vecd outlet_flow_unit_vector = rotation_outlet * axis_vector_x;
 Vecd outlet_buffer_translation = point_out - 0.5 * buffer_thickness * outlet_flow_unit_vector;
@@ -218,7 +223,7 @@ struct InflowVelocity
         // Real local_radius_square = position[0] * position[0] + position[1] * position[1];
         // Real Radius_inlet_square = Radius_inlet * Radius_inlet;
         // target_velocity[2] = 2.0 * u_ave * (1.0 - local_radius_square / Radius_inlet_square);
-        target_velocity[2] = u_ave;
+        target_velocity = u_ave * inlet_1_flow_unit_vector;
 
         // if (local_radius_square > Radius_inlet_square)
         // {
@@ -227,8 +232,8 @@ struct InflowVelocity
         //     std::cout << "Radius_inlet=" << Radius_inlet << std::endl;
         //     std::cin.get();
         // }
-        target_velocity[0] = 0.0;
-        target_velocity[1] = 0.0;
+        // target_velocity[0] = 0.0;
+        // target_velocity[1] = 0.0;
         return target_velocity;
     }
 };
