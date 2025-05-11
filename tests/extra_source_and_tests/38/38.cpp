@@ -279,10 +279,10 @@ int main(int ac, char *av[])
             corrected_configuration_fluid.exec();
             corrected_configuration_fluid_only_inner.exec();
 
-            //if (physical_time > turbulent_module_activate_time) //** A temporary treatment *
-            //{
-            //update_eddy_viscosity.exec();
-            //}
+            if (physical_time > turbulent_module_activate_time) //** A temporary treatment *
+            {
+                update_eddy_viscosity.exec();
+            }
 
             //viscous_force.exec();
             turbulent_viscous_force.exec();
