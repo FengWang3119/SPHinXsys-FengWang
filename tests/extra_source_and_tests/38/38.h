@@ -314,9 +314,6 @@ class WaterBlock : public ComplexShape
     }
 };
 
-/**
- * @brief 	Wall boundary body definition.
- */
 class WallBoundary : public ComplexShape
 {
   public:
