@@ -236,7 +236,6 @@ std::vector<Vecd> createWaterBlockShape()
     return water_block_shape;
 }
 //% For fish pass geometry
-/*
 std::vector<Vecd> createUpperWallShape()
 {
     std::vector<Vecd> shape;
@@ -327,8 +326,8 @@ class WallBoundary : public ComplexShape
         add<MultiPolygonShape>(bottom_dummy_boundary, "BottomDummyBoundary");
     }
 };
-*/
 
+/*
 //% For straight channel geometry
 std::vector<Vecd> createUpperWallShape()
 {
@@ -375,3 +374,4 @@ class WallBoundary : public ComplexShape
         add<MultiPolygonShape>(bottom_dummy_boundary, "BottomDummyBoundary");
     }
 };
+*/
