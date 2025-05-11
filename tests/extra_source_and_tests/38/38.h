@@ -235,6 +235,8 @@ std::vector<Vecd> createWaterBlockShape()
 
     return water_block_shape;
 }
+//% For fish pass geometry
+/*
 std::vector<Vecd> createUpperWallShape()
 {
     std::vector<Vecd> shape;
@@ -311,6 +313,54 @@ class WaterBlock : public ComplexShape
         subtract<MultiPolygonShape>(sub_upper_dummy_boundary, "SubUpperDummyBoundary");
         MultiPolygon sub_bottom_dummy_boundary(createPencilWallShape());
         subtract<MultiPolygonShape>(sub_bottom_dummy_boundary, "SubBottomDummyBoundary");
+    }
+};
+
+class WallBoundary : public ComplexShape
+{
+  public:
+    explicit WallBoundary(const std::string &shape_name) : ComplexShape(shape_name)
+    {
+        MultiPolygon upper_dummy_boundary(createUpperWallShape());
+        add<MultiPolygonShape>(upper_dummy_boundary, "UpperDummyBoundary");
+        MultiPolygon bottom_dummy_boundary(createBottomWallShape());
+        add<MultiPolygonShape>(bottom_dummy_boundary, "BottomDummyBoundary");
+    }
+};
+*/
+
+//% For straight channel geometry
+std::vector<Vecd> createUpperWallShape()
+{
+    std::vector<Vecd> shape;
+
+    shape.push_back(point_11);
+    shape.push_back(point_16);
+    shape.push_back(point_15);
+    shape.push_back(point_14);
+    shape.push_back(point_11);
+
+    return shape;
+}
+std::vector<Vecd> createBottomWallShape()
+{
+    std::vector<Vecd> shape;
+
+    shape.push_back(point_17);
+    shape.push_back(point_20);
+    shape.push_back(point_19);
+    shape.push_back(point_18);
+    shape.push_back(point_17);
+
+    return shape;
+}
+class WaterBlock : public ComplexShape
+{
+  public:
+    explicit WaterBlock(const std::string &shape_name) : ComplexShape(shape_name)
+    {
+        MultiPolygon computational_domain(createWaterBlockShape());
+        add<MultiPolygonShape>(computational_domain, "ComputationalDomain");
     }
 };
 
