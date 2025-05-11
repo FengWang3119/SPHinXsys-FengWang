@@ -152,33 +152,33 @@ int main(int ac, char *av[])
         particle_sorting_wall.exec();
         wall_boundary.updateCellLinkedList();
 
-        // inlet_2_particles_deletion.exec();
-        // particle_sorting_wall.exec();
-        // wall_boundary.updateCellLinkedList();
+        inlet_2_particles_deletion.exec();
+        particle_sorting_wall.exec();
+        wall_boundary.updateCellLinkedList();
 
-        // inlet_3_particles_deletion.exec();
-        // particle_sorting_wall.exec();
-        // wall_boundary.updateCellLinkedList();
+        inlet_3_particles_deletion.exec();
+        particle_sorting_wall.exec();
+        wall_boundary.updateCellLinkedList();
 
-        // inlet_4_particles_deletion.exec();
-        // particle_sorting_wall.exec();
-        // wall_boundary.updateCellLinkedList();
+        inlet_4_particles_deletion.exec();
+        particle_sorting_wall.exec();
+        wall_boundary.updateCellLinkedList();
 
-        // inlet_5_particles_deletion.exec();
-        // particle_sorting_wall.exec();
-        // wall_boundary.updateCellLinkedList();
+        inlet_5_particles_deletion.exec();
+        particle_sorting_wall.exec();
+        wall_boundary.updateCellLinkedList();
 
-        // inlet_6_particles_deletion.exec();
-        // particle_sorting_wall.exec();
-        // wall_boundary.updateCellLinkedList();
+        inlet_6_particles_deletion.exec();
+        particle_sorting_wall.exec();
+        wall_boundary.updateCellLinkedList();
 
-        // inlet_7_particles_deletion.exec();
-        // particle_sorting_wall.exec();
-        // wall_boundary.updateCellLinkedList();
+        inlet_7_particles_deletion.exec();
+        particle_sorting_wall.exec();
+        wall_boundary.updateCellLinkedList();
 
-        // inlet_8_particles_deletion.exec();
-        // particle_sorting_wall.exec();
-        // wall_boundary.updateCellLinkedList();
+        inlet_8_particles_deletion.exec();
+        particle_sorting_wall.exec();
+        wall_boundary.updateCellLinkedList();
 
         outlet_particles_deletion.exec();
         particle_sorting_wall.exec();
