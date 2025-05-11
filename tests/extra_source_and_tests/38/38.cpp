@@ -160,9 +160,13 @@ int main(int ac, char *av[])
     /** A temporarily test for the limiter . */
     SimpleDynamics<fluid_dynamics::GetLimiterOfTransportVelocityCorrection> get_limiter_of_transport_velocity_correction(water_block, 1000);
 
+    AlignedBox external_force_buffer_shape(xAxis, Transform(Vec2d(buffer_translation)), buffer_halfsize);
+    AlignedBoxPartByCell external_force_buffer(water_block, external_force_buffer_shape);
+    SimpleDynamics<fluid_dynamics::TagMonitoredRegionForExternalAcceleration> tag_monitored_region_for_external_acceleration(external_force_buffer);
+    ReduceDynamics<fluid_dynamics::UpdateExternalAcceleration> update_external_acceleration(water_block, axis_vel_ref_);
+
     /** Initialize particle acceleration. */
-    IncreaseToFullGravity time_dependent_acceleration(external_acc, external_acc_gradually_impose_t);
-    SimpleDynamics<GravityForce<Gravity>> apply_gravity_force(water_block, time_dependent_acceleration);
+    SimpleDynamics<fluid_dynamics::DynamicExternalForce> apply_dynamic_external_force(water_block, 0.0);
 
     /*
     //----------------------------------------------------------------------
@@ -228,7 +232,7 @@ int main(int ac, char *av[])
     // ObservedQuantityRecording<Real> write_recorded_water_mut("TurbulentViscosity", fluid_observer_contact);
     // ObservedQuantityRecording<Real> write_recorded_water_epsilon("TurbulentDissipation", fluid_observer_contact);
     //body_states_recording.addToWrite<int>(water_block, "BufferParticleIndicator");
-
+    body_states_recording.addToWrite<int>(water_block, "IndicatorForExternalForce"); // output for debug
     /**
      * @brief Setup geometry and initial conditions.
      */
@@ -271,13 +275,28 @@ int main(int ac, char *av[])
     while (physical_time < end_time)
     {
         Real integration_time = 0.0;
+        int num_particle_in_buffer = 0;
+        Real axis_vel_average_prior = 0.0;
+        Real external_acceleration = 0.0;
+        Real external_acceleration_prior = 0.0;
         /** Integrate time (loop) until the next output time. */
         while (integration_time < Output_Time)
         {
-            apply_gravity_force.exec();
-
             //Real Dt = get_fluid_advection_time_step_size.exec();
             Real Dt = get_turbulent_fluid_advection_time_step_size.exec();
+
+            tag_monitored_region_for_external_acceleration.clear_total_particle_number_in_buffer();
+            tag_monitored_region_for_external_acceleration.exec();
+            num_particle_in_buffer = tag_monitored_region_for_external_acceleration.output_total_particle_number_in_buffer();
+
+            update_external_acceleration.update_information_for_updating_external_force(num_particle_in_buffer, external_acceleration_prior, Dt, axis_vel_average_prior);
+            update_external_acceleration.exec();
+            external_acceleration = update_external_acceleration.output_external_acceleration();
+            axis_vel_average_prior = update_external_acceleration.output_axis_vel_average_prior();
+            external_acceleration_prior = external_acceleration;
+
+            apply_dynamic_external_force.get_external_acceleration(external_acceleration);
+            apply_dynamic_external_force.exec();
 
             //inlet_outlet_surface_particle_indicator.exec();
 

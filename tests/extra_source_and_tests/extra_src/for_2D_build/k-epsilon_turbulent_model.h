@@ -558,6 +558,82 @@ template <class ParticleScope>
 using TVC_ModifiedLimited_withoutLinearGradientCorrection =
     BaseTransportVelocityCorrectionComplex<SingleResolution, ModifiedTruncatedLinear, NoKernelCorrection, ParticleScope>;
 //=================================================================================================//
+class TagMonitoredRegionForExternalAcceleration : public BaseLocalDynamics<BodyPartByCell>
+{
+  public:
+    TagMonitoredRegionForExternalAcceleration(AlignedBoxPartByCell &aligned_box_part);
+    virtual ~TagMonitoredRegionForExternalAcceleration(){};
+
+    void update(size_t index_i, Real dt = 0.0);
+
+    void clear_total_particle_number_in_buffer()
+    {
+        num_particle_in_buffer_ = 0;
+    }
+    int output_total_particle_number_in_buffer()
+    {
+        return num_particle_in_buffer_;
+    }
+
+  protected:
+    Vecd *pos_;
+    AlignedBox &aligned_box_;
+    int *indicator_external_force_;
+    int num_particle_in_buffer_;
+};
+//=================================================================================================//
+class UpdateExternalAcceleration : public LocalDynamicsReduce<ReduceSum<Real>>
+{
+  public:
+    explicit UpdateExternalAcceleration(SPHBody &sph_body, Real axis_vel_ref);
+    virtual ~UpdateExternalAcceleration(){};
+    Real reduce(size_t index_i, Real dt = 0.0);
+    virtual Real outputResult(Real reduced_value) override;
+
+    void update_information_for_updating_external_force(int num_particle_in_buffer, Real external_acc_prior, Real time_step, Real axis_vel_average_prior)
+    {
+        num_particle_in_buffer_ = num_particle_in_buffer;
+        external_acceleration_ = external_acc_prior;
+        time_step_ = time_step;
+        axis_vel_average_prior_ = axis_vel_average_prior;
+    }
+    Real output_axis_vel_average_prior()
+    {
+        return axis_vel_average_prior_;
+    }
+    Real output_external_acceleration()
+    {
+        return external_acceleration_;
+    }
+
+  protected:
+    Vecd *vel_;
+    int *indicator_external_force_;
+    int num_particle_in_buffer_;
+    Real time_step_;
+    Real axis_vel_ref_;
+    Real external_acceleration_;
+    Real axis_vel_average_prior_;
+};
+//=================================================================================================//
+class DynamicExternalForce : public ForcePrior
+{
+  protected:
+    Vecd *pos_;
+    Real *mass_;
+    Real *physical_time_;
+    Real external_acc_;
+
+  public:
+    DynamicExternalForce(SPHBody &sph_body, Real external_acc_initial);
+    virtual ~DynamicExternalForce(){};
+    void update(size_t index_i, Real dt = 0.0);
+
+    void get_external_acceleration(Real external_acc)
+    {
+        external_acc_ = external_acc;
+    }
+};
 } // namespace fluid_dynamics
 } // namespace SPH
 #endif // K_EPSILON_TURBULENT_MODEL_H

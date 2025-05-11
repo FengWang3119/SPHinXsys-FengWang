@@ -108,9 +108,12 @@ StdVec<Real> initial_turbu_values = {0.000180001, 3.326679e-5, 1.0e-3};
 //Real Outlet_pressure = 0.0;
 //Real U_f = U_inlet;         //*Characteristic velocity
 //Real U_max = 3.0 * U_inlet; //** An estimated value, generally 1.5 U_inlet *
-
+Real DL_Sponge = 5.0 * resolution_ref;
+Vec2d buffer_halfsize = 0.5 * Vec2d(DL_Sponge, DH);
+Vec2d buffer_translation = Vec2d(DL_Sponge / 2.0, DH / 2.0);
 Vecd external_acc = Vecd(1.885, 0.0);
 Real external_acc_gradually_impose_t = 2.0;
+Real axis_vel_ref_ = 2.2;
 
 Real U_max = 3.0; //** An estimated value, Periodic BC *
 Real U_f = U_max; // * Characteristic velocity, Periodic BC

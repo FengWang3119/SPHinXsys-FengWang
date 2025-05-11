@@ -1137,6 +1137,70 @@ void GetLimiterOfTransportVelocityCorrection::update(size_t index_i, Real dt)
     limiter_tvc_[index_i] = SMIN(slope_ * squared_norm * h_ref_ * h_ref_, Real(1));
 }
 //=================================================================================================//
+TagMonitoredRegionForExternalAcceleration::
+    TagMonitoredRegionForExternalAcceleration(AlignedBoxPartByCell &aligned_box_part)
+    : BaseLocalDynamics<BodyPartByCell>(aligned_box_part),
+      pos_(particles_->getVariableDataByName<Vecd>("Position")),
+      aligned_box_(aligned_box_part.getAlignedBox()),
+      indicator_external_force_(particles_->registerStateVariable<int>("IndicatorForExternalForce")),
+      num_particle_in_buffer_(0) {}
+//=================================================================================================//
+void TagMonitoredRegionForExternalAcceleration::update(size_t index_i, Real dt)
+{
+    indicator_external_force_[index_i] = 0;
+    if (aligned_box_.checkContain(pos_[index_i]))
+    {
+        indicator_external_force_[index_i] = 1;
+        num_particle_in_buffer_++;
+    }
+}
+//=================================================================================================//
+UpdateExternalAcceleration::UpdateExternalAcceleration(SPHBody &sph_body, Real axis_vel_ref)
+    : LocalDynamicsReduce<ReduceSum<Real>>(sph_body),
+      vel_(particles_->getVariableDataByName<Vecd>("Velocity")),
+      indicator_external_force_(particles_->getVariableDataByName<int>("IndicatorForExternalForce")),
+      num_particle_in_buffer_(0), time_step_(0.0),
+      axis_vel_ref_(axis_vel_ref), axis_vel_average_prior_(0.0) {}
+//=================================================================================================//
+Real UpdateExternalAcceleration::reduce(size_t index_i, Real dt)
+{
+    if (indicator_external_force_[index_i] == 1)
+    {
+        return vel_[index_i][0]; //% Temporary treatment, all scalar operation
+    }
+    else
+    {
+        return 0.0;
+    }
+}
+//=================================================================================================//
+Real UpdateExternalAcceleration::outputResult(Real reduced_value)
+{
+    if (num_particle_in_buffer_ == 0)
+    {
+        std::cout << "No particles in buffer" << std::endl;
+        std::cin.get();
+    }
+    Real axis_vel_average = reduced_value / num_particle_in_buffer_;
+    external_acceleration_ += (2.0 * (axis_vel_average - axis_vel_ref_) - (axis_vel_average_prior_ - axis_vel_ref_)) / (2.0 * time_step_);
+
+    axis_vel_average_prior_ = axis_vel_average;
+    return external_acceleration_;
+}
+//=================================================================================================//
+DynamicExternalForce::DynamicExternalForce(SPHBody &sph_body, Real external_acc_initial)
+    : ForcePrior(sph_body, "DynamicExternalForce"),
+      pos_(particles_->getVariableDataByName<Vecd>("Position")),
+      mass_(particles_->registerStateVariable<Real>("Mass")),
+      physical_time_(sph_system_.getSystemVariableDataByName<Real>("PhysicalTime")),
+      external_acc_(external_acc_initial) {}
+//=================================================================================================//
+void DynamicExternalForce::update(size_t index_i, Real dt)
+{
+    current_force_[index_i] = mass_[index_i] * Vecd(external_acc_, 0.0); //% Temporary treatment, all scalar operation
+    ForcePrior::update(index_i, dt);
+}
+//=================================================================================================//
 } // namespace fluid_dynamics
 //=================================================================================================//
 } // namespace SPH
