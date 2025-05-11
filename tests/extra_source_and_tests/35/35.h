@@ -219,21 +219,7 @@ struct InflowVelocity
     {
         Vecd target_velocity = velocity;
         Real u_ave = current_time < t_ref ? 0.5 * u_ref_ * (1.0 - cos(Pi * current_time / t_ref)) : u_ref_;
-        //** 3D modification */
-        // Real local_radius_square = position[0] * position[0] + position[1] * position[1];
-        // Real Radius_inlet_square = Radius_inlet * Radius_inlet;
-        // target_velocity[2] = 2.0 * u_ave * (1.0 - local_radius_square / Radius_inlet_square);
         target_velocity = u_ave * inlet_1_flow_unit_vector;
-
-        // if (local_radius_square > Radius_inlet_square)
-        // {
-        //     std::cout << "Particles out of domain, wrong inlet velocity." << std::endl;
-        //     std::cout << "local_radius_square=" << local_radius_square << std::endl;
-        //     std::cout << "Radius_inlet=" << Radius_inlet << std::endl;
-        //     std::cin.get();
-        // }
-        // target_velocity[0] = 0.0;
-        // target_velocity[1] = 0.0;
         return target_velocity;
     }
 };
