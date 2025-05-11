@@ -219,11 +219,10 @@ struct InflowVelocity
     {
         Vecd target_velocity = velocity;
         Real u_ave = current_time < t_ref ? 0.5 * u_ref_ * (1.0 - cos(Pi * current_time / t_ref)) : u_ref_;
-        target_velocity = u_ave * inlet_1_flow_unit_vector;
+        target_velocity = u_ave * axis_vector_y;
         return target_velocity;
     }
 };
-
 struct RightOutflowPressure
 {
     template <class BoundaryConditionType>
