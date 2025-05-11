@@ -1143,7 +1143,10 @@ TagMonitoredRegionForExternalAcceleration::
       pos_(particles_->getVariableDataByName<Vecd>("Position")),
       aligned_box_(aligned_box_part.getAlignedBox()),
       indicator_external_force_(particles_->registerStateVariable<int>("IndicatorForExternalForce")),
-      num_particle_in_buffer_(0) {}
+      num_particle_in_buffer_(0)
+{
+    particles_->addVariableToWrite<int>("IndicatorForExternalForce");
+}
 //=================================================================================================//
 void TagMonitoredRegionForExternalAcceleration::update(size_t index_i, Real dt)
 {
