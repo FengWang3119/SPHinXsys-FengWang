@@ -298,8 +298,6 @@ int main(int ac, char *av[])
             apply_dynamic_external_force.get_external_acceleration(external_acceleration);
             apply_dynamic_external_force.exec();
 
-            //inlet_outlet_surface_particle_indicator.exec();
-
             update_density_by_summation.exec();
             //update_fluid_density_pressure.exec();
 
@@ -317,7 +315,6 @@ int main(int ac, char *av[])
             transport_velocity_correction.exec();
             get_limiter_of_transport_velocity_correction.exec();
 
-            /** Dynamics including pressure relaxation. */
             Real relaxation_time = 0.0;
             int inner_itr = 0;
             while (relaxation_time < Dt)
@@ -336,24 +333,14 @@ int main(int ac, char *av[])
                 pressure_relaxation.exec(dt);
 
                 kernel_summation.exec();
-                //left_inflow_pressure_condition.exec(dt);
-                //right_outflow_pressure_condition.exec(dt);
 
                 if (is_constrain_normal_velocity_in_P_region)
                 {
                     constrain_normal_velocity_in_P_region.exec();
                 }
 
-                //inflow_velocity_condition.exec();
-
-                //if (physical_time > turbulent_module_activate_time) //** A temporary treatment *
-                //{
-                //impose_turbulent_inflow_condition.exec();
-                //}
-
                 density_relaxation.exec(dt);
 
-                // distance_to_wall.exec();
                 update_near_wall_status.exec();
 
                 if (physical_time > turbulent_module_activate_time) //** A temporary treatment *
@@ -381,13 +368,6 @@ int main(int ac, char *av[])
             }
             number_of_iterations++;
 
-            // ** First do injection for all buffers *
-            //left_bidirection_buffer.injection.exec();
-            //right_bidirection_buffer.injection.exec();
-            // ** Then do deletion for all buffers *
-            //left_bidirection_buffer.deletion.exec();
-            //right_bidirection_buffer.deletion.exec();
-
             /** Periodic condition. */
             periodic_condition_x.bounding_.exec();
 
@@ -407,9 +387,6 @@ int main(int ac, char *av[])
 
             /** Tag truncated inlet/outlet particles*/
             inlet_outlet_surface_particle_indicator.exec();
-            /** Tag in/outlet buffer particles that suffer pressure condition*/
-            //left_bidirection_buffer.tag_buffer_particles.exec();
-            //right_bidirection_buffer.tag_buffer_particles.exec();
 
             // if (physical_time > cutoff_time)
             // {
