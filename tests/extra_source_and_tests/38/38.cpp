@@ -168,33 +168,6 @@ int main(int ac, char *av[])
     /** Initialize particle acceleration. */
     SimpleDynamics<fluid_dynamics::DynamicExternalForce> apply_dynamic_external_force(water_block, 0.0);
 
-    /*
-    //----------------------------------------------------------------------
-    // Left/Inlet buffer
-    //----------------------------------------------------------------------
-    AlignedBox left_emitter_shape(xAxis, Transform(Vec2d(left_buffer_translation)), left_buffer_halfsize);
-    AlignedBoxPartByCell left_emitter(water_block, left_emitter_shape);
-    fluid_dynamics::BidirectionalBuffer<LeftInflowPressure> left_bidirection_buffer(left_emitter, inlet_particle_buffer);
-
-    //SimpleDynamics<fluid_dynamics::PressureCondition<LeftInflowPressure>> left_inflow_pressure_condition(left_emitter);
-    SimpleDynamics<fluid_dynamics::PressureConditionCorrection<LeftInflowPressure>> left_inflow_pressure_condition(left_emitter);
-
-    SimpleDynamics<fluid_dynamics::InflowVelocityCondition<InflowVelocity>> inflow_velocity_condition(left_emitter);
-
-    /%% Turbulent InflowTurbulentCondition.It needs characteristic Length to calculate turbulent length  %/
-    SimpleDynamics<fluid_dynamics::InflowTurbulentCondition> impose_turbulent_inflow_condition(left_emitter, characteristic_length, relaxation_rate_turbulent_inlet, type_turbulent_inlet);
-
-    //----------------------------------------------------------------------
-    // Right/Outlet buffer
-    //----------------------------------------------------------------------
-    AlignedBox right_emitter_shape(xAxis, Transform(Rotation2d(Pi), Vec2d(right_buffer_translation)), right_buffer_halfsize);
-    AlignedBoxPartByCell right_emitter(water_block, right_emitter_shape);
-    fluid_dynamics::BidirectionalBuffer<RightOutflowPressure> right_bidirection_buffer(right_emitter, inlet_particle_buffer);
-
-    //SimpleDynamics<fluid_dynamics::PressureCondition<RightOutflowPressure>> right_outflow_pressure_condition(right_emitter);
-    SimpleDynamics<fluid_dynamics::PressureConditionCorrection<RightOutflowPressure>> right_outflow_pressure_condition(right_emitter);
-    */
-
     //----------------------------------------------------------------------
     // Periodic BC
     //----------------------------------------------------------------------
@@ -248,9 +221,6 @@ int main(int ac, char *av[])
 
     /** Tag inlet/outlet truncated particles */
     inlet_outlet_surface_particle_indicator.exec();
-    /** Tag in/outlet buffer particles */
-    // left_bidirection_buffer.tag_buffer_particles.exec();
-    // right_bidirection_buffer.tag_buffer_particles.exec();
 
     /** Output the start states of bodies. */
     body_states_recording.writeToFile();
