@@ -288,6 +288,8 @@ int main(int ac, char *av[])
             transport_velocity_correction.exec();
             get_limiter_of_transport_velocity_correction.exec();
 
+            kernel_summation.exec();
+
             Real relaxation_time = 0.0;
             int inner_itr = 0;
             while (relaxation_time < Dt)
@@ -304,8 +306,6 @@ int main(int ac, char *av[])
                     turbulent_kinetic_energy_force.exec();
                 }
                 pressure_relaxation.exec(dt);
-
-                kernel_summation.exec();
 
                 if (is_constrain_normal_velocity_in_P_region)
                 {
