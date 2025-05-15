@@ -158,15 +158,15 @@ int main(int ac, char *av[])
     /** A temporarily test for the limiter . */
     SimpleDynamics<fluid_dynamics::GetLimiterOfTransportVelocityCorrection> get_limiter_of_transport_velocity_correction(water_block, 1000);
 
-    /*
     AlignedBox external_force_buffer_shape(xAxis, Transform(Vec2d(buffer_translation)), buffer_halfsize);
     AlignedBoxPartByCell external_force_buffer(water_block, external_force_buffer_shape);
     SimpleDynamics<fluid_dynamics::TagMonitoredRegionForExternalAcceleration> tag_monitored_region_for_external_acceleration(external_force_buffer);
     ReduceDynamics<fluid_dynamics::UpdateExternalAcceleration> update_external_acceleration(water_block, axis_vel_ref_);
-    SimpleDynamics<fluid_dynamics::DynamicExternalForce> apply_dynamic_external_force(water_block, 0.0);
-    */
+    SimpleDynamics<fluid_dynamics::DynamicExternalForce> apply_dynamic_external_force(water_block, external_acc_initial);
+    /*
     IncreaseToFullGravity time_dependent_acceleration(external_acc, external_acc_gradually_impose_t);
     SimpleDynamics<GravityForce<Gravity>> apply_gravity_force(water_block, time_dependent_acceleration);
+    */
     //----------------------------------------------------------------------
     // Periodic BC
     //----------------------------------------------------------------------
@@ -243,19 +243,18 @@ int main(int ac, char *av[])
     while (physical_time < end_time)
     {
         Real integration_time = 0.0;
-        /*
+
         int num_particle_in_buffer = 0;
         Real axis_vel_average_prior = 0.0;
         Real external_acceleration = 0.0;
-        Real external_acceleration_prior = 0.0;
-        */
+        Real external_acceleration_prior = 0.1;
+
         /** Integrate time (loop) until the next output time. */
         while (integration_time < Output_Time)
         {
             //Real Dt = get_fluid_advection_time_step_size.exec();
             Real Dt = get_turbulent_fluid_advection_time_step_size.exec();
 
-            /*
             tag_monitored_region_for_external_acceleration.clear_total_particle_number_in_buffer();
             tag_monitored_region_for_external_acceleration.exec();
             num_particle_in_buffer = tag_monitored_region_for_external_acceleration.output_total_particle_number_in_buffer();
@@ -268,8 +267,17 @@ int main(int ac, char *av[])
 
             apply_dynamic_external_force.get_external_acceleration(external_acceleration);
             apply_dynamic_external_force.exec();
-            */
+            if (number_of_iterations % screen_output_interval == 0)
+            {
+                std::cout << "------" << std::endl;
+                std::cout << "num_particle_in_buffer=" << num_particle_in_buffer << std::endl;
+                std::cout << "external_acceleration=" << external_acceleration << std::endl;
+                std::cout << "axis_vel_average_prior=" << axis_vel_average_prior << std::endl;
+                std::cout << "------" << std::endl;
+            }
+            /*
             apply_gravity_force.exec();
+            */
 
             update_density_by_summation.exec();
             //update_fluid_density_pressure.exec();

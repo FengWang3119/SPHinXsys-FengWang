@@ -579,7 +579,7 @@ class TagMonitoredRegionForExternalAcceleration : public BaseLocalDynamics<BodyP
     Vecd *pos_;
     AlignedBox &aligned_box_;
     int *indicator_external_force_;
-    int num_particle_in_buffer_;
+    std::atomic<int> num_particle_in_buffer_;
 };
 //=================================================================================================//
 class UpdateExternalAcceleration : public LocalDynamicsReduce<ReduceSum<Real>>

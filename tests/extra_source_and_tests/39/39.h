@@ -82,10 +82,11 @@ StdVec<Real> initial_turbu_values = {0.000180001, 3.326679e-5, 1.0e-3};
 //Real U_max = 3.0 * U_inlet; //** An estimated value, generally 1.5 U_inlet *
 Real DL_Sponge = 5.0 * resolution_ref;
 Vec2d buffer_halfsize = 0.5 * Vec2d(DL_Sponge, DH);
-Vec2d buffer_translation = Vec2d(DL_Sponge / 2.0, DH / 2.0);
+Vec2d buffer_translation = Vec2d(DL_Sponge / 2.0, DH / 2.0) + Vec2d(BW, 0.0);
 Vecd external_acc = Vecd(1.885, 0.0);
 Real external_acc_gradually_impose_t = 2.0;
-Real axis_vel_ref_ = 2.2;
+Real axis_vel_ref_ = 38.0;
+Real external_acc_initial = 0.1;
 
 Real U_max = 3.0; //** An estimated value, Periodic BC *
 Real U_f = U_max; // * Characteristic velocity, Periodic BC
@@ -114,9 +115,9 @@ BoundingBox system_domain_bounds(left_bottom_point + Vec2d(-2.0 * BW, -2.0 * BW)
 // Output and time average control.
 //----------------------------------------------------------------------
 int screen_output_interval = 100;
-Real end_time = 30.0;               /**< End time. */
-Real Output_Time = end_time / 40.0; /**< Time stamps for output of body states. */
-Real cutoff_time = 25.0;            //%% cutoff_time should be a integral and the same as the PY script */
+Real end_time = 30.0;                /**< End time. */
+Real Output_Time = end_time / 200.0; /**< Time stamps for output of body states. */
+Real cutoff_time = 25.0;             //%% cutoff_time should be a integral and the same as the PY script */
 //----------------------------------------------------------------------
 // Observation with offset model.
 //----------------------------------------------------------------------
