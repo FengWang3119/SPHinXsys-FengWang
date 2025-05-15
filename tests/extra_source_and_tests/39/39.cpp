@@ -163,9 +163,14 @@ int main(int ac, char *av[])
     SimpleDynamics<fluid_dynamics::TagMonitoredRegionForExternalAcceleration> tag_monitored_region_for_external_acceleration(external_force_buffer);
     ReduceDynamics<fluid_dynamics::UpdateExternalAcceleration> update_external_acceleration(water_block, axis_vel_ref_);
     SimpleDynamics<fluid_dynamics::DynamicExternalForce> apply_dynamic_external_force(water_block, external_acc_initial);
+
     /*
     IncreaseToFullGravity time_dependent_acceleration(external_acc, external_acc_gradually_impose_t);
     SimpleDynamics<GravityForce<Gravity>> apply_gravity_force(water_block, time_dependent_acceleration);
+    */
+    /*
+    ReduceDynamics<fluid_dynamics::UpdateExternalAccelerationByAllFluidParticles> update_external_acceleration_by_all_fluid_particles(water_block, target_velocity, 0.1);
+    SimpleDynamics<fluid_dynamics::DynamicExternalForceByAllFluidParticles> apply_dynamic_external_force_by_all_fluid_particles(water_block, external_acceleration_initial);
     */
     //----------------------------------------------------------------------
     // Periodic BC
@@ -275,6 +280,21 @@ int main(int ac, char *av[])
                 std::cout << "axis_vel_average_prior=" << axis_vel_average_prior << std::endl;
                 std::cout << "------" << std::endl;
             }
+
+            /*
+            Vecd external_acceleration = update_external_acceleration_by_all_fluid_particles.exec();
+            Vecd velocity_average = update_external_acceleration_by_all_fluid_particles.output_vel_average();
+            apply_dynamic_external_force_by_all_fluid_particles.get_external_acceleration(external_acceleration);
+            apply_dynamic_external_force_by_all_fluid_particles.exec();
+            if (number_of_iterations % screen_output_interval == 0)
+            {
+                std::cout << "------" << std::endl;
+                std::cout << "external_acceleration = " << external_acceleration.transpose() << std::endl;
+                std::cout << "velocity_average = " << velocity_average.transpose() << std::endl;
+                std::cout << "------" << std::endl;
+            }
+            */
+
             /*
             apply_gravity_force.exec();
             */

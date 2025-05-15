@@ -88,6 +88,9 @@ Real external_acc_gradually_impose_t = 2.0;
 Real axis_vel_ref_ = 38.0;
 Real external_acc_initial = 0.1;
 
+Vecd target_velocity = Vecd(38.0, 0.0);
+Vecd external_acceleration_initial = Vecd(0.1, 0.0);
+
 Real U_max = 3.0; //** An estimated value, Periodic BC *
 Real U_f = U_max; // * Characteristic velocity, Periodic BC
 

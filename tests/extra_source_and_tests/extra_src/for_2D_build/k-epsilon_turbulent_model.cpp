@@ -1188,8 +1188,8 @@ Real UpdateExternalAcceleration::outputResult(Real reduced_value)
     Real axis_vel_average = reduced_value / num_particle_in_buffer_;
 
     //external_acceleration_ -= (2.0 * (axis_vel_average - axis_vel_ref_) - (axis_vel_average_prior_ - axis_vel_ref_)) / (2.0 * time_step_); //%[2003 Issa PhdThesis]
-    external_acceleration_ = (2.0 * (axis_vel_average - axis_vel_ref_) - (axis_vel_average_prior_ - axis_vel_ref_)) / (2.0 * time_step_); //%[2012 VIOLEAU BOOK]
-    //external_acceleration_ += 0.1 * (axis_vel_ref_ - axis_vel_average);
+    //external_acceleration_ = (2.0 * (axis_vel_average - axis_vel_ref_) - (axis_vel_average_prior_ - axis_vel_ref_)) / (2.0 * time_step_); //%[2012 VIOLEAU BOOK]
+    external_acceleration_ += 0.1 * (axis_vel_ref_ - axis_vel_average);
 
     axis_vel_average_prior_ = axis_vel_average;
     return external_acceleration_;
@@ -1205,6 +1205,41 @@ DynamicExternalForce::DynamicExternalForce(SPHBody &sph_body, Real external_acc_
 void DynamicExternalForce::update(size_t index_i, Real dt)
 {
     current_force_[index_i] = mass_[index_i] * Vecd(external_acc_, 0.0); //% Temporary treatment, all scalar operation
+    ForcePrior::update(index_i, dt);
+}
+//=================================================================================================//
+UpdateExternalAccelerationByAllFluidParticles::UpdateExternalAccelerationByAllFluidParticles(SPHBody &sph_body, Vecd vel_target, Real relax_rate)
+    : LocalDynamicsReduce<ReduceSum<Vecd>>(sph_body),
+      vel_(particles_->getVariableDataByName<Vecd>("Velocity")),
+      vel_target_(vel_target),
+      relax_rate_(relax_rate) {}
+//=================================================================================================//
+Vecd UpdateExternalAccelerationByAllFluidParticles::reduce(size_t index_i, Real dt)
+{
+    return vel_[index_i];
+}
+//=================================================================================================//
+Vecd UpdateExternalAccelerationByAllFluidParticles::outputResult(Vecd reduced_value)
+{
+    UnsignedInt total_real_particles = particles_->TotalRealParticles();
+    Vecd vel_average = reduced_value / total_real_particles;
+
+    external_acceleration_ += relax_rate_ * (vel_target_ - vel_average);
+    vel_average_ = vel_average; //% For output
+
+    return external_acceleration_;
+}
+//=================================================================================================//
+DynamicExternalForceByAllFluidParticles::DynamicExternalForceByAllFluidParticles(SPHBody &sph_body, Vecd external_acc_initial)
+    : ForcePrior(sph_body, "DynamicExternalForce"),
+      pos_(particles_->getVariableDataByName<Vecd>("Position")),
+      mass_(particles_->registerStateVariable<Real>("Mass")),
+      physical_time_(sph_system_.getSystemVariableDataByName<Real>("PhysicalTime")),
+      external_acc_(external_acc_initial) {}
+//=================================================================================================//
+void DynamicExternalForceByAllFluidParticles::update(size_t index_i, Real dt)
+{
+    current_force_[index_i] = mass_[index_i] * external_acc_;
     ForcePrior::update(index_i, dt);
 }
 //=================================================================================================//

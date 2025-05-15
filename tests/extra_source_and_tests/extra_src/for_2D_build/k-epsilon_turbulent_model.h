@@ -634,6 +634,45 @@ class DynamicExternalForce : public ForcePrior
         external_acc_ = external_acc;
     }
 };
+//=================================================================================================//
+class UpdateExternalAccelerationByAllFluidParticles : public LocalDynamicsReduce<ReduceSum<Vecd>>
+{
+  public:
+    explicit UpdateExternalAccelerationByAllFluidParticles(SPHBody &sph_body, Vecd vel_target, Real relax_rate = 0.1);
+    virtual ~UpdateExternalAccelerationByAllFluidParticles(){};
+    Vecd reduce(size_t index_i, Real dt = 0.0);
+    virtual Vecd outputResult(Vecd reduced_value) override;
+    Vecd output_vel_average()
+    {
+        return vel_average_;
+    }
+
+  protected:
+    Vecd *vel_;
+    Vecd vel_target_;
+    Vecd external_acceleration_;
+    Real relax_rate_;
+    Vecd vel_average_;
+};
+//=================================================================================================//
+class DynamicExternalForceByAllFluidParticles : public ForcePrior
+{
+  protected:
+    Vecd *pos_;
+    Real *mass_;
+    Real *physical_time_;
+    Vecd external_acc_;
+
+  public:
+    DynamicExternalForceByAllFluidParticles(SPHBody &sph_body, Vecd external_acc_initial);
+    virtual ~DynamicExternalForceByAllFluidParticles(){};
+    void update(size_t index_i, Real dt = 0.0);
+
+    void get_external_acceleration(Vecd external_acc)
+    {
+        external_acc_ = external_acc;
+    }
+};
 } // namespace fluid_dynamics
 } // namespace SPH
 #endif // K_EPSILON_TURBULENT_MODEL_H
