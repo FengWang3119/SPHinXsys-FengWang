@@ -279,6 +279,8 @@ int main(int ac, char *av[])
                 std::cout << "external_acceleration=" << external_acceleration << std::endl;
                 std::cout << "axis_vel_average_prior=" << axis_vel_average_prior << std::endl;
                 std::cout << "------" << std::endl;
+                apply_dynamic_external_force.write_external_acceleration_to_file();
+                update_external_acceleration.write_average_velocity_to_file(physical_time);
             }
 
             /*

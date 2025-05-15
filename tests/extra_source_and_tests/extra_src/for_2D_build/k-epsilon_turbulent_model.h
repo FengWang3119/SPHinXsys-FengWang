@@ -605,6 +605,29 @@ class UpdateExternalAcceleration : public LocalDynamicsReduce<ReduceSum<Real>>
     {
         return external_acceleration_;
     }
+    void write_average_velocity_to_file(Real time)
+    {
+        static bool header_written = false;
+        std::ofstream out("output/time_history_average_velocity.dat", std::ios::app);
+
+        if (!out.is_open())
+        {
+            std::cerr << "Failed to open output file." << std::endl;
+            return;
+        }
+
+        if (!header_written)
+        {
+            out << "VARIABLES = \"Time\" \"Vel_avg\"" << std::endl;
+            header_written = true;
+        }
+
+        out << std::fixed << std::setprecision(6)
+            << time << " "
+            << axis_vel_average_prior_ << std::endl;
+
+        out.close();
+    }
 
   protected:
     Vecd *vel_;
@@ -633,6 +656,29 @@ class DynamicExternalForce : public ForcePrior
     {
         external_acc_ = external_acc;
     }
+    void write_external_acceleration_to_file()
+    {
+        static bool header_written = false;
+        std::ofstream out("output/time_history_external_acceleration.dat", std::ios::app);
+
+        if (!out.is_open())
+        {
+            std::cerr << "Failed to open output file." << std::endl;
+            return;
+        }
+
+        if (!header_written)
+        {
+            out << "VARIABLES = \"Time\" \"Acc_\"" << std::endl;
+            header_written = true;
+        }
+
+        out << std::fixed << std::setprecision(6)
+            << *physical_time_ << " "
+            << external_acc_ << std::endl;
+
+        out.close();
+    }
 };
 //=================================================================================================//
 class UpdateExternalAccelerationByAllFluidParticles : public LocalDynamicsReduce<ReduceSum<Vecd>>
@@ -645,6 +691,30 @@ class UpdateExternalAccelerationByAllFluidParticles : public LocalDynamicsReduce
     Vecd output_vel_average()
     {
         return vel_average_;
+    }
+    void write_average_velocity_to_file(Real time)
+    {
+        static bool header_written = false;
+        std::ofstream out("output/time_history_average_velocity.dat", std::ios::app);
+
+        if (!out.is_open())
+        {
+            std::cerr << "Failed to open output file." << std::endl;
+            return;
+        }
+
+        if (!header_written)
+        {
+            out << "VARIABLES = \"Time\" \"Vel_avg_X\" \"Vel_avg_Y\"" << std::endl;
+            header_written = true;
+        }
+
+        out << std::fixed << std::setprecision(6)
+            << time << " "
+            << vel_average_[0] << " "
+            << vel_average_[1] << std::endl;
+
+        out.close();
     }
 
   protected:
@@ -671,6 +741,30 @@ class DynamicExternalForceByAllFluidParticles : public ForcePrior
     void get_external_acceleration(Vecd external_acc)
     {
         external_acc_ = external_acc;
+    }
+    void write_external_acceleration_to_file()
+    {
+        static bool header_written = false;
+        std::ofstream out("output/time_history_external_acceleration.dat", std::ios::app);
+
+        if (!out.is_open())
+        {
+            std::cerr << "Failed to open output file." << std::endl;
+            return;
+        }
+
+        if (!header_written)
+        {
+            out << "VARIABLES = \"Time\" \"Acc_X\" \"Acc_Y\"" << std::endl;
+            header_written = true;
+        }
+
+        out << std::fixed << std::setprecision(6)
+            << *physical_time_ << " "
+            << external_acc_[0] << " "
+            << external_acc_[1] << std::endl;
+
+        out.close();
     }
 };
 } // namespace fluid_dynamics
