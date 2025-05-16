@@ -251,8 +251,8 @@ int main(int ac, char *av[])
 
         int num_particle_in_buffer = 0;
         Real axis_vel_average_prior = 0.0;
-        Real external_acceleration = 0.0;
-        Real external_acceleration_prior = 0.1;
+        Real external_acceleration = external_acc_initial;
+        Real external_acceleration_prior = external_acc_initial;
 
         /** Integrate time (loop) until the next output time. */
         while (integration_time < Output_Time)
