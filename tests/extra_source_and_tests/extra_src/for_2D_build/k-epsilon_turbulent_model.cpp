@@ -1164,7 +1164,8 @@ UpdateExternalAcceleration::UpdateExternalAcceleration(SPHBody &sph_body, Real a
       vel_(particles_->getVariableDataByName<Vecd>("Velocity")),
       indicator_external_force_(particles_->getVariableDataByName<int>("IndicatorForExternalForce")),
       num_particle_in_buffer_(0), time_step_(0.0),
-      axis_vel_ref_(axis_vel_ref), axis_vel_average_prior_(0.0) {}
+      axis_vel_ref_(axis_vel_ref), axis_vel_average_prior_(0.0),
+      accumulated_error_(0.0) {}
 //=================================================================================================//
 Real UpdateExternalAcceleration::reduce(size_t index_i, Real dt)
 {
@@ -1191,9 +1192,17 @@ Real UpdateExternalAcceleration::outputResult(Real reduced_value)
     //external_acceleration_ = (2.0 * (axis_vel_average - axis_vel_ref_) - (axis_vel_average_prior_ - axis_vel_ref_)) / (2.0 * time_step_); //%[2012 VIOLEAU BOOK]
     //external_acceleration_ += 0.1 * (axis_vel_ref_ - axis_vel_average);
 
+    /*
     Real error_current = axis_vel_ref_ - axis_vel_average;
     Real error_prior = axis_vel_ref_ - axis_vel_average_prior_;
     external_acceleration_ += 0.05 * error_current + 0.01 * (error_current - error_prior);
+    */
+
+    Real alpha = 0.01;
+    Real beta = 0.005;
+    Real error_current = axis_vel_ref_ - axis_vel_average;
+    accumulated_error_ += error_current * time_step_;
+    external_acceleration_ += alpha * error_current + beta * accumulated_error_;
 
     axis_vel_average_prior_ = axis_vel_average;
     return external_acceleration_;

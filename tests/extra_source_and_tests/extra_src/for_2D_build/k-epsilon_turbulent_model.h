@@ -637,6 +637,7 @@ class UpdateExternalAcceleration : public LocalDynamicsReduce<ReduceSum<Real>>
     Real axis_vel_ref_;
     Real external_acceleration_;
     Real axis_vel_average_prior_;
+    Real accumulated_error_;
 };
 //=================================================================================================//
 class DynamicExternalForce : public ForcePrior
