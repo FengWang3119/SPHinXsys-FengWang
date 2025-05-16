@@ -90,7 +90,7 @@ Vec2d buffer_translation = Vec2d(DL_Sponge / 2.0, DH / 2.0) + Vec2d(BW, 0.0);
 */
 
 Real axis_vel_ref_ = 0.33;
-Real external_acc_initial = 2.0;
+Real external_acc_initial = 1.5;
 
 /*
 Vecd target_velocity = Vecd(38.0, 0.0);
