@@ -1190,12 +1190,14 @@ Real UpdateExternalAcceleration::outputResult(Real reduced_value)
 
     //external_acceleration_ -= (2.0 * (axis_vel_average - axis_vel_ref_) - (axis_vel_average_prior_ - axis_vel_ref_)) / (2.0 * time_step_); //%[2003 Issa PhdThesis]
     //external_acceleration_ = (2.0 * (axis_vel_average - axis_vel_ref_) - (axis_vel_average_prior_ - axis_vel_ref_)) / (2.0 * time_step_); //%[2012 VIOLEAU BOOK]
-    //external_acceleration_ += 0.1 * (axis_vel_ref_ - axis_vel_average);
+    Real alpha = 0.1;
+    external_acceleration_ += alpha * (axis_vel_ref_ - axis_vel_average);
 
+    /*
     Real error_current = axis_vel_ref_ - axis_vel_average;
     Real error_prior = axis_vel_ref_ - axis_vel_average_prior_;
     external_acceleration_ += 0.05 * error_current + 0.01 * (error_current - error_prior);
-
+    */
     /*
     Real alpha = 0.01;
     Real beta = 0.005;
