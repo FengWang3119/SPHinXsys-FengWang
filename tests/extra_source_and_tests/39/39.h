@@ -83,14 +83,19 @@ StdVec<Real> initial_turbu_values = {0.000180001, 3.326679e-5, 1.0e-3};
 Real DL_Sponge = 5.0 * resolution_ref;
 Vec2d buffer_halfsize = 0.5 * Vec2d(DL_Sponge, DH);
 Vec2d buffer_translation = Vec2d(DL_Sponge / 2.0, DH / 2.0) + Vec2d(BW, 0.0);
-Vecd external_acc = Vecd(1.885, 0.0);
-Real external_acc_gradually_impose_t = 2.0;
-Real axis_vel_ref_ = 38.0;
-Real external_acc_initial = 0.1;
 
+/*
+//Vecd external_acc = Vecd(1.885, 0.0);
+//Real external_acc_gradually_impose_t = 2.0;
+*/
+
+Real axis_vel_ref_ = 0.33;
+Real external_acc_initial = 0.01;
+
+/*
 Vecd target_velocity = Vecd(38.0, 0.0);
 Vecd external_acceleration_initial = Vecd(0.1, 0.0);
-
+*/
 Real U_max = 3.0; //** An estimated value, Periodic BC *
 Real U_f = U_max; // * Characteristic velocity, Periodic BC
 
@@ -231,7 +236,7 @@ std::vector<Vecd> createWaterBlockShape()
 
     return water_block_shape;
 }
-/*
+
 //% For fish pass geometry
 std::vector<Vecd> createUpperWallShape()
 {
@@ -323,8 +328,8 @@ class WallBoundary : public ComplexShape
         add<MultiPolygonShape>(bottom_dummy_boundary, "BottomDummyBoundary");
     }
 };
-*/
 
+/*
 //% For straight channel geometry
 std::vector<Vecd> createUpperWallShape()
 {
@@ -371,3 +376,4 @@ class WallBoundary : public ComplexShape
         add<MultiPolygonShape>(bottom_dummy_boundary, "BottomDummyBoundary");
     }
 };
+*/
