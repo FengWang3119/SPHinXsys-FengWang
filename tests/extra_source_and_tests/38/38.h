@@ -70,7 +70,7 @@ bool is_always_lattice_arrange_fluid = false;
 //** Tag for Source Term Linearisation *
 bool is_source_term_linearisation = true;
 //** Empirical parameter for initial stability*
-Real turbulent_module_activate_time = 2.5;
+Real turbulent_module_activate_time = 0.0;
 //** Initial values for K, Epsilon and Mu_t *
 StdVec<Real> initial_turbu_values = {0.000180001, 3.326679e-5, 1.0e-3};
 //----------------------------------------------------------------------
