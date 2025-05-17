@@ -19,11 +19,11 @@ using namespace SPH;
 //	Basic geometry parameters and numerical setup.
 //----------------------------------------------------------------------
 Real DH = 2.0; /**< Channel height. */
-Real num_fluid_cross_section = 800.0;
+Real num_fluid_cross_section = 100.0;
 Real DL = 3.0;
 
-Real y_p_constant = DH / 2.0 / num_fluid_cross_section; //%% For the first try *
-//Real y_p_constant = 0.025;
+//Real y_p_constant = DH / 2.0 / num_fluid_cross_section; //%% For the first try *
+Real y_p_constant = 0.01;
 
 Real resolution_ref_temp = (DH - 2.0 * y_p_constant) / (num_fluid_cross_section - 1.0); /**< Initial reference particle spacing. */
 Real resolution_ref = round(resolution_ref_temp * 1.0e8) / 1.0e8;
@@ -31,6 +31,9 @@ Real offset_distance = y_p_constant - resolution_ref / 2.0; //%% Basically offse
 Real BW = resolution_ref * 4;
 
 Vec2d point_O(0.0, 0.0);
+Vec2d point_water_left_up = point_O + Vec2d(0.0, DH);
+Vec2d point_water_right_up = point_O + Vec2d(DL, DH);
+Vec2d point_water_right_down = point_O + Vec2d(DL, 0.0);
 
 Vec2d point_1(2.42139, 0.95617);
 Vec2d point_2(1.82129, 0.95617);
@@ -54,6 +57,12 @@ Vec2d point_17 = point_O + Vec2d(-BW, -BW);
 Vec2d point_18 = point_17 + Vec2d(2.0 * BW + DL, 0.0);
 Vec2d point_19 = point_18 + Vec2d(0.0, BW);
 Vec2d point_20 = point_O + Vec2d(-BW, 0.0);
+
+Vec2d extend_distance_to_compensate_offset(0.0, 0.0);
+Vec2d point_O_extruded = point_O + Vec2d(offset_distance, offset_distance) - extend_distance_to_compensate_offset;
+Vec2d point_water_left_up_extruded = point_water_left_up + Vec2d(offset_distance, -offset_distance) - extend_distance_to_compensate_offset;
+Vec2d point_water_right_up_extruded = point_water_right_up + Vec2d(-offset_distance, -offset_distance) + extend_distance_to_compensate_offset;
+Vec2d point_water_right_down_extruded = point_water_right_down + Vec2d(-offset_distance, offset_distance) + extend_distance_to_compensate_offset;
 //----------------------------------------------------------------------
 //	Unique parameters for turbulence.
 //----------------------------------------------------------------------
@@ -215,18 +224,33 @@ void output_number_observe_points_on_lines()
 //----------------------------------------------------------------------
 //	Cases-dependent geometries
 //----------------------------------------------------------------------
+/*
 std::vector<Vecd> createWaterBlockShape()
 {
     std::vector<Vecd> water_block_shape;
 
-    water_block_shape.push_back(point_O);
-    water_block_shape.push_back(point_O + Vec2d(0.0, DH));
-    water_block_shape.push_back(point_O + Vec2d(DL, DH));
-    water_block_shape.push_back(point_O + Vec2d(DL, 0.0));
-    water_block_shape.push_back(point_O);
+    water_block_shape.push_back(point_O - extend_distance_to_compensate_offset);
+    water_block_shape.push_back(point_water_left_up - extend_distance_to_compensate_offset);
+    water_block_shape.push_back(point_water_right_up + extend_distance_to_compensate_offset);
+    water_block_shape.push_back(point_water_right_down + extend_distance_to_compensate_offset);
+    water_block_shape.push_back(point_O - extend_distance_to_compensate_offset);
 
     return water_block_shape;
 }
+*/
+std::vector<Vecd> createWaterBlockShapeExtruded()
+{
+    std::vector<Vecd> water_block_shape;
+
+    water_block_shape.push_back(point_O_extruded - extend_distance_to_compensate_offset);
+    water_block_shape.push_back(point_water_left_up_extruded - extend_distance_to_compensate_offset);
+    water_block_shape.push_back(point_water_right_up_extruded + extend_distance_to_compensate_offset);
+    water_block_shape.push_back(point_water_right_down_extruded + extend_distance_to_compensate_offset);
+    water_block_shape.push_back(point_O_extruded - extend_distance_to_compensate_offset);
+
+    return water_block_shape;
+}
+
 //% For fish pass geometry
 std::vector<Vecd> createUpperWallShape()
 {
@@ -292,18 +316,33 @@ std::vector<Vecd> createPencilWallShape()
 
     return shape;
 }
-class WaterBlock : public ComplexShape
+class WaterBlockExtruded : public ComplexShape
 {
   public:
-    explicit WaterBlock(const std::string &shape_name) : ComplexShape(shape_name)
+    explicit WaterBlockExtruded(const std::string &shape_name) : ComplexShape(shape_name)
     {
-        MultiPolygon computational_domain(createWaterBlockShape());
+        std::cout << "y_p_constant = " << y_p_constant << std::endl;
+
+        MultiPolygon computational_domain(createWaterBlockShapeExtruded());
         add<MultiPolygonShape>(computational_domain, "ComputationalDomain");
+        std::cout << "ComputationalDomain is MANUALLY extruded by distance = " << -offset_distance << std::endl;
 
         MultiPolygon sub_upper_dummy_boundary(createHookWallShape());
-        subtract<MultiPolygonShape>(sub_upper_dummy_boundary, "SubUpperDummyBoundary");
+
+        if (offset_distance < TinyReal)
+        {
+            subtract<MultiPolygonShape>(sub_upper_dummy_boundary, "SubUpperDummyBoundary");
+            std::cout << "!!!Note:Specially treat SubUpperDummyBoundary due to level-set crash" << std::endl;
+        }
+        else
+        {
+            subtract<ExtrudeShape<MultiPolygonShape>>(offset_distance, sub_upper_dummy_boundary, "SubUpperDummyBoundary");
+        }
+
+        std::cout << "SubUpperDummyBoundary is extruded by distance = " << offset_distance << std::endl;
         MultiPolygon sub_bottom_dummy_boundary(createPencilWallShape());
-        subtract<MultiPolygonShape>(sub_bottom_dummy_boundary, "SubBottomDummyBoundary");
+        subtract<ExtrudeShape<MultiPolygonShape>>(offset_distance, sub_bottom_dummy_boundary, "SubBottomDummyBoundary");
+        std::cout << "SubBottomDummyBoundary is extruded by distance = " << offset_distance << std::endl;
     }
 };
 
@@ -313,14 +352,27 @@ class WallBoundary : public ComplexShape
     explicit WallBoundary(const std::string &shape_name) : ComplexShape(shape_name)
     {
         MultiPolygon upper_dummy_boundary(createUpperWallShape());
-        add<MultiPolygonShape>(upper_dummy_boundary, "UpperDummyBoundary");
+        add<ExtrudeShape<MultiPolygonShape>>(offset_distance, upper_dummy_boundary, "UpperDummyBoundary");
+        std::cout << "UpperDummyBoundary is extruded by distance = " << offset_distance << std::endl;
+
         MultiPolygon bottom_dummy_boundary(createBottomWallShape());
-        add<MultiPolygonShape>(bottom_dummy_boundary, "BottomDummyBoundary");
+        add<ExtrudeShape<MultiPolygonShape>>(offset_distance, bottom_dummy_boundary, "BottomDummyBoundary");
+        std::cout << "BottomDummyBoundary is extruded by distance = " << offset_distance << std::endl;
     }
 };
 
 /*
 //% For straight channel geometry
+class WaterBlockExtruded : public ComplexShape
+{
+  public:
+    explicit WaterBlockExtruded(const std::string &shape_name) : ComplexShape(shape_name)
+    {
+        MultiPolygon computational_domain_extruded(createWaterBlockShapeExtruded());
+        add<MultiPolygonShape>(computational_domain_extruded, "ComputationalDomainExtruded");
+        std::cout << "ComputationalDomainExtruded is defined." << std::endl;
+    }
+};
 std::vector<Vecd> createUpperWallShape()
 {
     std::vector<Vecd> shape;
@@ -345,13 +397,17 @@ std::vector<Vecd> createBottomWallShape()
 
     return shape;
 }
+
 class WaterBlock : public ComplexShape
 {
   public:
     explicit WaterBlock(const std::string &shape_name) : ComplexShape(shape_name)
     {
+        std::cout << "y_p_constant = " << y_p_constant << std::endl;
+
         MultiPolygon computational_domain(createWaterBlockShape());
-        add<MultiPolygonShape>(computational_domain, "ComputationalDomain");
+        add<ExtrudeShape<MultiPolygonShape>>(-offset_distance, computational_domain, "ComputationalDomain");
+        std::cout << "ComputationalDomain is extruded by distance = " << -offset_distance << std::endl;
     }
 };
 
@@ -361,9 +417,12 @@ class WallBoundary : public ComplexShape
     explicit WallBoundary(const std::string &shape_name) : ComplexShape(shape_name)
     {
         MultiPolygon upper_dummy_boundary(createUpperWallShape());
-        add<MultiPolygonShape>(upper_dummy_boundary, "UpperDummyBoundary");
+        add<ExtrudeShape<MultiPolygonShape>>(offset_distance, upper_dummy_boundary, "UpperDummyBoundary");
+        std::cout << "UpperDummyBoundary is extruded by distance = " << offset_distance << std::endl;
+
         MultiPolygon bottom_dummy_boundary(createBottomWallShape());
-        add<MultiPolygonShape>(bottom_dummy_boundary, "BottomDummyBoundary");
+        add<ExtrudeShape<MultiPolygonShape>>(offset_distance, bottom_dummy_boundary, "BottomDummyBoundary");
+        std::cout << "BottomDummyBoundary is extruded by distance = " << offset_distance << std::endl;
     }
 };
 */

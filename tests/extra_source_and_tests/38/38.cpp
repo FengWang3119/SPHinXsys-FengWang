@@ -19,8 +19,13 @@ int main(int ac, char *av[])
      * @brief Material property, particles and body creation of fluid.
      */
 
-    FluidBody water_block(sph_system, makeShared<WaterBlock>("WaterBody"));
-    water_block.defineBodyLevelSetShape();
+    FluidBody water_block(sph_system, makeShared<WaterBlockExtruded>("WaterBody"));
+    if (sph_system.RunParticleRelaxation())
+    {
+        std::cout << "water_block.defineBodyLevelSetShape starts" << std::endl;
+        water_block.defineBodyLevelSetShape();
+        std::cout << "water_block.defineBodyLevelSetShape ends" << std::endl;
+    }
     water_block.defineClosure<WeaklyCompressibleFluid, Viscosity>(ConstructArgs(rho0_f, c_f), mu_f);
     ParticleBuffer<ReserveSizeFactor> inlet_particle_buffer(0.5);
     (!sph_system.RunParticleRelaxation() && sph_system.ReloadParticles() && !is_always_lattice_arrange_fluid)
@@ -30,7 +35,12 @@ int main(int ac, char *av[])
      * @brief 	Particle and body creation of wall boundary.
      */
     SolidBody wall_boundary(sph_system, makeShared<WallBoundary>("Wall"));
-    wall_boundary.defineBodyLevelSetShape();
+    if (sph_system.RunParticleRelaxation())
+    {
+        std::cout << "wall_boundary.defineBodyLevelSetShape starts" << std::endl;
+        wall_boundary.defineBodyLevelSetShape();
+        std::cout << "wall_boundary.defineBodyLevelSetShape ends" << std::endl;
+    }
     wall_boundary.defineMaterial<Solid>();
     (!sph_system.RunParticleRelaxation() && sph_system.ReloadParticles())
         ? wall_boundary.generateParticles<BaseParticles, Reload>(wall_boundary.getName())
@@ -170,6 +180,10 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     // Periodic BC
     //----------------------------------------------------------------------
+    // FluidBody water_block_extruded(sph_system, makeShared<WaterBlockExtruded>("WaterBodyExtruded"));
+    // water_block_extruded.defineClosure<WeaklyCompressibleFluid, Viscosity>(ConstructArgs(rho0_f, c_f), mu_f);
+    // water_block_extruded.generateParticles<BaseParticles, Lattice>();
+
     PeriodicAlongAxis periodic_along_x(water_block.getSPHBodyBounds(), xAxis);
     PeriodicConditionUsingCellLinkedList periodic_condition_x(water_block, periodic_along_x);
 
