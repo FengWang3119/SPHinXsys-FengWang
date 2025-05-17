@@ -3,7 +3,7 @@
  * @brief 	This is the case file for the test of flow passing by a cylinder.
  * @details  We consider a flow passing by a cylinder in 2D.
  * @author 	Xiangyu Hu, Chi Zhang and Luhui Han
- * Third try from 12
+ * try with the same reload data as 6
  */
 
 #include "bidirectional_buffer.h"
