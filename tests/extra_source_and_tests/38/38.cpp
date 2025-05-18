@@ -35,12 +35,12 @@ int main(int ac, char *av[])
      * @brief 	Particle and body creation of wall boundary.
      */
     SolidBody wall_boundary(sph_system, makeShared<WallBoundary>("Wall"));
-    // if (sph_system.RunParticleRelaxation())
-    // {
-    //     std::cout << "wall_boundary.defineBodyLevelSetShape starts" << std::endl;
-    wall_boundary.defineBodyLevelSetShape();
-    //     std::cout << "wall_boundary.defineBodyLevelSetShape ends" << std::endl;
-    // }
+    if (sph_system.RunParticleRelaxation())
+    {
+        std::cout << "wall_boundary.defineBodyLevelSetShape starts" << std::endl;
+        wall_boundary.defineBodyLevelSetShape();
+        std::cout << "wall_boundary.defineBodyLevelSetShape ends" << std::endl;
+    }
     wall_boundary.defineMaterial<Solid>();
     (!sph_system.RunParticleRelaxation() && sph_system.ReloadParticles())
         ? wall_boundary.generateParticles<BaseParticles, Reload>(wall_boundary.getName())
