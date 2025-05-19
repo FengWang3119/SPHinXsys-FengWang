@@ -59,7 +59,7 @@ Vec2d point_18 = point_17 + Vec2d(2.0 * BW + DL, 0.0);
 Vec2d point_19 = point_18 + Vec2d(0.0, BW);
 Vec2d point_20 = point_O + Vec2d(-BW, 0.0);
 
-Vec2d extend_distance_to_compensate_offset(0.0, 0.0);
+Vec2d extend_distance_to_compensate_offset(offset_distance, 0.0);
 Vec2d point_O_extruded = point_O + Vec2d(offset_distance, offset_distance) - extend_distance_to_compensate_offset;
 Vec2d point_water_left_up_extruded = point_water_left_up + Vec2d(offset_distance, -offset_distance) - extend_distance_to_compensate_offset;
 Vec2d point_water_right_up_extruded = point_water_right_up + Vec2d(-offset_distance, -offset_distance) + extend_distance_to_compensate_offset;
@@ -399,18 +399,18 @@ std::vector<Vecd> createBottomWallShape()
     return shape;
 }
 
-class WaterBlock : public ComplexShape
-{
-  public:
-    explicit WaterBlock(const std::string &shape_name) : ComplexShape(shape_name)
-    {
-        std::cout << "y_p_constant = " << y_p_constant << std::endl;
+// class WaterBlock : public ComplexShape
+// {
+//   public:
+//     explicit WaterBlock(const std::string &shape_name) : ComplexShape(shape_name)
+//     {
+//         std::cout << "y_p_constant = " << y_p_constant << std::endl;
 
-        MultiPolygon computational_domain(createWaterBlockShape());
-        add<ExtrudeShape<MultiPolygonShape>>(-offset_distance, computational_domain, "ComputationalDomain");
-        std::cout << "ComputationalDomain is extruded by distance = " << -offset_distance << std::endl;
-    }
-};
+//         MultiPolygon computational_domain(createWaterBlockShape());
+//         add<ExtrudeShape<MultiPolygonShape>>(-offset_distance, computational_domain, "ComputationalDomain");
+//         std::cout << "ComputationalDomain is extruded by distance = " << -offset_distance << std::endl;
+//     }
+// };
 
 class WallBoundary : public ComplexShape
 {
