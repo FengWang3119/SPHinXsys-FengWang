@@ -20,7 +20,7 @@ using namespace SPH;
 //	Basic geometry parameters and numerical setup.
 //----------------------------------------------------------------------
 Real DH = 2.0; /**< Channel height. */
-Real num_fluid_cross_section = 200.0;
+Real num_fluid_cross_section = 400.0;
 Real DL = 3.0;
 
 //Real y_p_constant = DH / 2.0 / num_fluid_cross_section; //%% For the first try *
