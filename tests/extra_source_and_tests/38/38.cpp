@@ -300,9 +300,9 @@ int main(int ac, char *av[])
             turbulent_viscous_force.exec();
 
             transport_velocity_correction.exec();
-            get_limiter_of_transport_velocity_correction.exec();
+            //get_limiter_of_transport_velocity_correction.exec();
 
-            kernel_summation.exec();
+            //kernel_summation.exec();
 
             Real relaxation_time = 0.0;
             int inner_itr = 0;
