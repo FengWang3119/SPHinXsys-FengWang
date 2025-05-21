@@ -97,6 +97,19 @@ void DisposerInBufferDeletion::update(size_t index_i, Real dt)
     }
     mutex_switch_to_buffer_.unlock();
 }
+//=============================================================================================//
+InitialiseColorIndicator::InitialiseColorIndicator(SPHBody &sph_body)
+    : LocalDynamics(sph_body),
+      color_indicator_(particles_->registerStateVariable<int>("ColorIndicator"))
+{
+    particles_->addVariableToSort<int>("ColorIndicator");
+    particles_->addVariableToWrite<int>("ColorIndicator");
+}
+//=============================================================================================//
+void InitialiseColorIndicator::update(size_t index_i, Real dt)
+{
+    color_indicator_[index_i] = 0; //%Actually not used
+}
 //=================================================================================================//
 } // namespace SPH
   //=================================================================================================//

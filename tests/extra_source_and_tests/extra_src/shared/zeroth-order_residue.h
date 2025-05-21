@@ -138,5 +138,15 @@ class DisposerInBufferDeletion : public BaseLocalDynamics<BodyPartByCell>
     AlignedBoxShape &aligned_box_;
 };
 
+class InitialiseColorIndicator : public LocalDynamics
+{
+  public:
+    explicit InitialiseColorIndicator(SPHBody &sph_body);
+    virtual ~InitialiseColorIndicator(){};
+    void update(size_t index_i, Real dt = 0.0);
+
+  protected:
+    int *color_indicator_;
+};
 } // namespace SPH
 #endif // K_EPSILON_TURBULENT_MODEL_H

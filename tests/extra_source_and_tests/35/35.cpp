@@ -237,6 +237,7 @@ int main(int ac, char *av[])
     // StartupAcceleration time_dependent_acceleration(Vecd(0.0, 0.0, U_f), t_ref);
     // SimpleDynamics<GravityForce<StartupAcceleration>> apply_gravity_force(water_block, time_dependent_acceleration);
 
+    SimpleDynamics<InitialiseColorIndicator> initialise_color_indicator(water_block);
     //----------------------------------------------------------------------
     // Inlet buffers
     //----------------------------------------------------------------------

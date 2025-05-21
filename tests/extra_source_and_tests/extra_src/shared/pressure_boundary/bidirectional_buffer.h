@@ -66,7 +66,7 @@ class BidirectionalBuffer
         {
             particles_->addVariableToSort<int>("BufferParticleIndicator");
         };
-        virtual ~TagBufferParticles() {};
+        virtual ~TagBufferParticles(){};
 
         virtual void update(size_t index_i, Real dt = 0.0)
         {
@@ -100,11 +100,12 @@ class BidirectionalBuffer
               buffer_particle_indicator_(particles_->getVariableDataByName<int>("BufferParticleIndicator")),
               upper_bound_fringe_(0.5 * sph_body_.getSPHBodyResolutionRef()),
               physical_time_(sph_system_.getSystemVariableDataByName<Real>("PhysicalTime")),
+              color_indicator_(particles_->getVariableDataByName<int>("ColorIndicator")),
               target_pressure_(target_pressure)
         {
             particle_buffer_.checkParticlesReserved();
         };
-        virtual ~Injection() {};
+        virtual ~Injection(){};
 
         void update(size_t index_i, Real dt = 0.0)
         {
@@ -118,6 +119,8 @@ class BidirectionalBuffer
                     particle_buffer_.checkEnoughBuffer(*particles_);
                     size_t new_particle_index = particles_->createRealParticleFrom(index_i);
                     buffer_particle_indicator_[new_particle_index] = 0;
+
+                    color_indicator_[index_i] = part_id_;
 
                     /** Periodic bounding. */
                     pos_[index_i] = aligned_box_.getUpperPeriodic(pos_[index_i]);
@@ -141,6 +144,7 @@ class BidirectionalBuffer
         int *previous_surface_indicator_, *buffer_particle_indicator_;
         Real upper_bound_fringe_;
         Real *physical_time_;
+        int *color_indicator_;
 
       private:
         TargetPressure &target_pressure_;
@@ -154,8 +158,8 @@ class BidirectionalBuffer
               part_id_(aligned_box_part.getPartID()),
               aligned_box_(aligned_box_part.getAlignedBoxShape()),
               pos_(particles_->getVariableDataByName<Vecd>("Position")),
-              buffer_particle_indicator_(particles_->getVariableDataByName<int>("BufferParticleIndicator")) {};
-        virtual ~Deletion() {};
+              buffer_particle_indicator_(particles_->getVariableDataByName<int>("BufferParticleIndicator")){};
+        virtual ~Deletion(){};
 
         void update(size_t index_i, Real dt = 0.0)
         {
@@ -185,8 +189,8 @@ class BidirectionalBuffer
         : target_pressure_(*this),
           tag_buffer_particles(aligned_box_part),
           injection(aligned_box_part, particle_buffer, target_pressure_),
-          deletion(aligned_box_part) {};
-    virtual ~BidirectionalBuffer() {};
+          deletion(aligned_box_part){};
+    virtual ~BidirectionalBuffer(){};
 
     SimpleDynamics<TagBufferParticles, ExecutionPolicy> tag_buffer_particles;
     SimpleDynamics<Injection, ExecutionPolicy> injection;
