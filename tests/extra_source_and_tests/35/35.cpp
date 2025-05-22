@@ -305,6 +305,8 @@ int main(int ac, char *av[])
     //SimpleDynamics<fluid_dynamics::PressureConditionCorrection<RightOutflowPressure>> outflow_pressure_condition(outlet_buffer);
     //----------------------------------------------------------------------
 
+    SimpleDynamics<ClearBufferParticleIndicator> clear_buffer_particle_indicator(water_block, zAxis, H_inlet, H_inlet + BW); //% This is case-dependent
+
     InteractionWithUpdate<fluid_dynamics::DensitySummationPressureComplex> update_fluid_density_pressure(water_block_inner, water_wall_contact);
 
     /** Choose one, ordinary or turbulent. Time step size without considering sound wave speed. */
@@ -493,6 +495,10 @@ int main(int ac, char *av[])
 
             /** Tag truncated inlet/outlet particles*/
             inlet_outlet_surface_particle_indicator.exec();
+
+            //% Clear before tagging.
+            //clear_buffer_particle_indicator.exec();
+
             /** Tag in/outlet buffer particles that suffer pressure condition*/
             bidirection_buffer_1.tag_buffer_particles.exec();
             bidirection_buffer_2.tag_buffer_particles.exec();

@@ -148,5 +148,19 @@ class InitialiseColorIndicator : public LocalDynamics
   protected:
     int *color_indicator_;
 };
+class ClearBufferParticleIndicator : public LocalDynamics
+{
+  public:
+    explicit ClearBufferParticleIndicator(SPHBody &sph_body, int third_dimension, Real lower_bound, Real upper_bound);
+    virtual ~ClearBufferParticleIndicator(){};
+    void update(size_t index_i, Real dt = 0.0);
+
+  protected:
+    int *buffer_particle_indicator_;
+    int third_dimension_;
+    Real lower_bound_;
+    Vecd *pos_;
+    Real upper_bound_;
+};
 } // namespace SPH
 #endif // K_EPSILON_TURBULENT_MODEL_H
