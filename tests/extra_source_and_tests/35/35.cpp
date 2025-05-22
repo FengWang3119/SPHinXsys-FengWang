@@ -333,6 +333,9 @@ int main(int ac, char *av[])
     body_states_recording.addToWrite<int>(water_block, "BufferParticleIndicator");
     //body_states_recording.addToWrite<Real>(water_block, "VolumetricMeasure");
     //body_states_recording.addToWrite<Matd>(water_block, "LinearGradientCorrectionMatrix");
+
+    WriteToVtpIfVelocityOutOfBound abnormal_velocity_recording(sph_system, 10.0);
+
     /**
      * @brief Setup geometry and initial conditions.
      */
@@ -364,7 +367,7 @@ int main(int ac, char *av[])
     Real end_time = 200.0;                      /**< End time. */
     Real cutoff_ratio = 0.92;                   //** cutoff_time should be a integral and the same as the PY script */
     Real cutoff_time = cutoff_ratio * end_time; //** cutoff_time should be a integral and the same as the PY script */
-    Real num_output_files = 200000.0;
+    Real num_output_files = 200.0;
     Real Output_Time = end_time / num_output_files; /**< Time stamps for output of body states. */
     Real index_check_file_fully_developed = num_output_files * cutoff_ratio;
     Real dt = 0.0; /**< Default acoustic time step sizes. */
@@ -447,6 +450,7 @@ int main(int ac, char *av[])
                 //{
                 //body_states_recording.writeToFile();
                 //}
+                abnormal_velocity_recording.writeToFile();
             }
             if (number_of_iterations % screen_output_interval == 0)
             {

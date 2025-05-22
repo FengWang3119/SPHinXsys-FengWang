@@ -64,7 +64,7 @@ BoundingBox system_domain_bounds(point_O +
 Real U_inlet = 1.0;
 Real U_f = U_inlet; //*Characteristic velocity
 
-Real U_max = 2.0 * U_inlet; //** An estimated value, generally 1.5 U_inlet *
+Real U_max = 2.0 * U_inlet; //** An estimated value, this case the max velocity in outlet is about 7.5 *
 
 Real c_f = 10.0 * U_max;
 Real rho0_f = 1000.0; /**< Density. */
@@ -101,7 +101,7 @@ Vecd point_6(-8.69741, -1.20208, 0.5);
 Vecd point_7(-5.3, -7.0, 0.5);
 Vecd point_8(1.20208, -8.69741, 0.5);
 */
-
+/*
 //% For G3
 Vecd point_1(7.0, -5.5, 0.5);
 Vecd point_2(8.83883, 1.06066, 0.5);
@@ -111,6 +111,17 @@ Vecd point_5(-7.0, 5.5, 0.5);
 Vecd point_6(-8.83883, -1.06066, 0.5);
 Vecd point_7(-5.5, -7.0, 0.5);
 Vecd point_8(1.06066, -8.83883, 0.5);
+*/
+
+//% For G4
+Vecd point_1(7.0, -6.0, 0.5);
+Vecd point_2(9.19239, 0.707107, 0.5);
+Vecd point_3(6.0, 7.0, 0.5);
+Vecd point_4(-0.707107, 9.19239, 0.5);
+Vecd point_5(-7.0, 6.0, 0.5);
+Vecd point_6(-9.19239, -0.707107, 0.5);
+Vecd point_7(-6.0, -7.0, 0.5);
+Vecd point_8(0.707107, -9.19239, 0.5);
 
 Vecd point_out(11.9373, 0.0, 3.5);
 
@@ -197,7 +208,7 @@ Vecd outlet_sub_buffer_translation = outlet_buffer_translation + buffer_thicknes
 //----------------------------------------------------------------------
 //	Cases-dependent geometries
 //----------------------------------------------------------------------
-std::string stl_fluid_path = "./input/g3.stl";
+std::string stl_fluid_path = "./input/g4.stl";
 Real scale_factor_fluid = 1.0;
 Vecd translation_stl_fluid(0.0, 0.0, 0.0);
 class WaterBlock : public ComplexShape
@@ -210,7 +221,7 @@ class WaterBlock : public ComplexShape
 };
 
 /** Set the file path to the stl file. */
-std::string stl_structure_path = "./input/g3.stl";
+std::string stl_structure_path = "./input/g4.stl"; //% This also denote which file we use
 Real scale_factor = 1.0;
 Vecd translation_stl(0.0, 0.0, 0.0);
 class WallBoundaryFromSTL : public ComplexShape
