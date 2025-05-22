@@ -130,7 +130,7 @@ Vecd axis_vector_z(0.0, 0.0, 1.0);
 Vecd axis_vector_y(0.0, 1.0, 0.0);
 
 //** L_inlet for X, axis-FLOW for Y, H_inlet for Z, */
-Vecd inlet_buffer_halfsize = 0.5 * Vecd(L_inlet, buffer_thickness, H_inlet);
+Vecd inlet_buffer_halfsize = 0.5 * Vecd(L_inlet + 0.5 * resolution_ref, buffer_thickness, H_inlet);
 
 Real inlet_1_rotation_angle = 0.0;
 Rotation3d inlet_1_rotation(inlet_1_rotation_angle, axis_vector_z);
