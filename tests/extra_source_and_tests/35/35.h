@@ -80,6 +80,7 @@ Real t_ref = 2.0;
 //	The open boundary setting.
 //----------------------------------------------------------------------
 /*
+//% For G1
 Vecd point_1(7.0, -8.0, 0.5);
 Vecd point_2(10.6066, -0.707107, 0.5);
 Vecd point_3(8.0, 7.0, 0.5);
@@ -88,9 +89,9 @@ Vecd point_5(-7.0, 8.0, 0.5);
 Vecd point_6(-10.6066, 0.707107, 0.5);
 Vecd point_7(-8.0, -7.0, 0.5);
 Vecd point_8(-0.707107, -10.6066, 0.5);
-Vecd point_out(11.9373, 0.0, 3.5);
 */
-
+/*
+//% For G2
 Vecd point_1(7.0, -5.3, 0.5);
 Vecd point_2(8.69741, 1.20208, 0.5);
 Vecd point_3(5.3, 7.0, 0.5);
@@ -99,6 +100,18 @@ Vecd point_5(-7.0, 5.3, 0.5);
 Vecd point_6(-8.69741, -1.20208, 0.5);
 Vecd point_7(-5.3, -7.0, 0.5);
 Vecd point_8(1.20208, -8.69741, 0.5);
+*/
+
+//% For G3
+Vecd point_1(7.0, -5.5, 0.5);
+Vecd point_2(8.83883, 1.06066, 0.5);
+Vecd point_3(5.5, 7.0, 0.5);
+Vecd point_4(-1.06066, 8.83883, 0.5);
+Vecd point_5(-7.0, 5.5, 0.5);
+Vecd point_6(-8.83883, -1.06066, 0.5);
+Vecd point_7(-5.5, -7.0, 0.5);
+Vecd point_8(1.06066, -8.83883, 0.5);
+
 Vecd point_out(11.9373, 0.0, 3.5);
 
 Vecd axis_vector_x(1.0, 0.0, 0.0);
@@ -184,7 +197,7 @@ Vecd outlet_sub_buffer_translation = outlet_buffer_translation + buffer_thicknes
 //----------------------------------------------------------------------
 //	Cases-dependent geometries
 //----------------------------------------------------------------------
-std::string stl_fluid_path = "./input/g2.stl";
+std::string stl_fluid_path = "./input/g3.stl";
 Real scale_factor_fluid = 1.0;
 Vecd translation_stl_fluid(0.0, 0.0, 0.0);
 class WaterBlock : public ComplexShape
@@ -197,7 +210,7 @@ class WaterBlock : public ComplexShape
 };
 
 /** Set the file path to the stl file. */
-std::string stl_structure_path = "./input/g2.stl";
+std::string stl_structure_path = "./input/g3.stl";
 Real scale_factor = 1.0;
 Vecd translation_stl(0.0, 0.0, 0.0);
 class WallBoundaryFromSTL : public ComplexShape
