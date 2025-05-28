@@ -67,7 +67,7 @@ Real U_max = 8.0 * U_inlet; //** An estimated value, this case the max velocity 
 
 Real c_f = 10.0 * U_max;
 Real rho0_f = 1000.0; /**< Density. */
-Real Re = 30.0;
+Real Re = 3.2;
 
 Real Outlet_pressure = 0.0;
 
