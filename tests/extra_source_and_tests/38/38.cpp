@@ -269,6 +269,8 @@ int main(int ac, char *av[])
             //Real Dt = get_fluid_advection_time_step_size.exec();
             Real Dt = get_turbulent_fluid_advection_time_step_size.exec();
 
+            Dt = 1.708e-4;
+
             /*
             tag_monitored_region_for_external_acceleration.clear_total_particle_number_in_buffer();
             tag_monitored_region_for_external_acceleration.exec();
