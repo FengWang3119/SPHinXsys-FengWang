@@ -20,7 +20,7 @@ using namespace SPH;
 //	Basic geometry parameters and numerical setup.
 //----------------------------------------------------------------------
 Real DH = 2.0; /**< Channel height. */
-Real num_fluid_cross_section = 400.0;
+Real num_fluid_cross_section = 800.0;
 Real DL = 3.0;
 
 //Real y_p_constant = DH / 2.0 / num_fluid_cross_section; //%% For the first try *
@@ -82,7 +82,7 @@ bool is_source_term_linearisation = true;
 //** Empirical parameter for initial stability*
 Real turbulent_module_activate_time = 0.0;
 //** Initial values for K, Epsilon and Mu_t *
-StdVec<Real> initial_turbu_values = {0.000180001, 3.326679e-5, 1.0e-3};
+StdVec<Real> initial_turbu_values = {1.0, 4.0, 0.1};
 //----------------------------------------------------------------------
 //	Material properties of the fluid.
 //----------------------------------------------------------------------
@@ -124,9 +124,9 @@ BoundingBox system_domain_bounds(left_bottom_point + Vec2d(-2.0 * BW, -2.0 * BW)
 // Output and time average control.
 //----------------------------------------------------------------------
 int screen_output_interval = 100;
-Real end_time = 30.0;               /**< End time. */
-Real Output_Time = end_time / 40.0; /**< Time stamps for output of body states. */
-Real cutoff_time = 25.0;            //%% cutoff_time should be a integral and the same as the PY script */
+Real end_time = 15.0;               /**< End time. */
+Real Output_Time = end_time / 200.0; /**< Time stamps for output of body states. */
+Real cutoff_time = 14.0;            //%% cutoff_time should be a integral and the same as the PY script */
 //----------------------------------------------------------------------
 // Observation with offset model.
 //----------------------------------------------------------------------
