@@ -19,14 +19,14 @@ using namespace SPH;
 //----------------------------------------------------------------------
 //	Basic geometry parameters and numerical setup.
 //----------------------------------------------------------------------
-//** Dimension: m s kg */
+//** Dimension: 10 \mu m, s, kg */
 Real scale = 1.0;
-Real H_inlet = 1.0;
-Real L_inlet = 2.0 * H_inlet;
-Real Radius_chamber = 8.0 * H_inlet;
+Real H_inlet = 4.0;
+Real L_inlet = 10.0;
+Real Radius_chamber = 83.0 / 2.0;
 Real H_outlet = H_inlet;
 Real L_outlet = L_inlet;
-Real H_total = 4.0 * H_inlet;
+Real H_total = 100;
 
 Real D_hydraulic = 2.0 * L_inlet * H_inlet / (L_inlet + H_inlet);
 
@@ -39,15 +39,14 @@ Real buffer_thickness = 5.0 * resolution_ref;
 //** STL relevant parameters */
 Vecd point_O(0.0, 0.0, 0.0);
 Vecd point_A = point_O + Vecd(0.0, 0.0, H_total);
-Vecd point_B(0.0, 0.0, 0.0);
 
 Vecd point_OA_half = (point_O + point_A) / 2.0;
 
-Real length_outlet = 4.0 * H_inlet;
+Real length_outlet = 10.0; //% Geometry dependent
 //----------------------------------------------------------------------
 //	Domain bounds of the system, STL relevant.
 //----------------------------------------------------------------------
-Real extend_domain_length = 2.0; //** Decided by the  g1_in_out_substract_space.stl*/
+Real extend_domain_length = 2.0; //% Geometry dependent
 BoundingBox system_domain_bounds(point_O +
                                      Vecd(-Radius_chamber, -Radius_chamber, 0.0) +
                                      Vecd(-length_outlet, -length_outlet, 0.0) +
@@ -168,7 +167,7 @@ Vecd point_8(0.707107, -9.19239, 0.5);
 Vecd point_out(10.93725, 0.0, 3.5);
 */
 
-///*
+/*
 //% For G8
 Vecd point_1(7.0, -6.0, 0.5);
 Vecd point_2(9.19239, 0.707107, 0.5);
@@ -179,6 +178,19 @@ Vecd point_6(-9.19239, -0.707107, 0.5);
 Vecd point_7(-6.0, -7.0, 0.5);
 Vecd point_8(0.707107, -9.19239, 0.5);
 Vecd point_out(11.93725, 0.0, 3.5);
+*/
+
+///*
+//% For G9
+Vecd point_1(36.5, -31.0185, 2.0);
+Vecd point_2(47.7428, 3.876, 2.0);
+Vecd point_3(31.0185, 36.5, 2.0);
+Vecd point_4(-3.876, 47.7428, 2.0);
+Vecd point_5(-36.5, 31.0185, 2.0);
+Vecd point_6(-47.7428, -3.876, 2.0);
+Vecd point_7(-31.0185, -36.5, 2.0);
+Vecd point_8(3.876, -47.7428, 2.0);
+Vecd point_out(51.1977, 0.0, 98.0);
 //*/
 
 Vecd axis_vector_x(1.0, 0.0, 0.0);
@@ -264,7 +276,7 @@ Vecd outlet_sub_buffer_translation = outlet_buffer_translation + buffer_thicknes
 //----------------------------------------------------------------------
 //	Cases-dependent geometries
 //----------------------------------------------------------------------
-std::string stl_fluid_path = "./input/g8.stl";
+std::string stl_fluid_path = "./input/g9_0p78.stl";
 Real scale_factor_fluid = 1.0;
 Vecd translation_stl_fluid(0.0, 0.0, 0.0);
 class WaterBlock : public ComplexShape
@@ -277,7 +289,7 @@ class WaterBlock : public ComplexShape
 };
 
 /** Set the file path to the stl file. */
-std::string stl_structure_path = "./input/g8.stl"; //% This also denote which file we use
+std::string stl_structure_path = "./input/g9_0p78.stl"; //% This also denote which file we use
 Real scale_factor = 1.0;
 Vecd translation_stl(0.0, 0.0, 0.0);
 class WallBoundaryFromSTL : public ComplexShape

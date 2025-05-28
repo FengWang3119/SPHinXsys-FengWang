@@ -9,7 +9,7 @@ int main(int ac, char *av[])
     SPHSystem sph_system(system_domain_bounds, resolution_ref);
 
     /** Tag for run particle relaxation for the initial body fitted distribution. */
-    sph_system.setRunParticleRelaxation(true);
+    sph_system.setRunParticleRelaxation(false);
     /** Tag for computation start with relaxed body fitted particles distribution. */
     sph_system.setReloadParticles(true);
 
@@ -208,7 +208,7 @@ int main(int ac, char *av[])
     /** Turbulent standard wall function needs normal vectors of wall. */
     //NearShapeSurface near_surface(water_block, makeShared<WallBoundary>("Wall"));
 
-    InteractionWithUpdate<LinearGradientCorrectionMatrixComplex> corrected_configuration_fluid(water_block_inner, water_wall_contact);
+    //InteractionWithUpdate<LinearGradientCorrectionMatrixComplex> corrected_configuration_fluid(water_block_inner, water_wall_contact);
 
     /** Pressure relaxation algorithm with Riemann solver for viscous flows. */
     Dynamics1Level<fluid_dynamics::Integration1stHalfWithWallRiemann> pressure_relaxation(water_block_inner, water_wall_contact);
@@ -403,7 +403,7 @@ int main(int ac, char *av[])
             //update_density_by_summation.exec();
             update_fluid_density_pressure.exec();
 
-            corrected_configuration_fluid.exec();
+            //corrected_configuration_fluid.exec();
 
             viscous_force.exec();
             //turbulent_viscous_force.exec();
