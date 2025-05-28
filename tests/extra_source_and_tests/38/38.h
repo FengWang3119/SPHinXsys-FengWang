@@ -73,7 +73,7 @@ Vec2d point_water_right_down_extruded = point_water_right_down + Vec2d(-offset_d
 //Real relaxation_rate_turbulent_inlet = 0.8;
 //** Tag for AMRD *
 int is_AMRD = 1;
-bool is_constrain_normal_velocity_in_P_region = false;
+bool is_constrain_normal_velocity_in_P_region = true;
 //** Weight for correcting the velocity  gradient in the sub near wall region  *
 Real weight_vel_grad_sub_nearwall = 0.1;
 bool is_always_lattice_arrange_fluid = false;
@@ -124,9 +124,9 @@ BoundingBox system_domain_bounds(left_bottom_point + Vec2d(-2.0 * BW, -2.0 * BW)
 // Output and time average control.
 //----------------------------------------------------------------------
 int screen_output_interval = 100;
-Real end_time = 5.0;                 /**< End time. */
-Real Output_Time = end_time / 200.0; /**< Time stamps for output of body states. */
-Real cutoff_time = 4.0;              //%% cutoff_time should be a integral and the same as the PY script */
+Real end_time = 5.0;                /**< End time. */
+Real Output_Time = end_time / 40.0; /**< Time stamps for output of body states. */
+Real cutoff_time = 4.0;             //%% cutoff_time should be a integral and the same as the PY script */
 //----------------------------------------------------------------------
 // Observation with offset model.
 //----------------------------------------------------------------------
