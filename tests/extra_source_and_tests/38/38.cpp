@@ -269,8 +269,9 @@ int main(int ac, char *av[])
             //Real Dt = get_fluid_advection_time_step_size.exec();
             Real Dt = get_turbulent_fluid_advection_time_step_size.exec();
 
-            //Dt = 1.708e-4;
-            Dt = 4.27e-5;
+            Dt = 1.708e-4; //% For NF100
+            //Dt = 8.54e-5;  //% For NF200
+            //Dt = 4.27e-5; //% For NF400
 
             /*
             tag_monitored_region_for_external_acceleration.clear_total_particle_number_in_buffer();
