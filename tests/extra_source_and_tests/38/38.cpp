@@ -254,7 +254,7 @@ int main(int ac, char *av[])
     //Real start_time_turbulence = 70.0;
     //std::cout << "Press any key to start";
     //std::cin.get();
-    const int skip = 4;
+    const int skip = 8;
     while (physical_time < end_time)
     {
         Real integration_time = 0.0;
