@@ -274,7 +274,9 @@ int main(int ac, char *av[])
             //Dt = 4.27e-5; //% For NF400
 
             //Dt = 4.0e-5; //% For NF200 further test
-            Dt = 2.0e-5; //% For NF400 further test
+            //Dt = 2.0e-5; //% For NF400 further test
+
+            Dt = 2.0e-5; //% For NF200 further further test
 
             /*
             tag_monitored_region_for_external_acceleration.clear_total_particle_number_in_buffer();
