@@ -254,7 +254,7 @@ int main(int ac, char *av[])
     //Real start_time_turbulence = 70.0;
     //std::cout << "Press any key to start";
     //std::cin.get();
-    const int skip = 2;
+    const int skip = 4;
     while (physical_time < end_time)
     {
         Real integration_time = 0.0;
@@ -279,7 +279,7 @@ int main(int ac, char *av[])
 
             //Dt = 2.0e-5; //% For NF200 further further test
 
-            Dt = 8.54e-5; //% For NF100 time convergence test
+            Dt = 4.27e-5; //% For NF100 time convergence test
 
             /*
             tag_monitored_region_for_external_acceleration.clear_total_particle_number_in_buffer();
