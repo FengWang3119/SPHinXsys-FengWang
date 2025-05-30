@@ -254,7 +254,6 @@ int main(int ac, char *av[])
     //Real start_time_turbulence = 70.0;
     //std::cout << "Press any key to start";
     //std::cin.get();
-    const int skip = 8;
     while (physical_time < end_time)
     {
         Real integration_time = 0.0;
@@ -311,10 +310,7 @@ int main(int ac, char *av[])
             //viscous_force.exec();
             turbulent_viscous_force.exec();
 
-            if (number_of_iterations % skip)
-            {
-                transport_velocity_correction.exec();
-            }
+            transport_velocity_correction.exec();
 
             //get_limiter_of_transport_velocity_correction.exec();
 
