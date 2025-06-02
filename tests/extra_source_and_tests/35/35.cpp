@@ -6,7 +6,7 @@ int main(int ac, char *av[])
     /**
      * @brief Build up -- a SPHSystem --
      */
-    SPHSystem sph_system(system_domain_bounds, resolution_ref);
+    SPHSystem sph_system(system_domain_bounds, resolution_ref, 12);
 
     /** Tag for run particle relaxation for the initial body fitted distribution. */
     sph_system.setRunParticleRelaxation(false);
@@ -18,6 +18,7 @@ int main(int ac, char *av[])
 
     FluidBody water_block(sph_system, makeShared<WaterBlock>("WaterBody"));
 
+    std::cout << "mu_f=" << mu_f << std::endl;
     std::cout << "water_block.defineBodyLevelSetShape starts" << std::endl;
     water_block.defineBodyLevelSetShape()->cleanLevelSet();
     std::cout << "water_block.defineBodyLevelSetShape ends" << std::endl;
