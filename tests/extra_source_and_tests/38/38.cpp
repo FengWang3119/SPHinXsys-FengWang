@@ -327,7 +327,7 @@ int main(int ac, char *av[])
 
                 dt = SMIN(get_fluid_time_step_size.exec(), Dt);
 
-                Dt = dt;
+                //Dt = dt;
 
                 if (physical_time > turbulent_module_activate_time) //** A temporary treatment *
                 {

@@ -20,11 +20,11 @@ using namespace SPH;
 //	Basic geometry parameters and numerical setup.
 //----------------------------------------------------------------------
 Real DH = 2.0; /**< Channel height. */
-Real num_fluid_cross_section = 200.0;
+Real num_fluid_cross_section = 100.0;
 Real DL = 3.0;
 
-Real y_p_constant = DH / 2.0 / num_fluid_cross_section; //%% For the first try *
-//Real y_p_constant = 0.01;
+//Real y_p_constant = DH / 2.0 / num_fluid_cross_section; //%% For the first try *
+Real y_p_constant = 0.01;
 
 Real resolution_ref_temp = (DH - 2.0 * y_p_constant) / (num_fluid_cross_section - 1.0); /**< Initial reference particle spacing. */
 Real resolution_ref = round(resolution_ref_temp * 1.0e8) / 1.0e8;
