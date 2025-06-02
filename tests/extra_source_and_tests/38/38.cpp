@@ -308,7 +308,7 @@ int main(int ac, char *av[])
             }
 
             //viscous_force.exec();
-            turbulent_viscous_force.exec();
+            //turbulent_viscous_force.exec();
 
             transport_velocity_correction.exec();
 
@@ -328,6 +328,9 @@ int main(int ac, char *av[])
                 dt = SMIN(get_fluid_time_step_size.exec(), Dt);
 
                 //Dt = dt;
+
+                //viscous_force.exec();
+                turbulent_viscous_force.exec();
 
                 if (physical_time > turbulent_module_activate_time) //** A temporary treatment *
                 {
