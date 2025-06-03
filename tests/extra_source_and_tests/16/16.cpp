@@ -281,7 +281,7 @@ int main(int ac, char *av[])
             if (physical_time > turbulent_module_activate_time) //** A temporary treatment *
             {
                 update_eddy_viscosity.exec();
-                update_turbulent_viscous_force_symmetric_part.exec();
+                //update_turbulent_viscous_force_symmetric_part.exec();
             }
 
             //viscous_force.exec();
