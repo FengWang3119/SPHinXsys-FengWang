@@ -420,6 +420,56 @@ void TKEnergyForce<Contact<>>::interaction(size_t index_i, Real dt)
     test_k_grad_rslt_[index_i] += k_gradient;
 }
 //=================================================================================================//
+//%
+TurbulentViscousForceSymmetricPart<Inner<>>::TurbulentViscousForceSymmetricPart(BaseInnerRelation &inner_relation)
+    : TurbulentViscousForceSymmetricPart<Base, DataDelegateInner>(inner_relation),
+      B_(particles_->getVariableDataByName<Matd>("LinearGradientCorrectionMatrix")) {}
+//=================================================================================================//
+void TurbulentViscousForceSymmetricPart<Inner<>>::interaction(size_t index_i, Real dt)
+{
+    turbu_mu_gradient_[index_i] = Vecd::Zero();
+
+    Real turbu_mu_i = turbu_mu_[index_i];
+    Vecd turbu_mu_gradient_i = Vecd::Zero();
+    const Neighborhood &inner_neighborhood = inner_configuration_[index_i];
+    for (size_t n = 0; n != inner_neighborhood.current_size_; ++n)
+    {
+        size_t index_j = inner_neighborhood.j_[n];
+        Vecd nablaW_ijV_j = inner_neighborhood.dW_ij_[n] * inner_neighborhood.e_ij_[n];
+        turbu_mu_gradient_i += (turbu_mu_i + turbu_mu_[index_j]) * nablaW_ijV_j;
+    }
+
+    turbu_mu_gradient_[index_i] += turbu_mu_gradient_i;
+}
+//=================================================================================================//
+void TurbulentViscousForceSymmetricPart<Inner<>>::update(size_t index_i, Real dt)
+{
+    Vecd acc_rho = velocity_gradient_[index_i] * turbu_mu_gradient_[index_i] + velocity_gradient_[index_i].transpose() * turbu_mu_gradient_[index_i];
+    viscous_force_symmetric_part_[index_i] = acc_rho * mass_[index_i] / rho_[index_i];
+}
+//=================================================================================================//
+TurbulentViscousForceSymmetricPart<Contact<>>::TurbulentViscousForceSymmetricPart(BaseContactRelation &contact_relation)
+    : TurbulentViscousForceSymmetricPart<Base, DataDelegateContact>(contact_relation),
+      B_(particles_->getVariableDataByName<Matd>("LinearGradientCorrectionMatrix")) {}
+//=================================================================================================//
+void TurbulentViscousForceSymmetricPart<Contact<>>::interaction(size_t index_i, Real dt)
+{
+    Real turbu_mu_i = turbu_mu_[index_i];
+    Vecd turbu_mu_gradient_i = Vecd::Zero();
+    for (size_t k = 0; k < DataDelegateContact::contact_configuration_.size(); ++k)
+    {
+        Neighborhood &contact_neighborhood = (*DataDelegateContact::contact_configuration_[k])[index_i];
+        for (size_t n = 0; n != contact_neighborhood.current_size_; ++n)
+        {
+            Vecd nablaW_ijV_j = contact_neighborhood.dW_ij_[n] * contact_neighborhood.e_ij_[n];
+            turbu_mu_gradient_i += (turbu_mu_i + turbu_mu_i) * nablaW_ijV_j;
+        }
+    }
+
+    turbu_mu_gradient_[index_i] += turbu_mu_gradient_i;
+}
+//%
+//=================================================================================================//
 TurbuViscousForce<Inner<>>::TurbuViscousForce(BaseInnerRelation &inner_relation)
     : TurbuViscousForce<DataDelegateInner>(inner_relation),
       turbu_indicator_(this->particles_->template getVariableDataByName<int>("TurbulentIndicator")),

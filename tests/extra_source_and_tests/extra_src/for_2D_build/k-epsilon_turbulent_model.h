@@ -269,6 +269,61 @@ using BaseTKEnergyForceComplex = ComplexInteraction<TKEnergyForce<InnerInteracti
 
 using TKEnergyForceComplex = BaseTKEnergyForceComplex<Inner<>, Contact<>>;
 //=================================================================================================//
+//%
+template <typename... InteractionTypes>
+class TurbulentViscousForceSymmetricPart;
+
+template <class DataDelegationType>
+class TurbulentViscousForceSymmetricPart<Base, DataDelegationType>
+    : public ForcePrior, public DataDelegationType
+{
+  public:
+    template <class BaseRelationType>
+    explicit TurbulentViscousForceSymmetricPart(BaseRelationType &base_relation);
+    virtual ~TurbulentViscousForceSymmetricPart(){};
+
+  protected:
+    Real *mass_;
+    Vecd *viscous_force_symmetric_part_;
+    Real *rho_;
+    Real *turbu_mu_;
+    Vecd *turbu_mu_gradient_;
+    Matd *velocity_gradient_;
+};
+//** Inner part *
+template <>
+class TurbulentViscousForceSymmetricPart<Inner<>> : public TurbulentViscousForceSymmetricPart<Base, DataDelegateInner>
+{
+  public:
+    explicit TurbulentViscousForceSymmetricPart(BaseInnerRelation &inner_relation);
+    virtual ~TurbulentViscousForceSymmetricPart(){};
+    void interaction(size_t index_i, Real dt = 0.0);
+    void update(size_t index_i, Real dt = 0.0);
+
+  protected:
+    Matd *B_;
+};
+//** Wall part *
+template <>
+class TurbulentViscousForceSymmetricPart<Contact<>> : public TurbulentViscousForceSymmetricPart<Base, DataDelegateContact>
+{
+  public:
+    explicit TurbulentViscousForceSymmetricPart(BaseContactRelation &contact_relation);
+    virtual ~TurbulentViscousForceSymmetricPart(){};
+    void interaction(size_t index_i, Real dt = 0.0);
+
+  protected:
+    Matd *B_;
+};
+
+//** Interface part *
+template <class InnerInteractionType, class... ContactInteractionTypes>
+using BaseTurbulentViscousForceSymmetricPartComplex = ComplexInteraction<TurbulentViscousForceSymmetricPart<InnerInteractionType, ContactInteractionTypes...>>;
+
+using TurbulentViscousForceSymmetricPartComplex = BaseTurbulentViscousForceSymmetricPartComplex<Inner<>, Contact<>>;
+
+//%
+//=================================================================================================//
 template <typename... InteractionTypes>
 class TurbuViscousForce;
 

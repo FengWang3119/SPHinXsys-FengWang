@@ -200,6 +200,10 @@ int main(int ac, char *av[])
 
     /** Turbulent eddy viscosity calculation needs values of Wall Y start. */
     SimpleDynamics<fluid_dynamics::TurbulentEddyViscosity> update_eddy_viscosity(water_block);
+
+    //% Test from reviewer's comment
+    InteractionWithUpdate<fluid_dynamics::TurbulentViscousForceSymmetricPartComplex> update_turbulent_viscous_force_symmetric_part(water_block_inner, water_wall_contact);
+
     //----------------------------------------------------------------------
     //	Define the configuration related particles dynamics.
     //----------------------------------------------------------------------
@@ -275,6 +279,9 @@ int main(int ac, char *av[])
             {
                 update_eddy_viscosity.exec();
             }
+
+            //update_turbulent_viscous_force_symmetric_part.exec();
+
             //viscous_force.exec();
             turbulent_viscous_force.exec();
 

@@ -62,6 +62,21 @@ TKEnergyForce<Base, DataDelegationType>::
       turbu_k_(this->particles_->template getVariableDataByName<Real>("TurbulenceKineticEnergy")),
       test_k_grad_rslt_(this->particles_->template registerStateVariable<Vecd>("TkeGradResult")) {}
 //=================================================================================================//
+//%
+template <class DataDelegationType>
+template <class BaseRelationType>
+TurbulentViscousForceSymmetricPart<Base, DataDelegationType>::
+    TurbulentViscousForceSymmetricPart(BaseRelationType &base_relation)
+    : ForcePrior(base_relation.getSPHBody(), "ViscousForceSymmetricPart"),
+      DataDelegationType(base_relation),
+      mass_(this->particles_->template getVariableDataByName<Real>("Mass")),
+      viscous_force_symmetric_part_(this->particles_->template registerStateVariable<Vecd>("ViscousForceSymmetricPart")),
+      rho_(this->particles_->template getVariableDataByName<Real>("Density")),
+      turbu_mu_(this->particles_->template getVariableDataByName<Real>("TurbulentViscosity")),
+      turbu_mu_gradient_(this->particles_->template registerStateVariable<Vecd>("EddyViscosityGradient")),
+      velocity_gradient_(this->particles_->template getVariableDataByName<Matd>("TurbulentVelocityGradient")) {}
+//%
+//=================================================================================================//
 template <class DataDelegationType>
 template <class BaseRelationType>
 GetVelocityGradient<DataDelegationType>::
