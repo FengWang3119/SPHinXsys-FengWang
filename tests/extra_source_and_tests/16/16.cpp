@@ -223,6 +223,9 @@ int main(int ac, char *av[])
     ObservedQuantityRecording<Real> write_recorded_water_epsilon("TurbulentDissipation", fluid_observer_contact);
     body_states_recording.addToWrite<int>(water_block, "BufferParticleIndicator");
 
+    body_states_recording.addToWrite<Vecd>(water_block, "ViscousForceSymmetricPart"); // output for debug
+    body_states_recording.addToWrite<Vecd>(water_block, "EddyViscosityGradient");     // output for debug
+
     /**
      * @brief Setup geometry and initial conditions.
      */
@@ -278,9 +281,8 @@ int main(int ac, char *av[])
             if (physical_time > turbulent_module_activate_time) //** A temporary treatment *
             {
                 update_eddy_viscosity.exec();
+                update_turbulent_viscous_force_symmetric_part.exec();
             }
-
-            //update_turbulent_viscous_force_symmetric_part.exec();
 
             //viscous_force.exec();
             turbulent_viscous_force.exec();
