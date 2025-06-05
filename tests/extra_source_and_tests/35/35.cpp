@@ -20,7 +20,7 @@ int main(int ac, char *av[])
 
     std::cout << "mu_f=" << mu_f << std::endl;
     std::cout << "water_block.defineBodyLevelSetShape starts" << std::endl;
-    water_block.defineBodyLevelSetShape()->cleanLevelSet();
+    water_block.defineBodyLevelSetShape();
     std::cout << "water_block.defineBodyLevelSetShape ends" << std::endl;
 
     water_block.defineMaterial<WeaklyCompressibleFluid>(rho0_f, c_f, mu_f);

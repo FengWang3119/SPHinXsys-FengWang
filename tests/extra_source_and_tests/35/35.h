@@ -74,7 +74,7 @@ Real Outlet_pressure = 0.0;
 Real mu_f = rho0_f * U_f * D_hydraulic / Re;
 Real Re_calculated = U_f * D_hydraulic * rho0_f / mu_f;
 
-Real t_ref = 0.2; //% An estimated value
+Real t_ref = H_inlet / U_f; //% An estimated value
 //----------------------------------------------------------------------
 //	The open boundary setting.
 //----------------------------------------------------------------------
