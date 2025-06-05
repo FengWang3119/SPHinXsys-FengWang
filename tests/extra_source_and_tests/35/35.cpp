@@ -9,7 +9,7 @@ int main(int ac, char *av[])
     SPHSystem sph_system(system_domain_bounds, resolution_ref, 12);
 
     /** Tag for run particle relaxation for the initial body fitted distribution. */
-    sph_system.setRunParticleRelaxation(false);
+    sph_system.setRunParticleRelaxation(true);
     /** Tag for computation start with relaxed body fitted particles distribution. */
     sph_system.setReloadParticles(true);
 
@@ -337,7 +337,7 @@ int main(int ac, char *av[])
     //body_states_recording.addToWrite<Real>(water_block, "VolumetricMeasure");
     //body_states_recording.addToWrite<Matd>(water_block, "LinearGradientCorrectionMatrix");
 
-    WriteToVtpIfVelocityOutOfBound abnormal_velocity_recording(sph_system, 30.0);
+    WriteToVtpIfVelocityOutOfBound abnormal_velocity_recording(sph_system, 100.0 * U_max);
 
     /**
      * @brief Setup geometry and initial conditions.

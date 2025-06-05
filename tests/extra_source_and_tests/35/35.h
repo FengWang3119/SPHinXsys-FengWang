@@ -19,14 +19,14 @@ using namespace SPH;
 //----------------------------------------------------------------------
 //	Basic geometry parameters and numerical setup.
 //----------------------------------------------------------------------
-//** Dimension: 10 \mu m, s, kg */
-Real scale = 1.0;
-Real H_inlet = 4.0;
-Real L_inlet = 10.0;
-Real Radius_chamber = 83.0 / 2.0;
+//% Dimension: m, s, kg  [2005 Lin JMM]
+Real scale = 1.0e-6;
+Real H_inlet = 40.0 * scale;
+Real L_inlet = 100.0 * scale;
+Real Radius_chamber = 830.0 / 2.0 * scale;
 Real H_outlet = H_inlet;
 Real L_outlet = L_inlet;
-Real H_total = 100;
+Real H_total = 1000.0 * scale;
 
 Real D_hydraulic = 2.0 * L_inlet * H_inlet / (L_inlet + H_inlet);
 
@@ -42,11 +42,11 @@ Vecd point_A = point_O + Vecd(0.0, 0.0, H_total);
 
 Vecd point_OA_half = (point_O + point_A) / 2.0;
 
-Real length_outlet = 10.0; //% Geometry dependent
+Real length_outlet = L_inlet; //% Length of the outlet channel, Geometry dependent
 //----------------------------------------------------------------------
 //	Domain bounds of the system, STL relevant.
 //----------------------------------------------------------------------
-Real extend_domain_length = 2.0; //% Geometry dependent
+Real extend_domain_length = length_outlet; //% Geometry dependent
 BoundingBox system_domain_bounds(point_O +
                                      Vecd(-Radius_chamber, -Radius_chamber, 0.0) +
                                      Vecd(-length_outlet, -length_outlet, 0.0) +
@@ -60,13 +60,13 @@ BoundingBox system_domain_bounds(point_O +
 //----------------------------------------------------------------------
 //	Material properties of the fluid.
 //----------------------------------------------------------------------
-Real U_inlet = 1.0;
+Real U_inlet = 0.1; //% 10cm/s
 Real U_f = U_inlet; //*Characteristic velocity
 
-Real U_max = 2.0 * U_inlet; //** An estimated value, this case the max velocity in outlet is about 7.5 *
+Real U_max = 8.0 * U_inlet; //** An estimated value, this case one outlet and 8 inlets *
 
 Real c_f = 10.0 * U_max;
-Real rho0_f = 1.0; /**< Density. */
+Real rho0_f = 1000.0; /**< Density. */
 Real Re = 3.2;
 
 Real Outlet_pressure = 0.0;
@@ -74,7 +74,7 @@ Real Outlet_pressure = 0.0;
 Real mu_f = rho0_f * U_f * D_hydraulic / Re;
 Real Re_calculated = U_f * D_hydraulic * rho0_f / mu_f;
 
-Real t_ref = 2.0;
+Real t_ref = 0.2; //% An estimated value
 //----------------------------------------------------------------------
 //	The open boundary setting.
 //----------------------------------------------------------------------
@@ -180,7 +180,7 @@ Vecd point_8(0.707107, -9.19239, 0.5);
 Vecd point_out(11.93725, 0.0, 3.5);
 */
 
-///*
+/*
 //% For G9
 Vecd point_1(36.5, -31.0185, 2.0);
 Vecd point_2(47.7428, 3.876, 2.0);
@@ -191,6 +191,30 @@ Vecd point_6(-47.7428, -3.876, 2.0);
 Vecd point_7(-31.0185, -36.5, 2.0);
 Vecd point_8(3.876, -47.7428, 2.0);
 Vecd point_out(51.1977, 0.0, 98.0);
+*/
+
+///*
+//% For G9 scale to m
+Vecd point_1_temp(36.5, -31.0185, 2.0);
+Vecd point_2_temp(47.7428, 3.876, 2.0);
+Vecd point_3_temp(31.0185, 36.5, 2.0);
+Vecd point_4_temp(-3.876, 47.7428, 2.0);
+Vecd point_5_temp(-36.5, 31.0185, 2.0);
+Vecd point_6_temp(-47.7428, -3.876, 2.0);
+Vecd point_7_temp(-31.0185, -36.5, 2.0);
+Vecd point_8_temp(3.876, -47.7428, 2.0);
+Vecd point_out_temp(51.1977, 0.0, 98.0);
+
+Real scale_temp = 1.0e-5;
+Vecd point_1 = point_1_temp * scale_temp;
+Vecd point_2 = point_2_temp * scale_temp;
+Vecd point_3 = point_3_temp * scale_temp;
+Vecd point_4 = point_4_temp * scale_temp;
+Vecd point_5 = point_5_temp * scale_temp;
+Vecd point_6 = point_6_temp * scale_temp;
+Vecd point_7 = point_7_temp * scale_temp;
+Vecd point_8 = point_8_temp * scale_temp;
+Vecd point_out = point_out_temp * scale_temp;
 //*/
 
 Vecd axis_vector_x(1.0, 0.0, 0.0);
@@ -277,7 +301,7 @@ Vecd outlet_sub_buffer_translation = outlet_buffer_translation + buffer_thicknes
 //	Cases-dependent geometries
 //----------------------------------------------------------------------
 std::string stl_fluid_path = "./input/g9_0p78.stl";
-Real scale_factor_fluid = 1.0;
+Real scale_factor_fluid = 1.0e-5;
 Vecd translation_stl_fluid(0.0, 0.0, 0.0);
 class WaterBlock : public ComplexShape
 {
@@ -290,7 +314,7 @@ class WaterBlock : public ComplexShape
 
 /** Set the file path to the stl file. */
 std::string stl_structure_path = "./input/g9_0p78.stl"; //% This also denote which file we use
-Real scale_factor = 1.0;
+Real scale_factor = 1.0e-5;
 Vecd translation_stl(0.0, 0.0, 0.0);
 class WallBoundaryFromSTL : public ComplexShape
 {
