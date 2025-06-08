@@ -67,7 +67,7 @@ Real U_max = 8.0 * U_inlet; //** An estimated value, this case one outlet and 8 
 
 Real c_f = 10.0 * U_max;
 Real rho0_f = 1.0; /**< Density. */
-Real Re = 3.2;
+Real Re = 10.0;
 
 Real Outlet_pressure = 0.0;
 
