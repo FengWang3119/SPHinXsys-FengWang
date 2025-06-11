@@ -100,7 +100,8 @@ void DisposerInBufferDeletion::update(size_t index_i, Real dt)
 //=============================================================================================//
 InitialiseColorIndicator::InitialiseColorIndicator(SPHBody &sph_body)
     : LocalDynamics(sph_body),
-      color_indicator_(particles_->registerStateVariable<int>("ColorIndicator"))
+      color_indicator_(particles_->registerStateVariable<int>("ColorIndicator")),
+      pos_(particles_->getVariableDataByName<Vecd>("Position"))
 {
     particles_->addVariableToSort<int>("ColorIndicator");
     particles_->addVariableToWrite<int>("ColorIndicator");
@@ -108,7 +109,55 @@ InitialiseColorIndicator::InitialiseColorIndicator(SPHBody &sph_body)
 //=============================================================================================//
 void InitialiseColorIndicator::update(size_t index_i, Real dt)
 {
-    color_indicator_[index_i] = 0; //%Actually not used
+    Real x = pos_[index_i][xAxis];
+    Real y = pos_[index_i][yAxis];
+    Real x_abs = std::abs(x);
+    Real y_abs = std::abs(y);
+
+    if (x > 0.0 && y > 0.0)
+    {
+        if (x_abs < y_abs)
+        {
+            color_indicator_[index_i] = 3;
+        }
+        else
+        {
+            color_indicator_[index_i] = 2;
+        }
+    }
+    else if (x > 0.0 && y <= 0.0)
+    {
+        if (x_abs > y_abs)
+        {
+            color_indicator_[index_i] = 1;
+        }
+        else
+        {
+            color_indicator_[index_i] = 8;
+        }
+    }
+    else if (x <= 0.0 && y <= 0.0)
+    {
+        if (x_abs < y_abs)
+        {
+            color_indicator_[index_i] = 7;
+        }
+        else
+        {
+            color_indicator_[index_i] = 6;
+        }
+    }
+    else if (x <= 0.0 && y > 0.0)
+    {
+        if (x_abs > y_abs)
+        {
+            color_indicator_[index_i] = 5;
+        }
+        else
+        {
+            color_indicator_[index_i] = 4;
+        }
+    }
 }
 //=============================================================================================//
 ClearBufferParticleIndicator::ClearBufferParticleIndicator(SPHBody &sph_body, int third_dimension, Real lower_bound, Real upper_bound)
@@ -127,7 +176,8 @@ void ClearBufferParticleIndicator::update(size_t index_i, Real dt)
 //=============================================================================================//
 DisposerForInitialParticleDeletion::DisposerForInitialParticleDeletion(SPHBody &sph_body)
     : LocalDynamics(sph_body),
-      pos_(particles_->getVariableDataByName<Vecd>("Position")) {}
+      pos_(particles_->getVariableDataByName<Vecd>("Position")),
+      buffer_particle_indicator_(particles_->getVariableDataByName<int>("BufferParticleIndicator")) {}
 //=============================================================================================//
 void DisposerForInitialParticleDeletion::update(size_t index_i, Real dt)
 {
@@ -138,6 +188,10 @@ void DisposerForInitialParticleDeletion::update(size_t index_i, Real dt)
         particles_->switchToBufferParticle(index_i);
         radius = sqrt(pos_[index_i][xAxis] * pos_[index_i][xAxis] + pos_[index_i][yAxis] * pos_[index_i][yAxis]);
     }
+    // while ((buffer_particle_indicator_[index_i] == 0 || buffer_particle_indicator_[index_i] == 9) && index_i < particles_->TotalRealParticles()) //% Temp
+    // {
+    //     particles_->switchToBufferParticle(index_i);
+    // }
     mutex_switch_to_buffer_.unlock();
 }
 //=============================================================================================//

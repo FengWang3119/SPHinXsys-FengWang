@@ -147,6 +147,7 @@ class InitialiseColorIndicator : public LocalDynamics
 
   protected:
     int *color_indicator_;
+    Vecd *pos_;
 };
 class ClearBufferParticleIndicator : public LocalDynamics
 {
@@ -174,6 +175,7 @@ class DisposerForInitialParticleDeletion : public LocalDynamics
   protected:
     Vecd *pos_;
     std::mutex mutex_switch_to_buffer_; /**< mutex exclusion for memory conflict */
+    int *buffer_particle_indicator_;
 };
 class DisposerForSplashParticleDeletion : public LocalDynamics
 {
