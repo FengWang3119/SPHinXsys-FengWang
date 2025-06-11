@@ -124,6 +124,40 @@ void ClearBufferParticleIndicator::update(size_t index_i, Real dt)
     if (pos_[index_i][third_dimension_] > lower_bound_ && pos_[index_i][third_dimension_] <= upper_bound_)
         buffer_particle_indicator_[index_i] = 0;
 }
+//=============================================================================================//
+DisposerForInitialParticleDeletion::DisposerForInitialParticleDeletion(SPHBody &sph_body)
+    : LocalDynamics(sph_body),
+      pos_(particles_->getVariableDataByName<Vecd>("Position")) {}
+//=============================================================================================//
+void DisposerForInitialParticleDeletion::update(size_t index_i, Real dt)
+{
+    mutex_switch_to_buffer_.lock();
+    Real radius = sqrt(pos_[index_i][xAxis] * pos_[index_i][xAxis] + pos_[index_i][yAxis] * pos_[index_i][yAxis]);
+    while ((pos_[index_i][zAxis] >= 4.0 || radius <= (83.0 / 2.0)) && index_i < particles_->TotalRealParticles()) //% Temp
+    {
+        particles_->switchToBufferParticle(index_i);
+        radius = sqrt(pos_[index_i][xAxis] * pos_[index_i][xAxis] + pos_[index_i][yAxis] * pos_[index_i][yAxis]);
+    }
+    mutex_switch_to_buffer_.unlock();
+}
+//=============================================================================================//
+DisposerForSplashParticleDeletion::DisposerForSplashParticleDeletion(SPHBody &sph_body)
+    : LocalDynamics(sph_body),
+      pos_(particles_->getVariableDataByName<Vecd>("Position")),
+      pos_div_(particles_->getVariableDataByName<Real>("PositionDivergence"))
+{
+    particles_->addVariableToWrite<Real>("PositionDivergence");
+}
+//=============================================================================================//
+void DisposerForSplashParticleDeletion::update(size_t index_i, Real dt)
+{
+    mutex_switch_to_buffer_.lock();
+    while (pos_[index_i][zAxis] >= 4.0 && index_i < particles_->TotalRealParticles()) //% Temp
+    {
+        particles_->switchToBufferParticle(index_i);
+    }
+    mutex_switch_to_buffer_.unlock();
+}
 //=================================================================================================//
 } // namespace SPH
   //=================================================================================================//

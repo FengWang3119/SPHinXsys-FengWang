@@ -67,7 +67,7 @@ Real U_max = 8.0 * U_inlet; //** An estimated value, this case one outlet and 8 
 
 Real c_f = 10.0 * U_max;
 Real rho0_f = 1.0; /**< Density. */
-Real Re = 10.0;
+Real Re = 3.2;
 
 Real Outlet_pressure = 0.0;
 
@@ -180,7 +180,7 @@ Vecd point_8(0.707107, -9.19239, 0.5);
 Vecd point_out(11.93725, 0.0, 3.5);
 */
 
-///*
+/*
 //% For G9
 Vecd point_1(36.5, -31.0185, 2.0);
 Vecd point_2(47.7428, 3.876, 2.0);
@@ -191,7 +191,7 @@ Vecd point_6(-47.7428, -3.876, 2.0);
 Vecd point_7(-31.0185, -36.5, 2.0);
 Vecd point_8(3.876, -47.7428, 2.0);
 Vecd point_out(51.1977, 0.0, 98.0);
-//*/
+*/
 
 /*
 //% For G9 scale to m
@@ -240,6 +240,19 @@ Vecd point_7 = point_7_temp * scale_temp;
 Vecd point_8 = point_8_temp * scale_temp;
 Vecd point_out = point_out_temp * scale_temp;
 */
+
+///*
+//% For G12
+Vecd point_1(36.5, -33.0185, 2.0);
+Vecd point_2(49.1570, 2.46178, 2.0);
+Vecd point_3(33.0185, 36.5, 2.0);
+Vecd point_4(-2.46178, 49.1570, 2.0);
+Vecd point_5(-36.5, 33.0185, 2.0);
+Vecd point_6(-49.1570, -2.46178, 2.0);
+Vecd point_7(-33.0185, -36.5, 2.0);
+Vecd point_8(2.46178, -49.1570, 2.0);
+Vecd point_out(51.1977, 0.0, 98.0);
+//*/
 
 Vecd axis_vector_x(1.0, 0.0, 0.0);
 Vecd axis_vector_z(0.0, 0.0, 1.0);
@@ -324,7 +337,7 @@ Vecd outlet_sub_buffer_translation = outlet_buffer_translation + buffer_thicknes
 //----------------------------------------------------------------------
 //	Cases-dependent geometries
 //----------------------------------------------------------------------
-std::string stl_fluid_path = "./input/g9_0p78.stl";
+std::string stl_fluid_path = "./input/g12_0p39.stl";
 Real scale_factor_fluid = 1.0;
 Vecd translation_stl_fluid(0.0, 0.0, 0.0);
 class WaterBlock : public ComplexShape
@@ -337,7 +350,7 @@ class WaterBlock : public ComplexShape
 };
 
 /** Set the file path to the stl file. */
-std::string stl_structure_path = "./input/g9_0p78.stl"; //% This also denote which file we use
+std::string stl_structure_path = "./input/g12_0p39.stl"; //% This also denote which file we use
 Real scale_factor = 1.0;
 Vecd translation_stl(0.0, 0.0, 0.0);
 class WallBoundaryFromSTL : public ComplexShape

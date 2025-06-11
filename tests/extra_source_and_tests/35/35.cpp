@@ -209,7 +209,7 @@ int main(int ac, char *av[])
     /** Turbulent standard wall function needs normal vectors of wall. */
     //NearShapeSurface near_surface(water_block, makeShared<WallBoundary>("Wall"));
 
-    InteractionWithUpdate<LinearGradientCorrectionMatrixComplex> corrected_configuration_fluid(water_block_inner, water_wall_contact);
+    InteractionWithUpdate<LinearGradientCorrectionMatrixComplex> corrected_configuration_fluid(ConstructorArgs(water_block_inner, 0.5), water_wall_contact);
 
     /** Pressure relaxation algorithm with Riemann solver for viscous flows. */
     //Dynamics1Level<fluid_dynamics::Integration1stHalfWithWallRiemann> pressure_relaxation(water_block_inner, water_wall_contact);
@@ -308,7 +308,8 @@ int main(int ac, char *av[])
 
     SimpleDynamics<ClearBufferParticleIndicator> clear_buffer_particle_indicator(water_block, zAxis, H_inlet, H_inlet + BW); //% This is case-dependent
 
-    InteractionWithUpdate<fluid_dynamics::DensitySummationPressureComplex> update_fluid_density_pressure(water_block_inner, water_wall_contact);
+    //InteractionWithUpdate<fluid_dynamics::DensitySummationPressureComplex> update_fluid_density_pressure(water_block_inner, water_wall_contact);
+    InteractionWithUpdate<fluid_dynamics::DensitySummationFreeStreamComplex> update_fluid_density_freestream(water_block_inner, water_wall_contact);
 
     /** Choose one, ordinary or turbulent. Time step size without considering sound wave speed. */
     ReduceDynamics<fluid_dynamics::AdvectionViscousTimeStep> get_fluid_advection_time_step_size(water_block, U_f);
@@ -339,6 +340,13 @@ int main(int ac, char *av[])
 
     WriteToVtpIfVelocityOutOfBound abnormal_velocity_recording(sph_system, 1.0e6 * U_max);
 
+    //% Temporary Treat
+    SimpleDynamics<DisposerForInitialParticleDeletion> delete_initial_particle(water_block);
+    delete_initial_particle.exec();
+    particle_sorting.exec();
+    water_block.updateCellLinkedList();
+    SimpleDynamics<DisposerForSplashParticleDeletion> delete_splash_particle(water_block);
+
     /**
      * @brief Setup geometry and initial conditions.
      */
@@ -367,10 +375,10 @@ int main(int ac, char *av[])
     Real &physical_time = *sph_system.getSystemVariableDataByName<Real>("PhysicalTime");
     size_t number_of_iterations = sph_system.RestartStep();
     int screen_output_interval = 100;
-    Real end_time = 200.0;                      /**< End time. */
+    Real end_time = 4000.0;                     /**< End time. */
     Real cutoff_ratio = 0.92;                   //** cutoff_time should be a integral and the same as the PY script */
     Real cutoff_time = cutoff_ratio * end_time; //** cutoff_time should be a integral and the same as the PY script */
-    Real num_output_files = 200.0;
+    Real num_output_files = 400.0;
     Real Output_Time = end_time / num_output_files; /**< Time stamps for output of body states. */
     Real index_check_file_fully_developed = num_output_files * cutoff_ratio;
     Real dt = 0.0; /**< Default acoustic time step sizes. */
@@ -402,7 +410,8 @@ int main(int ac, char *av[])
             //Real Dt = get_turbulent_fluid_advection_time_step_size.exec();
 
             //update_density_by_summation.exec();
-            update_fluid_density_pressure.exec();
+            //update_fluid_density_pressure.exec();
+            update_fluid_density_freestream.exec();
 
             corrected_configuration_fluid.exec();
 

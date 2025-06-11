@@ -162,5 +162,31 @@ class ClearBufferParticleIndicator : public LocalDynamics
     Vecd *pos_;
     Real upper_bound_;
 };
+
+class DisposerForInitialParticleDeletion : public LocalDynamics
+{
+  public:
+    DisposerForInitialParticleDeletion(SPHBody &sph_body);
+    virtual ~DisposerForInitialParticleDeletion(){};
+
+    void update(size_t index_i, Real dt = 0.0);
+
+  protected:
+    Vecd *pos_;
+    std::mutex mutex_switch_to_buffer_; /**< mutex exclusion for memory conflict */
+};
+class DisposerForSplashParticleDeletion : public LocalDynamics
+{
+  public:
+    DisposerForSplashParticleDeletion(SPHBody &sph_body);
+    virtual ~DisposerForSplashParticleDeletion(){};
+
+    void update(size_t index_i, Real dt = 0.0);
+
+  protected:
+    Vecd *pos_;
+    std::mutex mutex_switch_to_buffer_; /**< mutex exclusion for memory conflict */
+    Real *pos_div_;
+};
 } // namespace SPH
 #endif // K_EPSILON_TURBULENT_MODEL_H
