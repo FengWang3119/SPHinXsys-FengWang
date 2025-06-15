@@ -341,10 +341,10 @@ int main(int ac, char *av[])
     WriteToVtpIfVelocityOutOfBound abnormal_velocity_recording(sph_system, 1.0e6 * U_max);
 
     //% Temporary Treat Note that this should be in front of TAG particle include inlet outlet and buffer
-    SimpleDynamics<DisposerForInitialParticleDeletion> delete_initial_particle(water_block);
-    delete_initial_particle.exec();
-    particle_sorting.exec();
-    water_block.updateCellLinkedList();
+    // SimpleDynamics<DisposerForInitialParticleDeletion> delete_initial_particle(water_block);
+    // delete_initial_particle.exec();
+    // particle_sorting.exec();
+    // water_block.updateCellLinkedList();
 
     initialise_color_indicator.exec();
     /**
