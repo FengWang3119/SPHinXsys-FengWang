@@ -1137,6 +1137,23 @@ void GetLimiterOfTransportVelocityCorrection::update(size_t index_i, Real dt)
     limiter_tvc_[index_i] = SMIN(slope_ * squared_norm * h_ref_ * h_ref_, Real(1));
 }
 //=================================================================================================//
+NonDimensionalisePressure::
+    NonDimensionalisePressure(SPHBody &sph_body)
+    : LocalDynamics(sph_body),
+      rho_(particles_->getVariableDataByName<Real>("Density")),
+      p_(particles_->getVariableDataByName<Real>("Pressure")),
+      p_dimensionless_(particles_->registerStateVariable<Real>("PressureDimensionless"))
+{
+    particles_->addVariableToWrite<Real>("PressureDimensionless");
+}
+//=================================================================================================//
+void NonDimensionalisePressure::update(size_t index_i, Real dt)
+{
+    //p_dimensionless_[index_i] = p_[index_i] / rho_[index_i]; //% actually is P/rho U * U, U=1 neglect
+    //p_dimensionless_[index_i] = p_[index_i] / (rho_[index_i] * 20.0);
+    p_dimensionless_[index_i] = p_[index_i] / ((rho_[index_i] - 1.0));
+}
+//=================================================================================================//
 } // namespace fluid_dynamics
 //=================================================================================================//
 } // namespace SPH

@@ -171,6 +171,8 @@ int main(int ac, char *av[])
     /** A temporarily test for the limiter . */
     SimpleDynamics<fluid_dynamics::GetLimiterOfTransportVelocityCorrection> get_limiter_of_transport_velocity_correction(water_block, 1000);
 
+    SimpleDynamics<fluid_dynamics::NonDimensionalisePressure> get_dimensionless_pressure(water_block);
+
     /** Evaluation of density by summation approach. */
     //InteractionWithUpdate<fluid_dynamics::DensitySummationFreeStreamComplex> update_density_by_summation(water_block_inner, water_wall_contact);
 
@@ -342,6 +344,7 @@ int main(int ac, char *av[])
                 //{
                 //body_states_recording.writeToFile();
                 //}
+                get_dimensionless_pressure.exec();
             }
             if (number_of_iterations % screen_output_interval == 0)
             {

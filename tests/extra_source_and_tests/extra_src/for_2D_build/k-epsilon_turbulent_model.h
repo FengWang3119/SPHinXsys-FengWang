@@ -558,6 +558,20 @@ template <class ParticleScope>
 using TVC_ModifiedLimited_withoutLinearGradientCorrection =
     BaseTransportVelocityCorrectionComplex<SingleResolution, ModifiedTruncatedLinear, NoKernelCorrection, ParticleScope>;
 //=================================================================================================//
+class NonDimensionalisePressure : public LocalDynamics
+{
+  public:
+    explicit NonDimensionalisePressure(SPHBody &sph_body);
+    virtual ~NonDimensionalisePressure(){};
+
+    void update(size_t index_i, Real dt = 0.0);
+
+  protected:
+    Real *rho_;
+    Real *p_;
+    Real *p_dimensionless_;
+};
+//=================================================================================================//
 } // namespace fluid_dynamics
 } // namespace SPH
 #endif // K_EPSILON_TURBULENT_MODEL_H
