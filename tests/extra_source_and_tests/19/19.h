@@ -14,7 +14,7 @@ using namespace SPH;
 //----------------------------------------------------------------------
 Real DH = 2.0;  /**< Channel height. */
 Real DL = 30.0; /**< Channel length. */
-Real num_fluid_cross_section = 80.0;
+Real num_fluid_cross_section = 20.0;
 
 //----------------------------------------------------------------------
 //	Unique parameters for turbulence.
@@ -187,7 +187,7 @@ class WallBoundary : public ComplexShape
 struct InflowVelocity
 {
     Real u_ref_, t_ref_;
-    AlignedBoxShape &aligned_box_;
+    AlignedBox &aligned_box_;
     Vecd halfsize_;
 
     template <class BoundaryConditionType>
