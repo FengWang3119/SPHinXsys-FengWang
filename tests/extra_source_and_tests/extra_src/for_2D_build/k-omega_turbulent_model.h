@@ -47,6 +47,7 @@ class kOmega_BaseTurbulentModel<Base, DataDelegationType>
     Real *turbu_strain_rate_magnitude_;
     Real *turbu_strain_rate_traceless_magnitude_;
 
+    Viscosity &viscosity_;
     Real mu_, smoothing_length_, particle_spacing_min_;
     Real *rho_;
     Real *Vol_;
@@ -132,6 +133,7 @@ class kOmegaTurbulentEddyViscosity : public LocalDynamics,
     Real *wall_Y_plus_;
     Real *wall_Y_star_;
     Real *turbu_strain_rate_traceless_magnitude_;
+    Viscosity &viscosity_;
     Real mu_;
 };
 //=================================================================================================//
@@ -156,6 +158,7 @@ class kOmegaStdWallFuncCorrection : public LocalDynamics,
 
     Vecd *vel_;
     Real *rho_;
+    Viscosity &viscosity_;
     Real molecular_viscosity_;
     Real *turbu_k_;
     Real *turbu_omega_;

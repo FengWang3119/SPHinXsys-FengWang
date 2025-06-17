@@ -25,7 +25,8 @@ kOmegaTurbulentEddyViscosity::
       wall_Y_plus_(particles_->getVariableDataByName<Real>("WallYplus")),
       wall_Y_star_(particles_->getVariableDataByName<Real>("WallYstar")),
       turbu_strain_rate_traceless_magnitude_(particles_->getVariableDataByName<Real>("TurbulentStrainRateTracelessMagnitude")),
-      mu_(DynamicCast<Fluid>(this, particles_->getBaseMaterial()).ReferenceViscosity()) {}
+      viscosity_(DynamicCast<Viscosity>(this, particles_->getBaseMaterial())),
+      mu_(viscosity_.ReferenceViscosity()) {}
 //=================================================================================================//
 void kOmegaTurbulentEddyViscosity::update(size_t index_i, Real dt)
 {
@@ -44,7 +45,8 @@ kOmegaStdWallFuncCorrection::
       velo_tan_(particles_->registerStateVariable<Real>("TangentialVelocity")),
       velo_friction_(particles_->registerStateVariable<Vecd>("FrictionVelocity")),
       vel_(particles_->getVariableDataByName<Vecd>("Velocity")), rho_(particles_->getVariableDataByName<Real>("Density")),
-      molecular_viscosity_(DynamicCast<Fluid>(this, particles_->getBaseMaterial()).ReferenceViscosity()),
+      viscosity_(DynamicCast<Viscosity>(this, particles_->getBaseMaterial())),
+      molecular_viscosity_(viscosity_.ReferenceViscosity()),
       turbu_k_(particles_->getVariableDataByName<Real>("TurbulenceKineticEnergy")),
       turbu_omega_(particles_->getVariableDataByName<Real>("TurbulentSpecificDissipation")),
       turbu_mu_(particles_->getVariableDataByName<Real>("TurbulentViscosity")),
