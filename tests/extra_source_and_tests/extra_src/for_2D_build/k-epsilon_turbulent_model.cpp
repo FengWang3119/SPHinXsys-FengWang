@@ -730,7 +730,6 @@ JudgeIsNearWall::
       e_nearest_tau_(particles_->registerStateVariable<Vecd>("WallNearestTangentialUnitVector")),
       e_nearest_normal_(particles_->registerStateVariable<Vecd>("WallNearestNormalUnitVector")),
       pos_(particles_->getVariableDataByName<Vecd>("Position")),
-      dimension_(2),
       fluid_particle_spacing_(inner_relation.getSPHBody().sph_adaptation_->ReferenceSpacing()),
       wall_particle_spacing_(contact_relation.getSPHBody().sph_adaptation_->ReferenceSpacing()),
       distance_from_wall_(particles_->getVariableDataByName<Vecd>("DistanceFromWall"))
@@ -830,7 +829,7 @@ void JudgeIsNearWall::interaction(size_t index_i, Real dt)
     {
         is_near_wall_P2_[index_i] = 10; //** Particles that have contact are defined as in region P2 *
         //** Get the tangential unit vector *
-        if (dimension_ == 2)
+        if (Dimensions == 2)
         {
             e_i_nearest_tau[0] = e_i_nearest_n[1];
             e_i_nearest_tau[1] = e_i_nearest_n[0] * (-1.0);

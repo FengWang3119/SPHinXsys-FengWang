@@ -410,7 +410,6 @@ class JudgeIsNearWall : public LocalDynamics, public DataDelegateContact, public
     Vecd *e_nearest_tau_, *e_nearest_normal_;
 
     Vecd *pos_;
-    int dimension_;
     Real fluid_particle_spacing_, wall_particle_spacing_;
     Vecd *distance_from_wall_;
     StdVec<Real *> contact_Vol_;
