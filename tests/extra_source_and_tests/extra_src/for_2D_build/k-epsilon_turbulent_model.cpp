@@ -720,7 +720,7 @@ Real InflowTurbulentCondition::getTurbulentInflowE(Vecd &position, Real &turbu_k
 //=================================================================================================//
 JudgeIsNearWall::
     JudgeIsNearWall(BaseInnerRelation &inner_relation,
-                    BaseContactRelation &contact_relation)
+                    BaseContactRelation &contact_relation, Real constant_y_p)
     : LocalDynamics(inner_relation.getSPHBody()), DataDelegateContact(contact_relation),
       distance_to_dummy_interface_(particles_->registerStateVariable<Real>("DistanceToDummyInterface")),
       distance_to_dummy_interface_up_average_(particles_->registerStateVariable<Real>("DistanceToDummyInterfaceUpAver")),
@@ -729,6 +729,8 @@ JudgeIsNearWall::
       index_nearest_(particles_->registerStateVariable<int>("NearestIndex")),
       e_nearest_tau_(particles_->registerStateVariable<Vecd>("WallNearestTangentialUnitVector")),
       e_nearest_normal_(particles_->registerStateVariable<Vecd>("WallNearestNormalUnitVector")),
+      y_p_(particles_->registerStateVariable<Real>("Y_P")),
+      constant_y_p_(constant_y_p),
       pos_(particles_->getVariableDataByName<Vecd>("Position")),
       fluid_particle_spacing_(inner_relation.getSPHBody().sph_adaptation_->ReferenceSpacing()),
       wall_particle_spacing_(contact_relation.getSPHBody().sph_adaptation_->ReferenceSpacing()),
@@ -855,26 +857,31 @@ void JudgeIsNearWall::interaction(size_t index_i, Real dt)
 void JudgeIsNearWall::update(size_t index_i, Real dt)
 {
     is_near_wall_P1_[index_i] = 0;
+    y_p_[index_i] = 0.0;
     if (is_near_wall_P2_[index_i] == 10)
     {
+        y_p_[index_i] = constant_y_p_ + fluid_particle_spacing_ / 2.0;
         //** Choose one kind of the distance to classify *
         Real distance = distance_to_dummy_interface_[index_i];
 
         //** Classify the wall-nearest particles *
         if (distance < 1.0 * fluid_particle_spacing_)
+        {
             is_near_wall_P1_[index_i] = 1;
+            y_p_[index_i] = constant_y_p_;
+        }
     }
 }
 //=================================================================================================//
 StandardWallFunctionCorrection::
     StandardWallFunctionCorrection(BaseInnerRelation &inner_relation,
-                                   BaseContactRelation &contact_relation, Real y_p_constant)
+                                   BaseContactRelation &contact_relation)
     : LocalDynamics(inner_relation.getSPHBody()), DataDelegateContact(contact_relation),
-      y_p_(particles_->registerStateVariable<Real>("Y_P", y_p_constant)),
       wall_Y_plus_(particles_->registerStateVariable<Real>("WallYplus")),
       wall_Y_star_(particles_->registerStateVariable<Real>("WallYstar")),
       velo_tan_(particles_->registerStateVariable<Real>("TangentialVelocity")),
       velo_friction_(particles_->registerStateVariable<Vecd>("FrictionVelocity")),
+      y_p_(particles_->getVariableDataByName<Real>("Y_P")),
       vel_(particles_->getVariableDataByName<Vecd>("Velocity")), rho_(particles_->getVariableDataByName<Real>("Density")),
       viscosity_(DynamicCast<Viscosity>(this, particles_->getBaseMaterial())),
       molecular_viscosity_(viscosity_.ReferenceViscosity()),

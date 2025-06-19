@@ -144,7 +144,7 @@ class kOmegaStdWallFuncCorrection : public LocalDynamics,
 {
   public:
     kOmegaStdWallFuncCorrection(BaseInnerRelation &inner_relation,
-                                BaseContactRelation &contact_relation, Real y_p_constant);
+                                BaseContactRelation &contact_relation);
     virtual ~kOmegaStdWallFuncCorrection(){};
     inline void interaction(size_t index_i, Real dt = 0.0);
 

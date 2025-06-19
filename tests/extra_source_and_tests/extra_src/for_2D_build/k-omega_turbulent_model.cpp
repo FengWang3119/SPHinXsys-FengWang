@@ -37,9 +37,9 @@ void kOmegaTurbulentEddyViscosity::update(size_t index_i, Real dt)
 //=================================================================================================//
 kOmegaStdWallFuncCorrection::
     kOmegaStdWallFuncCorrection(BaseInnerRelation &inner_relation,
-                                BaseContactRelation &contact_relation, Real y_p_constant)
+                                BaseContactRelation &contact_relation)
     : LocalDynamics(inner_relation.getSPHBody()), DataDelegateContact(contact_relation),
-      y_p_(particles_->registerStateVariable<Real>("Y_P", y_p_constant)),
+      y_p_(particles_->getVariableDataByName<Real>("Y_P")),
       wall_Y_plus_(particles_->registerStateVariable<Real>("WallYplus")),
       wall_Y_star_(particles_->registerStateVariable<Real>("WallYstar")),
       velo_tan_(particles_->registerStateVariable<Real>("TangentialVelocity")),

@@ -396,7 +396,7 @@ class JudgeIsNearWall : public LocalDynamics, public DataDelegateContact, public
 {
   public:
     JudgeIsNearWall(BaseInnerRelation &inner_relation,
-                    BaseContactRelation &contact_relation);
+                    BaseContactRelation &contact_relation, Real constant_y_p);
     virtual ~JudgeIsNearWall(){};
     inline void interaction(size_t index_i, Real dt = 0.0);
     void update(size_t index_i, Real dt = 0.0);
@@ -408,6 +408,8 @@ class JudgeIsNearWall : public LocalDynamics, public DataDelegateContact, public
     int *is_near_wall_P2_;
     int *index_nearest_;
     Vecd *e_nearest_tau_, *e_nearest_normal_;
+    Real *y_p_;
+    Real constant_y_p_;
 
     Vecd *pos_;
     Real fluid_particle_spacing_, wall_particle_spacing_;
@@ -420,16 +422,16 @@ class StandardWallFunctionCorrection : public LocalDynamics, public DataDelegate
 {
   public:
     StandardWallFunctionCorrection(BaseInnerRelation &inner_relation,
-                                   BaseContactRelation &contact_relation, Real y_p_constant);
+                                   BaseContactRelation &contact_relation);
     virtual ~StandardWallFunctionCorrection(){};
     inline void interaction(size_t index_i, Real dt = 0.0);
 
   protected:
-    Real *y_p_;
     Real *wall_Y_plus_, *wall_Y_star_;
     Real *velo_tan_;
     Vecd *velo_friction_;
 
+    Real *y_p_;
     Vecd *vel_;
     Real *rho_;
     Viscosity &viscosity_;
