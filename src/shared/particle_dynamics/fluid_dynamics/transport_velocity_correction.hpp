@@ -27,7 +27,9 @@ TransportVelocityCorrection<Inner<ResolutionType, LimiterType>, CommonControlTyp
       correction_scaling_(coefficient * h_ref_ * h_ref_),
       Vol_(this->particles_->template getVariableDataByName<Real>("VolumetricMeasure")),
       pos_(this->particles_->template getVariableDataByName<Vecd>("Position")),
-      h_ratio_(this->particles_), limiter_(h_ref_ * h_ref_)
+      h_ratio_(this->particles_), limiter_(h_ref_ * h_ref_),
+      ratio_displacement_mag_tvf_(this->particles_->template registerStateVariable<Real>("RatioTVF")),
+      displacement_tvf_(this->particles_->template registerStateVariable<Vecd>("DisplacementTVF"))
 {
     static_assert(std::is_base_of<Limiter, LimiterType>::value,
                   "Limiter is not the base of LimiterType!");
@@ -62,6 +64,10 @@ void TransportVelocityCorrection<Inner<ResolutionType, LimiterType>, CommonContr
         Real squared_norm = this->zero_gradient_residue_[index_i].squaredNorm();
         pos_[index_i] += correction_scaling_ * limiter_(squared_norm) *
                          this->zero_gradient_residue_[index_i] * inv_h_ratio * inv_h_ratio;
+        //% For reviewer
+        displacement_tvf_[index_i] = correction_scaling_ * limiter_(squared_norm) *
+                                     this->zero_gradient_residue_[index_i] * inv_h_ratio * inv_h_ratio;
+        ratio_displacement_mag_tvf_[index_i] = displacement_tvf_[index_i].norm() / h_ref_;
     }
 }
 //=================================================================================================//

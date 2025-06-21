@@ -219,6 +219,10 @@ int main(int ac, char *av[])
     ObservedQuantityRecording<Real> write_recorded_water_epsilon("TurbulentDissipation", fluid_observer_contact);
     body_states_recording.addToWrite<int>(water_block, "BufferParticleIndicator");
 
+    //% For reviewer
+    body_states_recording.addToWrite<Real>(water_block, "RatioTVF");
+    body_states_recording.addToWrite<Vecd>(water_block, "DisplacementTVF");
+
     /**
      * @brief Setup geometry and initial conditions.
      */

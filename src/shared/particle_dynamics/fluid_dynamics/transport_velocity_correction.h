@@ -79,6 +79,9 @@ class TransportVelocityCorrection<Inner<ResolutionType, LimiterType>, CommonCont
     Vecd *pos_;
     ResolutionType h_ratio_;
     LimiterType limiter_;
+    //% For reviewer
+    Real *ratio_displacement_mag_tvf_;
+    Vecd *displacement_tvf_;
 };
 template <class LimiterType, class ParticleScope>
 using TransportVelocityCorrectionInner =
