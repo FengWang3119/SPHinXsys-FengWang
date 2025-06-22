@@ -153,8 +153,10 @@ int main(int ac, char *av[])
     //InteractionWithUpdate<fluid_dynamics::GetVelocityGradientComplex> get_velocity_gradient(water_block_inner, water_wall_contact);
     //InteractionWithUpdate<fluid_dynamics::VelocityGradientWithWall<LinearGradientCorrection>> vel_grad_calculation(water_block_inner, water_wall_contact);
 
-    InteractionWithUpdate<fluid_dynamics::K_TurbulentModelInner> k_equation_relaxation(water_block_inner, initial_turbu_values, is_AMRD, is_source_term_linearisation);
-    InteractionWithUpdate<fluid_dynamics::E_TurbulentModelInner> epsilon_equation_relaxation(water_block_inner, is_source_term_linearisation);
+    SimpleDynamics<fluid_dynamics::K_TurbulentModelInner> k_equation_relaxation(water_block_inner, initial_turbu_values, is_AMRD, is_source_term_linearisation);
+    InteractionDynamics<fluid_dynamics::TurbulentKineticEnergyDiffusion> turbulent_kinetic_energy_diffusion(water_block_inner);
+    SimpleDynamics<fluid_dynamics::E_TurbulentModelInner> epsilon_equation_relaxation(water_block_inner, is_source_term_linearisation);
+    InteractionDynamics<fluid_dynamics::TurbulentDissipationRateDiffusion> turbulent_dissipation_rate_diffusion(water_block_inner);
     InteractionDynamics<fluid_dynamics::TKEnergyForceComplex> turbulent_kinetic_energy_force(water_block_inner, water_wall_contact);
     InteractionDynamics<fluid_dynamics::StandardWallFunctionCorrection> standard_wall_function_correction(water_block_inner, water_wall_contact);
 
@@ -298,7 +300,17 @@ int main(int ac, char *av[])
             //viscous_force.exec();
             turbulent_viscous_force.exec();
 
+            get_velocity_gradient.exec();
+            turbulent_kinetic_energy_diffusion.exec();
+            turbulent_dissipation_rate_diffusion.exec();
+            distance_to_wall.exec();
+            update_near_wall_status.exec();
+            standard_wall_function_correction.exec();
+
             transport_velocity_correction.exec();
+
+            kernel_summation.exec();
+
             get_limiter_of_transport_velocity_correction.exec();
 
             /** Dynamics including pressure relaxation. */
@@ -312,7 +324,6 @@ int main(int ac, char *av[])
 
                 pressure_relaxation.exec(dt);
 
-                kernel_summation.exec();
                 left_inflow_pressure_condition.exec(dt);
                 right_outflow_pressure_condition.exec(dt);
 
@@ -324,13 +335,6 @@ int main(int ac, char *av[])
                 impose_turbulent_inflow_condition.exec();
 
                 density_relaxation.exec(dt);
-
-                distance_to_wall.exec();
-                update_near_wall_status.exec();
-
-                standard_wall_function_correction.exec();
-
-                get_velocity_gradient.exec(dt);
 
                 k_equation_relaxation.exec(dt);
                 epsilon_equation_relaxation.exec(dt);
