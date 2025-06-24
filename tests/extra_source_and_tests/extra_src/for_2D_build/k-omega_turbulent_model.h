@@ -65,7 +65,7 @@ class kOmega_kTransportEquationInner : public kOmega_BaseTurbulentModel<Base, Da
     explicit kOmega_kTransportEquationInner(BaseInnerRelation &inner_relation, const StdVec<Real> &initial_values, int is_extr_visc_dissipa = 0);
     virtual ~kOmega_kTransportEquationInner(){};
 
-    inline void interaction(size_t index_i, Real dt = 0.0);
+    //inline void interaction(size_t index_i, Real dt = 0.0);
     void update(size_t index_i, Real dt = 0.0);
 
   protected:
@@ -87,6 +87,20 @@ class kOmega_kTransportEquationInner : public kOmega_BaseTurbulentModel<Base, Da
     Real *k_diffusion_;
 };
 //=================================================================================================//
+class kOmega_TKE_Diffusion : public kOmega_BaseTurbulentModel<Base, DataDelegateInner>
+{
+  public:
+    explicit kOmega_TKE_Diffusion(BaseInnerRelation &inner_relation);
+    virtual ~kOmega_TKE_Diffusion(){};
+
+    inline void interaction(size_t index_i, Real dt = 0.0);
+
+  protected:
+    Real *turbu_k_;
+    Real *turbu_omega_;
+    Real *k_diffusion_;
+};
+//=================================================================================================//
 /**
 	 * @class kOmegaSST_TurbulentModelInner
 	 * @brief  kOmegaSST_TurbulentModelInner
@@ -97,7 +111,7 @@ class kOmega_omegaTransportEquationInner : public kOmega_BaseTurbulentModel<Base
     explicit kOmega_omegaTransportEquationInner(BaseInnerRelation &inner_relation);
     virtual ~kOmega_omegaTransportEquationInner(){};
 
-    inline void interaction(size_t index_i, Real dt = 0.0);
+    //inline void interaction(size_t index_i, Real dt = 0.0);
     void update(size_t index_i, Real dt = 0.0);
 
   protected:
@@ -106,6 +120,7 @@ class kOmega_omegaTransportEquationInner : public kOmega_BaseTurbulentModel<Base
     Real *omega_production_;
     Real *omega_dissipation_;
     Real *omega_diffusion_;
+    Real *gradient_dot_k_omega_;
     Real *omega_cross_diffusion_;
 
     Real *turbu_mu_;
@@ -113,6 +128,21 @@ class kOmega_omegaTransportEquationInner : public kOmega_BaseTurbulentModel<Base
     Real *turbu_omega_;
     Real *k_production_;
     int *is_near_wall_P1_;
+};
+//=================================================================================================//
+class kOmega_TSDR_Diffusion_Gradient_Dot : public kOmega_BaseTurbulentModel<Base, DataDelegateInner>
+{
+  public:
+    explicit kOmega_TSDR_Diffusion_Gradient_Dot(BaseInnerRelation &inner_relation);
+    virtual ~kOmega_TSDR_Diffusion_Gradient_Dot(){};
+
+    inline void interaction(size_t index_i, Real dt = 0.0);
+
+  protected:
+    Real *gradient_dot_k_omega_;
+    Real *omega_diffusion_;
+    Real *turbu_omega_;
+    Real *turbu_k_;
 };
 //=================================================================================================//
 class kOmegaTurbulentEddyViscosity : public LocalDynamics,

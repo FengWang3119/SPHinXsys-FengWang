@@ -143,8 +143,11 @@ int main(int ac, char *av[])
     //InteractionWithUpdate<fluid_dynamics::GetVelocityGradientComplex> get_velocity_gradient(water_block_inner, water_wall_contact);
     //InteractionWithUpdate<fluid_dynamics::VelocityGradientWithWall<LinearGradientCorrection>> vel_grad_calculation(water_block_inner, water_wall_contact);
 
-    InteractionWithUpdate<fluid_dynamics::kOmega_kTransportEquationInner> k_equation_relaxation(water_block_inner, initial_turbu_values, is_AMRD);
-    InteractionWithUpdate<fluid_dynamics::kOmega_omegaTransportEquationInner> epsilon_equation_relaxation(water_block_inner);
+    SimpleDynamics<fluid_dynamics::kOmega_kTransportEquationInner> k_equation_relaxation(water_block_inner, initial_turbu_values, is_AMRD);
+    InteractionDynamics<fluid_dynamics::kOmega_TKE_Diffusion> compute_TKE_diffusion(water_block_inner);
+    SimpleDynamics<fluid_dynamics::kOmega_omegaTransportEquationInner> epsilon_equation_relaxation(water_block_inner);
+    InteractionDynamics<fluid_dynamics::kOmega_TSDR_Diffusion_Gradient_Dot> compute_TSDR_diffusion_and_gradient_k_omega(water_block_inner);
+
     InteractionDynamics<fluid_dynamics::TKEnergyForceComplex> turbulent_kinetic_energy_force(water_block_inner, water_wall_contact);
     InteractionDynamics<fluid_dynamics::kOmegaStdWallFuncCorrection> standard_wall_function_correction(water_block_inner, water_wall_contact);
 
@@ -285,6 +288,12 @@ int main(int ac, char *av[])
             //viscous_force.exec();
             turbulent_viscous_force.exec();
 
+            get_velocity_gradient.exec();
+            compute_TKE_diffusion.exec();
+            compute_TSDR_diffusion_and_gradient_k_omega.exec();
+            update_near_wall_status.exec();
+            standard_wall_function_correction.exec();
+
             transport_velocity_correction.exec();
             get_limiter_of_transport_velocity_correction.exec();
 
@@ -311,13 +320,6 @@ int main(int ac, char *av[])
                 impose_turbulent_inflow_condition.exec();
 
                 density_relaxation.exec(dt);
-
-                distance_to_wall.exec();
-                update_near_wall_status.exec();
-
-                standard_wall_function_correction.exec();
-
-                get_velocity_gradient.exec(dt);
 
                 k_equation_relaxation.exec(dt);
                 epsilon_equation_relaxation.exec(dt);
