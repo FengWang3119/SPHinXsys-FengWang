@@ -85,7 +85,6 @@ class kOmega_kTransportEquationInner : public kOmega_BaseTurbulentModel<Base, Da
     //** for test */
     int *turbu_indicator_;
     Real *k_diffusion_;
-    Real *vel_x_;
 };
 //=================================================================================================//
 /**

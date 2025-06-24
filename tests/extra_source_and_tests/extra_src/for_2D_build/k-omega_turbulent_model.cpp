@@ -262,8 +262,7 @@ kOmega_kTransportEquationInner::kOmega_kTransportEquationInner(BaseInnerRelation
       turbu_strain_rate_magnitude_(particles_->getVariableDataByName<Real>("TurbulentStrainRateMagnitude")),
       is_extra_viscous_dissipation_(particles_->registerStateVariable<int>("TurbulentExtraViscousDissipation", is_extr_visc_dissipa)),
       turbu_indicator_(particles_->registerStateVariable<int>("TurbulentIndicator")),
-      k_diffusion_(particles_->registerStateVariable<Real>("K_Diffusion")),
-      vel_x_(particles_->registerStateVariable<Real>("Velocity_X"))
+      k_diffusion_(particles_->registerStateVariable<Real>("K_Diffusion"))
 {
     particles_->addVariableToSort<Real>("ChangeRateOfTKE");
     particles_->addVariableToSort<Real>("ChangeRateOfTKEWithoutDissipation");
@@ -293,8 +292,6 @@ kOmega_kTransportEquationInner::kOmega_kTransportEquationInner(BaseInnerRelation
     particles_->addVariableToWrite<Real>("K_Diffusion");
 
     particles_->addVariableToWrite<Real>("ChangeRateOfTKE");
-
-    particles_->addVariableToSort<Real>("Velocity_X");
 
     particles_->addVariableToSort<int>("TurbulentIndicator");
     particles_->addVariableToWrite<int>("TurbulentIndicator");
@@ -359,7 +356,6 @@ void kOmega_kTransportEquationInner::interaction(size_t index_i, Real dt)
 
     //** for record */
     k_diffusion_[index_i] = k_diffusion;
-    vel_x_[index_i] = vel_[index_i][0];
     turbu_strain_rate_[index_i] = strain_rate;
 }
 //=================================================================================================//
