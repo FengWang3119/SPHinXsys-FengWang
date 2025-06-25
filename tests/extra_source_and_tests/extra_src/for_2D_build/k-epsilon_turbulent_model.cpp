@@ -553,8 +553,8 @@ void TurbuViscousForce<Contact<Wall>>::interaction(size_t index_i, Real dt)
     viscous_force_[index_i] += force;
 }
 //=================================================================================================//
-TurbulentEddyViscosity::
-    TurbulentEddyViscosity(SPHBody &sph_body)
+kEpsilon_TurbulentEddyViscosity::
+    kEpsilon_TurbulentEddyViscosity(SPHBody &sph_body)
     : LocalDynamics(sph_body),
       rho_(particles_->getVariableDataByName<Real>("Density")),
       turbu_mu_(particles_->getVariableDataByName<Real>("TurbulentViscosity")),
@@ -565,7 +565,7 @@ TurbulentEddyViscosity::
       viscosity_(DynamicCast<Viscosity>(this, particles_->getBaseMaterial())),
       mu_(viscosity_.ReferenceViscosity()) {}
 //=================================================================================================//
-void TurbulentEddyViscosity::update(size_t index_i, Real dt)
+void kEpsilon_TurbulentEddyViscosity::update(size_t index_i, Real dt)
 {
     turbu_mu_[index_i] = rho_[index_i] * C_mu_ * turbu_k_[index_i] * turbu_k_[index_i] / (turbu_epsilon_[index_i]);
 }

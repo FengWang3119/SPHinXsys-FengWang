@@ -218,7 +218,7 @@ int main(int ac, char *av[])
     ReduceDynamics<fluid_dynamics::AcousticTimeStep> get_fluid_time_step_size(water_block);
 
     /** Turbulent eddy viscosity calculation needs values of Wall Y start. */
-    SimpleDynamics<fluid_dynamics::TurbulentEddyViscosity> update_eddy_viscosity(water_block);
+    SimpleDynamics<fluid_dynamics::kEpsilon_TurbulentEddyViscosity> update_eddy_viscosity(water_block);
     //----------------------------------------------------------------------
     //	Define the configuration related particles dynamics.
     //----------------------------------------------------------------------

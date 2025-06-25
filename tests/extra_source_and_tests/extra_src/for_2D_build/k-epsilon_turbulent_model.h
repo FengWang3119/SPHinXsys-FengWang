@@ -353,11 +353,11 @@ class TurbuViscousForce<Contact<Wall>> : public BaseTurbuViscousForceWithWall, p
 //** Interface part *
 using TurbulentViscousForceWithWall = ComplexInteraction<TurbuViscousForce<Inner<>, Contact<Wall>>>;
 //=================================================================================================//
-class TurbulentEddyViscosity : public LocalDynamics, public kEpsilon_TurbulentClosureCoefficient
+class kEpsilon_TurbulentEddyViscosity : public LocalDynamics, public kEpsilon_TurbulentClosureCoefficient
 {
   public:
-    explicit TurbulentEddyViscosity(SPHBody &sph_body);
-    virtual ~TurbulentEddyViscosity(){};
+    explicit kEpsilon_TurbulentEddyViscosity(SPHBody &sph_body);
+    virtual ~kEpsilon_TurbulentEddyViscosity(){};
 
     void update(size_t index_i, Real dt = 0.0);
 
