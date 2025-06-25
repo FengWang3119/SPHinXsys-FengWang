@@ -155,15 +155,11 @@ class kEpsilon_BaseTurbulentModel<Base, DataDelegationType>
     int dimension_;
 };
 //=================================================================================================//
-/**
-	 * @class K_TurbulentModelInner
-	 * @brief  K_TurbulentModelInner
-	 */
-class K_TurbulentModelInner : public kEpsilon_BaseTurbulentModel<Base, DataDelegateInner>
+class kEpsilon_kTransportEquationInner : public kEpsilon_BaseTurbulentModel<Base, DataDelegateInner>
 {
   public:
-    explicit K_TurbulentModelInner(BaseInnerRelation &inner_relation, const StdVec<Real> &initial_values, int is_extr_visc_dissipa, bool is_STL);
-    virtual ~K_TurbulentModelInner(){};
+    explicit kEpsilon_kTransportEquationInner(BaseInnerRelation &inner_relation, const StdVec<Real> &initial_values, int is_extr_visc_dissipa, bool is_STL);
+    virtual ~kEpsilon_kTransportEquationInner(){};
 
     //inline void interaction(size_t index_i, Real dt = 0.0);
     void update(size_t index_i, Real dt = 0.0);

@@ -55,10 +55,6 @@ class kOmega_BaseTurbulentModel<Base, DataDelegationType>
     int dimension_;
 };
 //=================================================================================================//
-/**
-	 * @class kOmegaSST_TurbulentModelInner
-	 * @brief  kOmegaSST_TurbulentModelInner
-	 */
 class kOmega_kTransportEquationInner : public kOmega_BaseTurbulentModel<Base, DataDelegateInner>
 {
   public:
@@ -99,10 +95,6 @@ class kOmega_TKE_Diffusion : public kOmega_BaseTurbulentModel<Base, DataDelegate
     Real *k_diffusion_;
 };
 //=================================================================================================//
-/**
-	 * @class kOmegaSST_TurbulentModelInner
-	 * @brief  kOmegaSST_TurbulentModelInner
-	 */
 class kOmega_omegaTransportEquationInner : public kOmega_BaseTurbulentModel<Base, DataDelegateInner>
 {
   public:

@@ -161,7 +161,7 @@ void GetVelocityGradient<Contact<Wall>>::interaction(size_t index_i, Real dt)
     }
 }
 //=================================================================================================//
-K_TurbulentModelInner::K_TurbulentModelInner(BaseInnerRelation &inner_relation, const StdVec<Real> &initial_values, int is_extr_visc_dissipa, bool is_STL)
+kEpsilon_kTransportEquationInner::kEpsilon_kTransportEquationInner(BaseInnerRelation &inner_relation, const StdVec<Real> &initial_values, int is_extr_visc_dissipa, bool is_STL)
     : kEpsilon_BaseTurbulentModel<Base, DataDelegateInner>(inner_relation),
       dk_dt_(particles_->registerStateVariable<Real>("ChangeRateOfTKE")),
       dk_dt_without_dissipation_(particles_->registerStateVariable<Real>("ChangeRateOfTKEWithoutDissipation")),
@@ -212,7 +212,7 @@ K_TurbulentModelInner::K_TurbulentModelInner(BaseInnerRelation &inner_relation, 
     //std::fill(is_extra_viscous_dissipation_.begin(), is_extra_viscous_dissipation_.end(), is_extr_visc_dissipa);
 }
 //=================================================================================================//
-void K_TurbulentModelInner::update(size_t index_i, Real dt)
+void kEpsilon_kTransportEquationInner::update(size_t index_i, Real dt)
 {
     Real rho_i = rho_[index_i];
     Real turbu_mu_i = turbu_mu_[index_i];

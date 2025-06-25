@@ -153,7 +153,7 @@ int main(int ac, char *av[])
     //InteractionWithUpdate<fluid_dynamics::GetVelocityGradientComplex> get_velocity_gradient(water_block_inner, water_wall_contact);
     //InteractionWithUpdate<fluid_dynamics::VelocityGradientWithWall<LinearGradientCorrection>> vel_grad_calculation(water_block_inner, water_wall_contact);
 
-    SimpleDynamics<fluid_dynamics::K_TurbulentModelInner> k_equation_relaxation(water_block_inner, initial_turbu_values, is_AMRD, is_source_term_linearisation);
+    SimpleDynamics<fluid_dynamics::kEpsilon_kTransportEquationInner> k_equation_relaxation(water_block_inner, initial_turbu_values, is_AMRD, is_source_term_linearisation);
     InteractionDynamics<fluid_dynamics::TurbulentKineticEnergyDiffusion> turbulent_kinetic_energy_diffusion(water_block_inner);
     SimpleDynamics<fluid_dynamics::E_TurbulentModelInner> epsilon_equation_relaxation(water_block_inner, is_source_term_linearisation);
     InteractionDynamics<fluid_dynamics::TurbulentDissipationRateDiffusion> turbulent_dissipation_rate_diffusion(water_block_inner);
