@@ -286,7 +286,7 @@ void TurbulentKineticEnergyDiffusion::interaction(size_t index_i, Real dt)
     k_diffusion_[index_i] = k_lap;
 }
 //=================================================================================================//
-E_TurbulentModelInner::E_TurbulentModelInner(BaseInnerRelation &inner_relation, bool is_STL)
+kEpsilon_epsilonTransportEquationInner::kEpsilon_epsilonTransportEquationInner(BaseInnerRelation &inner_relation, bool is_STL)
     : kEpsilon_BaseTurbulentModel<Base, DataDelegateInner>(inner_relation),
       depsilon_dt_(particles_->registerStateVariable<Real>("ChangeRateOfTDR")),
       depsilon_dt_without_dissipation_(particles_->registerStateVariable<Real>("ChangeRateOfTDRWithoutDissp")),
@@ -313,7 +313,7 @@ E_TurbulentModelInner::E_TurbulentModelInner(BaseInnerRelation &inner_relation, 
     particles_->addVariableToWrite<Real>("Ep_Diffusion_");
 }
 //=================================================================================================//
-void E_TurbulentModelInner::update(size_t index_i, Real dt)
+void kEpsilon_epsilonTransportEquationInner::update(size_t index_i, Real dt)
 {
     Real turbu_k_i = turbu_k_[index_i];
     Real turbu_epsilon_i = turbu_epsilon_[index_i];

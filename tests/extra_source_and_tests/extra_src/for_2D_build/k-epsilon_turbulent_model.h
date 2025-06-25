@@ -196,15 +196,11 @@ class TurbulentKineticEnergyDiffusion : public kEpsilon_BaseTurbulentModel<Base,
     Real *k_diffusion_;
 };
 //=================================================================================================//
-/**
-	 * @class E_TurbulentModelInner
-	 * @brief  E_TurbulentModelInner
-	 */
-class E_TurbulentModelInner : public kEpsilon_BaseTurbulentModel<Base, DataDelegateInner>
+class kEpsilon_epsilonTransportEquationInner : public kEpsilon_BaseTurbulentModel<Base, DataDelegateInner>
 {
   public:
-    explicit E_TurbulentModelInner(BaseInnerRelation &inner_relation, bool is_STL);
-    virtual ~E_TurbulentModelInner(){};
+    explicit kEpsilon_epsilonTransportEquationInner(BaseInnerRelation &inner_relation, bool is_STL);
+    virtual ~kEpsilon_epsilonTransportEquationInner(){};
 
     //inline void interaction(size_t index_i, Real dt = 0.0);
     void update(size_t index_i, Real dt = 0.0);
