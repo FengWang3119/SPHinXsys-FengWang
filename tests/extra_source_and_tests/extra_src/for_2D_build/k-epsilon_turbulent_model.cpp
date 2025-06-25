@@ -750,8 +750,7 @@ JudgeIsNearWall::
       constant_y_p_(constant_y_p),
       pos_(particles_->getVariableDataByName<Vecd>("Position")),
       fluid_particle_spacing_(inner_relation.getSPHBody().sph_adaptation_->ReferenceSpacing()),
-      wall_particle_spacing_(contact_relation.getSPHBody().sph_adaptation_->ReferenceSpacing()),
-      distance_from_wall_(particles_->getVariableDataByName<Vecd>("DistanceFromWall"))
+      wall_particle_spacing_(contact_relation.getSPHBody().sph_adaptation_->ReferenceSpacing())
 {
     for (size_t k = 0; k != contact_particles_.size(); ++k)
     {
@@ -777,8 +776,6 @@ JudgeIsNearWall::
     particles_->addVariableToSort<Vecd>("WallNearestTangentialUnitVector");
 
     particles_->addVariableToSort<Vecd>("WallNearestNormalUnitVector");
-
-    particles_->addVariableToWrite<Vecd>("DistanceFromWall");
 };
 //=================================================================================================//
 void JudgeIsNearWall::interaction(size_t index_i, Real dt)
