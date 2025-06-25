@@ -253,16 +253,16 @@ kOmega_kTransportEquationInner::kOmega_kTransportEquationInner(BaseInnerRelation
       dk_dt_(particles_->registerStateVariable<Real>("ChangeRateOfTKE")),
       dk_dt_without_dissipation_(particles_->registerStateVariable<Real>("ChangeRateOfTKEWithoutDissipation")),
       k_production_(particles_->registerStateVariable<Real>("K_Production")),
-      is_near_wall_P1_(particles_->getVariableDataByName<int>("IsNearWallP1")),
-      velocity_gradient_(particles_->getVariableDataByName<Matd>("TurbulentVelocityGradient")),
       turbu_k_(particles_->registerStateVariable<Real>("TurbulenceKineticEnergy", Real(initial_values[0]))),
       turbu_omega_(particles_->registerStateVariable<Real>("TurbulentSpecificDissipation", Real(initial_values[1]))),
       turbu_mu_(particles_->registerStateVariable<Real>("TurbulentViscosity", Real(initial_values[2]))),
-      turbu_strain_rate_(particles_->getVariableDataByName<Matd>("TurbulentStrainRate")),
-      turbu_strain_rate_magnitude_(particles_->getVariableDataByName<Real>("TurbulentStrainRateMagnitude")),
       is_extra_viscous_dissipation_(particles_->registerStateVariable<int>("TurbulentExtraViscousDissipation", is_extr_visc_dissipa)),
       turbu_indicator_(particles_->registerStateVariable<int>("TurbulentIndicator")),
-      k_diffusion_(particles_->registerStateVariable<Real>("K_Diffusion"))
+      k_diffusion_(particles_->registerStateVariable<Real>("K_Diffusion")),
+      turbu_strain_rate_(particles_->getVariableDataByName<Matd>("TurbulentStrainRate")),
+      turbu_strain_rate_magnitude_(particles_->getVariableDataByName<Real>("TurbulentStrainRateMagnitude")),
+      is_near_wall_P1_(particles_->getVariableDataByName<int>("IsNearWallP1")),
+      velocity_gradient_(particles_->getVariableDataByName<Matd>("TurbulentVelocityGradient"))
 {
     particles_->addVariableToSort<Real>("ChangeRateOfTKE");
     particles_->addVariableToSort<Real>("ChangeRateOfTKEWithoutDissipation");

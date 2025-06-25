@@ -72,19 +72,17 @@ class kOmega_kTransportEquationInner : public kOmega_BaseTurbulentModel<Base, Da
     Real *dk_dt_;
     Real *dk_dt_without_dissipation_;
     Real *k_production_;
-
-    int *is_near_wall_P1_; //** This is used to specially treat near wall region  *
-    Matd *velocity_gradient_;
     Real *turbu_k_;
     Real *turbu_omega_;
     Real *turbu_mu_;
-    Matd *turbu_strain_rate_;
-    Real *turbu_strain_rate_magnitude_;
     int *is_extra_viscous_dissipation_;
-
-    //** for test */
     int *turbu_indicator_;
     Real *k_diffusion_;
+
+    Matd *turbu_strain_rate_;
+    Real *turbu_strain_rate_magnitude_;
+    int *is_near_wall_P1_; //** This is used to specially treat near wall region  *
+    Matd *velocity_gradient_;
 };
 //=================================================================================================//
 class kOmega_TKE_Diffusion : public kOmega_BaseTurbulentModel<Base, DataDelegateInner>
