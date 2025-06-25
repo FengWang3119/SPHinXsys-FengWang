@@ -135,16 +135,16 @@ class GetVelocityGradient<Contact<Wall>> : public InteractionWithWall<GetVelocit
 using GetVelocityGradientComplex = ComplexInteraction<GetVelocityGradient<Inner<>, Contact<Wall>>>;
 //=================================================================================================//
 template <typename... T>
-class BaseTurbulentModel;
+class kEpsilon_BaseTurbulentModel;
 
 template <class DataDelegationType>
-class BaseTurbulentModel<Base, DataDelegationType>
+class kEpsilon_BaseTurbulentModel<Base, DataDelegationType>
     : public LocalDynamics, public DataDelegationType, public kEpsilon_TurbulentClosureCoefficient
 {
   public:
     template <class BaseRelationType>
-    explicit BaseTurbulentModel(BaseRelationType &base_relation);
-    virtual ~BaseTurbulentModel(){};
+    explicit kEpsilon_BaseTurbulentModel(BaseRelationType &base_relation);
+    virtual ~kEpsilon_BaseTurbulentModel(){};
 
   protected:
     Matd *turbu_strain_rate_; //** temporary naming to distinguish the regular strain rate *
@@ -159,7 +159,7 @@ class BaseTurbulentModel<Base, DataDelegationType>
 	 * @class K_TurbulentModelInner
 	 * @brief  K_TurbulentModelInner
 	 */
-class K_TurbulentModelInner : public BaseTurbulentModel<Base, DataDelegateInner>
+class K_TurbulentModelInner : public kEpsilon_BaseTurbulentModel<Base, DataDelegateInner>
 {
   public:
     explicit K_TurbulentModelInner(BaseInnerRelation &inner_relation, const StdVec<Real> &initial_values, int is_extr_visc_dissipa, bool is_STL);
@@ -186,7 +186,7 @@ class K_TurbulentModelInner : public BaseTurbulentModel<Base, DataDelegateInner>
     Real *k_diffusion_;
 };
 //=================================================================================================//
-class TurbulentKineticEnergyDiffusion : public BaseTurbulentModel<Base, DataDelegateInner>
+class TurbulentKineticEnergyDiffusion : public kEpsilon_BaseTurbulentModel<Base, DataDelegateInner>
 {
   public:
     explicit TurbulentKineticEnergyDiffusion(BaseInnerRelation &inner_relation);
@@ -204,7 +204,7 @@ class TurbulentKineticEnergyDiffusion : public BaseTurbulentModel<Base, DataDele
 	 * @class E_TurbulentModelInner
 	 * @brief  E_TurbulentModelInner
 	 */
-class E_TurbulentModelInner : public BaseTurbulentModel<Base, DataDelegateInner>
+class E_TurbulentModelInner : public kEpsilon_BaseTurbulentModel<Base, DataDelegateInner>
 {
   public:
     explicit E_TurbulentModelInner(BaseInnerRelation &inner_relation, bool is_STL);
@@ -228,7 +228,7 @@ class E_TurbulentModelInner : public BaseTurbulentModel<Base, DataDelegateInner>
     bool is_STL_;
 };
 //=================================================================================================//
-class TurbulentDissipationRateDiffusion : public BaseTurbulentModel<Base, DataDelegateInner>
+class TurbulentDissipationRateDiffusion : public kEpsilon_BaseTurbulentModel<Base, DataDelegateInner>
 {
   public:
     explicit TurbulentDissipationRateDiffusion(BaseInnerRelation &inner_relation);
@@ -247,7 +247,7 @@ class TKEnergyForce;
 
 template <class DataDelegationType>
 class TKEnergyForce<Base, DataDelegationType>
-    : public BaseTurbulentModel<Base, DataDelegationType>
+    : public kEpsilon_BaseTurbulentModel<Base, DataDelegationType>
 {
   public:
     template <class BaseRelationType>

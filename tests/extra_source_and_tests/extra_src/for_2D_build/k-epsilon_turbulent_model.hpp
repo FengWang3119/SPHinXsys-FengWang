@@ -37,7 +37,7 @@ namespace fluid_dynamics
 //=================================================================================================//
 template <class DataDelegationType>
 template <class BaseRelationType>
-BaseTurbulentModel<Base, DataDelegationType>::BaseTurbulentModel(BaseRelationType &base_relation)
+kEpsilon_BaseTurbulentModel<Base, DataDelegationType>::kEpsilon_BaseTurbulentModel(BaseRelationType &base_relation)
     : LocalDynamics(base_relation.getSPHBody()), DataDelegationType(base_relation),
       turbu_strain_rate_(this->particles_->template registerStateVariable<Matd>("TurbulentStrainRate")),
       viscosity_(DynamicCast<Viscosity>(this, this->particles_->getBaseMaterial())),
@@ -54,7 +54,7 @@ template <class DataDelegationType>
 template <class BaseRelationType>
 TKEnergyForce<Base, DataDelegationType>::
     TKEnergyForce(BaseRelationType &base_relation)
-    : BaseTurbulentModel<Base, DataDelegationType>(base_relation),
+    : kEpsilon_BaseTurbulentModel<Base, DataDelegationType>(base_relation),
       force_(this->particles_->template registerStateVariable<Vecd>("Force")),
       mass_(this->particles_->template getVariableDataByName<Real>("Mass")),
       indicator_(this->particles_->template getVariableDataByName<int>("Indicator")),

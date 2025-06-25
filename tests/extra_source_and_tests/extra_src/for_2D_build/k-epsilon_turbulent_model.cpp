@@ -162,7 +162,7 @@ void GetVelocityGradient<Contact<Wall>>::interaction(size_t index_i, Real dt)
 }
 //=================================================================================================//
 K_TurbulentModelInner::K_TurbulentModelInner(BaseInnerRelation &inner_relation, const StdVec<Real> &initial_values, int is_extr_visc_dissipa, bool is_STL)
-    : BaseTurbulentModel<Base, DataDelegateInner>(inner_relation),
+    : kEpsilon_BaseTurbulentModel<Base, DataDelegateInner>(inner_relation),
       dk_dt_(particles_->registerStateVariable<Real>("ChangeRateOfTKE")),
       dk_dt_without_dissipation_(particles_->registerStateVariable<Real>("ChangeRateOfTKEWithoutDissipation")),
       k_production_(particles_->registerStateVariable<Real>("K_Production")),
@@ -259,7 +259,7 @@ void K_TurbulentModelInner::update(size_t index_i, Real dt)
 }
 //=================================================================================================//
 TurbulentKineticEnergyDiffusion::TurbulentKineticEnergyDiffusion(BaseInnerRelation &inner_relation)
-    : BaseTurbulentModel<Base, DataDelegateInner>(inner_relation),
+    : kEpsilon_BaseTurbulentModel<Base, DataDelegateInner>(inner_relation),
       turbu_k_(particles_->getVariableDataByName<Real>("TurbulenceKineticEnergy")),
       turbu_mu_(particles_->getVariableDataByName<Real>("TurbulentViscosity")),
       k_diffusion_(particles_->getVariableDataByName<Real>("K_Diffusion")) {}
@@ -287,7 +287,7 @@ void TurbulentKineticEnergyDiffusion::interaction(size_t index_i, Real dt)
 }
 //=================================================================================================//
 E_TurbulentModelInner::E_TurbulentModelInner(BaseInnerRelation &inner_relation, bool is_STL)
-    : BaseTurbulentModel<Base, DataDelegateInner>(inner_relation),
+    : kEpsilon_BaseTurbulentModel<Base, DataDelegateInner>(inner_relation),
       depsilon_dt_(particles_->registerStateVariable<Real>("ChangeRateOfTDR")),
       depsilon_dt_without_dissipation_(particles_->registerStateVariable<Real>("ChangeRateOfTDRWithoutDissp")),
       ep_production(particles_->registerStateVariable<Real>("Ep_Production")),
@@ -352,7 +352,7 @@ void E_TurbulentModelInner::update(size_t index_i, Real dt)
 }
 //=================================================================================================//
 TurbulentDissipationRateDiffusion::TurbulentDissipationRateDiffusion(BaseInnerRelation &inner_relation)
-    : BaseTurbulentModel<Base, DataDelegateInner>(inner_relation),
+    : kEpsilon_BaseTurbulentModel<Base, DataDelegateInner>(inner_relation),
       ep_diffusion_(particles_->getVariableDataByName<Real>("Ep_Diffusion_")),
       turbu_mu_(particles_->getVariableDataByName<Real>("TurbulentViscosity")),
       turbu_epsilon_(particles_->getVariableDataByName<Real>("TurbulentDissipation")) {}
