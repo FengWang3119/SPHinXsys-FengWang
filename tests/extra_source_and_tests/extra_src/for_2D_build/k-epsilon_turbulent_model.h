@@ -443,12 +443,12 @@ class JudgeIsNearWall : public LocalDynamics, public DataDelegateContact, public
     StdVec<Vecd *> contact_n_;
 };
 //=================================================================================================//
-class StandardWallFunctionCorrection : public LocalDynamics, public DataDelegateContact, public WallFunction
+class kEpsilon_StandardWallFunctionCorrection : public LocalDynamics, public DataDelegateContact, public WallFunction
 {
   public:
-    StandardWallFunctionCorrection(BaseInnerRelation &inner_relation,
-                                   BaseContactRelation &contact_relation);
-    virtual ~StandardWallFunctionCorrection(){};
+    kEpsilon_StandardWallFunctionCorrection(BaseInnerRelation &inner_relation,
+                                            BaseContactRelation &contact_relation);
+    virtual ~kEpsilon_StandardWallFunctionCorrection(){};
     inline void interaction(size_t index_i, Real dt = 0.0);
 
   protected:

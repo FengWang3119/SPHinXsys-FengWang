@@ -887,9 +887,9 @@ void JudgeIsNearWall::update(size_t index_i, Real dt)
     }
 }
 //=================================================================================================//
-StandardWallFunctionCorrection::
-    StandardWallFunctionCorrection(BaseInnerRelation &inner_relation,
-                                   BaseContactRelation &contact_relation)
+kEpsilon_StandardWallFunctionCorrection::
+    kEpsilon_StandardWallFunctionCorrection(BaseInnerRelation &inner_relation,
+                                            BaseContactRelation &contact_relation)
     : LocalDynamics(inner_relation.getSPHBody()), DataDelegateContact(contact_relation),
       wall_Y_plus_(particles_->registerStateVariable<Real>("WallYplus")),
       wall_Y_star_(particles_->registerStateVariable<Real>("WallYstar")),
@@ -939,7 +939,7 @@ StandardWallFunctionCorrection::
     particles_->addVariableToWrite<Vecd>("FrictionVelocity");
 };
 //=================================================================================================//
-void StandardWallFunctionCorrection::interaction(size_t index_i, Real dt)
+void kEpsilon_StandardWallFunctionCorrection::interaction(size_t index_i, Real dt)
 {
     velo_tan_[index_i] = 0.0;
     velo_friction_[index_i] = Vecd::Zero();

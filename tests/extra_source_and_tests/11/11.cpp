@@ -158,7 +158,7 @@ int main(int ac, char *av[])
     SimpleDynamics<fluid_dynamics::E_TurbulentModelInner> epsilon_equation_relaxation(water_block_inner, is_source_term_linearisation);
     InteractionDynamics<fluid_dynamics::TurbulentDissipationRateDiffusion> turbulent_dissipation_rate_diffusion(water_block_inner);
     InteractionDynamics<fluid_dynamics::TKEnergyForceComplex> turbulent_kinetic_energy_force(water_block_inner, water_wall_contact);
-    InteractionDynamics<fluid_dynamics::StandardWallFunctionCorrection> standard_wall_function_correction(water_block_inner, water_wall_contact);
+    InteractionDynamics<fluid_dynamics::kEpsilon_StandardWallFunctionCorrection> standard_wall_function_correction(water_block_inner, water_wall_contact);
 
     SimpleDynamics<fluid_dynamics::ConstrainNormalVelocityInRegionP> constrain_normal_velocity_in_P_region(water_block);
 
