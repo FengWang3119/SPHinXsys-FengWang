@@ -204,20 +204,14 @@ class kOmegaStdWallFuncCorrection : public LocalDynamics,
     Real *physical_time_;
 };
 //=================================================================================================//
-/**
-	* @class   InflowTurbulentCondition
-	* @brief   Inflow boundary condition which imposes directly to a given velocity profile.
-	*          TargetVelocity gives the velocity profile along the inflow direction,
-	*          i.e. x direction in local frame.
-	*/
-class kOmegaInflowTurbulentCondition : public BaseFlowBoundaryCondition,
-                                       public kEpsilon_TurbulentClosureCoefficient,
-                                       public kOmega_BaseTurbuClosureCoeff
+class kOmega_InflowTurbulentCondition : public BaseFlowBoundaryCondition,
+                                        public kEpsilon_TurbulentClosureCoefficient,
+                                        public kOmega_BaseTurbuClosureCoeff
 {
   public:
-    explicit kOmegaInflowTurbulentCondition(BodyPartByCell &body_part,
-                                            Real CharacteristicLength, Real relaxation_rate, int type_turbu_inlet);
-    virtual ~kOmegaInflowTurbulentCondition(){};
+    explicit kOmega_InflowTurbulentCondition(BodyPartByCell &body_part,
+                                             Real CharacteristicLength, Real relaxation_rate, int type_turbu_inlet);
+    virtual ~kOmega_InflowTurbulentCondition(){};
     void update(size_t index_i, Real dt = 0.0);
 
   protected:

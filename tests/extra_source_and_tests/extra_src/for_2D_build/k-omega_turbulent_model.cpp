@@ -477,7 +477,7 @@ void kOmega_TSDR_Diffusion_Gradient_Dot::interaction(size_t index_i, Real dt)
     gradient_dot_k_omega_[index_i] = k_gradient.dot(omega_gradient);
 }
 //=================================================================================================//
-kOmegaInflowTurbulentCondition::kOmegaInflowTurbulentCondition(BodyPartByCell &body_part, Real CharacteristicLength, Real relaxation_rate, int type_turbu_inlet)
+kOmega_InflowTurbulentCondition::kOmega_InflowTurbulentCondition(BodyPartByCell &body_part, Real CharacteristicLength, Real relaxation_rate, int type_turbu_inlet)
     : BaseFlowBoundaryCondition(body_part), type_turbu_inlet_(type_turbu_inlet),
       relaxation_rate_(relaxation_rate),
       CharacteristicLength_(CharacteristicLength),
@@ -487,7 +487,7 @@ kOmegaInflowTurbulentCondition::kOmegaInflowTurbulentCondition(BodyPartByCell &b
     TurbulentLength_ = turbulent_length_ratio_for_epsilon_inlet_ * CharacteristicLength_;
 }
 //=================================================================================================//
-void kOmegaInflowTurbulentCondition::update(size_t index_i, Real dt)
+void kOmega_InflowTurbulentCondition::update(size_t index_i, Real dt)
 {
     Real target_inflow_turbu_k = getTurbulentInflowK(pos_[index_i], vel_[index_i], turbu_k_[index_i]);
     turbu_k_[index_i] += relaxation_rate_ * (target_inflow_turbu_k - turbu_k_[index_i]);
@@ -500,7 +500,7 @@ void kOmegaInflowTurbulentCondition::update(size_t index_i, Real dt)
     turbu_omega_[index_i] += relaxation_rate_ * (target_inflow_turbu_omega - turbu_omega_[index_i]);
 }
 //=================================================================================================//
-Real kOmegaInflowTurbulentCondition::getTurbulentInflowK(Vecd &position, Vecd &velocity, Real &turbu_k)
+Real kOmega_InflowTurbulentCondition::getTurbulentInflowK(Vecd &position, Vecd &velocity, Real &turbu_k)
 {
     Real u = velocity[0];
     Real temp_in_turbu_k = 1.5 * pow((turbulent_intensity_ * u), 2);
@@ -541,7 +541,7 @@ Real kOmegaInflowTurbulentCondition::getTurbulentInflowK(Vecd &position, Vecd &v
     return (position[0] < 0.0) ? temp_in_turbu_k : turbu_k_original; //** Temporarily treatment *
 }
 //=================================================================================================//
-Real kOmegaInflowTurbulentCondition::getTurbulentInflowTemporaryEpsilon(Vecd &position, Real &turbu_k, Real turbu_E)
+Real kOmega_InflowTurbulentCondition::getTurbulentInflowTemporaryEpsilon(Vecd &position, Real &turbu_k, Real turbu_E)
 {
     Real temp_in_turbu_E = C_mu_75_ * pow(turbu_k, 1.5) / TurbulentLength_;
     Real turbu_E_original = turbu_E;

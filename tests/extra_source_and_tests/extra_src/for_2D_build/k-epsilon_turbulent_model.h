@@ -393,17 +393,17 @@ class TurbulentAdvectionTimeStepSize : public LocalDynamicsReduce<ReduceMax>
 };
 //=================================================================================================//
 /**
-	* @class   InflowTurbulentCondition
+	* @class   kEpsilon_InflowTurbulentCondition
 	* @brief   Inflow boundary condition which imposes directly to a given velocity profile.
 	*          TargetVelocity gives the velocity profile along the inflow direction,
 	*          i.e. x direction in local frame.
 	*/
-class InflowTurbulentCondition : public BaseFlowBoundaryCondition, public kEpsilon_TurbulentClosureCoefficient
+class kEpsilon_InflowTurbulentCondition : public BaseFlowBoundaryCondition, public kEpsilon_TurbulentClosureCoefficient
 {
   public:
-    explicit InflowTurbulentCondition(BodyPartByCell &body_part,
-                                      Real CharacteristicLength, Real relaxation_rate, int type_turbu_inlet);
-    virtual ~InflowTurbulentCondition(){};
+    explicit kEpsilon_InflowTurbulentCondition(BodyPartByCell &body_part,
+                                               Real CharacteristicLength, Real relaxation_rate, int type_turbu_inlet);
+    virtual ~kEpsilon_InflowTurbulentCondition(){};
     void update(size_t index_i, Real dt = 0.0);
 
   protected:
