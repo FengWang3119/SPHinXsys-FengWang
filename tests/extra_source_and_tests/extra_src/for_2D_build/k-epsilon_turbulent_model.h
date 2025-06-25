@@ -220,11 +220,11 @@ class kEpsilon_epsilonTransportEquationInner : public kEpsilon_BaseTurbulentMode
     bool is_STL_;
 };
 //=================================================================================================//
-class TurbulentDissipationRateDiffusion : public kEpsilon_BaseTurbulentModel<Base, DataDelegateInner>
+class kEpsilon_TDR_Diffusion : public kEpsilon_BaseTurbulentModel<Base, DataDelegateInner>
 {
   public:
-    explicit TurbulentDissipationRateDiffusion(BaseInnerRelation &inner_relation);
-    virtual ~TurbulentDissipationRateDiffusion(){};
+    explicit kEpsilon_TDR_Diffusion(BaseInnerRelation &inner_relation);
+    virtual ~kEpsilon_TDR_Diffusion(){};
 
     inline void interaction(size_t index_i, Real dt = 0.0);
 

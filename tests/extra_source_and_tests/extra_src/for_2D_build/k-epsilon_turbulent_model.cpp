@@ -351,13 +351,13 @@ void kEpsilon_epsilonTransportEquationInner::update(size_t index_i, Real dt)
     }
 }
 //=================================================================================================//
-TurbulentDissipationRateDiffusion::TurbulentDissipationRateDiffusion(BaseInnerRelation &inner_relation)
+kEpsilon_TDR_Diffusion::kEpsilon_TDR_Diffusion(BaseInnerRelation &inner_relation)
     : kEpsilon_BaseTurbulentModel<Base, DataDelegateInner>(inner_relation),
       ep_diffusion_(particles_->getVariableDataByName<Real>("Ep_Diffusion_")),
       turbu_mu_(particles_->getVariableDataByName<Real>("TurbulentViscosity")),
       turbu_epsilon_(particles_->getVariableDataByName<Real>("TurbulentDissipation")) {}
 //=================================================================================================//
-void TurbulentDissipationRateDiffusion::interaction(size_t index_i, Real dt)
+void kEpsilon_TDR_Diffusion::interaction(size_t index_i, Real dt)
 {
     Real rho_i = rho_[index_i];
     Real turbu_epsilon_i = turbu_epsilon_[index_i];
