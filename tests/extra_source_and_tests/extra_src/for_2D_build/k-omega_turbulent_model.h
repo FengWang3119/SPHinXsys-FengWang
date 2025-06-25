@@ -211,7 +211,7 @@ class kOmegaStdWallFuncCorrection : public LocalDynamics,
 	*          i.e. x direction in local frame.
 	*/
 class kOmegaInflowTurbulentCondition : public BaseFlowBoundaryCondition,
-                                       public BaseTurbuClosureCoeff,
+                                       public kEpsilon_TurbulentClosureCoefficient,
                                        public kOmega_BaseTurbuClosureCoeff
 {
   public:

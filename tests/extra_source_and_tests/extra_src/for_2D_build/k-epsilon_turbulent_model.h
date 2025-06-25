@@ -37,11 +37,11 @@ namespace SPH
 {
 namespace fluid_dynamics
 {
-class BaseTurbuClosureCoeff
+class kEpsilon_TurbulentClosureCoefficient
 {
   public:
-    explicit BaseTurbuClosureCoeff();
-    virtual ~BaseTurbuClosureCoeff(){};
+    explicit kEpsilon_TurbulentClosureCoefficient();
+    virtual ~kEpsilon_TurbulentClosureCoefficient(){};
 
   protected:
     Real Karman_;
@@ -62,7 +62,7 @@ class BaseTurbuClosureCoeff
     Real y_star_threshold_laminar_;
 };
 //=================================================================================================//
-class WallFunction : public BaseTurbuClosureCoeff
+class WallFunction : public kEpsilon_TurbulentClosureCoefficient
 {
   public:
     explicit WallFunction(){};
@@ -139,7 +139,7 @@ class BaseTurbulentModel;
 
 template <class DataDelegationType>
 class BaseTurbulentModel<Base, DataDelegationType>
-    : public LocalDynamics, public DataDelegationType, public BaseTurbuClosureCoeff
+    : public LocalDynamics, public DataDelegationType, public kEpsilon_TurbulentClosureCoefficient
 {
   public:
     template <class BaseRelationType>
@@ -353,7 +353,7 @@ class TurbuViscousForce<Contact<Wall>> : public BaseTurbuViscousForceWithWall, p
 //** Interface part *
 using TurbulentViscousForceWithWall = ComplexInteraction<TurbuViscousForce<Inner<>, Contact<Wall>>>;
 //=================================================================================================//
-class TurbulentEddyViscosity : public LocalDynamics, public BaseTurbuClosureCoeff
+class TurbulentEddyViscosity : public LocalDynamics, public kEpsilon_TurbulentClosureCoefficient
 {
   public:
     explicit TurbulentEddyViscosity(SPHBody &sph_body);
@@ -398,7 +398,7 @@ class TurbulentAdvectionTimeStepSize : public LocalDynamicsReduce<ReduceMax>
 	*          TargetVelocity gives the velocity profile along the inflow direction,
 	*          i.e. x direction in local frame.
 	*/
-class InflowTurbulentCondition : public BaseFlowBoundaryCondition, public BaseTurbuClosureCoeff
+class InflowTurbulentCondition : public BaseFlowBoundaryCondition, public kEpsilon_TurbulentClosureCoefficient
 {
   public:
     explicit InflowTurbulentCondition(BodyPartByCell &body_part,
@@ -418,7 +418,7 @@ class InflowTurbulentCondition : public BaseFlowBoundaryCondition, public BaseTu
     virtual Real getTurbulentInflowE(Vecd &position, Real &turbu_k, Real &turbu_E);
 };
 //=================================================================================================//
-class JudgeIsNearWall : public LocalDynamics, public DataDelegateContact, public BaseTurbuClosureCoeff
+class JudgeIsNearWall : public LocalDynamics, public DataDelegateContact, public kEpsilon_TurbulentClosureCoefficient
 {
   public:
     JudgeIsNearWall(BaseInnerRelation &inner_relation,
