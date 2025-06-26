@@ -44,9 +44,8 @@ int main(int ac, char *av[])
     fluid_observer.generateParticles<ObserverParticles>(observation_locations);
 
     ObserverBody observer_body(sph_system, makeShared<WaterBlock>("ObserverBody")); //% Average
-    (!sph_system.RunParticleRelaxation() && sph_system.ReloadParticles())
-        ? observer_body.generateParticles<BaseParticles, Reload>(water_block.getName())
-        : observer_body.generateParticles<BaseParticles, Lattice>();
+    observer_body.defineAdaptationRatios(0.65, 2.0);
+    observer_body.generateParticles<BaseParticles, Lattice>();
 
     /** topology */
     InnerRelation water_block_inner(water_block);
