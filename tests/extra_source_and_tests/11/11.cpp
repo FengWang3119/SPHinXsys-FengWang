@@ -55,11 +55,19 @@ int main(int ac, char *av[])
     ObserverBody fluid_observer(sph_system, "FluidObserver");
     fluid_observer.generateParticles<ObserverParticles>(observation_location);
 
+    ObserverBody observer_body(sph_system, makeShared<WaterBlock>("ObserverBody")); //% Average
+    (!sph_system.RunParticleRelaxation() && sph_system.ReloadParticles())
+        ? observer_body.generateParticles<BaseParticles, Reload>(water_block.getName())
+        : observer_body.generateParticles<BaseParticles, Lattice>();
+
     /** topology */
     InnerRelation water_block_inner(water_block);
     ContactRelation water_wall_contact(water_block, {&wall_boundary});
     ContactRelation fluid_observer_contact(fluid_observer, {&water_block});
     ContactRelation observer_centerpoint_contact(observer_center_point, {&water_block});
+
+    ContactRelation fluid_observer_contact2(observer_body, {&water_block}); //% Average
+
     //----------------------------------------------------------------------
     // Combined relations built from basic relations
     // which is only used for update configuration.
@@ -217,6 +225,12 @@ int main(int ac, char *av[])
 
     /** Turbulent eddy viscosity calculation needs values of Wall Y start. */
     SimpleDynamics<fluid_dynamics::TurbulentEddyViscosity> update_eddy_viscosity(water_block);
+
+    ObservingAQuantity<Real> observing_pressure(fluid_observer_contact2, "Pressure");          //% Average pressure
+    SimpleDynamics<ParticleSnapshotAverage<Real>> average_pressure(observer_body, "Pressure"); //% Average pressure
+    ObservingAQuantity<Real> observing_density(fluid_observer_contact2, "Density");            //% Average density
+    SimpleDynamics<ParticleSnapshotAverage<Real>> average_density(observer_body, "Density");   //% Average density
+
     //----------------------------------------------------------------------
     //	Define the configuration related particles dynamics.
     //----------------------------------------------------------------------
@@ -236,6 +250,11 @@ int main(int ac, char *av[])
     ObservedQuantityRecording<Real> write_recorded_water_epsilon("TurbulentDissipation", fluid_observer_contact);
     body_states_recording.addToWrite<int>(water_block, "BufferParticleIndicator");
     RegressionTestDynamicTimeWarping<ObservedQuantityRecording<Real>> write_centerpoint_quantity("TurbulentViscosity", observer_centerpoint_contact);
+
+    BodyStatesRecordingToVtp write_observation_states(observer_body);     //% Average
+    write_observation_states.addToWrite<Real>(observer_body, "Pressure"); //% Average pressure
+    write_observation_states.addToWrite<Real>(observer_body, "Density");  //% Average density
+
     /**
      * @brief Setup geometry and initial conditions.
      */
@@ -257,9 +276,9 @@ int main(int ac, char *av[])
     size_t number_of_iterations = sph_system.RestartStep();
     int screen_output_interval = 100;
     int observation_sample_interval = screen_output_interval * 2;
-    Real end_time = 200.0;             /**< End time. */
-    Real Output_Time = end_time / 4.0; /**< Time stamps for output of body states. */
-    Real dt = 0.0;                     /**< Default acoustic time step sizes. */
+    Real end_time = 200.0;               /**< End time. */
+    Real Output_Time = end_time / 200.0; /**< Time stamps for output of body states. */
+    Real dt = 0.0;                       /**< Default acoustic time step sizes. */
     //----------------------------------------------------------------------
     //	Statistics for CPU time
     //----------------------------------------------------------------------
@@ -386,6 +405,14 @@ int main(int ac, char *av[])
                 write_recorded_water_k.writeToFile(number_of_iterations);
                 write_recorded_water_mut.writeToFile(number_of_iterations);
                 write_recorded_water_epsilon.writeToFile(number_of_iterations);
+
+                fluid_observer_contact2.updateConfiguration();
+                //% Average pressure
+                observing_pressure.exec();
+                average_pressure.exec();
+                //% Average density
+                observing_density.exec();
+                average_density.exec();
             }
             //if (physical_time > end_time * 0.5)
             //body_states_recording.writeToFile();
@@ -394,6 +421,9 @@ int main(int ac, char *av[])
         body_states_recording.writeToFile();
         observer_centerpoint_contact.updateConfiguration();
         num_output_file++;
+
+        write_observation_states.writeToFile(); //% Average
+
         //if (num_output_file == 100)
         //    system("pause");
         //TickCount t3 = TickCount::now();
