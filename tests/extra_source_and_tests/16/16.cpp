@@ -43,10 +43,18 @@ int main(int ac, char *av[])
     ObserverBody fluid_observer(sph_system, "FluidObserver");
     fluid_observer.generateParticles<ObserverParticles>(observation_locations);
 
+    ObserverBody observer_body(sph_system, makeShared<WaterBlock>("ObserverBody")); //% Average
+    (!sph_system.RunParticleRelaxation() && sph_system.ReloadParticles())
+        ? observer_body.generateParticles<BaseParticles, Reload>(water_block.getName())
+        : observer_body.generateParticles<BaseParticles, Lattice>();
+
     /** topology */
     InnerRelation water_block_inner(water_block);
     ContactRelation water_wall_contact(water_block, {&wall_boundary});
     ContactRelation fluid_observer_contact(fluid_observer, {&water_block});
+
+    ContactRelation fluid_observer_contact2(observer_body, {&water_block}); //% Average
+
     //----------------------------------------------------------------------
     // Combined relations built from basic relations
     // which is only used for update configuration.
@@ -153,7 +161,7 @@ int main(int ac, char *av[])
     //InteractionWithUpdate<fluid_dynamics::ViscousForceWithWall> viscous_force(water_block_inner, water_wall_contact);
 
     /** Impose transport velocity. */
-    InteractionWithUpdate<fluid_dynamics::TVC_NotLimited_RKGC_OBFCorrection<BulkParticles>> transport_velocity_correction(water_block_inner, water_wall_contact);
+    InteractionWithUpdate<fluid_dynamics::TVC_ModifiedLimited_RKGC_OBFCorrection<BulkParticles>> transport_velocity_correction(water_block_inner, water_wall_contact);
 
     /** A temporarily test for the limiter . */
     SimpleDynamics<fluid_dynamics::GetLimiterOfTransportVelocityCorrection> get_limiter_of_transport_velocity_correction(water_block, 1000);
@@ -200,6 +208,11 @@ int main(int ac, char *av[])
 
     /** Turbulent eddy viscosity calculation needs values of Wall Y start. */
     SimpleDynamics<fluid_dynamics::TurbulentEddyViscosity> update_eddy_viscosity(water_block);
+
+    ObservingAQuantity<Real> observing_pressure(fluid_observer_contact2, "Pressure");          //% Average pressure
+    SimpleDynamics<ParticleSnapshotAverage<Real>> average_pressure(observer_body, "Pressure"); //% Average pressure
+    ObservingAQuantity<Real> observing_density(fluid_observer_contact2, "Density");            //% Average density
+    SimpleDynamics<ParticleSnapshotAverage<Real>> average_density(observer_body, "Density");   //% Average density
     //----------------------------------------------------------------------
     //	Define the configuration related particles dynamics.
     //----------------------------------------------------------------------
@@ -218,6 +231,10 @@ int main(int ac, char *av[])
     ObservedQuantityRecording<Real> write_recorded_water_mut("TurbulentViscosity", fluid_observer_contact);
     ObservedQuantityRecording<Real> write_recorded_water_epsilon("TurbulentDissipation", fluid_observer_contact);
     body_states_recording.addToWrite<int>(water_block, "BufferParticleIndicator");
+
+    BodyStatesRecordingToVtp write_observation_states(observer_body);     //% Average
+    write_observation_states.addToWrite<Real>(observer_body, "Pressure"); //% Average pressure
+    write_observation_states.addToWrite<Real>(observer_body, "Density");  //% Average density
 
     //% For reviewer
     body_states_recording.addToWrite<Real>(water_block, "RatioTVF");
@@ -377,6 +394,14 @@ int main(int ac, char *av[])
                 write_recorded_water_k.writeToFile(number_of_iterations);
                 write_recorded_water_mut.writeToFile(number_of_iterations);
                 write_recorded_water_epsilon.writeToFile(number_of_iterations);
+
+                fluid_observer_contact2.updateConfiguration();
+                //% Average pressure
+                observing_pressure.exec();
+                average_pressure.exec();
+                //% Average density
+                observing_density.exec();
+                average_density.exec();
             }
             //if (physical_time > end_time * 0.5)
             //body_states_recording.writeToFile();
@@ -384,6 +409,9 @@ int main(int ac, char *av[])
         //TickCount t2 = TickCount::now();
         body_states_recording.writeToFile();
         num_output_file++;
+
+        write_observation_states.writeToFile(); //% Average
+
         //if (num_output_file == 100)
         //    system("pause");
         //TickCount t3 = TickCount::now();
