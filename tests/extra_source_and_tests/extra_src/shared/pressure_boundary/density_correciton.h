@@ -70,17 +70,30 @@ class DensitySummationPressure<Inner<>> : public DensitySummationPressure<Inner<
   public:
     explicit DensitySummationPressure(BaseInnerRelation &inner_relation)
         : DensitySummationPressure<Inner<Base>>(inner_relation),
-          buffer_particle_indicator_(particles_->getVariableDataByName<int>("BufferParticleIndicator")){};
+          buffer_particle_indicator_(particles_->getVariableDataByName<int>("BufferParticleIndicator")),
+          is_near_wall_P1_(particles_->getVariableDataByName<int>("IsNearWallP1")),
+          pos_(particles_->getVariableDataByName<Vecd>("Position")){};
     virtual ~DensitySummationPressure(){};
     void interaction(size_t index_i, Real dt = 0.0);
     void update(size_t index_i, Real dt = 0.0)
     {
         if (buffer_particle_indicator_[index_i] == 0)
-            assignDensity(index_i);
+        {
+            if (pos_[index_i][xAxis] > 4.3375 && pos_[index_i][xAxis] < 5.8125 && pos_[index_i][yAxis] < 1.0 && is_near_wall_P1_[index_i] == 1)
+            {
+                //% do nothing
+            }
+            else
+            {
+                assignDensity(index_i);
+            }
+        }
     };
 
   protected:
     int *buffer_particle_indicator_;
+    int *is_near_wall_P1_;
+    Vecd *pos_;
 };
 
 template <>
