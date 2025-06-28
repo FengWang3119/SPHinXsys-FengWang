@@ -10,29 +10,15 @@ namespace fluid_dynamics
 //=================================================================================================//
 template <class DataDelegationType>
 template <class BaseRelationType>
-kEpsilon_BaseTurbulentModel<Base, DataDelegationType>::kEpsilon_BaseTurbulentModel(BaseRelationType &base_relation)
-    : LocalDynamics(base_relation.getSPHBody()), DataDelegationType(base_relation),
-      turbu_strain_rate_(this->particles_->template registerStateVariable<Matd>("TurbulentStrainRate")),
-      viscosity_(DynamicCast<Viscosity>(this, this->particles_->getBaseMaterial())),
-      mu_(viscosity_.ReferenceViscosity()),
-      smoothing_length_(this->sph_body_.sph_adaptation_->ReferenceSmoothingLength()),
-      particle_spacing_min_(base_relation.getSPHBody().sph_adaptation_->MinimumSpacing()),
-      rho_(this->particles_->template getVariableDataByName<Real>("Density")),
-      Vol_(this->particles_->template getVariableDataByName<Real>("VolumetricMeasure")),
-      vel_(this->particles_->template getVariableDataByName<Vecd>("Velocity")),
-      dimension_(2) {}
-//** A temporarily treatment for dimension **
-//=================================================================================================//
-template <class DataDelegationType>
-template <class BaseRelationType>
 TKEnergyForce<Base, DataDelegationType>::
     TKEnergyForce(BaseRelationType &base_relation)
-    : kEpsilon_BaseTurbulentModel<Base, DataDelegationType>(base_relation),
+    : LocalDynamics(base_relation.getSPHBody()), DataDelegationType(base_relation),
       force_(this->particles_->template registerStateVariable<Vecd>("Force")),
       mass_(this->particles_->template getVariableDataByName<Real>("Mass")),
       indicator_(this->particles_->template getVariableDataByName<int>("Indicator")),
       pos_(this->particles_->template getVariableDataByName<Vecd>("Position")),
       turbu_k_(this->particles_->template getVariableDataByName<Real>("TurbulenceKineticEnergy")),
+      Vol_(this->particles_->template getVariableDataByName<Real>("VolumetricMeasure")),
       test_k_grad_rslt_(this->particles_->template registerStateVariable<Vecd>("TkeGradResult")) {}
 //=================================================================================================//
 template <class DataDelegationType>
