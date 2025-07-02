@@ -30,6 +30,7 @@
 #ifndef K_EPSILON_TURBULENT_MODEL_H
 #define K_EPSILON_TURBULENT_MODEL_H
 
+#include "common_turbulence_model.h"
 #include "sphinxsys.h"
 #include <mutex>
 
@@ -61,78 +62,6 @@ class kEpsilon_TurbulentClosureCoefficient
     Real start_time_laminar_;
     Real y_star_threshold_laminar_;
 };
-//=================================================================================================//
-class WallFunction : public kEpsilon_TurbulentClosureCoefficient
-{
-  public:
-    explicit WallFunction(){};
-    virtual ~WallFunction(){};
-
-    Real get_dimensionless_velocity(Real y_star, Real time);
-    Real get_near_wall_velocity_gradient_magnitude(Real y_star, Real vel_fric_mag, Real denominator_log_law, Real dynamic_viscosity);
-    Real get_distance_from_P_to_wall(Real y_p_constant);
-
-    Real log_law_wall_function(Real y_star);
-    Real laminar_law_wall_function(Real y_star);
-    Real log_law_velocity_gradient(Real vel_fric_mag, Real denominator_log_law);
-    Real laminar_law_velocity_gradient(Real vel_fric_mag, Real dynamic_viscosity);
-};
-//=================================================================================================//
-template <typename... InteractionTypes>
-class GetVelocityGradient;
-
-template <class DataDelegationType>
-class GetVelocityGradient<DataDelegationType>
-    : public LocalDynamics, public DataDelegationType
-{
-  public:
-    template <class BaseRelationType>
-    explicit GetVelocityGradient(BaseRelationType &base_relation);
-    virtual ~GetVelocityGradient(){};
-
-  protected:
-    Real *Vol_;
-    Vecd *vel_, *pos_;
-    int *is_near_wall_P1_;
-    int *is_near_wall_P2_;
-
-    Matd *velocity_gradient_;
-    //**For test*
-    Matd *velocity_gradient_wall;
-};
-//** Inner part *
-template <>
-class GetVelocityGradient<Inner<>> : public GetVelocityGradient<DataDelegateInner>
-{
-  public:
-    explicit GetVelocityGradient(BaseInnerRelation &inner_relation, Real weight_sub);
-    virtual ~GetVelocityGradient(){};
-    void interaction(size_t index_i, Real dt = 0.0);
-    void update(size_t index_i, Real dt = 0.0);
-
-  protected:
-    Matd *velocity_gradient_;
-    Matd *B_;
-    Matd *turbu_B_;
-    Real weight_sub_nearwall_;
-};
-using GetVelocityGradientInner = GetVelocityGradient<Inner<>>;
-
-//** Wall part *
-template <>
-class GetVelocityGradient<Contact<Wall>> : public InteractionWithWall<GetVelocityGradient>
-{
-  public:
-    explicit GetVelocityGradient(BaseContactRelation &contact_relation);
-    virtual ~GetVelocityGradient(){};
-    void interaction(size_t index_i, Real dt = 0.0);
-
-  protected:
-    Matd *velocity_gradient_;
-};
-
-//** Interface part *
-using GetVelocityGradientComplex = ComplexInteraction<GetVelocityGradient<Inner<>, Contact<Wall>>>;
 //=================================================================================================//
 template <typename... T>
 class kEpsilon_BaseTurbulentModel;
@@ -234,117 +163,6 @@ class kEpsilon_TDR_Diffusion : public kEpsilon_BaseTurbulentModel<Base, DataDele
     Real *turbu_epsilon_;
 };
 //=================================================================================================//
-template <typename... InteractionTypes>
-class TKEnergyForce;
-
-template <class DataDelegationType>
-class TKEnergyForce<Base, DataDelegationType>
-    : public kEpsilon_BaseTurbulentModel<Base, DataDelegationType>
-{
-  public:
-    template <class BaseRelationType>
-    explicit TKEnergyForce(BaseRelationType &base_relation);
-    virtual ~TKEnergyForce(){};
-
-  protected:
-    Vecd *force_;
-    Real *mass_;
-    int *indicator_;
-    Vecd *pos_;
-    Real *turbu_k_;
-    Vecd *test_k_grad_rslt_;
-};
-//** Inner part *
-template <>
-class TKEnergyForce<Inner<>> : public TKEnergyForce<Base, DataDelegateInner>
-{
-  public:
-    explicit TKEnergyForce(BaseInnerRelation &inner_relation);
-    virtual ~TKEnergyForce(){};
-    void interaction(size_t index_i, Real dt = 0.0);
-
-  protected:
-    Vecd *test_k_grad_rslt_;
-    Matd *B_;
-};
-//** Wall part *
-template <>
-class TKEnergyForce<Contact<>> : public TKEnergyForce<Base, DataDelegateContact>
-{
-  public:
-    explicit TKEnergyForce(BaseContactRelation &contact_relation);
-    virtual ~TKEnergyForce(){};
-    void interaction(size_t index_i, Real dt = 0.0);
-
-  protected:
-    Vecd *test_k_grad_rslt_;
-    Matd *B_;
-};
-
-//** Interface part *
-template <class InnerInteractionType, class... ContactInteractionTypes>
-using BaseTKEnergyForceComplex = ComplexInteraction<TKEnergyForce<InnerInteractionType, ContactInteractionTypes...>>;
-
-using TKEnergyForceComplex = BaseTKEnergyForceComplex<Inner<>, Contact<>>;
-//=================================================================================================//
-template <typename... InteractionTypes>
-class TurbuViscousForce;
-
-template <class DataDelegationType>
-class TurbuViscousForce<DataDelegationType> : public ViscousForce<DataDelegationType>
-{
-  public:
-    template <class BaseRelationType>
-    explicit TurbuViscousForce(BaseRelationType &base_relation);
-    virtual ~TurbuViscousForce(){};
-
-  protected:
-    Real *turbu_k_;
-    Real *turbu_mu_;
-    Real *wall_Y_plus_;
-    Real *wall_Y_star_;
-    Vecd *velo_friction_;
-    Real *y_p_;
-    int *is_near_wall_P2_;
-    Viscosity viscosity_;
-    Real molecular_viscosity_;
-    Real c0_;
-};
-
-//** Inner part *
-template <>
-class TurbuViscousForce<Inner<>> : public TurbuViscousForce<DataDelegateInner>
-{
-  public:
-    explicit TurbuViscousForce(BaseInnerRelation &inner_relation);
-    virtual ~TurbuViscousForce(){};
-    void interaction(size_t index_i, Real dt = 0.0);
-
-  protected:
-    int *turbu_indicator_;
-    int *is_extra_viscous_dissipation_;
-    Matd *B_;
-};
-
-//** Wall part *
-using BaseTurbuViscousForceWithWall = InteractionWithWall<TurbuViscousForce>;
-template <>
-class TurbuViscousForce<Contact<Wall>> : public BaseTurbuViscousForceWithWall, public WallFunction
-{
-  public:
-    explicit TurbuViscousForce(BaseContactRelation &wall_contact_relation);
-    virtual ~TurbuViscousForce(){};
-    void interaction(size_t index_i, Real dt = 0.0);
-
-  protected:
-    Real wall_particle_spacing_;
-    Matd *B_;
-    Real *physical_time_;
-};
-
-//** Interface part *
-using TurbulentViscousForceWithWall = ComplexInteraction<TurbuViscousForce<Inner<>, Contact<Wall>>>;
-//=================================================================================================//
 class kEpsilon_TurbulentEddyViscosity : public LocalDynamics, public kEpsilon_TurbulentClosureCoefficient
 {
   public:
@@ -361,27 +179,6 @@ class kEpsilon_TurbulentEddyViscosity : public LocalDynamics, public kEpsilon_Tu
     Real *wall_Y_plus_, *wall_Y_star_;
     Viscosity &viscosity_;
     Real mu_;
-};
-//=================================================================================================//
-/**
-	 * @class TurbulentAdvectionTimeStepSize
-	 * @brief Computing the turbulent advection time step size
-	 */
-class TurbulentAdvectionTimeStepSize : public LocalDynamicsReduce<ReduceMax>
-{
-  public:
-    explicit TurbulentAdvectionTimeStepSize(SPHBody &sph_body, Real U_max, Real advectionCFL = 0.25);
-    virtual ~TurbulentAdvectionTimeStepSize(){};
-    Real reduce(size_t index_i, Real dt = 0.0);
-    virtual Real outputResult(Real reduced_value) override;
-
-  protected:
-    Vecd *vel_;
-    Real smoothing_length_min_;
-    Real speed_ref_turbu_, advectionCFL_;
-    Real *turbu_mu_;
-    Fluid &fluid_;
-    Viscosity &viscosity_;
 };
 //=================================================================================================//
 /**
@@ -408,31 +205,6 @@ class kEpsilon_InflowTurbulentCondition : public BaseFlowBoundaryCondition, publ
 
     virtual Real getTurbulentInflowK(Vecd &position, Vecd &velocity, Real &turbu_k);
     virtual Real getTurbulentInflowE(Vecd &position, Real &turbu_k, Real &turbu_E);
-};
-//=================================================================================================//
-class JudgeIsNearWall : public LocalDynamics, public DataDelegateContact, public kEpsilon_TurbulentClosureCoefficient
-{
-  public:
-    JudgeIsNearWall(BaseInnerRelation &inner_relation,
-                    BaseContactRelation &contact_relation, Real constant_y_p);
-    virtual ~JudgeIsNearWall(){};
-    inline void interaction(size_t index_i, Real dt = 0.0);
-    void update(size_t index_i, Real dt = 0.0);
-
-  protected:
-    Real *distance_to_dummy_interface_;
-    Real *distance_to_dummy_interface_up_average_;
-    int *is_near_wall_P1_;
-    int *is_near_wall_P2_;
-    int *index_nearest_;
-    Vecd *e_nearest_tau_, *e_nearest_normal_;
-    Real *y_p_;
-    Real constant_y_p_;
-
-    Vecd *pos_;
-    Real fluid_particle_spacing_, wall_particle_spacing_;
-    StdVec<Real *> contact_Vol_;
-    StdVec<Vecd *> contact_n_;
 };
 //=================================================================================================//
 class kEpsilon_StandardWallFunctionCorrection : public LocalDynamics, public DataDelegateContact, public WallFunction
@@ -468,126 +240,6 @@ class kEpsilon_StandardWallFunctionCorrection : public LocalDynamics, public Dat
     StdVec<Real *> contact_Vol_;
     StdVec<Vecd *> contact_n_;
     Real *physical_time_;
-};
-//=================================================================================================//
-class ConstrainNormalVelocityInRegionP : public LocalDynamics
-{
-  public:
-    explicit ConstrainNormalVelocityInRegionP(SPHBody &sph_body);
-    virtual ~ConstrainNormalVelocityInRegionP(){};
-
-    void update(size_t index_i, Real dt = 0.0);
-
-  protected:
-    Vecd *vel_;
-    int *is_near_wall_P1_;
-    Vecd *e_nearest_normal_;
-};
-//=================================================================================================//
-template <typename... InteractionTypes>
-class TurbulentLinearGradientCorrectionMatrix;
-
-template <class DataDelegationType>
-class TurbulentLinearGradientCorrectionMatrix<DataDelegationType>
-    : public LocalDynamics, public DataDelegationType
-{
-  public:
-    template <class BaseRelationType>
-    explicit TurbulentLinearGradientCorrectionMatrix(BaseRelationType &base_relation);
-    virtual ~TurbulentLinearGradientCorrectionMatrix(){};
-
-  protected:
-    Real *Vol_;
-    Matd *turbu_B_;
-    Matd *B_;
-};
-
-template <>
-class TurbulentLinearGradientCorrectionMatrix<Inner<>>
-    : public TurbulentLinearGradientCorrectionMatrix<DataDelegateInner>
-{
-    Real turbu_alpha_;
-
-  public:
-    explicit TurbulentLinearGradientCorrectionMatrix(BaseInnerRelation &inner_relation, Real alpha = Real(0))
-        : TurbulentLinearGradientCorrectionMatrix<DataDelegateInner>(inner_relation), turbu_alpha_(alpha){};
-    template <typename BodyRelationType, typename FirstArg>
-    explicit TurbulentLinearGradientCorrectionMatrix(InteractArgs<BodyRelationType, FirstArg> parameters)
-        : TurbulentLinearGradientCorrectionMatrix(parameters.body_relation_, std::get<0>(parameters.others_)){};
-    virtual ~TurbulentLinearGradientCorrectionMatrix(){};
-    void interaction(size_t index_i, Real dt = 0.0);
-    void update(size_t index_i, Real dt = 0.0);
-};
-using TurbulentLinearGradientCorrectionMatrixInner = TurbulentLinearGradientCorrectionMatrix<Inner<>>;
-
-//=================================================================================================//
-class GetLimiterOfTransportVelocityCorrection : public LocalDynamics
-{
-  public:
-    explicit GetLimiterOfTransportVelocityCorrection(SPHBody &sph_body, Real slope);
-    virtual ~GetLimiterOfTransportVelocityCorrection(){};
-
-    void update(size_t index_i, Real dt = 0.0);
-
-  protected:
-    const Real h_ref_;
-    Vecd *zero_gradient_residue_;
-    Real slope_;
-    Real *limiter_tvc_;
-};
-//=================================================================================================//
-template <class ParticleScope>
-using TVC_Limited_withLinearGradientCorrection =
-    BaseTransportVelocityCorrectionComplex<SingleResolution, TruncatedLinear, LinearGradientCorrection, ParticleScope>;
-template <class ParticleScope>
-using TVC_NoLimiter_withLinearGradientCorrection =
-    BaseTransportVelocityCorrectionComplex<SingleResolution, NoLimiter, LinearGradientCorrection, ParticleScope>;
-//=================================================================================================//
-class ModifiedTruncatedLinear : public Limiter
-{
-    Real ref_, slope_;
-
-  public:
-    ModifiedTruncatedLinear(Real ref, Real slope = 1000.0)
-        : Limiter(), ref_(ref), slope_(slope){};
-    Real operator()(Real measure)
-    {
-        Real measure_scale = measure * ref_;
-        return SMIN(slope_ * measure_scale, Real(1));
-    };
-};
-template <class ParticleScope>
-using TVC_ModifiedLimited_NoRKGC =
-    BaseTransportVelocityCorrectionComplex<SingleResolution, ModifiedTruncatedLinear, NoKernelCorrection, ParticleScope>;
-
-template <class ParticleScope>
-using TVC_ModifiedLimited_withLinearGradientCorrection =
-    BaseTransportVelocityCorrectionComplex<SingleResolution, ModifiedTruncatedLinear, LinearGradientCorrection, ParticleScope>;
-
-template <class ParticleScope>
-using TVC_ModifiedLimited_RKGC_OBFCorrection =
-    BaseTransportVelocityCorrectionComplex<SingleResolution, ModifiedTruncatedLinear, LinearGradientCorrectionWithBulkScope, ParticleScope>;
-
-template <class ParticleScope>
-using TVC_NotLimited_RKGC_OBFCorrection =
-    BaseTransportVelocityCorrectionComplex<SingleResolution, NoLimiter, LinearGradientCorrectionWithBulkScope, ParticleScope>;
-
-template <class ParticleScope>
-using TVC_ModifiedLimited_withoutLinearGradientCorrection =
-    BaseTransportVelocityCorrectionComplex<SingleResolution, ModifiedTruncatedLinear, NoKernelCorrection, ParticleScope>;
-//=================================================================================================//
-class NonDimensionalisePressure : public LocalDynamics
-{
-  public:
-    explicit NonDimensionalisePressure(SPHBody &sph_body);
-    virtual ~NonDimensionalisePressure(){};
-
-    void update(size_t index_i, Real dt = 0.0);
-
-  protected:
-    Real *rho_;
-    Real *p_;
-    Real *p_dimensionless_;
 };
 //=================================================================================================//
 } // namespace fluid_dynamics

@@ -122,7 +122,7 @@ void kOmegaStdWallFuncCorrection::interaction(size_t index_i, Real dt)
         Real nu_i = molecular_viscosity_ / rho_i;
 
         //** Calculate Y_star, note the current code is based on Y_star *
-        wall_Y_star_[index_i] = y_p_constant_i * C_mu_25_ * turbu_k_i_05 / nu_i;
+        wall_Y_star_[index_i] = y_p_constant_i * C_mu_wf_25_ * turbu_k_i_05 / nu_i;
 
         //** Calculate friction velocity, including P2 region. *
         Real velo_fric_mag = 0.0;
@@ -138,7 +138,7 @@ void kOmegaStdWallFuncCorrection::interaction(size_t index_i, Real dt)
         }
 
         Real u_star = get_dimensionless_velocity(wall_Y_star_[index_i], current_time);
-        velo_fric_mag = sqrt(C_mu_25_ * turbu_k_i_05 * velo_tan_mag / u_star);
+        velo_fric_mag = sqrt(C_mu_wf_25_ * turbu_k_i_05 * velo_tan_mag / u_star);
 
         if (velo_fric_mag != static_cast<Real>(velo_fric_mag))
         {
@@ -146,10 +146,10 @@ void kOmegaStdWallFuncCorrection::interaction(size_t index_i, Real dt)
             std::cout << "velo_fric=" << velo_fric_mag << std::endl
                       << "velo_tan_mag=" << velo_tan_mag << std::endl;
             std::cout << "turbu_k_=" << pow(turbu_k_[index_i], 0.5) << std::endl;
-            std::cout << "sum=" << (Karman_ * velo_tan_mag * C_mu_25_ * pow(turbu_k_[index_i], 0.5) / log(turbu_const_E_ * C_mu_25_ * pow(turbu_k_[index_i], 0.5) * y_p_constant_i * rho_i / molecular_viscosity_)) << std::endl;
-            std::cout << "numerator=" << Karman_ * velo_tan_mag * C_mu_25_ * pow(turbu_k_[index_i], 0.5) << std::endl;
-            std::cout << "denominator=" << log(turbu_const_E_ * C_mu_25_ * pow(turbu_k_[index_i], 0.5) * y_p_constant_i * rho_i / molecular_viscosity_) << std::endl;
-            Real temp = C_mu_25_ * pow(turbu_k_[index_i], 0.5) * velo_tan_mag / u_star;
+            std::cout << "sum=" << (Karman_ * velo_tan_mag * C_mu_wf_25_ * pow(turbu_k_[index_i], 0.5) / log(turbu_const_E_ * C_mu_wf_25_ * pow(turbu_k_[index_i], 0.5) * y_p_constant_i * rho_i / molecular_viscosity_)) << std::endl;
+            std::cout << "numerator=" << Karman_ * velo_tan_mag * C_mu_wf_25_ * pow(turbu_k_[index_i], 0.5) << std::endl;
+            std::cout << "denominator=" << log(turbu_const_E_ * C_mu_wf_25_ * pow(turbu_k_[index_i], 0.5) * y_p_constant_i * rho_i / molecular_viscosity_) << std::endl;
+            Real temp = C_mu_wf_25_ * pow(turbu_k_[index_i], 0.5) * velo_tan_mag / u_star;
 
             std::cout << "temp =" << temp << std::endl;
 
@@ -207,12 +207,12 @@ void kOmegaStdWallFuncCorrection::interaction(size_t index_i, Real dt)
                     Real weight_j = contact_neighborhood.W_ij_[n] * Vol_k[index_j];
                     total_weight += weight_j;
 
-                    Real denominator_log_law_j = C_mu_25_ * turbu_k_i_05 * Karman_ * y_p_j;
+                    Real denominator_log_law_j = C_mu_wf_25_ * turbu_k_i_05 * Karman_ * y_p_j;
 
                     Real vel_i_tau_mag = abs(vel_i.dot(e_j_tau));
-                    Real y_star_j = C_mu_25_ * turbu_k_i_05 * y_p_j / nu_i;
+                    Real y_star_j = C_mu_wf_25_ * turbu_k_i_05 * y_p_j / nu_i;
                     Real u_star_j = get_dimensionless_velocity(y_star_j, current_time);
-                    Real fric_vel_mag_j = sqrt(C_mu_25_ * turbu_k_i_05 * vel_i_tau_mag / u_star_j);
+                    Real fric_vel_mag_j = sqrt(C_mu_wf_25_ * turbu_k_i_05 * vel_i_tau_mag / u_star_j);
 
                     Real dudn_p_mag_j = get_near_wall_velocity_gradient_magnitude(y_star_j, fric_vel_mag_j, denominator_log_law_j, nu_i);
                     dudn_p_j = dudn_p_mag_j * boost::qvm::sign(vel_i.dot(e_j_tau));
