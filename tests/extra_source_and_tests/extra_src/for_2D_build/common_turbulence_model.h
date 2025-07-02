@@ -8,32 +8,24 @@ namespace SPH
 {
 namespace fluid_dynamics
 {
-class kEpsilon_TurbulentClosureCoefficient
+//=================================================================================================//
+class WallFunctionCoefficient
 {
   public:
-    explicit kEpsilon_TurbulentClosureCoefficient();
-    virtual ~kEpsilon_TurbulentClosureCoefficient(){};
+    explicit WallFunctionCoefficient();
+    virtual ~WallFunctionCoefficient(){};
 
   protected:
     Real Karman_;
     Real turbu_const_E_;
-    Real C_mu_, C_mu_25_, C_mu_75_;
-    Real turbulent_intensity_;
-
-    //** Closure coefficients for K *
-    Real sigma_k_;
-
-    //** Closure coefficients for Epsilon *
-    Real C_l_, C_2_;
-    Real sigma_E_;
-    Real turbulent_length_ratio_for_epsilon_inlet_;
+    Real C_mu_wf_, C_mu_wf_25_, C_mu_wf_75_;
 
     //** Start time for laminar law *
     Real start_time_laminar_;
     Real y_star_threshold_laminar_;
 };
 //=================================================================================================//
-class WallFunction : public kEpsilon_TurbulentClosureCoefficient
+class WallFunction : public WallFunctionCoefficient
 {
   public:
     explicit WallFunction(){};
@@ -110,7 +102,7 @@ class TKEnergyForce;
 
 template <class DataDelegationType>
 class TKEnergyForce<Base, DataDelegationType>
-    : public LocalDynamics, public DataDelegationType, public kEpsilon_TurbulentClosureCoefficient
+    : public LocalDynamics, public DataDelegationType
 {
   public:
     template <class BaseRelationType>
@@ -238,7 +230,7 @@ class TurbulentAdvectionTimeStepSize : public LocalDynamicsReduce<ReduceMax>
     Viscosity &viscosity_;
 };
 //=================================================================================================//
-class JudgeIsNearWall : public LocalDynamics, public DataDelegateContact, public kEpsilon_TurbulentClosureCoefficient
+class JudgeIsNearWall : public LocalDynamics, public DataDelegateContact
 {
   public:
     JudgeIsNearWall(BaseInnerRelation &inner_relation,

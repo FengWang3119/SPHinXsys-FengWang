@@ -5,15 +5,13 @@ namespace SPH
 //=================================================================================================//
 namespace fluid_dynamics
 {
-using TurbuIntegration2ndHalfWithWallDissipativeRiemann = ComplexInteraction<Integration2ndHalf<Inner<>, Contact<Wall>>, DissipativeRiemannSolver>;
 //=================================================================================================//
-kEpsilon_TurbulentClosureCoefficient::kEpsilon_TurbulentClosureCoefficient()
-    : Karman_(0.41), turbu_const_E_(9.8), C_mu_(0.09), turbulent_intensity_(5.0e-2),
-      sigma_k_(1.0), C_l_(1.44), C_2_(1.92), sigma_E_(1.3), turbulent_length_ratio_for_epsilon_inlet_(0.07),
+WallFunctionCoefficient::WallFunctionCoefficient()
+    : Karman_(0.41), turbu_const_E_(9.8), C_mu_wf_(0.09),
       start_time_laminar_(0.0), y_star_threshold_laminar_(11.225)
 {
-    C_mu_25_ = pow(C_mu_, 0.25);
-    C_mu_75_ = pow(C_mu_, 0.75);
+    C_mu_wf_25_ = pow(C_mu_wf_, 0.25);
+    C_mu_wf_75_ = pow(C_mu_wf_, 0.75);
 }
 //=================================================================================================//
 Real WallFunction::get_distance_from_P_to_wall(Real y_p_constant)
@@ -314,9 +312,9 @@ void TurbuViscousForce<Contact<Wall>>::interaction(size_t index_i, Real dt)
             Real vel_i_tau_mag = abs(vel_i.dot(e_j_tau));
 
             Real y_p_j = get_distance_from_P_to_wall(y_p_constant_i);
-            Real y_star_j = rho_i * C_mu_25_ * turbu_k_i_05 * y_p_j / molecular_viscosity_;
+            Real y_star_j = rho_i * C_mu_wf_25_ * turbu_k_i_05 * y_p_j / molecular_viscosity_;
             Real u_star_j = get_dimensionless_velocity(y_star_j, current_time);
-            Real fric_vel_mag_j = sqrt(C_mu_25_ * turbu_k_i_05 * vel_i_tau_mag / u_star_j);
+            Real fric_vel_mag_j = sqrt(C_mu_wf_25_ * turbu_k_i_05 * vel_i_tau_mag / u_star_j);
 
             //** Construct local wall shear stress, if this is on each wall particle j   *
             Real WSS_tn_mag_j = rho_i * fric_vel_mag_j * fric_vel_mag_j * boost::qvm::sign(vel_i.dot(e_j_tau));
