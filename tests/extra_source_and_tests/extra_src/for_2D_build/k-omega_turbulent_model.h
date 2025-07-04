@@ -48,6 +48,7 @@ class kOmega_BaseTurbulentModel<Base, DataDelegationType>
     Real *turbu_strain_rate_magnitude_;
     Real *turbu_strain_rate_traceless_magnitude_;
 
+    Viscosity &viscosity_;
     Real mu_, smoothing_length_, particle_spacing_min_;
     Real *rho_;
     Real *Vol_;
@@ -55,50 +56,57 @@ class kOmega_BaseTurbulentModel<Base, DataDelegationType>
     int dimension_;
 };
 //=================================================================================================//
-/**
-	 * @class kOmegaSST_TurbulentModelInner
-	 * @brief  kOmegaSST_TurbulentModelInner
-	 */
 class kOmega_kTransportEquationInner : public kOmega_BaseTurbulentModel<Base, DataDelegateInner>
 {
   public:
     explicit kOmega_kTransportEquationInner(BaseInnerRelation &inner_relation, const StdVec<Real> &initial_values, int is_extr_visc_dissipa, int is_blended = 0);
     virtual ~kOmega_kTransportEquationInner(){};
 
-    inline void interaction(size_t index_i, Real dt = 0.0);
+    //inline void interaction(size_t index_i, Real dt = 0.0);
     void update(size_t index_i, Real dt = 0.0);
 
   protected:
     Real *dk_dt_;
     Real *dk_dt_without_dissipation_;
     Real *k_production_;
-
-    int *is_near_wall_P1_; //** This is used to specially treat near wall region  *
-    Matd *velocity_gradient_;
     Real *turbu_k_;
     Real *turbu_omega_;
     Real *turbu_mu_;
+    int *is_extra_viscous_dissipation_;
+    int *turbu_indicator_;
+    Real *k_diffusion_;
+
     Matd *turbu_strain_rate_;
     Real *turbu_strain_rate_magnitude_;
     int *is_extra_viscous_dissipation_;
     int *is_blended_;
     //** for test */
     int *turbu_indicator_;
-    Real *k_diffusion_;
-    Real *vel_x_;
+    int *is_near_wall_P1_; //** This is used to specially treat near wall region  *
+    Matd *velocity_gradient_;
 };
 //=================================================================================================//
-/**
-	 * @class kOmegaSST_TurbulentModelInner
-	 * @brief  kOmegaSST_TurbulentModelInner
-	 */
+class kOmega_TKE_Diffusion : public kOmega_BaseTurbulentModel<Base, DataDelegateInner>
+{
+  public:
+    explicit kOmega_TKE_Diffusion(BaseInnerRelation &inner_relation);
+    virtual ~kOmega_TKE_Diffusion(){};
+
+    inline void interaction(size_t index_i, Real dt = 0.0);
+
+  protected:
+    Real *turbu_k_;
+    Real *turbu_omega_;
+    Real *k_diffusion_;
+};
+//=================================================================================================//
 class kOmega_omegaTransportEquationInner : public kOmega_BaseTurbulentModel<Base, DataDelegateInner>
 {
   public:
     explicit kOmega_omegaTransportEquationInner(BaseInnerRelation &inner_relation);
     virtual ~kOmega_omegaTransportEquationInner(){};
 
-    inline void interaction(size_t index_i, Real dt = 0.0);
+    //inline void interaction(size_t index_i, Real dt = 0.0);
     void update(size_t index_i, Real dt = 0.0);
 
   protected:
@@ -107,6 +115,7 @@ class kOmega_omegaTransportEquationInner : public kOmega_BaseTurbulentModel<Base
     Real *omega_production_;
     Real *omega_dissipation_;
     Real *omega_diffusion_;
+    Real *gradient_dot_k_omega_;
     Real *omega_cross_diffusion_;
 
     Real *turbu_mu_;
@@ -114,6 +123,21 @@ class kOmega_omegaTransportEquationInner : public kOmega_BaseTurbulentModel<Base
     Real *turbu_omega_;
     Real *k_production_;
     int *is_near_wall_P1_;
+};
+//=================================================================================================//
+class kOmega_TSDR_Diffusion_Gradient_Dot : public kOmega_BaseTurbulentModel<Base, DataDelegateInner>
+{
+  public:
+    explicit kOmega_TSDR_Diffusion_Gradient_Dot(BaseInnerRelation &inner_relation);
+    virtual ~kOmega_TSDR_Diffusion_Gradient_Dot(){};
+
+    inline void interaction(size_t index_i, Real dt = 0.0);
+
+  protected:
+    Real *gradient_dot_k_omega_;
+    Real *omega_diffusion_;
+    Real *turbu_omega_;
+    Real *turbu_k_;
 };
 //=================================================================================================//
 class kOmegaTurbulentEddyViscosity : public LocalDynamics,
@@ -133,6 +157,7 @@ class kOmegaTurbulentEddyViscosity : public LocalDynamics,
     Real *wall_Y_plus_;
     Real *wall_Y_star_;
     Real *turbu_strain_rate_traceless_magnitude_;
+    Viscosity &viscosity_;
     Real mu_;
 };
 //=================================================================================================//
@@ -143,7 +168,7 @@ class kOmegaStdWallFuncCorrection : public LocalDynamics,
 {
   public:
     kOmegaStdWallFuncCorrection(BaseInnerRelation &inner_relation,
-                                BaseContactRelation &contact_relation, Real y_p_constant);
+                                BaseContactRelation &contact_relation);
     virtual ~kOmegaStdWallFuncCorrection(){};
     inline void interaction(size_t index_i, Real dt = 0.0);
 
@@ -157,6 +182,7 @@ class kOmegaStdWallFuncCorrection : public LocalDynamics,
 
     Vecd *vel_;
     Real *rho_;
+    Viscosity &viscosity_;
     Real molecular_viscosity_;
     Real *turbu_k_;
     Real *turbu_omega_;
@@ -176,20 +202,14 @@ class kOmegaStdWallFuncCorrection : public LocalDynamics,
     int *is_blended_;
 };
 //=================================================================================================//
-/**
-	* @class   InflowTurbulentCondition
-	* @brief   Inflow boundary condition which imposes directly to a given velocity profile.
-	*          TargetVelocity gives the velocity profile along the inflow direction,
-	*          i.e. x direction in local frame.
-	*/
-class kOmegaInflowTurbulentCondition : public BaseFlowBoundaryCondition,
-                                       public BaseTurbuClosureCoeff,
-                                       public kOmega_BaseTurbuClosureCoeff
+class kOmega_InflowTurbulentCondition : public BaseFlowBoundaryCondition,
+                                        public kEpsilon_TurbulentClosureCoefficient,
+                                        public kOmega_BaseTurbuClosureCoeff
 {
   public:
-    explicit kOmegaInflowTurbulentCondition(BodyPartByCell &body_part,
-                                            Real CharacteristicLength, Real relaxation_rate, int type_turbu_inlet);
-    virtual ~kOmegaInflowTurbulentCondition(){};
+    explicit kOmega_InflowTurbulentCondition(BodyPartByCell &body_part,
+                                             Real CharacteristicLength, Real relaxation_rate, int type_turbu_inlet);
+    virtual ~kOmega_InflowTurbulentCondition(){};
     void update(size_t index_i, Real dt = 0.0);
 
   protected:

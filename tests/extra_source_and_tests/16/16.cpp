@@ -21,7 +21,7 @@ int main(int ac, char *av[])
 
     FluidBody water_block(sph_system, makeShared<WaterBlock>("WaterBody"));
     water_block.defineBodyLevelSetShape();
-    water_block.defineMaterial<WeaklyCompressibleFluid>(rho0_f, c_f, mu_f);
+    water_block.defineClosure<WeaklyCompressibleFluid, Viscosity>(ConstructArgs(rho0_f, c_f), mu_f);
     ParticleBuffer<ReserveSizeFactor> inlet_particle_buffer(0.5);
     (!sph_system.RunParticleRelaxation() && sph_system.ReloadParticles() && !is_always_lattice_arrange_fluid)
         ? water_block.generateParticlesWithReserve<BaseParticles, Reload>(inlet_particle_buffer, water_block.getName())
@@ -134,16 +134,16 @@ int main(int ac, char *av[])
     Dynamics1Level<fluid_dynamics::Integration2ndHalfWithWallNoRiemann> density_relaxation(water_block_inner, water_wall_contact);
 
     /** Turbulent.Note: When use wall function, K Epsilon calculation only consider inner */
-    InteractionWithUpdate<fluid_dynamics::JudgeIsNearWall> update_near_wall_status(water_block_inner, water_wall_contact);
+    InteractionWithUpdate<fluid_dynamics::JudgeIsNearWall> update_near_wall_status(water_block_inner, water_wall_contact, y_p_constant);
 
     InteractionWithUpdate<fluid_dynamics::GetVelocityGradientInner> get_velocity_gradient(water_block_inner, weight_vel_grad_sub_nearwall);
     //InteractionWithUpdate<fluid_dynamics::GetVelocityGradientComplex> get_velocity_gradient(water_block_inner, water_wall_contact);
 
     /** Turbulent.Note: Temporarily transfer parameters at this place. The 3rd parameter refers to extra dissipation for viscous */
-    InteractionWithUpdate<fluid_dynamics::K_TurbulentModelInner> k_equation_relaxation(water_block_inner, initial_turbu_values, is_AMRD, is_source_term_linearisation);
-    InteractionWithUpdate<fluid_dynamics::E_TurbulentModelInner> epsilon_equation_relaxation(water_block_inner, is_source_term_linearisation);
+    InteractionWithUpdate<fluid_dynamics::kEpsilon_kTransportEquationInner> k_equation_relaxation(water_block_inner, initial_turbu_values, is_AMRD, is_source_term_linearisation);
+    InteractionWithUpdate<fluid_dynamics::kEpsilon_epsilonTransportEquationInner> epsilon_equation_relaxation(water_block_inner, is_source_term_linearisation);
     InteractionDynamics<fluid_dynamics::TKEnergyForceComplex> turbulent_kinetic_energy_force(water_block_inner, water_wall_contact);
-    InteractionDynamics<fluid_dynamics::StandardWallFunctionCorrection> standard_wall_function_correction(water_block_inner, water_wall_contact, y_p_constant);
+    InteractionDynamics<fluid_dynamics::kEpsilon_StandardWallFunctionCorrection> standard_wall_function_correction(water_block_inner, water_wall_contact);
 
     /** Turbulent.Extra boundary condition */
     SimpleDynamics<fluid_dynamics::ConstrainNormalVelocityInRegionP> constrain_normal_velocity_in_P_region(water_block);
@@ -165,8 +165,8 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     // Left/Inlet buffer
     //----------------------------------------------------------------------
-    AlignedBoxShape left_emitter_shape(xAxis, Transform(Vec2d(left_buffer_translation)), left_buffer_halfsize);
-    BodyAlignedBoxByCell left_emitter(water_block, left_emitter_shape);
+    AlignedBox left_emitter_shape(xAxis, Transform(Vec2d(left_buffer_translation)), left_buffer_halfsize);
+    AlignedBoxPartByCell left_emitter(water_block, left_emitter_shape);
     fluid_dynamics::BidirectionalBuffer<LeftInflowPressure> left_bidirection_buffer(left_emitter, inlet_particle_buffer);
 
     //SimpleDynamics<fluid_dynamics::PressureCondition<LeftInflowPressure>> left_inflow_pressure_condition(left_emitter);
@@ -174,14 +174,14 @@ int main(int ac, char *av[])
 
     SimpleDynamics<fluid_dynamics::InflowVelocityCondition<InflowVelocity>> inflow_velocity_condition(left_emitter);
 
-    /** Turbulent InflowTurbulentCondition.It needs characteristic Length to calculate turbulent length  */
-    SimpleDynamics<fluid_dynamics::InflowTurbulentCondition> impose_turbulent_inflow_condition(left_emitter, characteristic_length, relaxation_rate_turbulent_inlet, type_turbulent_inlet);
+    /** Turbulent kEpsilon_InflowTurbulentCondition.It needs characteristic Length to calculate turbulent length  */
+    SimpleDynamics<fluid_dynamics::kEpsilon_InflowTurbulentCondition> impose_turbulent_inflow_condition(left_emitter, characteristic_length, relaxation_rate_turbulent_inlet, type_turbulent_inlet);
 
     //----------------------------------------------------------------------
     // Right/Outlet buffer
     //----------------------------------------------------------------------
-    AlignedBoxShape right_emitter_shape(xAxis, Transform(Rotation2d(Pi), Vec2d(right_buffer_translation)), right_buffer_halfsize);
-    BodyAlignedBoxByCell right_emitter(water_block, right_emitter_shape);
+    AlignedBox right_emitter_shape(xAxis, Transform(Rotation2d(Pi), Vec2d(right_buffer_translation)), right_buffer_halfsize);
+    AlignedBoxPartByCell right_emitter(water_block, right_emitter_shape);
     fluid_dynamics::BidirectionalBuffer<RightOutflowPressure> right_bidirection_buffer(right_emitter, inlet_particle_buffer);
 
     //SimpleDynamics<fluid_dynamics::PressureCondition<RightOutflowPressure>> right_outflow_pressure_condition(right_emitter);
@@ -199,7 +199,7 @@ int main(int ac, char *av[])
     ReduceDynamics<fluid_dynamics::AcousticTimeStep> get_fluid_time_step_size(water_block);
 
     /** Turbulent eddy viscosity calculation needs values of Wall Y start. */
-    SimpleDynamics<fluid_dynamics::TurbulentEddyViscosity> update_eddy_viscosity(water_block);
+    SimpleDynamics<fluid_dynamics::kEpsilon_TurbulentEddyViscosity> update_eddy_viscosity(water_block);
     //----------------------------------------------------------------------
     //	Define the configuration related particles dynamics.
     //----------------------------------------------------------------------

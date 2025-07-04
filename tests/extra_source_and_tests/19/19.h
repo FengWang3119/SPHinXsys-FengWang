@@ -1,7 +1,7 @@
 #include "bidirectional_buffer.h"
+#include "common_turbulence_model.cpp"
 #include "density_correciton.h"
 #include "density_correciton.hpp"
-#include "k-epsilon_turbulent_model.cpp"
 #include "k-omega_turbulent_model.cpp"
 #include "kernel_summation.h"
 #include "kernel_summation.hpp"
@@ -14,7 +14,7 @@ using namespace SPH;
 //----------------------------------------------------------------------
 Real DH = 2.0;  /**< Channel height. */
 Real DL = 30.0; /**< Channel length. */
-Real num_fluid_cross_section = 80.0;
+Real num_fluid_cross_section = 20.0;
 
 //----------------------------------------------------------------------
 //	Unique parameters for turbulence.
@@ -187,7 +187,7 @@ class WallBoundary : public ComplexShape
 struct InflowVelocity
 {
     Real u_ref_, t_ref_;
-    AlignedBoxShape &aligned_box_;
+    AlignedBox &aligned_box_;
     Vecd halfsize_;
 
     template <class BoundaryConditionType>
