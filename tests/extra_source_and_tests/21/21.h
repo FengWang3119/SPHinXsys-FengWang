@@ -6,9 +6,9 @@
  */
 
 #include "bidirectional_buffer.h"
+#include "common_turbulence_model.cpp"
 #include "density_correciton.h"
 #include "density_correciton.hpp"
-#include "k-epsilon_turbulent_model.cpp"
 #include "k-omega_turbulent_model.cpp"
 #include "kernel_summation.h"
 #include "kernel_summation.hpp"
@@ -328,7 +328,7 @@ class WallBoundary : public ComplexShape
 struct InflowVelocity
 {
     Real u_ref_, t_ref_;
-    AlignedBoxShape &aligned_box_;
+    AlignedBox &aligned_box_;
     Vecd halfsize_;
 
     template <class BoundaryConditionType>

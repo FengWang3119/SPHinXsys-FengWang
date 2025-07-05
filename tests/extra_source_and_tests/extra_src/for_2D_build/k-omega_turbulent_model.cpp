@@ -9,7 +9,9 @@ namespace fluid_dynamics
 kOmega_BaseTurbuClosureCoeff::kOmega_BaseTurbuClosureCoeff()
     : std_kw_beta_star_(0.09), std_kw_sigma_star_(0.6),
       std_kw_alpha_(0.52), std_kw_sigma_(0.5), std_kw_f_beta_(1.0), std_kw_beta_0_(0.0708),
-      std_kw_sigma_do_(0.125), std_kw_C_lim_(0.875), std_kw_beta_i_(0.075)
+      std_kw_sigma_do_(0.125), std_kw_C_lim_(0.875), std_kw_beta_i_(0.075),
+      turbulent_intensity_for_k_inlet_(0.05), turbulent_length_ratio_for_omega_inlet_(0.07),
+      C_mu_75_for_omega_inlet_(pow(0.09, 0.75))
 {
     std_kw_beta_ = std_kw_beta_0_ * std_kw_f_beta_;
     std_kw_beta_star_25_ = pow(std_kw_beta_star_, 0.25);
@@ -260,7 +262,7 @@ void kOmegaStdWallFuncCorrection::interaction(size_t index_i, Real dt)
                         else
                         {
                             //** This is to be consistent with openfoam v12, I don't know why need to so complicated  */
-                            Real u_tau_temp = C_mu_25_ * turbu_k_i_05;
+                            Real u_tau_temp = C_mu_wf_25_ * turbu_k_i_05;
                             G_k_p_j = (u_tau_temp * vel_i_tau_mag / u_star_j) * (u_tau_temp * vel_i_tau_mag / u_star_j) / (nu_i * Karman_ * y_star_j);
                             omega_p_j = u_tau_temp / (std_kw_beta_star_5_ * Karman_ * y_p_j);
 
@@ -504,8 +506,10 @@ void kOmega_TSDR_Diffusion_Gradient_Dot::interaction(size_t index_i, Real dt)
     for (size_t n = 0; n != inner_neighborhood.current_size_; ++n)
     {
         size_t index_j = inner_neighborhood.j_[n];
-        //Real mu_eff_j = mu_ + std_kw_sigma_ * rho_i * turbu_k_[index_j] / turbu_omega_[index_j];
-        Real mu_eff_j = mu_ + std_kw_sigma_ * turbu_mu_[index_j];
+
+        Real mu_eff_j = mu_ + std_kw_sigma_ * rho_i * turbu_k_[index_j] / turbu_omega_[index_j]; //% Involve limiter
+        //Real mu_eff_j = mu_ + std_kw_sigma_ * turbu_mu_[index_j];  //% Not involve limiter
+
         Real mu_harmo = 2 * mu_eff_i * mu_eff_j / (mu_eff_i + mu_eff_j);
         omega_derivative = (turbu_omega_i - turbu_omega_[index_j]) / (inner_neighborhood.r_ij_[n] + 0.01 * smoothing_length_);
         omega_lap += 2.0 * mu_harmo * omega_derivative * inner_neighborhood.dW_ij_[n] * this->Vol_[index_j];
@@ -526,7 +530,7 @@ kOmega_InflowTurbulentCondition::kOmega_InflowTurbulentCondition(BodyPartByCell 
       turbu_k_(particles_->getVariableDataByName<Real>("TurbulenceKineticEnergy")),
       turbu_omega_(particles_->getVariableDataByName<Real>("TurbulentSpecificDissipation"))
 {
-    TurbulentLength_ = turbulent_length_ratio_for_epsilon_inlet_ * CharacteristicLength_;
+    TurbulentLength_ = turbulent_length_ratio_for_omega_inlet_ * CharacteristicLength_;
 }
 //=================================================================================================//
 void kOmega_InflowTurbulentCondition::update(size_t index_i, Real dt)
@@ -545,7 +549,7 @@ void kOmega_InflowTurbulentCondition::update(size_t index_i, Real dt)
 Real kOmega_InflowTurbulentCondition::getTurbulentInflowK(Vecd &position, Vecd &velocity, Real &turbu_k)
 {
     Real u = velocity[0];
-    Real temp_in_turbu_k = 1.5 * pow((turbulent_intensity_ * u), 2);
+    Real temp_in_turbu_k = 1.5 * pow((turbulent_intensity_for_k_inlet_ * u), 2);
     Real turbu_k_original = turbu_k;
     if (type_turbu_inlet_ == 1)
     {
@@ -585,7 +589,7 @@ Real kOmega_InflowTurbulentCondition::getTurbulentInflowK(Vecd &position, Vecd &
 //=================================================================================================//
 Real kOmega_InflowTurbulentCondition::getTurbulentInflowTemporaryEpsilon(Vecd &position, Real &turbu_k, Real turbu_E)
 {
-    Real temp_in_turbu_E = C_mu_75_ * pow(turbu_k, 1.5) / TurbulentLength_;
+    Real temp_in_turbu_E = C_mu_75_for_omega_inlet_ * pow(turbu_k, 1.5) / TurbulentLength_;
     Real turbu_E_original = turbu_E;
     if (type_turbu_inlet_ == 1)
     {

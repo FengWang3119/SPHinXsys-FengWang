@@ -17,7 +17,7 @@ class WallFunctionCoefficient
 
   protected:
     Real Karman_;
-    Real turbu_const_E_;
+    Real turbu_const_E_, inv_turbu_E_;
     Real C_mu_wf_, C_mu_wf_25_, C_mu_wf_75_;
 
     //** Start time for laminar law *
@@ -31,7 +31,7 @@ class WallFunction : public WallFunctionCoefficient
     explicit WallFunction(){};
     virtual ~WallFunction(){};
 
-    Real get_dimensionless_velocity(Real y_star, Real time);
+    Real get_dimensionless_velocity(Real y_star, Real time, Real u_star_previous = 0.0, int is_blended = 0);
     Real get_near_wall_velocity_gradient_magnitude(Real y_star, Real vel_fric_mag, Real denominator_log_law, Real dynamic_viscosity);
     Real get_distance_from_P_to_wall(Real y_p_constant);
 
@@ -39,6 +39,7 @@ class WallFunction : public WallFunctionCoefficient
     Real laminar_law_wall_function(Real y_star);
     Real log_law_velocity_gradient(Real vel_fric_mag, Real denominator_log_law);
     Real laminar_law_velocity_gradient(Real vel_fric_mag, Real dynamic_viscosity);
+    Real Spalding_wall_function(Real y_star, Real u_star_guess);
 };
 //=================================================================================================//
 template <typename... InteractionTypes>

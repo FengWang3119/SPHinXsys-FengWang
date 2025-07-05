@@ -1,7 +1,7 @@
 #ifndef K_OMEGA_TURBULENT_MODEL_H
 #define K_OMEGA_TURBULENT_MODEL_H
 
-#include "k-epsilon_turbulent_model.h"
+#include "common_turbulence_model.h"
 #include <mutex>
 
 namespace SPH
@@ -29,6 +29,10 @@ class kOmega_BaseTurbuClosureCoeff
     Real std_kw_beta_i_;
     Real std_kw_beta_star_25_;
     Real std_kw_beta_star_5_;
+
+    Real turbulent_intensity_for_k_inlet_;
+    Real turbulent_length_ratio_for_omega_inlet_;
+    Real C_mu_75_for_omega_inlet_;
 };
 //=================================================================================================//
 template <typename... T>
@@ -73,15 +77,12 @@ class kOmega_kTransportEquationInner : public kOmega_BaseTurbulentModel<Base, Da
     Real *turbu_omega_;
     Real *turbu_mu_;
     int *is_extra_viscous_dissipation_;
+    int *is_blended_;
     int *turbu_indicator_;
     Real *k_diffusion_;
 
     Matd *turbu_strain_rate_;
     Real *turbu_strain_rate_magnitude_;
-    int *is_extra_viscous_dissipation_;
-    int *is_blended_;
-    //** for test */
-    int *turbu_indicator_;
     int *is_near_wall_P1_; //** This is used to specially treat near wall region  *
     Matd *velocity_gradient_;
 };
@@ -203,7 +204,6 @@ class kOmegaStdWallFuncCorrection : public LocalDynamics,
 };
 //=================================================================================================//
 class kOmega_InflowTurbulentCondition : public BaseFlowBoundaryCondition,
-                                        public kEpsilon_TurbulentClosureCoefficient,
                                         public kOmega_BaseTurbuClosureCoeff
 {
   public:

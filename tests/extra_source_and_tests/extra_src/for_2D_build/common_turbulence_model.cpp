@@ -12,6 +12,7 @@ WallFunctionCoefficient::WallFunctionCoefficient()
 {
     C_mu_wf_25_ = pow(C_mu_wf_, 0.25);
     C_mu_wf_75_ = pow(C_mu_wf_, 0.75);
+    inv_turbu_E_ = 1.0 / turbu_const_E_;
 }
 //=================================================================================================//
 Real WallFunction::get_distance_from_P_to_wall(Real y_p_constant)
@@ -28,22 +29,38 @@ Real WallFunction::get_distance_from_P_to_wall(Real y_p_constant)
     return y_p_constant;
 }
 //=================================================================================================//
-Real WallFunction::get_dimensionless_velocity(Real y_star, Real time)
+Real WallFunction::get_dimensionless_velocity(Real y_star, Real time, Real u_star_previous, int is_blended)
 {
     Real dimensionless_velocity = 0.0;
-    if (y_star < y_star_threshold_laminar_ && time > start_time_laminar_)
+    if (is_blended && time > start_time_laminar_)
     {
-        dimensionless_velocity = laminar_law_wall_function(y_star);
+        dimensionless_velocity = Spalding_wall_function(y_star, u_star_previous);
     }
     else
     {
-        dimensionless_velocity = log_law_wall_function(y_star);
+
+        if (y_star < y_star_threshold_laminar_ && time > start_time_laminar_)
+        {
+            dimensionless_velocity = laminar_law_wall_function(y_star);
+        }
+        else
+        {
+            if (std::isnan(dimensionless_velocity) || std::isinf(dimensionless_velocity))
+            {
+                std::cout << "u_star=" << dimensionless_velocity << std::endl;
+                std::cout << "y_star=" << y_star << std::endl;
+                std::cout << "system pause" << std::endl;
+
+                std::cin.get();
+            }
+            dimensionless_velocity = log_law_wall_function(y_star);
+        }
     }
     if (std::isnan(dimensionless_velocity) || std::isinf(dimensionless_velocity))
     {
         std::cout << "u_star=" << dimensionless_velocity << std::endl;
         std::cout << "y_star=" << y_star << std::endl;
-        std::cin.get();
+        //std::cin.get();
     }
     //if (dimensionless_velocity<0.0)
     //{
@@ -70,6 +87,39 @@ Real WallFunction::log_law_wall_function(Real y_star)
 Real WallFunction::laminar_law_wall_function(Real y_star)
 {
     Real u_star = y_star;
+    return u_star;
+}
+//=================================================================================================//
+Real WallFunction::Spalding_wall_function(Real y_star, Real u_star_guess)
+{
+    if (u_star_guess > 100.0 || u_star_guess <= TinyReal)
+    {
+        std::cout << "u_star_guess > 100.0 || u_star_guess <= TinyReal, please check." << std::endl;
+        std::cout << "u_star_guess=" << u_star_guess << std::endl;
+        //std::cin.get();
+    }
+    //** Use Newton method */
+    Real u_star = u_star_guess; //** initial guess */
+    int max_iter = 10;
+    Real tolerance = 0.01;
+    for (int iter = 0; iter < max_iter; ++iter)
+    {
+        Real Karman_u_star = SMIN(Karman_ * u_star, 50.0);
+        Real f = u_star + inv_turbu_E_ * (std::exp(Karman_u_star) - 1.0 - Karman_u_star - 0.5 * pow(Karman_u_star, 2) - 1.0 / 6.0 * pow(Karman_u_star, 3)) - y_star;
+        Real df = 1.0 + inv_turbu_E_ * (Karman_ * std::exp(Karman_u_star) - Karman_ - Karman_ * Karman_u_star - 0.5 * Karman_ * pow(Karman_u_star, 2));
+        //** update */
+        u_star -= f / df;
+        //** judge */
+        Real residue = std::abs(f / df);
+        if (residue <= tolerance)
+            break;
+    }
+    if (u_star > 100.0)
+    {
+        std::cout << "u+ is larger than 100, please check." << std::endl;
+        std::cout << "u_star=" << u_star << std::endl;
+        //std::cin.get();
+    }
     return u_star;
 }
 //=================================================================================================//
