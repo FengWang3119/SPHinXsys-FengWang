@@ -92,9 +92,9 @@ Real WallFunction::laminar_law_wall_function(Real y_star)
 //=================================================================================================//
 Real WallFunction::Spalding_wall_function(Real y_star, Real u_star_guess)
 {
-    if (u_star_guess > 100.0 || u_star_guess <= TinyReal)
+    if (u_star_guess > 500.0 || u_star_guess <= TinyReal)
     {
-        std::cout << "u_star_guess > 100.0 || u_star_guess <= TinyReal, please check." << std::endl;
+        std::cout << "u_star_guess > 500.0 || u_star_guess <= TinyReal, please check." << std::endl;
         std::cout << "u_star_guess=" << u_star_guess << std::endl;
         //std::cin.get();
     }
@@ -114,9 +114,9 @@ Real WallFunction::Spalding_wall_function(Real y_star, Real u_star_guess)
         if (residue <= tolerance)
             break;
     }
-    if (u_star > 100.0)
+    if (u_star > 500.0)
     {
-        std::cout << "u+ is larger than 100, please check." << std::endl;
+        std::cout << "u+ is larger than 500, please check." << std::endl;
         std::cout << "u_star=" << u_star << std::endl;
         //std::cin.get();
     }
@@ -320,7 +320,8 @@ TurbuViscousForce<Contact<Wall>>::TurbuViscousForce(BaseContactRelation &wall_co
     : BaseTurbuViscousForceWithWall(wall_contact_relation),
       wall_particle_spacing_(wall_contact_relation.getSPHBody().sph_adaptation_->ReferenceSpacing()),
       B_(particles_->getVariableDataByName<Matd>("LinearGradientCorrectionMatrix")),
-      physical_time_(sph_system_.getSystemVariableDataByName<Real>("PhysicalTime")) {}
+      physical_time_(sph_system_.getSystemVariableDataByName<Real>("PhysicalTime")),
+      is_blended_(particles_->getVariableDataByName<int>("TurbulentWallTreatmentType")) {}
 //=================================================================================================//
 void TurbuViscousForce<Contact<Wall>>::interaction(size_t index_i, Real dt)
 {
@@ -328,6 +329,7 @@ void TurbuViscousForce<Contact<Wall>>::interaction(size_t index_i, Real dt)
     if (this->is_near_wall_P2_[index_i] != 10)
         return;
 
+    Real vel_fric_mag_previous = velo_friction_[index_i].norm();
     Real current_time = *physical_time_;
     Real turbu_k_i = this->turbu_k_[index_i];
     Real turbu_k_i_05 = pow(turbu_k_i, 0.5);
@@ -361,9 +363,20 @@ void TurbuViscousForce<Contact<Wall>>::interaction(size_t index_i, Real dt)
             //** Calculate the local friction velocity *
             Real vel_i_tau_mag = abs(vel_i.dot(e_j_tau));
 
+            Real u_star_previous = vel_i_tau_mag / vel_fric_mag_previous;
+            if ((u_star_previous > 100.0 || u_star_previous <= TinyReal) && current_time > start_time_laminar_)
+            {
+                // std::cout << "u_star_previous > 100.0 || u_star_previous <= TinyReal, please check." << std::endl;
+                // std::cout << "u_star_previous=" << u_star_previous << std::endl;
+                // std::cout << "vel_i_tau_mag=" << vel_i_tau_mag << std::endl;
+                // std::cout << "vel_fric_mag_previous=" << vel_fric_mag_previous << std::endl;
+                u_star_previous = wall_Y_star_[index_i] + 10.0 * TinyReal; //** If too small initially, use y_star as initial guess */
+                //std::cin.get();
+            }
+
             Real y_p_j = get_distance_from_P_to_wall(y_p_constant_i);
             Real y_star_j = rho_i * C_mu_wf_25_ * turbu_k_i_05 * y_p_j / molecular_viscosity_;
-            Real u_star_j = get_dimensionless_velocity(y_star_j, current_time);
+            Real u_star_j = get_dimensionless_velocity(y_star_j, current_time, u_star_previous, is_blended_[index_i]);
             Real fric_vel_mag_j = sqrt(C_mu_wf_25_ * turbu_k_i_05 * vel_i_tau_mag / u_star_j);
 
             //** Construct local wall shear stress, if this is on each wall particle j   *

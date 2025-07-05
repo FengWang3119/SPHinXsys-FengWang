@@ -489,7 +489,7 @@ void kEpsilon_StandardWallFunctionCorrection::interaction(size_t index_i, Real d
             std::cin.get();
         }
 
-        Real u_star = get_dimensionless_velocity(wall_Y_star_[index_i], current_time);
+        Real u_star = get_dimensionless_velocity(wall_Y_star_[index_i], current_time, 0.0, 0);
         velo_fric_mag = sqrt(C_mu_wf_25_ * turbu_k_i_05 * velo_tan_mag / u_star);
 
         if (velo_fric_mag != static_cast<Real>(velo_fric_mag))
@@ -563,7 +563,7 @@ void kEpsilon_StandardWallFunctionCorrection::interaction(size_t index_i, Real d
 
                     Real vel_i_tau_mag = abs(vel_i.dot(e_j_tau));
                     Real y_star_j = C_mu_wf_25_ * turbu_k_i_05 * y_p_j / nu_i;
-                    Real u_star_j = get_dimensionless_velocity(y_star_j, current_time);
+                    Real u_star_j = get_dimensionless_velocity(y_star_j, current_time, 0.0, 0);
                     Real fric_vel_mag_j = sqrt(C_mu_wf_25_ * turbu_k_i_05 * vel_i_tau_mag / u_star_j);
 
                     Real dudn_p_mag_j = get_near_wall_velocity_gradient_magnitude(y_star_j, fric_vel_mag_j, denominator_log_law_j, nu_i);
