@@ -38,9 +38,9 @@ void kOmegaTurbulentEddyViscosity::update(size_t index_i, Real dt)
     turbu_mu_[index_i] = rho_[index_i] * turbu_k_[index_i] / turbu_omega_tilde_;
 }
 //=================================================================================================//
-kOmegaStdWallFuncCorrection::
-    kOmegaStdWallFuncCorrection(BaseInnerRelation &inner_relation,
-                                BaseContactRelation &contact_relation)
+kOmega_WallFunctionCorrection::
+    kOmega_WallFunctionCorrection(BaseInnerRelation &inner_relation,
+                                  BaseContactRelation &contact_relation)
     : LocalDynamics(inner_relation.getSPHBody()), DataDelegateContact(contact_relation),
       y_p_(particles_->getVariableDataByName<Real>("Y_P")),
       wall_Y_plus_(particles_->registerStateVariable<Real>("WallYplus")),
@@ -96,7 +96,7 @@ kOmegaStdWallFuncCorrection::
     particles_->addVariableToWrite<Vecd>("FrictionVelocity");
 };
 //=================================================================================================//
-void kOmegaStdWallFuncCorrection::interaction(size_t index_i, Real dt)
+void kOmega_WallFunctionCorrection::interaction(size_t index_i, Real dt)
 {
     velo_tan_[index_i] = 0.0;
     Real vel_fric_mag_previous = velo_friction_[index_i].norm();

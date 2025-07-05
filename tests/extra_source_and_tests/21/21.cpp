@@ -146,7 +146,7 @@ int main(int ac, char *av[])
     InteractionDynamics<fluid_dynamics::kOmega_TSDR_Diffusion_Gradient_Dot> compute_TSDR_diffusion_and_gradient_k_omega(water_block_inner);
 
     InteractionDynamics<fluid_dynamics::TKEnergyForceComplex> turbulent_kinetic_energy_force(water_block_inner, water_wall_contact);
-    InteractionDynamics<fluid_dynamics::kOmegaStdWallFuncCorrection> standard_wall_function_correction(water_block_inner, water_wall_contact);
+    InteractionDynamics<fluid_dynamics::kOmega_WallFunctionCorrection> standard_wall_function_correction(water_block_inner, water_wall_contact);
 
     /** Turbulent.Extra boundary condition */
     SimpleDynamics<fluid_dynamics::ConstrainNormalVelocityInRegionP> constrain_normal_velocity_in_P_region(water_block);

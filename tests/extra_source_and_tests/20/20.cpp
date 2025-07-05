@@ -141,7 +141,7 @@ int main(int ac, char *av[])
     InteractionWithUpdate<fluid_dynamics::kOmega_kTransportEquationInner> k_equation_relaxation(water_block_inner, initial_turbu_values, is_AMRD);
     InteractionWithUpdate<fluid_dynamics::kOmega_omegaTransportEquationInner> epsilon_equation_relaxation(water_block_inner);
     InteractionDynamics<fluid_dynamics::TKEnergyForceComplex> turbulent_kinetic_energy_force(water_block_inner, water_wall_contact);
-    InteractionDynamics<fluid_dynamics::kOmegaStdWallFuncCorrection> standard_wall_function_correction(water_block_inner, water_wall_contact, y_p_constant);
+    InteractionDynamics<fluid_dynamics::kOmega_WallFunctionCorrection> standard_wall_function_correction(water_block_inner, water_wall_contact, y_p_constant);
 
     /** Turbulent.Extra boundary condition */
     SimpleDynamics<fluid_dynamics::ConstrainNormalVelocityInRegionP> constrain_normal_velocity_in_P_region(water_block);

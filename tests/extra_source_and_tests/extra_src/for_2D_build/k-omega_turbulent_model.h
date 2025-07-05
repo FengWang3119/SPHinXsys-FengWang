@@ -162,15 +162,15 @@ class kOmegaTurbulentEddyViscosity : public LocalDynamics,
     Real mu_;
 };
 //=================================================================================================//
-class kOmegaStdWallFuncCorrection : public LocalDynamics,
-                                    public DataDelegateContact,
-                                    public WallFunction,
-                                    public kOmega_BaseTurbuClosureCoeff
+class kOmega_WallFunctionCorrection : public LocalDynamics,
+                                      public DataDelegateContact,
+                                      public WallFunction,
+                                      public kOmega_BaseTurbuClosureCoeff
 {
   public:
-    kOmegaStdWallFuncCorrection(BaseInnerRelation &inner_relation,
-                                BaseContactRelation &contact_relation);
-    virtual ~kOmegaStdWallFuncCorrection(){};
+    kOmega_WallFunctionCorrection(BaseInnerRelation &inner_relation,
+                                  BaseContactRelation &contact_relation);
+    virtual ~kOmega_WallFunctionCorrection(){};
     inline void interaction(size_t index_i, Real dt = 0.0);
 
   protected:
