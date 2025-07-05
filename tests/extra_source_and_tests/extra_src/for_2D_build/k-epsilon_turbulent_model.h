@@ -58,10 +58,6 @@ class kEpsilon_TurbulentClosureCoefficient
     Real C_l_, C_2_;
     Real sigma_E_;
     Real turbulent_length_ratio_for_epsilon_inlet_;
-
-    //** Start time for laminar law *
-    Real start_time_laminar_;
-    Real y_star_threshold_laminar_;
 };
 //=================================================================================================//
 template <typename... T>

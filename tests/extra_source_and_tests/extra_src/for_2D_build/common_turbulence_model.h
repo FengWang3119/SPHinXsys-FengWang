@@ -257,7 +257,7 @@ class JudgeIsNearWall : public LocalDynamics, public DataDelegateContact
     StdVec<Vecd *> contact_n_;
 };
 //=================================================================================================//
-class ConstrainNormalVelocityInRegionP : public LocalDynamics
+class ConstrainNormalVelocityInRegionP : public LocalDynamics, public WallFunctionCoefficient
 {
   public:
     explicit ConstrainNormalVelocityInRegionP(SPHBody &sph_body);
@@ -269,6 +269,7 @@ class ConstrainNormalVelocityInRegionP : public LocalDynamics
     Vecd *vel_;
     int *is_near_wall_P1_;
     Vecd *e_nearest_normal_;
+    Real *wall_Y_star_;
 };
 //=================================================================================================//
 template <typename... InteractionTypes>
