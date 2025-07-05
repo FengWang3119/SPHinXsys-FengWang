@@ -8,7 +8,7 @@ namespace fluid_dynamics
 //=================================================================================================//
 WallFunctionCoefficient::WallFunctionCoefficient()
     : Karman_(0.41), turbu_const_E_(9.8), C_mu_wf_(0.09),
-      start_time_laminar_(0.0), y_star_threshold_laminar_(11.225)
+      start_time_laminar_(2.0), y_star_threshold_laminar_(11.225)
 {
     C_mu_wf_25_ = pow(C_mu_wf_, 0.25);
     C_mu_wf_75_ = pow(C_mu_wf_, 0.75);
