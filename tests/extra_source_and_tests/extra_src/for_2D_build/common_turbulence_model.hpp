@@ -65,7 +65,39 @@ TurbulentLinearGradientCorrectionMatrix<DataDelegationType>::
     this->particles_->template addVariableToWrite<Matd>("LinearGradientCorrectionMatrix");
     this->particles_->template addVariableToSort<Matd>("LinearGradientCorrectionMatrix");
 }
+//=================================================================================================//
+template <class RiemannSolverType>
+TurbulentIntegration2ndHalf<Contact<Wall>, RiemannSolverType>::
+    TurbulentIntegration2ndHalf(BaseContactRelation &wall_contact_relation)
+    : BaseIntegrationWithWall(wall_contact_relation),
+      riemann_solver_(this->fluid_, this->fluid_, 5.0) {}
+//=================================================================================================//
+template <class RiemannSolverType>
+void TurbulentIntegration2ndHalf<Contact<Wall>, RiemannSolverType>::interaction(size_t index_i, Real dt)
+{
+    Real density_change_rate = 0.0;
+    Vecd p_dissipation = Vecd::Zero();
+    for (size_t k = 0; k < contact_configuration_.size(); ++k)
+    {
+        Vecd *vel_ave_k = wall_vel_ave_[k];
+        Vecd *n_k = wall_n_[k];
+        Real *wall_Vol_k = wall_Vol_[k];
+        Neighborhood &wall_neighborhood = (*contact_configuration_[k])[index_i];
+        for (size_t n = 0; n != wall_neighborhood.current_size_; ++n)
+        {
+            size_t index_j = wall_neighborhood.j_[n];
+            Vecd &e_ij = wall_neighborhood.e_ij_[n];
+            Real dW_ijV_j = wall_neighborhood.dW_ij_[n] * wall_Vol_k[index_j];
 
+            Vecd vel_in_wall = 2.0 * vel_ave_k[index_j] - vel_[index_i];
+            density_change_rate += (vel_[index_i] - vel_in_wall).dot(e_ij) * dW_ijV_j;
+            Real u_jump = 2.0 * (vel_[index_i] - vel_ave_k[index_j]).dot(n_k[index_j]);
+            p_dissipation += riemann_solver_.DissipativePJump(u_jump) * dW_ijV_j * n_k[index_j];
+        }
+    }
+    drho_dt_[index_i] += density_change_rate * this->rho_[index_i];
+    force_[index_i] += p_dissipation * this->Vol_[index_i];
+}
 //=================================================================================================//
 } // namespace fluid_dynamics
 //=================================================================================================//
