@@ -70,7 +70,7 @@ template <class RiemannSolverType>
 TurbulentIntegration2ndHalf<Contact<Wall>, RiemannSolverType>::
     TurbulentIntegration2ndHalf(BaseContactRelation &wall_contact_relation)
     : BaseIntegrationWithWall(wall_contact_relation),
-      riemann_solver_(this->fluid_, this->fluid_, 30.0) {}
+      riemann_solver_(this->fluid_, this->fluid_, 50.0) {}
 //=================================================================================================//
 template <class RiemannSolverType>
 void TurbulentIntegration2ndHalf<Contact<Wall>, RiemannSolverType>::interaction(size_t index_i, Real dt)
