@@ -6,7 +6,7 @@ int main(int ac, char *av[])
     /**
      * @brief Build up -- a SPHSystem --
      */
-    SPHSystem sph_system(system_domain_bounds, resolution_ref, 12);
+    SPHSystem sph_system(system_domain_bounds, resolution_ref);
 
     /** Tag for run particle relaxation for the initial body fitted distribution. */
     sph_system.setRunParticleRelaxation(false);
@@ -341,10 +341,10 @@ int main(int ac, char *av[])
     WriteToVtpIfVelocityOutOfBound abnormal_velocity_recording(sph_system, 1.0e6 * U_max);
 
     //% Temporary Treat Note that this should be in front of TAG particle include inlet outlet and buffer
-    // SimpleDynamics<DisposerForInitialParticleDeletion> delete_initial_particle(water_block);
-    // delete_initial_particle.exec();
-    // particle_sorting.exec();
-    // water_block.updateCellLinkedList();
+    SimpleDynamics<DisposerForInitialParticleDeletion> delete_initial_particle(water_block);
+    delete_initial_particle.exec();
+    particle_sorting.exec();
+    water_block.updateCellLinkedList();
 
     initialise_color_indicator.exec();
     /**
@@ -375,10 +375,10 @@ int main(int ac, char *av[])
     Real &physical_time = *sph_system.getSystemVariableDataByName<Real>("PhysicalTime");
     size_t number_of_iterations = sph_system.RestartStep();
     int screen_output_interval = 100;
-    Real end_time = 4000.0;                     /**< End time. */
+    Real end_time = 6000.0;                     /**< End time. */
     Real cutoff_ratio = 0.92;                   //** cutoff_time should be a integral and the same as the PY script */
     Real cutoff_time = cutoff_ratio * end_time; //** cutoff_time should be a integral and the same as the PY script */
-    Real num_output_files = 400.0;
+    Real num_output_files = 600.0;
     Real Output_Time = end_time / num_output_files; /**< Time stamps for output of body states. */
     Real index_check_file_fully_developed = num_output_files * cutoff_ratio;
     Real dt = 0.0; /**< Default acoustic time step sizes. */
