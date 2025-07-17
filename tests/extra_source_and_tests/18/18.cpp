@@ -51,12 +51,20 @@ int main(int ac, char *av[])
     ObserverBody fluid_observer_cross_section(sph_system, "FluidObserverCrossSections");
     fluid_observer_cross_section.generateParticles<ObserverParticles>(observe_cross_sections::observation_locations);
 
+    ObserverBody observer_body(sph_system, makeShared<WaterBlock>("ObserverBody")); //% Average
+    (!sph_system.RunParticleRelaxation() && sph_system.ReloadParticles())
+        ? observer_body.generateParticles<BaseParticles, Reload>(water_block.getName())
+        : observer_body.generateParticles<BaseParticles, Lattice>();
+
     /** topology */
     InnerRelation water_block_inner(water_block);
     ContactRelation water_wall_contact(water_block, {&wall_boundary});
     ContactRelation fluid_observer_contact(fluid_observer, {&water_block});
     ContactRelation fluid_observer_cross_section_contact(fluid_observer_cross_section, {&water_block});
     ContactRelation observer_centerpoint_contact(observer_center_point, {&water_block});
+
+    ContactRelation fluid_observer_contact2(observer_body, {&water_block}); //% Average
+
     //----------------------------------------------------------------------
     // Combined relations built from basic relations
     // which is only used for update configuration.
@@ -204,6 +212,11 @@ int main(int ac, char *av[])
     /** Time step size with considering sound wave speed. */
     ReduceDynamics<fluid_dynamics::AcousticTimeStep> get_fluid_time_step_size(water_block);
 
+    ObservingAQuantity<Real> observing_pressure(fluid_observer_contact2, "Pressure");          //% Average pressure
+    SimpleDynamics<ParticleSnapshotAverage<Real>> average_pressure(observer_body, "Pressure"); //% Average pressure
+    ObservingAQuantity<Real> observing_density(fluid_observer_contact2, "Density");            //% Average density
+    SimpleDynamics<ParticleSnapshotAverage<Real>> average_density(observer_body, "Density");   //% Average density
+
     //----------------------------------------------------------------------
     //	Define the configuration related particles dynamics.
     //----------------------------------------------------------------------
@@ -222,6 +235,11 @@ int main(int ac, char *av[])
     //body_states_recording.addToWrite<int>(water_block, "BufferParticleIndicator");
     body_states_recording.addToWrite<Real>(water_block, "VolumetricMeasure");
     body_states_recording.addToWrite<Matd>(water_block, "LinearGradientCorrectionMatrix");
+
+    BodyStatesRecordingToVtp write_observation_states(observer_body);     //% Average
+    write_observation_states.addToWrite<Real>(observer_body, "Pressure"); //% Average pressure
+    write_observation_states.addToWrite<Real>(observer_body, "Density");  //% Average density
+
     /**
      * @brief Setup geometry and initial conditions.
      */
@@ -366,6 +384,14 @@ int main(int ac, char *av[])
             {
                 write_recorded_water_velocity.writeToFile(number_of_iterations);
                 write_recorded_water_velocity_cross_section.writeToFile(number_of_iterations);
+
+                fluid_observer_contact2.updateConfiguration();
+                //% Average pressure
+                observing_pressure.exec();
+                average_pressure.exec();
+                //% Average density
+                observing_density.exec();
+                average_density.exec();
             }
             //if (physical_time > end_time * 0.5)
             //body_states_recording.writeToFile();
@@ -374,6 +400,9 @@ int main(int ac, char *av[])
         body_states_recording.writeToFile();
         observer_centerpoint_contact.updateConfiguration();
         num_output_file++;
+
+        write_observation_states.writeToFile(); //% Average
+
         //if (num_output_file == 100)
         //    system("pause");
         //TickCount t3 = TickCount::now();
