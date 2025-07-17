@@ -40,16 +40,24 @@ BoundingBox system_domain_bounds(Vec2d(-DL_sponge - 2.0 * BW, -BW), Vec2d(DL + 2
 //----------------------------------------------------------------------
 //	Material properties of the fluid.
 //----------------------------------------------------------------------
-Real U_inlet = 1.0;
-Real U_f = U_inlet;         //*Characteristic velocity
-Real U_max = 1.5 * U_inlet; //** An estimated value, generally 1.5 U_inlet *
+//Real U_inlet = 1.0;
+//Real U_f = U_inlet;         //*Characteristic velocity
+//Real U_max = 1.5 * U_inlet; //** An estimated value, generally 1.5 U_inlet *
+
+Vecd external_acc = Vecd(0.03, 0.0);
+Real external_acc_gradually_impose_t = 2.0;
+
+Real U_max = 1.5; //** An estimated value, Periodic BC *
+Real U_f = U_max; // * Characteristic velocity, Periodic BC
+
 Real c_f = 10.0 * U_max;
 Real rho0_f = 1000.0; /**< Density. */
-Real Re = 200.0;
 
-Real Outlet_pressure = 0.0;
+//Real Re = 200.0;
+//Real Outlet_pressure = 0.0;
 
-Real mu_f = rho0_f * U_f * DH / Re;
+//Real mu_f = rho0_f * U_f * DH / Re;
+Real mu_f = 10.0; //** Periodic BC */
 
 Real Re_calculated = U_f * DH * rho0_f / mu_f;
 
@@ -284,55 +292,55 @@ class WallBoundary : public ComplexShape
 //----------------------------------------------------------------------
 //	Inflow velocity
 //----------------------------------------------------------------------
-struct InflowVelocity
-{
-    Real u_ref_, t_ref_;
-    AlignedBoxShape &aligned_box_;
-    Vecd halfsize_;
+// struct InflowVelocity
+// {
+//     Real u_ref_, t_ref_;
+//     AlignedBoxShape &aligned_box_;
+//     Vecd halfsize_;
 
-    template <class BoundaryConditionType>
-    InflowVelocity(BoundaryConditionType &boundary_condition)
-        : u_ref_(U_inlet), t_ref_(2.0),
-          aligned_box_(boundary_condition.getAlignedBox()),
-          halfsize_(aligned_box_.HalfSize()) {}
+//     template <class BoundaryConditionType>
+//     InflowVelocity(BoundaryConditionType &boundary_condition)
+//         : u_ref_(U_inlet), t_ref_(2.0),
+//           aligned_box_(boundary_condition.getAlignedBox()),
+//           halfsize_(aligned_box_.HalfSize()) {}
 
-    Vecd operator()(Vecd &position, Vecd &velocity, Real current_time)
-    {
-        Vecd target_velocity = velocity;
-        Real u_ave = current_time < t_ref_ ? 0.5 * u_ref_ * (1.0 - cos(Pi * current_time / t_ref_)) : u_ref_;
-        target_velocity[0] = 1.5 * u_ave * (1.0 - position[1] * position[1] / half_channel_height / half_channel_height);
-        //target_velocity[0] = u_ave;
+//     Vecd operator()(Vecd &position, Vecd &velocity, Real current_time)
+//     {
+//         Vecd target_velocity = velocity;
+//         Real u_ave = current_time < t_ref_ ? 0.5 * u_ref_ * (1.0 - cos(Pi * current_time / t_ref_)) : u_ref_;
+//         target_velocity[0] = 1.5 * u_ave * (1.0 - position[1] * position[1] / half_channel_height / half_channel_height);
+//         //target_velocity[0] = u_ave;
 
-        if (position[1] > half_channel_height)
-        {
-            std::cout << "Particles out of domain, wrong inlet velocity." << std::endl;
-            std::cout << position[1] << std::endl;
-            std::cin.get();
-        }
-        target_velocity[1] = 0.0;
-        return target_velocity;
-    }
-};
+//         if (position[1] > half_channel_height)
+//         {
+//             std::cout << "Particles out of domain, wrong inlet velocity." << std::endl;
+//             std::cout << position[1] << std::endl;
+//             std::cin.get();
+//         }
+//         target_velocity[1] = 0.0;
+//         return target_velocity;
+//     }
+// };
 
-struct RightOutflowPressure
-{
-    template <class BoundaryConditionType>
-    RightOutflowPressure(BoundaryConditionType &boundary_condition) {}
+// struct RightOutflowPressure
+// {
+//     template <class BoundaryConditionType>
+//     RightOutflowPressure(BoundaryConditionType &boundary_condition) {}
 
-    Real operator()(Real p, Real current_time)
-    {
-        /*constant pressure*/
-        Real pressure = Outlet_pressure;
-        return pressure;
-    }
-};
-struct LeftInflowPressure
-{
-    template <class BoundaryConditionType>
-    LeftInflowPressure(BoundaryConditionType &boundary_condition) {}
+//     Real operator()(Real p, Real current_time)
+//     {
+//         /*constant pressure*/
+//         Real pressure = Outlet_pressure;
+//         return pressure;
+//     }
+// };
+// struct LeftInflowPressure
+// {
+//     template <class BoundaryConditionType>
+//     LeftInflowPressure(BoundaryConditionType &boundary_condition) {}
 
-    Real operator()(Real p, Real current_time)
-    {
-        return p;
-    }
-};
+//     Real operator()(Real p, Real current_time)
+//     {
+//         return p;
+//     }
+// };

@@ -159,9 +159,11 @@ int main(int ac, char *av[])
     //InteractionWithUpdate<fluid_dynamics::DensitySummationFreeStreamComplex> update_density_by_summation(water_block_inner, water_wall_contact);
 
     /** Initialize particle acceleration. */
-    StartupAcceleration time_dependent_acceleration(Vec2d(U_f, 0.0), 2.0);
-    SimpleDynamics<GravityForce<StartupAcceleration>> apply_gravity_force(water_block, time_dependent_acceleration);
+    //StartupAcceleration time_dependent_acceleration(Vec2d(U_f, 0.0), 2.0);
+    IncreaseToFullGravity time_dependent_acceleration(external_acc, external_acc_gradually_impose_t);
+    SimpleDynamics<GravityForce<Gravity>> apply_gravity_force(water_block, time_dependent_acceleration);
 
+    /*
     //----------------------------------------------------------------------
     // Left/Inlet buffer
     //----------------------------------------------------------------------
@@ -184,8 +186,17 @@ int main(int ac, char *av[])
     SimpleDynamics<fluid_dynamics::PressureCondition<RightOutflowPressure>> right_outflow_pressure_condition(right_emitter);
     //SimpleDynamics<fluid_dynamics::PressureConditionCorrection<RightOutflowPressure>> right_outflow_pressure_condition(right_emitter);
     //----------------------------------------------------------------------
+    */
 
-    InteractionWithUpdate<fluid_dynamics::DensitySummationPressureComplex> update_fluid_density_pressure(water_block_inner, water_wall_contact);
+    //----------------------------------------------------------------------
+    // Periodic BC
+    //----------------------------------------------------------------------
+    PeriodicAlongAxis periodic_along_x(water_block.getSPHBodyBounds(), xAxis);
+    PeriodicConditionUsingCellLinkedList periodic_condition_x(water_block, periodic_along_x);
+    //----------------------------------------------------------------------
+
+    //InteractionWithUpdate<fluid_dynamics::DensitySummationPressureComplex> update_fluid_density_pressure(water_block_inner, water_wall_contact);
+    InteractionWithUpdate<fluid_dynamics::DensitySummationComplex> update_density_by_summation(water_block_inner, water_wall_contact);
 
     /** Choose one, ordinary or turbulent. Time step size without considering sound wave speed. */
     ReduceDynamics<fluid_dynamics::AdvectionViscousTimeStep> get_fluid_advection_time_step_size(water_block, U_f);
@@ -208,13 +219,17 @@ int main(int ac, char *av[])
     body_states_recording.addToWrite<Vecd>(water_block, "ZeroGradientResidue"); // output for debug
     ObservedQuantityRecording<Vecd> write_recorded_water_velocity("Velocity", fluid_observer_contact);
     ObservedQuantityRecording<Vecd> write_recorded_water_velocity_cross_section("Velocity", fluid_observer_cross_section_contact);
-    body_states_recording.addToWrite<int>(water_block, "BufferParticleIndicator");
+    //body_states_recording.addToWrite<int>(water_block, "BufferParticleIndicator");
     body_states_recording.addToWrite<Real>(water_block, "VolumetricMeasure");
     body_states_recording.addToWrite<Matd>(water_block, "LinearGradientCorrectionMatrix");
     /**
      * @brief Setup geometry and initial conditions.
      */
     sph_system.initializeSystemCellLinkedLists();
+
+    /** periodic condition applied after the mesh cell linked list build up but before the configuration build up. */
+    periodic_condition_x.update_cell_linked_list_.exec();
+
     sph_system.initializeSystemConfigurations();
     wall_boundary_normal_direction.exec();
     body_states_recording.addToWrite<Vecd>(wall_boundary, "NormalDirection");
@@ -222,8 +237,8 @@ int main(int ac, char *av[])
     /** Tag inlet/outlet truncated particles */
     inlet_outlet_surface_particle_indicator.exec();
     /** Tag in/outlet buffer particles */
-    left_bidirection_buffer.tag_buffer_particles.exec();
-    right_bidirection_buffer.tag_buffer_particles.exec();
+    //left_bidirection_buffer.tag_buffer_particles.exec();
+    //right_bidirection_buffer.tag_buffer_particles.exec();
 
     //----------------------------------------------------------------------
     //	Setup computing and initial conditions.
@@ -264,8 +279,8 @@ int main(int ac, char *av[])
 
             //inlet_outlet_surface_particle_indicator.exec();
 
-            //update_density_by_summation.exec();
-            update_fluid_density_pressure.exec();
+            update_density_by_summation.exec();
+            //update_fluid_density_pressure.exec();
 
             corrected_configuration_fluid.exec();
 
@@ -288,10 +303,10 @@ int main(int ac, char *av[])
 
                 pressure_relaxation.exec(dt);
 
-                left_inflow_pressure_condition.exec(dt);
-                right_outflow_pressure_condition.exec(dt);
+                //left_inflow_pressure_condition.exec(dt);
+                //right_outflow_pressure_condition.exec(dt);
 
-                inflow_velocity_condition.exec();
+                //inflow_velocity_condition.exec();
 
                 density_relaxation.exec(dt);
 
@@ -316,18 +331,27 @@ int main(int ac, char *av[])
             number_of_iterations++;
 
             // ** First do injection for all buffers *
-            left_bidirection_buffer.injection.exec();
-            right_bidirection_buffer.injection.exec();
+            // left_bidirection_buffer.injection.exec();
+            // right_bidirection_buffer.injection.exec();
             // ** Then do deletion for all buffers *
-            left_bidirection_buffer.deletion.exec();
-            right_bidirection_buffer.deletion.exec();
+            // left_bidirection_buffer.deletion.exec();
+            // right_bidirection_buffer.deletion.exec();
+
+            /** Periodic condition. */
+            periodic_condition_x.bounding_.exec();
 
             /** Update cell linked list and configuration. */
             if (number_of_iterations % 100 == 0 && number_of_iterations != 1)
             {
                 particle_sorting.exec();
             }
+
+            /** Update cell linked list and configuration. */
             water_block.updateCellLinkedList();
+
+            /** Periodic condition. */
+            periodic_condition_x.update_cell_linked_list_.exec();
+
             water_block_complex.updateConfiguration();
             fluid_observer_contact.updateConfiguration();
             fluid_observer_cross_section_contact.updateConfiguration();
@@ -335,8 +359,8 @@ int main(int ac, char *av[])
             /** Tag truncated inlet/outlet particles*/
             inlet_outlet_surface_particle_indicator.exec();
             /** Tag in/outlet buffer particles that suffer pressure condition*/
-            left_bidirection_buffer.tag_buffer_particles.exec();
-            right_bidirection_buffer.tag_buffer_particles.exec();
+            // left_bidirection_buffer.tag_buffer_particles.exec();
+            // right_bidirection_buffer.tag_buffer_particles.exec();
 
             if (physical_time > cutoff_time)
             {
