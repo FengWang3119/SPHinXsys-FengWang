@@ -17,6 +17,10 @@ Real gravity_g = 1.0;                    /**< Gravity. */
 Real U_ref = 2.0 * sqrt(gravity_g * LH); /**< Characteristic velocity. */
 Real c_f = 10.0 * U_ref;                 /**< Reference sound speed. */
 //----------------------------------------------------------------------
+//	MPH Parameters.
+//----------------------------------------------------------------------
+Real Swp = 1.0 / 2.0 * 1.0 / 3.0 * M_PI / particle_spacing_ref / particle_spacing_ref;
+//----------------------------------------------------------------------
 //	Geometric shapes used in this case.
 //----------------------------------------------------------------------
 Vec2d water_block_halfsize = Vec2d(0.5 * LL, 0.5 * LH); // local center at origin
