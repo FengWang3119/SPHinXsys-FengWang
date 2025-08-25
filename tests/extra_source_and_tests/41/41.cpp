@@ -1,4 +1,6 @@
+#include "mph_method.cpp"
 #include "sphinxsys.h" //SPHinXsys Library.
+
 using namespace SPH;   // Namespace cite here.
 //----------------------------------------------------------------------
 //	Basic geometry parameters and numerical setup.
@@ -162,6 +164,7 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     while (physical_time < end_time)
     {
+        std::cout << test_ccc << "\n";
         Real integration_time = 0.0;
         /** Integrate time (loop) until the next output time. */
         while (integration_time < output_interval)
