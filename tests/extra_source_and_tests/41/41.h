@@ -22,6 +22,8 @@ Real c_f = 10.0 * U_ref;                 /**< Reference sound speed. */
 //	MPH Parameters.
 //----------------------------------------------------------------------
 Real Swp = 1.0 / 2.0 * 1.0 / 3.0 * M_PI / particle_spacing_ref / particle_spacing_ref;
+Real bulk_modulus = 1.0e+6;
+Real bulk_viscosity = 2.0e+3;
 //----------------------------------------------------------------------
 //	Geometric shapes used in this case.
 //----------------------------------------------------------------------
