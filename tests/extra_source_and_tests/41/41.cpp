@@ -18,10 +18,14 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     GeometricShapeBox initial_water_block(Transform(water_block_translation), water_block_halfsize, "WaterBody");
     FluidBody water_block(sph_system, initial_water_block);
+    water_block.defineAdaptationRatios(0.875, 1.0);
+    water_block.getSPHAdaptation().resetKernel<KernelOfMPH>(particle_spacing_ref);
     water_block.defineMaterial<WeaklyCompressibleFluid>(rho0_f, c_f);
     water_block.generateParticles<BaseParticles, Lattice>();
 
     SolidBody wall_boundary(sph_system, makeShared<WallBoundary>("WallBoundary"));
+    wall_boundary.defineAdaptationRatios(0.875, 1.0);
+    wall_boundary.getSPHAdaptation().resetKernel<KernelOfMPH>(particle_spacing_ref);
     wall_boundary.defineMaterial<Solid>();
     wall_boundary.generateParticles<BaseParticles, Lattice>();
 
