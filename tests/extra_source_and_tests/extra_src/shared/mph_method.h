@@ -3,12 +3,8 @@
 
 #include "sphinxsys.h"
 
-namespace SPH
-{
-	int test_ccc = 1;
-namespace fluid_dynamics
-{
-//=================================================================================================//
-} // namespace fluid_dynamics
-} // namespace SPH
+using namespace SPH;
+
+int test_ccc = 1;
+
 #endif // MPH_METHOD_H
