@@ -28,6 +28,59 @@ public:
     virtual Real d2W_2D(const Real q) const override;
     virtual Real d2W_3D(const Real q) const override;
 };
+namespace fluid_dynamics
+{
+//=================================================================================================//
+template <typename... InteractionTypes>
+class CalculateVolumeStrain;
 
-}
+template <class DataDelegationType>
+class CalculateVolumeStrain<Base, DataDelegationType>
+    : public LocalDynamics, public DataDelegationType
+{
+public:
+    template <class BaseRelationType>
+    explicit CalculateVolumeStrain(BaseRelationType& base_relation);
+    virtual ~CalculateVolumeStrain() {};
+
+protected:
+    Real *volume_strain_;
+};
+
+template <>
+class CalculateVolumeStrain<Inner<>> : public CalculateVolumeStrain<Base, DataDelegateInner>
+{
+public:
+    explicit CalculateVolumeStrain(BaseInnerRelation& inner_relation);
+    virtual ~CalculateVolumeStrain() {};
+    void interaction(size_t index_i, Real dt = 0.0);
+    void update(size_t index_i, Real dt = 0.0);
+
+protected:
+    Real number_density_Lattice_SPH_;
+    Real number_density_Lattice_MPH_;
+    Real smoothing_length_;
+    Real particle_spacing_;
+};
+
+template <>
+class CalculateVolumeStrain<Contact<>> : public CalculateVolumeStrain<Base, DataDelegateContact>
+{
+public:
+    explicit CalculateVolumeStrain(BaseContactRelation& contact_relation);
+    virtual ~CalculateVolumeStrain() {};
+    void interaction(size_t index_i, Real dt = 0.0);
+
+protected:
+
+};
+
+template <class InnerInteractionType, class... ContactInteractionTypes>
+using BaseCalculateVolumeStrainComplex = ComplexInteraction<CalculateVolumeStrain<InnerInteractionType, ContactInteractionTypes...>>;
+
+using CalculateVolumeStrainComplex = BaseCalculateVolumeStrainComplex<Inner<>, Contact<>>;
+//=================================================================================================//
+} // namespace fluid_dynamics
+//=================================================================================================//
+} // namespace SPH
 #endif // MPH_METHOD_H

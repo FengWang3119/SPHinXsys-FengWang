@@ -59,6 +59,8 @@ int main(int ac, char *av[])
     SimpleDynamics<GravityForce<Gravity>> constant_gravity(water_block, gravity);
     SimpleDynamics<NormalDirectionFromBodyShape> wall_boundary_normal_direction(wall_boundary);
 
+    InteractionWithUpdate<fluid_dynamics::CalculateVolumeStrainComplex> calculate_volume_strain(water_block_inner, water_wall_contact);
+
     Dynamics1Level<fluid_dynamics::Integration1stHalfWithWallRiemann> fluid_pressure_relaxation(water_block_inner, water_wall_contact);
     Dynamics1Level<fluid_dynamics::Integration2ndHalfWithWallRiemann> fluid_density_relaxation(water_block_inner, water_wall_contact);
     InteractionWithUpdate<fluid_dynamics::DensitySummationComplexFreeSurface> fluid_density_by_summation(water_block_inner, water_wall_contact);
@@ -124,6 +126,8 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     //	Main loop starts here.
     //----------------------------------------------------------------------
+    std::cout << "Press any key to start";
+    std::cin.get();
     while (physical_time < end_time)
     {
         std::cout << test_ccc << "\n";
