@@ -80,6 +80,19 @@ using BaseCalculateVolumeStrainComplex = ComplexInteraction<CalculateVolumeStrai
 
 using CalculateVolumeStrainComplex = BaseCalculateVolumeStrainComplex<Inner<>, Contact<>>;
 //=================================================================================================//
+class UpdateVelocity : public LocalDynamics
+{
+public:
+    explicit UpdateVelocity(SPHBody& sph_body);
+    virtual ~UpdateVelocity() {};
+
+    void update(size_t index_i, Real dt = 0.0);
+
+protected:
+    Vecd* vel_;
+    Vecd* pos_;
+};
+//=================================================================================================//
 } // namespace fluid_dynamics
 //=================================================================================================//
 } // namespace SPH
