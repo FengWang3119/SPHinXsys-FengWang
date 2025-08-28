@@ -224,6 +224,50 @@ void CalculatePressure::update(size_t index_i, Real dt)
     p_[index_i] = -1.0 * bulk_viscosity_[index_i] * velocity_divergence_[index_i] + bulk_modulus_[index_i] * volume_strain_[index_i];
 }
 //=================================================================================================//
+CalculatePressureGradientForce<Inner<>>::CalculatePressureGradientForce(BaseInnerRelation& inner_relation)
+    : CalculatePressureGradientForce<Base, DataDelegateInner>(inner_relation) {}
+//=================================================================================================//
+void CalculatePressureGradientForce<Inner<>>::interaction(size_t index_i, Real dt)
+{
+    Vecd force = Vecd::Zero();
+    const Neighborhood& inner_neighborhood = inner_configuration_[index_i];
+    for (size_t n = 0; n != inner_neighborhood.current_size_; ++n)
+    {
+        size_t index_j = inner_neighborhood.j_[n];
+        if (index_i != index_j)
+        {
+            const Vecd& e_ij = inner_neighborhood.e_ij_[n];
+            Real dW_ij = inner_neighborhood.dW_ij_[n];
+            force -= (p_[index_i] + p_[index_j] ) * dW_ij * e_ij;
+        }
+    }
+    force_[index_i] += force * Vol_[index_i];
+}
+//=================================================================================================//
+CalculatePressureGradientForce<Contact<>>::CalculatePressureGradientForce(BaseContactRelation& contact_relation)
+    : CalculatePressureGradientForce<Base, DataDelegateContact>(contact_relation) {}
+//=================================================================================================//
+void CalculatePressureGradientForce<Contact<>>::interaction(size_t index_i, Real dt)
+{
+    Vecd force = Vecd::Zero();
+    for (size_t k = 0; k < DataDelegateContact::contact_configuration_.size(); ++k)
+    {
+        Neighborhood& contact_neighborhood = (*DataDelegateContact::contact_configuration_[k])[index_i];
+        for (size_t n = 0; n != contact_neighborhood.current_size_; ++n)
+        {
+            size_t index_j = contact_neighborhood.j_[n];
+            if (index_i != index_j)
+            {
+                const Vecd& e_ij = contact_neighborhood.e_ij_[n];
+                Real dW_ij = contact_neighborhood.dW_ij_[n];
+                Real p_j_in_wall = p_[index_i];
+                force -= (p_[index_i] + p_j_in_wall) * dW_ij * e_ij;
+            }
+        }
+    }
+    force_[index_i] += force * Vol_[index_i];
+}
+//=================================================================================================//
 }// namespace fluid_dynamics
 //=================================================================================================//
 }// namespace SPH

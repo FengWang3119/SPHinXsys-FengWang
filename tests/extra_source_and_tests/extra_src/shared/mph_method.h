@@ -182,6 +182,53 @@ protected:
 
 };
 //=================================================================================================//
+template <typename... InteractionTypes>
+class CalculatePressureGradientForce;
+
+template <class DataDelegationType>
+class CalculatePressureGradientForce<Base, DataDelegationType>
+    : public LocalDynamics, public DataDelegationType
+{
+public:
+    template <class BaseRelationType>
+    explicit CalculatePressureGradientForce(BaseRelationType& base_relation);
+    virtual ~CalculatePressureGradientForce() {};
+
+protected:
+    Vecd *force_;
+    Real *p_;
+    Real *Vol_;
+};
+
+template <>
+class CalculatePressureGradientForce<Inner<>> : public CalculatePressureGradientForce<Base, DataDelegateInner>
+{
+public:
+    explicit CalculatePressureGradientForce(BaseInnerRelation& inner_relation);
+    virtual ~CalculatePressureGradientForce() {};
+    void interaction(size_t index_i, Real dt = 0.0);
+
+protected:
+
+};
+
+template <>
+class CalculatePressureGradientForce<Contact<>> : public CalculatePressureGradientForce<Base, DataDelegateContact>
+{
+public:
+    explicit CalculatePressureGradientForce(BaseContactRelation& contact_relation);
+    virtual ~CalculatePressureGradientForce() {};
+    void interaction(size_t index_i, Real dt = 0.0);
+
+protected:
+
+};
+
+template <class InnerInteractionType, class... ContactInteractionTypes>
+using BaseCalculatePressureGradientForceComplex = ComplexInteraction<CalculatePressureGradientForce<InnerInteractionType, ContactInteractionTypes...>>;
+
+using CalculatePressureGradientForceComplex = BaseCalculatePressureGradientForceComplex<Inner<>, Contact<>>;
+//=================================================================================================//
 } // namespace fluid_dynamics
 //=================================================================================================//
 } // namespace SPH
