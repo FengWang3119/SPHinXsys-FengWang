@@ -133,6 +133,17 @@ void UpdateVelocity::update(size_t index_i, Real dt)
     pos_[index_i] += vel_[index_i] * dt;
 }
 //=================================================================================================//
+ResetForce::ResetForce(SPHBody& sph_body)
+    : LocalDynamics(sph_body),
+    force_(particles_->registerStateVariableData<Vecd>("Force")),
+    force_prior_(particles_->registerStateVariableData<Vecd>("ForcePrior")) {}
+//=================================================================================================//
+void ResetForce::update(size_t index_i, Real dt)
+{
+    force_[index_i] = Vecd::Zero();
+    force_prior_[index_i] = Vecd::Zero();
+}
+//=================================================================================================//
 }// namespace fluid_dynamics
 //=================================================================================================//
 }// namespace SPH

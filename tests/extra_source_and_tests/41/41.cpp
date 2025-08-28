@@ -61,6 +61,7 @@ int main(int ac, char *av[])
 
     InteractionWithUpdate<fluid_dynamics::CalculateVolumeStrainComplex> calculate_volume_strain(water_block_inner, water_wall_contact);
     SimpleDynamics<fluid_dynamics::UpdateVelocity> update_velocity(water_block);
+    SimpleDynamics<fluid_dynamics::ResetForce> reset_force(water_block);
 
     Dynamics1Level<fluid_dynamics::Integration1stHalfWithWallRiemann> fluid_pressure_relaxation(water_block_inner, water_wall_contact);
     Dynamics1Level<fluid_dynamics::Integration2ndHalfWithWallRiemann> fluid_density_relaxation(water_block_inner, water_wall_contact);

@@ -93,6 +93,18 @@ protected:
     Vecd* pos_;
 };
 //=================================================================================================//
+class ResetForce : public LocalDynamics
+{
+public:
+    explicit ResetForce(SPHBody& sph_body);
+    virtual ~ResetForce() {};
+
+    void update(size_t index_i, Real dt = 0.0);
+
+protected:
+    Vecd *force_, *force_prior_;
+};
+//=================================================================================================//
 } // namespace fluid_dynamics
 //=================================================================================================//
 } // namespace SPH
