@@ -105,6 +105,66 @@ protected:
     Vecd *force_, *force_prior_;
 };
 //=================================================================================================//
+template <typename... InteractionTypes>
+class CalculateVelocityDivergence;
+
+template <class DataDelegationType>
+class CalculateVelocityDivergence<Base, DataDelegationType>
+    : public LocalDynamics, public DataDelegationType
+{
+public:
+    template <class BaseRelationType>
+    explicit CalculateVelocityDivergence(BaseRelationType& base_relation);
+    virtual ~CalculateVelocityDivergence() {};
+
+protected:
+    Vecd *vel_;
+    Real *velocity_divergence_;
+};
+
+template <>
+class CalculateVelocityDivergence<Inner<>> : public CalculateVelocityDivergence<Base, DataDelegateInner>
+{
+public:
+    explicit CalculateVelocityDivergence(BaseInnerRelation& inner_relation);
+    virtual ~CalculateVelocityDivergence() {};
+    void interaction(size_t index_i, Real dt = 0.0);
+
+protected:
+
+};
+
+template <>
+class CalculateVelocityDivergence<Contact<>> : public CalculateVelocityDivergence<Base, DataDelegateContact>
+{
+public:
+    explicit CalculateVelocityDivergence(BaseContactRelation& contact_relation);
+    virtual ~CalculateVelocityDivergence() {};
+    void interaction(size_t index_i, Real dt = 0.0);
+
+protected:
+
+};
+
+template <class InnerInteractionType, class... ContactInteractionTypes>
+using BaseCalculateVelocityDivergenceComplex = ComplexInteraction<CalculateVelocityDivergence<InnerInteractionType, ContactInteractionTypes...>>;
+
+using CalculateVelocityDivergenceComplex = BaseCalculateVelocityDivergenceComplex<Inner<>, Contact<>>;
+//=================================================================================================//
+class CalculatePhysicalCoefficients : public LocalDynamics
+{
+public:
+    explicit CalculatePhysicalCoefficients(SPHBody& sph_body, Real bulk_modulus, Real bulk_viscosity);
+    virtual ~CalculatePhysicalCoefficients() {};
+
+    void update(size_t index_i, Real dt = 0.0);
+
+protected:
+    Real *bulk_modulus_, *bulk_viscosity_;
+    Real *Vol_, *rho_, *mass_;
+    Real *volume_strain_;
+    Real bulk_modulus_ref_;
+};//=================================================================================================//
 } // namespace fluid_dynamics
 //=================================================================================================//
 } // namespace SPH

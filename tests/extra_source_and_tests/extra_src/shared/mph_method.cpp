@@ -135,13 +135,81 @@ void UpdateVelocity::update(size_t index_i, Real dt)
 //=================================================================================================//
 ResetForce::ResetForce(SPHBody& sph_body)
     : LocalDynamics(sph_body),
-    force_(particles_->registerStateVariableData<Vecd>("Force")),
-    force_prior_(particles_->registerStateVariableData<Vecd>("ForcePrior")) {}
+    force_(particles_->getVariableDataByName<Vecd>("Force")),
+    force_prior_(particles_->getVariableDataByName<Vecd>("ForcePrior")) {}
 //=================================================================================================//
 void ResetForce::update(size_t index_i, Real dt)
 {
     force_[index_i] = Vecd::Zero();
     force_prior_[index_i] = Vecd::Zero();
+}
+//=================================================================================================//
+CalculateVelocityDivergence<Inner<>>::CalculateVelocityDivergence(BaseInnerRelation& inner_relation)
+    : CalculateVelocityDivergence<Base, DataDelegateInner>(inner_relation) {}
+//=================================================================================================//
+void CalculateVelocityDivergence<Inner<>>::interaction(size_t index_i, Real dt)
+{
+    velocity_divergence_[index_i] = 0.0;
+
+    Real vel_divergence = 0.0;
+    const Neighborhood& inner_neighborhood = inner_configuration_[index_i];
+    for (size_t n = 0; n != inner_neighborhood.current_size_; ++n)
+    {
+        size_t index_j = inner_neighborhood.j_[n];
+        if (index_i != index_j)
+        {
+            const Vecd& e_ij = inner_neighborhood.e_ij_[n];
+            Real dW_ij = inner_neighborhood.dW_ij_[n];
+            Real u_jump = (vel_[index_i] - vel_[index_j]).dot(e_ij);
+            vel_divergence += u_jump * dW_ij;
+        }
+    }
+    velocity_divergence_[index_i] += vel_divergence;
+}
+//=================================================================================================//
+CalculateVelocityDivergence<Contact<>>::CalculateVelocityDivergence(BaseContactRelation& contact_relation)
+    : CalculateVelocityDivergence<Base, DataDelegateContact>(contact_relation) {}
+//=================================================================================================//
+void CalculateVelocityDivergence<Contact<>>::interaction(size_t index_i, Real dt)
+{
+    Real vel_divergence = 0.0;
+    for (size_t k = 0; k < DataDelegateContact::contact_configuration_.size(); ++k)
+    {
+        Neighborhood& contact_neighborhood = (*DataDelegateContact::contact_configuration_[k])[index_i];
+        for (size_t n = 0; n != contact_neighborhood.current_size_; ++n)
+        {
+            size_t index_j = contact_neighborhood.j_[n];
+            if (index_i != index_j)
+            {
+                const Vecd& e_ij = contact_neighborhood.e_ij_[n];
+                Real dW_ij = contact_neighborhood.dW_ij_[n];
+                Vecd vel_j_in_wall = - vel_[index_i];
+                Real u_jump = (vel_[index_i] - vel_j_in_wall).dot(e_ij);
+                vel_divergence += u_jump * dW_ij;
+            }
+        }
+    }
+    velocity_divergence_[index_i] += vel_divergence;
+}
+//=================================================================================================//
+CalculatePhysicalCoefficients::CalculatePhysicalCoefficients(SPHBody& sph_body, Real bulk_modulus, Real bulk_viscosity)
+    : LocalDynamics(sph_body),
+    bulk_modulus_(particles_->registerStateVariableData<Real>("BulkModulus", bulk_modulus)),
+    bulk_viscosity_(particles_->registerStateVariableData<Real>("BulkViscosity", bulk_viscosity)),
+    Vol_(particles_->getVariableDataByName<Real>("VolumetricMeasure")),
+    rho_(particles_->getVariableDataByName<Real>("Density")),
+    mass_(particles_->getVariableDataByName<Real>("Mass")),
+    volume_strain_(particles_->getVariableDataByName<Real>("VolumeStrain")),
+    bulk_modulus_ref_(bulk_modulus){}
+//=================================================================================================//
+void CalculatePhysicalCoefficients::update(size_t index_i, Real dt)
+{
+    mass_[index_i] = rho_[index_i] * Vol_[index_i];
+    bulk_modulus_[index_i] = bulk_modulus_ref_;
+    if (volume_strain_[index_i] < 0.0)
+    {
+        bulk_modulus_[index_i] = 0.0;
+    }
 }
 //=================================================================================================//
 }// namespace fluid_dynamics
