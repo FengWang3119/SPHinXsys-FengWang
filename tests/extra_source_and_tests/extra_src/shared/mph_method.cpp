@@ -123,12 +123,12 @@ void CalculateVolumeStrain<Contact<>>::interaction(size_t index_i, Real dt)
     volume_strain_[index_i] += sum_W_ij;
 }
 //=================================================================================================//
-UpdateVelocity::UpdateVelocity(SPHBody& sph_body)
+UpdatePosition::UpdatePosition(SPHBody& sph_body)
     : LocalDynamics(sph_body),
     vel_(particles_->getVariableDataByName<Vecd>("Velocity")),
     pos_(particles_->getVariableDataByName<Vecd>("Position")) {}
 //=================================================================================================//
-void UpdateVelocity::update(size_t index_i, Real dt)
+void UpdatePosition::update(size_t index_i, Real dt)
 {
     pos_[index_i] += vel_[index_i] * dt;
 }

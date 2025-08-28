@@ -60,7 +60,7 @@ int main(int ac, char *av[])
     SimpleDynamics<NormalDirectionFromBodyShape> wall_boundary_normal_direction(wall_boundary);
 
     InteractionWithUpdate<fluid_dynamics::CalculateVolumeStrainComplex> calculate_volume_strain(water_block_inner, water_wall_contact);
-    SimpleDynamics<fluid_dynamics::UpdateVelocity> update_velocity(water_block);
+    SimpleDynamics<fluid_dynamics::UpdatePosition> update_velocity(water_block);
     SimpleDynamics<fluid_dynamics::ResetForce> reset_force(water_block);
     InteractionDynamics<fluid_dynamics::CalculateVelocityDivergenceComplex> calculate_velocity_divergence(water_block_inner, water_wall_contact);
     SimpleDynamics<fluid_dynamics::CalculatePhysicalCoefficients> calculate_physical_coefficients(water_block, bulk_modulus_ref, bulk_viscosity_ref);
