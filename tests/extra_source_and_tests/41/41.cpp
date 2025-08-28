@@ -64,6 +64,7 @@ int main(int ac, char *av[])
     SimpleDynamics<fluid_dynamics::ResetForce> reset_force(water_block);
     InteractionDynamics<fluid_dynamics::CalculateVelocityDivergenceComplex> calculate_velocity_divergence(water_block_inner, water_wall_contact);
     SimpleDynamics<fluid_dynamics::CalculatePhysicalCoefficients> calculate_physical_coefficients(water_block, bulk_modulus_ref, bulk_viscosity_ref);
+    SimpleDynamics<fluid_dynamics::CalculatePressure> calculate_pressure(water_block);
 
     Dynamics1Level<fluid_dynamics::Integration1stHalfWithWallRiemann> fluid_pressure_relaxation(water_block_inner, water_wall_contact);
     Dynamics1Level<fluid_dynamics::Integration2ndHalfWithWallRiemann> fluid_density_relaxation(water_block_inner, water_wall_contact);

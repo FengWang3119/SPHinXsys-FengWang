@@ -164,7 +164,24 @@ protected:
     Real *Vol_, *rho_, *mass_;
     Real *volume_strain_;
     Real bulk_modulus_ref_;
-};//=================================================================================================//
+};
+//=================================================================================================//
+class CalculatePressure : public LocalDynamics
+{
+public:
+    explicit CalculatePressure(SPHBody& sph_body);
+    virtual ~CalculatePressure() {};
+
+    void update(size_t index_i, Real dt = 0.0);
+
+protected:
+    Real *bulk_modulus_, *bulk_viscosity_;
+    Real *volume_strain_;
+    Real *p_;
+    Real *velocity_divergence_;
+
+};
+//=================================================================================================//
 } // namespace fluid_dynamics
 //=================================================================================================//
 } // namespace SPH

@@ -212,6 +212,18 @@ void CalculatePhysicalCoefficients::update(size_t index_i, Real dt)
     }
 }
 //=================================================================================================//
+CalculatePressure::CalculatePressure(SPHBody& sph_body): LocalDynamics(sph_body),
+    bulk_modulus_(particles_->getVariableDataByName<Real>("BulkModulus")),
+    bulk_viscosity_(particles_->getVariableDataByName<Real>("BulkViscosity")),
+    volume_strain_(particles_->getVariableDataByName<Real>("VolumeStrain")),
+    p_(particles_->getVariableDataByName<Real>("Pressure")),
+    velocity_divergence_(particles_->getVariableDataByName<Real>("VelocityDivergence")) {}
+//=================================================================================================//
+void CalculatePressure::update(size_t index_i, Real dt)
+{
+    p_[index_i] = -1.0 * bulk_viscosity_[index_i] * velocity_divergence_[index_i] + bulk_modulus_[index_i] * volume_strain_[index_i];
+}
+//=================================================================================================//
 }// namespace fluid_dynamics
 //=================================================================================================//
 }// namespace SPH
