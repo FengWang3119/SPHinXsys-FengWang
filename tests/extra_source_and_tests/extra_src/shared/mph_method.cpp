@@ -268,6 +268,18 @@ void CalculatePressureGradientForce<Contact<>>::interaction(size_t index_i, Real
     force_[index_i] += force * Vol_[index_i];
 }
 //=================================================================================================//
+UpdateVelocity::UpdateVelocity(SPHBody& sph_body)
+    : LocalDynamics(sph_body),
+    vel_(particles_->getVariableDataByName<Vecd>("Velocity")),
+    force_(particles_->getVariableDataByName<Vecd>("Force")),
+    force_prior_(particles_->getVariableDataByName<Vecd>("ForcePrior")),
+    mass_(this->particles_->template getVariableDataByName<Real>("Mass")) {}
+//=================================================================================================//
+void UpdateVelocity::update(size_t index_i, Real dt)
+{
+    vel_[index_i] += (force_prior_[index_i] + force_[index_i]) / mass_[index_i] * dt;
+}
+//=================================================================================================//
 }// namespace fluid_dynamics
 //=================================================================================================//
 }// namespace SPH

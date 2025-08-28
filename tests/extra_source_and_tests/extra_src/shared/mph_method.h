@@ -229,6 +229,20 @@ using BaseCalculatePressureGradientForceComplex = ComplexInteraction<CalculatePr
 
 using CalculatePressureGradientForceComplex = BaseCalculatePressureGradientForceComplex<Inner<>, Contact<>>;
 //=================================================================================================//
+class UpdateVelocity : public LocalDynamics
+{
+public:
+    explicit UpdateVelocity(SPHBody& sph_body);
+    virtual ~UpdateVelocity() {};
+
+    void update(size_t index_i, Real dt = 0.0);
+
+protected:
+    Vecd *vel_;
+    Vecd *force_, *force_prior_;
+    Real *mass_;
+};
+//=================================================================================================//
 } // namespace fluid_dynamics
 //=================================================================================================//
 } // namespace SPH
