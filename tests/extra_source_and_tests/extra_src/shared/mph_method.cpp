@@ -139,7 +139,7 @@ ResetForce::ResetForce(SPHBody& sph_body)
 void ResetForce::update(size_t index_i, Real dt)
 {
     force_[index_i] = Vecd::Zero();
-    force_prior_[index_i] = Vecd::Zero();
+    //force_prior_[index_i] = Vecd::Zero();
 }
 //=================================================================================================//
 CalculateVelocityDivergence<Inner<>>::CalculateVelocityDivergence(BaseInnerRelation& inner_relation)

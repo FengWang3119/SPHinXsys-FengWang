@@ -73,7 +73,7 @@ int main(int ac, char *av[])
     //InteractionWithUpdate<fluid_dynamics::DensitySummationComplexFreeSurface> fluid_density_by_summation(water_block_inner, water_wall_contact);
 
     //ReduceDynamics<fluid_dynamics::AdvectionTimeStep> fluid_advection_time_step(water_block, U_ref);
-    //ReduceDynamics<fluid_dynamics::AcousticTimeStep> fluid_acoustic_time_step(water_block);
+    ReduceDynamics<fluid_dynamics::AcousticTimeStep> fluid_acoustic_time_step(water_block);
     //----------------------------------------------------------------------
     //	Define the configuration related particles dynamics.
     //----------------------------------------------------------------------
@@ -100,6 +100,11 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     calculate_volume_strain.exec();
     body_states_recording.addToWrite<Real>(water_block, "VolumeStrain");
+    body_states_recording.addToWrite<Vecd>(water_block, "Velocity");
+    body_states_recording.addToWrite<Real>(water_block, "Pressure");
+    body_states_recording.addToWrite<Real>(water_block, "Density");
+    body_states_recording.addToWrite<Vecd>(water_block, "Force");
+    body_states_recording.addToWrite<Vecd>(water_block, "ForcePrior");
     //----------------------------------------------------------------------
     //	Load restart file if necessary.
     //----------------------------------------------------------------------
@@ -120,6 +125,8 @@ int main(int ac, char *av[])
     int restart_output_interval = screen_output_interval * 10;
     Real end_time = 20.0;
     Real output_interval = 0.1;
+    Real relaxation_time = 0.0;
+    Real acoustic_dt = 0.0;
     //----------------------------------------------------------------------
     //	Statistics for CPU time
     //----------------------------------------------------------------------
@@ -142,7 +149,6 @@ int main(int ac, char *av[])
     std::cin.get();
     while (physical_time < end_time)
     {
-        std::cout << test_ccc << "\n";
         Real integration_time = 0.0;
         /** Integrate time (loop) until the next output time. */
         while (integration_time < output_interval)
@@ -154,8 +160,23 @@ int main(int ac, char *av[])
             interval_computing_time_step += TickCount::now() - time_instance;
 
             time_instance = TickCount::now();
-            Real relaxation_time = 0.0;
-            Real acoustic_dt = 0.0;
+            //Real relaxation_time = 0.0;
+            //Real acoustic_dt = 0.0;
+            //----------------------------------------------------------------------
+            //	MPH model.
+            //----------------------------------------------------------------------
+            acoustic_dt = fluid_acoustic_time_step.exec();
+            update_position.exec(acoustic_dt);
+            reset_force.exec();
+            calculate_volume_strain.exec();
+            calculate_velocity_divergence.exec();
+            calculate_physical_coefficients.exec();
+            calculate_pressure.exec();
+            update_velocity.exec(acoustic_dt);
+
+            std::cout << std::fixed << std::setprecision(9) << "N=" << number_of_iterations << "	Time = "
+            << physical_time << "	acoustic_dt = " << acoustic_dt << "\n";
+
             //while (relaxation_time < advection_dt)
             //{
                 /** inner loop for dual-time criteria time-stepping.  */
