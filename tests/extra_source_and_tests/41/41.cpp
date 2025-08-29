@@ -106,6 +106,8 @@ int main(int ac, char *av[])
     body_states_recording.addToWrite<Real>(water_block, "Density");
     body_states_recording.addToWrite<Vecd>(water_block, "Force");
     body_states_recording.addToWrite<Vecd>(water_block, "ForcePrior");
+    body_states_recording.addToWrite<Real>(water_block, "Mass");
+    body_states_recording.addToWrite<Real>(water_block, "VolumetricMeasure");
     //----------------------------------------------------------------------
     //	Load restart file if necessary.
     //----------------------------------------------------------------------
