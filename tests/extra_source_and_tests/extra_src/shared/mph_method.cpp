@@ -76,8 +76,6 @@ CalculateVolumeStrain<Inner<>>::CalculateVolumeStrain(BaseInnerRelation& inner_r
     Real W_ij_R0_2D = (1.0 / Swg_2D) * (1.0 / (h_p * h_p));
     number_density_Lattice_MPH_ = number_density_Lattice_SPH_ - W_ij_R0_2D;
     std::cout << "The particle number density is: " << number_density_Lattice_MPH_ << std::endl;
-    std::cout << "Press anykey to continue " << std::endl;
-    std::cin.get();
 }
 //=================================================================================================//
 void CalculateVolumeStrain<Inner<>>::interaction(size_t index_i, Real dt)
@@ -125,7 +123,7 @@ void CalculateVolumeStrain<Contact<>>::interaction(size_t index_i, Real dt)
 //=================================================================================================//
 UpdatePosition::UpdatePosition(SPHBody& sph_body)
     : LocalDynamics(sph_body),
-    vel_(particles_->getVariableDataByName<Vecd>("Velocity")),
+    vel_(particles_->registerStateVariableData<Vecd>("Velocity")),
     pos_(particles_->getVariableDataByName<Vecd>("Position")) {}
 //=================================================================================================//
 void UpdatePosition::update(size_t index_i, Real dt)
@@ -135,7 +133,7 @@ void UpdatePosition::update(size_t index_i, Real dt)
 //=================================================================================================//
 ResetForce::ResetForce(SPHBody& sph_body)
     : LocalDynamics(sph_body),
-    force_(particles_->getVariableDataByName<Vecd>("Force")),
+    force_(particles_->registerStateVariableData<Vecd>("Force")),
     force_prior_(particles_->getVariableDataByName<Vecd>("ForcePrior")) {}
 //=================================================================================================//
 void ResetForce::update(size_t index_i, Real dt)
@@ -216,7 +214,7 @@ CalculatePressure::CalculatePressure(SPHBody& sph_body): LocalDynamics(sph_body)
     bulk_modulus_(particles_->getVariableDataByName<Real>("BulkModulus")),
     bulk_viscosity_(particles_->getVariableDataByName<Real>("BulkViscosity")),
     volume_strain_(particles_->getVariableDataByName<Real>("VolumeStrain")),
-    p_(particles_->getVariableDataByName<Real>("Pressure")),
+    p_(particles_->registerStateVariableData<Real>("Pressure")),
     velocity_divergence_(particles_->getVariableDataByName<Real>("VelocityDivergence")) {}
 //=================================================================================================//
 void CalculatePressure::update(size_t index_i, Real dt)

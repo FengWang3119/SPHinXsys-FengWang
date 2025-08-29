@@ -99,7 +99,7 @@ int main(int ac, char *av[])
     //	Prepare the simulation for MPH.
     //----------------------------------------------------------------------
     calculate_volume_strain.exec();
-    body_states_recording.addToWrite<Vecd>(water_block, "VolumeStrain");
+    body_states_recording.addToWrite<Real>(water_block, "VolumeStrain");
     //----------------------------------------------------------------------
     //	Load restart file if necessary.
     //----------------------------------------------------------------------
