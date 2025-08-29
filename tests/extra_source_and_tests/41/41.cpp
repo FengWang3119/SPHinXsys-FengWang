@@ -11,7 +11,7 @@ int main(int ac, char *av[])
     //	Build up an SPHSystem and IO environment.
     //----------------------------------------------------------------------
     BoundingBox system_domain_bounds(Vec2d(-BW, -BW), Vec2d(DL + BW, DH + BW));
-    SPHSystem sph_system(system_domain_bounds, particle_spacing_ref);
+    SPHSystem sph_system(system_domain_bounds, particle_spacing_ref, 1);
     sph_system.handleCommandlineOptions(ac, av);
     //----------------------------------------------------------------------
     //	Creating bodies with corresponding materials and particles.
@@ -100,6 +100,7 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     calculate_volume_strain.exec();
     body_states_recording.addToWrite<Real>(water_block, "VolumeStrain");
+    body_states_recording.addToWrite<Real>(water_block, "VelocityDivergence");
     body_states_recording.addToWrite<Vecd>(water_block, "Velocity");
     body_states_recording.addToWrite<Real>(water_block, "Pressure");
     body_states_recording.addToWrite<Real>(water_block, "Density");
@@ -145,8 +146,8 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     //	Main loop starts here.
     //----------------------------------------------------------------------
-    std::cout << "Press any key to start";
-    std::cin.get();
+    //std::cout << "Press any key to start";
+    //std::cin.get();
     while (physical_time < end_time)
     {
         Real integration_time = 0.0;
@@ -166,16 +167,20 @@ int main(int ac, char *av[])
             //	MPH model.
             //----------------------------------------------------------------------
             acoustic_dt = fluid_acoustic_time_step.exec();
+            //acoustic_dt = 1.0e-8;
             update_position.exec(acoustic_dt);
             reset_force.exec();
             calculate_volume_strain.exec();
             calculate_velocity_divergence.exec();
             calculate_physical_coefficients.exec();
             calculate_pressure.exec();
+            calculate_pressure_gradient_force.exec();
             update_velocity.exec(acoustic_dt);
 
             std::cout << std::fixed << std::setprecision(9) << "N=" << number_of_iterations << "	Time = "
             << physical_time << "	acoustic_dt = " << acoustic_dt << "\n";
+
+            body_states_recording.writeToFile();
 
             //while (relaxation_time < advection_dt)
             //{
@@ -208,10 +213,10 @@ int main(int ac, char *av[])
 
             /** Update cell linked list and configuration. */
             time_instance = TickCount::now();
-            if (number_of_iterations % 100 == 0 && number_of_iterations != 1)
-            {
-                particle_sorting.exec();
-            }
+            //if (number_of_iterations % 100 == 0 && number_of_iterations != 1)
+            //{
+            //    particle_sorting.exec();
+            //}
             water_block.updateCellLinkedList();
             water_wall_complex.updateConfiguration();
             fluid_observer_contact.updateConfiguration();
