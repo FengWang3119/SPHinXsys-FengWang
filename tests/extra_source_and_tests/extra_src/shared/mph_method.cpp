@@ -159,7 +159,7 @@ void CalculateVelocityDivergence<Inner<>>::interaction(size_t index_i, Real dt)
             const Vecd& e_ij = inner_neighborhood.e_ij_[n];
             Real dW_ij = inner_neighborhood.dW_ij_[n];
             Real u_jump = (vel_[index_i] - vel_[index_j]).dot(e_ij);
-            vel_divergence += u_jump * dW_ij;
+            vel_divergence -= u_jump * dW_ij;
         }
     }
     velocity_divergence_[index_i] += vel_divergence;
@@ -183,7 +183,7 @@ void CalculateVelocityDivergence<Contact<>>::interaction(size_t index_i, Real dt
                 Real dW_ij = contact_neighborhood.dW_ij_[n];
                 Vecd vel_j_in_wall = - vel_[index_i];
                 Real u_jump = (vel_[index_i] - vel_j_in_wall).dot(e_ij);
-                vel_divergence += u_jump * dW_ij;
+                vel_divergence -= u_jump * dW_ij;
             }
         }
     }
