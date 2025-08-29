@@ -96,6 +96,11 @@ int main(int ac, char *av[])
     wall_boundary_normal_direction.exec();
     constant_gravity.exec();
     //----------------------------------------------------------------------
+    //	Prepare the simulation for MPH.
+    //----------------------------------------------------------------------
+    calculate_volume_strain.exec();
+    body_states_recording.addToWrite<Vecd>(water_block, "VolumeStrain");
+    //----------------------------------------------------------------------
     //	Load restart file if necessary.
     //----------------------------------------------------------------------
     Real &physical_time = *sph_system.getSystemVariableDataByName<Real>("PhysicalTime");
