@@ -24,7 +24,7 @@ Real c_f = 10.0 * U_ref;                 /**< Reference sound speed. */
 //	MPH Parameters.
 //----------------------------------------------------------------------
 Real bulk_modulus_ref = 1.0e+6;
-Real bulk_viscosity_ref = 2.0e+3;
+Real bulk_viscosity_ref = 0.5e+3;
 //----------------------------------------------------------------------
 //	Geometric shapes used in this case.
 //----------------------------------------------------------------------
