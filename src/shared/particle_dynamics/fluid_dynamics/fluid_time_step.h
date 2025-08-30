@@ -45,7 +45,7 @@ namespace fluid_dynamics
 class AcousticTimeStep : public LocalDynamicsReduce<ReduceMax>
 {
   public:
-    explicit AcousticTimeStep(SPHBody &sph_body, Real acousticCFL = 0.6);
+    explicit AcousticTimeStep(SPHBody &sph_body, Real acousticCFL = 0.25);
     virtual ~AcousticTimeStep() {};
     Real reduce(size_t index_i, Real dt = 0.0);
     virtual Real outputResult(Real reduced_value) override;
