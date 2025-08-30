@@ -168,8 +168,8 @@ int main(int ac, char *av[])
             //----------------------------------------------------------------------
             //	MPH model.
             //----------------------------------------------------------------------
-            acoustic_dt = fluid_acoustic_time_step.exec();
-            //acoustic_dt = 1.0e-8;
+            //acoustic_dt = fluid_acoustic_time_step.exec();
+            acoustic_dt = 1.0e-6;
             update_position.exec(acoustic_dt);
             reset_force.exec();
             calculate_volume_strain.exec();
