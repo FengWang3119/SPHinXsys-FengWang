@@ -127,7 +127,7 @@ int main(int ac, char *av[])
     int observation_sample_interval = screen_output_interval * 2;
     int restart_output_interval = screen_output_interval * 10;
     Real end_time = 3.0;
-    Real output_interval = 0.001;
+    Real output_interval = 0.01;
     Real relaxation_time = 0.0;
     Real acoustic_dt = 0.0;
     //----------------------------------------------------------------------
