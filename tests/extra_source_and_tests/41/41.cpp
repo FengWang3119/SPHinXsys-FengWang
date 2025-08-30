@@ -126,8 +126,8 @@ int main(int ac, char *av[])
     int screen_output_interval = 100;
     int observation_sample_interval = screen_output_interval * 2;
     int restart_output_interval = screen_output_interval * 10;
-    Real end_time = 20.0;
-    Real output_interval = 0.1;
+    Real end_time = 3.0;
+    Real output_interval = 0.001;
     Real relaxation_time = 0.0;
     Real acoustic_dt = 0.0;
     //----------------------------------------------------------------------
@@ -182,7 +182,7 @@ int main(int ac, char *av[])
             std::cout << std::fixed << std::setprecision(9) << "N=" << number_of_iterations << "	Time = "
             << physical_time << "	acoustic_dt = " << acoustic_dt << "\n";
 
-            body_states_recording.writeToFile();
+            //body_states_recording.writeToFile();
 
             //while (relaxation_time < advection_dt)
             //{

@@ -3,19 +3,21 @@
 using namespace SPH;
 
 //----------------------------------------------------------------------
-//	Basic geometry parameters and numerical setup.
+//	Basic geometry parameters and numerical setup,
+//	Dimension: m s kg
+//	Reproduce [2021 Kondo CPM]
 //----------------------------------------------------------------------
-Real DL = 5.366;                    /**< Water tank length. */
-Real DH = 5.366;                    /**< Water tank height. */
-Real LL = 2.0;                      /**< Water column length. */
-Real LH = 1.0;                      /**< Water column height. */
-Real particle_spacing_ref = 0.025;  /**< Initial reference particle spacing. */
+Real DL = 3.22;                    /**< Water tank length. */
+Real LL = 1.2;                      /**< Water column length. */
+Real LH = 0.6;                      /**< Water column height. */
+Real DH = 4.0 * LH;                    /**< Water tank height. */
+Real particle_spacing_ref = 0.02;  /**< Initial reference particle spacing. */
 Real BW = particle_spacing_ref * 4; /**< Thickness of tank wall. */
 //----------------------------------------------------------------------
 //	Material parameters.
 //----------------------------------------------------------------------
-Real rho0_f = 1.0;                       /**< Reference density of fluid. */
-Real gravity_g = 1.0;                    /**< Gravity. */
+Real rho0_f = 1000.0;                       /**< Reference density of fluid. */
+Real gravity_g = 9.8;                    /**< Gravity. */
 Real U_ref = 2.0 * sqrt(gravity_g * LH); /**< Characteristic velocity. */
 Real c_f = 10.0 * U_ref;                 /**< Reference sound speed. */
 //----------------------------------------------------------------------
