@@ -1,6 +1,6 @@
 #include "41.h"
 
-using namespace SPH;   // Namespace cite here.
+using namespace SPH; // Namespace cite here.
 
 //----------------------------------------------------------------------
 //	Main program starts here.
@@ -68,11 +68,11 @@ int main(int ac, char *av[])
     InteractionDynamics<fluid_dynamics::CalculatePressureGradientForceComplex> calculate_pressure_gradient_force(water_block_inner, water_wall_contact);
     SimpleDynamics<fluid_dynamics::UpdateVelocity> update_velocity(water_block);
 
-    //Dynamics1Level<fluid_dynamics::Integration1stHalfWithWallRiemann> fluid_pressure_relaxation(water_block_inner, water_wall_contact);
-    //Dynamics1Level<fluid_dynamics::Integration2ndHalfWithWallRiemann> fluid_density_relaxation(water_block_inner, water_wall_contact);
-    //InteractionWithUpdate<fluid_dynamics::DensitySummationComplexFreeSurface> fluid_density_by_summation(water_block_inner, water_wall_contact);
+    // Dynamics1Level<fluid_dynamics::Integration1stHalfWithWallRiemann> fluid_pressure_relaxation(water_block_inner, water_wall_contact);
+    // Dynamics1Level<fluid_dynamics::Integration2ndHalfWithWallRiemann> fluid_density_relaxation(water_block_inner, water_wall_contact);
+    // InteractionWithUpdate<fluid_dynamics::DensitySummationComplexFreeSurface> fluid_density_by_summation(water_block_inner, water_wall_contact);
 
-    //ReduceDynamics<fluid_dynamics::AdvectionTimeStep> fluid_advection_time_step(water_block, U_ref);
+    // ReduceDynamics<fluid_dynamics::AdvectionTimeStep> fluid_advection_time_step(water_block, U_ref);
     ReduceDynamics<fluid_dynamics::AcousticTimeStep> fluid_acoustic_time_step(water_block);
     //----------------------------------------------------------------------
     //	Define the configuration related particles dynamics.
@@ -98,7 +98,6 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     //	Prepare the simulation for MPH.
     //----------------------------------------------------------------------
-    calculate_volume_strain.exec();
     body_states_recording.addToWrite<Real>(water_block, "VolumeStrain");
     body_states_recording.addToWrite<Real>(water_block, "VelocityDivergence");
     body_states_recording.addToWrite<Vecd>(water_block, "Velocity");
@@ -108,6 +107,13 @@ int main(int ac, char *av[])
     body_states_recording.addToWrite<Vecd>(water_block, "ForcePrior");
     body_states_recording.addToWrite<Real>(water_block, "Mass");
     body_states_recording.addToWrite<Real>(water_block, "VolumetricMeasure");
+    body_states_recording.addToWrite<Real>(water_block, "WeightSummation");
+
+    calculate_volume_strain.exec();
+    body_states_recording.writeToFile();
+    // std::cout << "Press any key to start";
+    // std::cin.get();
+
     //----------------------------------------------------------------------
     //	Load restart file if necessary.
     //----------------------------------------------------------------------
@@ -148,8 +154,8 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     //	Main loop starts here.
     //----------------------------------------------------------------------
-    //std::cout << "Press any key to start";
-    //std::cin.get();
+    // std::cout << "Press any key to start";
+    // std::cin.get();
     while (physical_time < end_time)
     {
         Real integration_time = 0.0;
@@ -158,17 +164,17 @@ int main(int ac, char *av[])
         {
             /** outer loop for dual-time criteria time-stepping. */
             time_instance = TickCount::now();
-            //Real advection_dt = fluid_advection_time_step.exec();
-            //fluid_density_by_summation.exec();
+            // Real advection_dt = fluid_advection_time_step.exec();
+            // fluid_density_by_summation.exec();
             interval_computing_time_step += TickCount::now() - time_instance;
 
             time_instance = TickCount::now();
-            //Real relaxation_time = 0.0;
-            //Real acoustic_dt = 0.0;
+            // Real relaxation_time = 0.0;
+            // Real acoustic_dt = 0.0;
             //----------------------------------------------------------------------
             //	MPH model.
             //----------------------------------------------------------------------
-            //acoustic_dt = fluid_acoustic_time_step.exec();
+            // acoustic_dt = fluid_acoustic_time_step.exec();
             acoustic_dt = 4.0e-4;
             update_position.exec(acoustic_dt);
             reset_force.exec();
@@ -180,28 +186,28 @@ int main(int ac, char *av[])
             update_velocity.exec(acoustic_dt);
 
             std::cout << std::fixed << std::setprecision(9) << "N=" << number_of_iterations << "	Time = "
-            << physical_time << "	acoustic_dt = " << acoustic_dt << "\n";
+                      << physical_time << "	acoustic_dt = " << acoustic_dt << "\n";
 
-            //body_states_recording.writeToFile();
+            // body_states_recording.writeToFile();
 
-            //while (relaxation_time < advection_dt)
+            // while (relaxation_time < advection_dt)
             //{
-                /** inner loop for dual-time criteria time-stepping.  */
-                //acoustic_dt = fluid_acoustic_time_step.exec();
-                //fluid_pressure_relaxation.exec(acoustic_dt);
-                //fluid_density_relaxation.exec(acoustic_dt);
-                relaxation_time += acoustic_dt;
-                integration_time += acoustic_dt;
-                physical_time += acoustic_dt;
+            /** inner loop for dual-time criteria time-stepping.  */
+            // acoustic_dt = fluid_acoustic_time_step.exec();
+            // fluid_pressure_relaxation.exec(acoustic_dt);
+            // fluid_density_relaxation.exec(acoustic_dt);
+            relaxation_time += acoustic_dt;
+            integration_time += acoustic_dt;
+            physical_time += acoustic_dt;
             //}
             interval_computing_fluid_pressure_relaxation += TickCount::now() - time_instance;
 
             /** screen output, write body observables and restart files  */
             if (number_of_iterations % screen_output_interval == 0)
             {
-                //std::cout << std::fixed << std::setprecision(9) << "N=" << number_of_iterations << "	Time = "
-                //          << physical_time
-                //          << "	advection_dt = " << advection_dt << "	acoustic_dt = " << acoustic_dt << "\n";
+                // std::cout << std::fixed << std::setprecision(9) << "N=" << number_of_iterations << "	Time = "
+                //           << physical_time
+                //           << "	advection_dt = " << advection_dt << "	acoustic_dt = " << acoustic_dt << "\n";
 
                 if (number_of_iterations % observation_sample_interval == 0 && number_of_iterations != sph_system.RestartStep())
                 {
@@ -215,10 +221,10 @@ int main(int ac, char *av[])
 
             /** Update cell linked list and configuration. */
             time_instance = TickCount::now();
-            //if (number_of_iterations % 100 == 0 && number_of_iterations != 1)
+            // if (number_of_iterations % 100 == 0 && number_of_iterations != 1)
             //{
-            //    particle_sorting.exec();
-            //}
+            //     particle_sorting.exec();
+            // }
             water_block.updateCellLinkedList();
             water_wall_complex.updateConfiguration();
             fluid_observer_contact.updateConfiguration();

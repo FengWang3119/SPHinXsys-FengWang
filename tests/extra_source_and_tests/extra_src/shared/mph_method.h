@@ -45,6 +45,8 @@ public:
 
 protected:
     Real *volume_strain_;
+    //** For test *
+    Real *sum_weight_;
 };
 
 template <>
