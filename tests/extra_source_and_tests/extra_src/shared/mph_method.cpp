@@ -221,20 +221,20 @@ void CalculateVelocityDivergence<Contact<>>::interaction(size_t index_i, Real dt
         Neighborhood &contact_neighborhood = (*DataDelegateContact::contact_configuration_[k])[index_i];
         for (size_t n = 0; n != contact_neighborhood.current_size_; ++n)
         {
-            size_t index_j = contact_neighborhood.j_[n];
-            if (index_i != index_j)
-            {
-                const Vecd &e_ij = contact_neighborhood.e_ij_[n];
-                Real dW_ij = contact_neighborhood.dW_ij_[n];
+            // size_t index_j = contact_neighborhood.j_[n];
+            //  if (index_i != index_j)
+            //  {
+            const Vecd &e_ij = contact_neighborhood.e_ij_[n];
+            Real dW_ij = contact_neighborhood.dW_ij_[n];
 
-                Vecd vel_j_in_wall = -vel_[index_i];
-                Real u_jump = (vel_[index_i] - vel_j_in_wall).dot(e_ij);
+            Vecd vel_j_in_wall = -vel_[index_i];
+            Real u_jump = (vel_[index_i] - vel_j_in_wall).dot(e_ij);
 
-                // Vecd vel_j_in_wall = vel_[index_i];
-                // Real u_jump = (vel_[index_i] - vel_j_in_wall).dot(e_ij);
+            // Vecd vel_j_in_wall = vel_[index_i];
+            // Real u_jump = (vel_[index_i] - vel_j_in_wall).dot(e_ij);
 
-                vel_divergence -= u_jump * dW_ij;
-            }
+            vel_divergence -= u_jump * dW_ij;
+            //}
         }
     }
     velocity_divergence_[index_i] += vel_divergence;
@@ -303,14 +303,14 @@ void CalculatePressureGradientForce<Contact<>>::interaction(size_t index_i, Real
         Neighborhood &contact_neighborhood = (*DataDelegateContact::contact_configuration_[k])[index_i];
         for (size_t n = 0; n != contact_neighborhood.current_size_; ++n)
         {
-            size_t index_j = contact_neighborhood.j_[n];
-            if (index_i != index_j)
-            {
-                const Vecd &e_ij = contact_neighborhood.e_ij_[n];
-                Real dW_ij = contact_neighborhood.dW_ij_[n];
-                Real p_j_in_wall = p_[index_i];
-                force -= (p_[index_i] + p_j_in_wall) * dW_ij * e_ij;
-            }
+            // size_t index_j = contact_neighborhood.j_[n];
+            //  if (index_i != index_j)
+            //  {
+            const Vecd &e_ij = contact_neighborhood.e_ij_[n];
+            Real dW_ij = contact_neighborhood.dW_ij_[n];
+            Real p_j_in_wall = p_[index_i];
+            force -= (p_[index_i] + p_j_in_wall) * dW_ij * e_ij;
+            //}
         }
     }
     force_[index_i] += force * Vol_[index_i];
