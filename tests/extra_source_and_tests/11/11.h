@@ -13,7 +13,7 @@ using namespace SPH;
 //----------------------------------------------------------------------
 Real DH = 2.0;  /**< Channel height. */
 Real DL = 30.0; /**< Channel length. */
-Real num_fluid_cross_section = 40.0;
+Real num_fluid_cross_section = 20.0;
 
 //----------------------------------------------------------------------
 //	Unique parameters for turbulence.
@@ -169,8 +169,8 @@ struct InflowVelocity
     {
         Vecd target_velocity = velocity;
         Real u_ave = current_time < t_ref_ ? 0.5 * u_ref_ * (1.0 - cos(Pi * current_time / t_ref_)) : u_ref_;
-        //target_velocity[0] = 1.5 * u_ave * SMAX(0.0, 1.0 - position[1] * position[1] / halfsize_[1] / halfsize_[1]);
-        //target_velocity[0] = 1.5 * u_ave * (1.0 - position[1] * position[1] / half_channel_height / half_channel_height);
+        // target_velocity[0] = 1.5 * u_ave * SMAX(0.0, 1.0 - position[1] * position[1] / halfsize_[1] / halfsize_[1]);
+        // target_velocity[0] = 1.5 * u_ave * (1.0 - position[1] * position[1] / half_channel_height / half_channel_height);
         target_velocity[0] = u_ave;
         if (1)
         {
@@ -208,7 +208,7 @@ struct InflowVelocity
 
             //** Impose inlet velocity gradually */
             target_velocity[0] = current_time < t_ref_ ? 0.5 * polynomial_value * (1.0 - cos(Pi * current_time / t_ref_)) : polynomial_value;
-            //target_velocity[0] = polynomial_value;
+            // target_velocity[0] = polynomial_value;
         }
 
         if (position[1] > half_channel_height)
