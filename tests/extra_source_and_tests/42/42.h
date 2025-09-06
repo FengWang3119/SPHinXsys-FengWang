@@ -11,6 +11,7 @@ using namespace SPH;
 //----------------------------------------------------------------------
 //	Basic geometry parameters and numerical setup.
 //----------------------------------------------------------------------
+Real plate_length = 100.0;
 Real DH = 2.0;  /**< Channel height. */
 Real DL = 30.0; /**< Channel length. */
 Real num_fluid_cross_section = 20.0;
@@ -36,9 +37,22 @@ Real y_p_constant = 0.05;
 Real resolution_ref = (DH - 2.0 * y_p_constant) / (num_fluid_cross_section - 1.0); /**< Initial reference particle spacing. */
 Real offset_distance = y_p_constant - resolution_ref / 2.0;                        //** Basically offset distance is large than or equal to 0 *
 
+Real plate_thickness = resolution_ref * 4;
 Real BW = resolution_ref * 4; /**< Reference size of the emitter. */
 Real DL_sponge = resolution_ref * 20;
 Real half_channel_height = DH / 2.0;
+//----------------------------------------------------------------------
+//	Geometry settings.
+//----------------------------------------------------------------------
+Vec2d point_O(0.0, 0.0);
+Vec2d point_A = point_O + Vec2d(0.0, 0.0625 * plate_length + plate_thickness);
+Vec2d point_B = point_A + Vec2d(1.5 * plate_length, 0.0);
+Vec2d point_C = point_B - Vec2d(0.0, 0.0625 * plate_length + plate_thickness);
+
+Vec2d point_D(0.25 * plate_length, 0.03125 * plate_length);
+Vec2d point_E = point_D + Vec2d(0.0, plate_thickness);
+Vec2d point_F = point_E + Vec2d(plate_length, 0.0);
+Vec2d point_G = point_F - Vec2d(0.0, plate_thickness);
 //----------------------------------------------------------------------
 //	Domain bounds of the system.
 //----------------------------------------------------------------------
