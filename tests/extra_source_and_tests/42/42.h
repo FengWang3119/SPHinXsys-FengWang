@@ -12,18 +12,20 @@ using namespace SPH;
 //	Basic geometry parameters and numerical setup.
 //----------------------------------------------------------------------
 Real plate_length = 100.0;
-Real DH = 2.0;  /**< Channel height. */
-Real DL = 30.0; /**< Channel length. */
-Real num_fluid_cross_section = 20.0;
+Real num_fluid_cross_plate_length = 800.0;
+Real resolution_ref = plate_length / num_fluid_cross_plate_length; /**< Initial reference particle spacing. */
 
+Real y_p_constant = resolution_ref / 2.0; //** For the first try *
+// Real y_p_constant = 0.05;
+Real offset_distance = y_p_constant - resolution_ref / 2.0; //** Basically offset distance is large than or equal to 0 *
 //----------------------------------------------------------------------
-//	Unique parameters for turbulence.
+//	Unique control parameters for turbulence.
 //----------------------------------------------------------------------
 int inflow_velocity_type = 0;           // ** 0 uniform, 1 parabolic
 int is_inflow_velocity_from_python = 0; // ** Overwrite the inflow_velocity_type by input from python
 
 Real characteristic_length = plate_length; /**<It needs characteristic Length to calculate turbulent length and the inflow turbulent epsilon>*/
-//** For K and Epsilon, type of the turbulent inlet, 0 is freestream, 1 is from interpolation from PY21 *
+//** For K and Epsilon, type of the turbulent inlet, 0 is freestream, 1 is from interpolation from PY21, 2 is determined from inital values *
 int type_turbulent_inlet = 0;
 Real relaxation_rate_turbulent_inlet = 0.8;
 //** Tag for AMRD *
@@ -34,11 +36,6 @@ Real weight_vel_grad_sub_nearwall = 0.1;
 //** Tag for Source Term Linearisation *
 bool is_source_term_linearisation = false;
 
-Real y_p_constant = DH / 2.0 / num_fluid_cross_section; //** For the first try *
-// Real y_p_constant = 0.05;
-Real resolution_ref = (DH - 2.0 * y_p_constant) / (num_fluid_cross_section - 1.0); /**< Initial reference particle spacing. */
-Real offset_distance = y_p_constant - resolution_ref / 2.0;                        //** Basically offset distance is large than or equal to 0 *
-
 //----------------------------------------------------------------------
 //	Geometry settings.
 //----------------------------------------------------------------------
@@ -46,20 +43,27 @@ Real plate_thickness = resolution_ref * 4;
 
 Real BW = resolution_ref * 4; /**< Reference size of the emitter. */
 Real DL_sponge = resolution_ref * 20;
-Real half_channel_height = DH / 2.0;
+
+Real DH_half_flow_region = 0.03125 * plate_length;
+
+Real DL_flow_region_temp = 1.5 * plate_length;
+Real DL_flow_region = round(DL_flow_region_temp * 1.0e8) / 1.0e8; //* This size will affect define levelset, larger than 100 will cause failure
+
+Real DL_upstream_distance = 0.25 * plate_length;
 
 Vec2d point_O(0.0, 0.0);
-Vec2d point_A = point_O + Vec2d(0.0, 0.0625 * plate_length + plate_thickness);
-Vec2d point_B = point_A + Vec2d(1.5 * plate_length, 0.0);
-Vec2d point_C = point_B - Vec2d(0.0, 0.0625 * plate_length + plate_thickness);
+Vec2d point_A = point_O + Vec2d(0.0, 2.0 * DH_half_flow_region + plate_thickness);
+Vec2d point_B = point_A + Vec2d(DL_flow_region, 0.0);
+Vec2d point_C = point_B - Vec2d(0.0, 2.0 * DH_half_flow_region + plate_thickness);
 
-Vec2d point_D(0.25 * plate_length, 0.03125 * plate_length);
+Vec2d point_D(DL_upstream_distance, DH_half_flow_region);
 Vec2d point_E = point_D + Vec2d(0.0, plate_thickness);
 Vec2d point_F = point_E + Vec2d(plate_length, 0.0);
 Vec2d point_G = point_F - Vec2d(0.0, plate_thickness);
 
 Real DH_total = point_A[yAxis] - point_O[yAxis];
 Real DL_total = point_C[xAxis] - point_O[xAxis];
+Real half_DH_total = DH_total / 2.0;
 //----------------------------------------------------------------------
 //	Domain bounds of the system.
 //----------------------------------------------------------------------
@@ -79,11 +83,9 @@ Real Re = 4.2e6;
 
 Real Outlet_pressure = 0.0;
 
-Real mu_f = rho0_f * U_f * DH / Re;
+Real mu_f = rho0_f * U_f * plate_length / Re;
 
-Real Re_calculated = U_f * DH * rho0_f / mu_f;
-
-Real DH_C = DH - 2.0 * offset_distance;
+Real Re_calculated = U_f * plate_length * rho0_f / mu_f;
 
 //** Initial values for K, Epsilon and Mu_t *
 Real initial_k = 0.013 * U_inlet * U_inlet;
@@ -101,9 +103,9 @@ Vec2d right_buffer_translation = Vec2d(DL_total - 2.5 * resolution_ref, 0.5 * DH
 //----------------------------------------------------------------------
 // Observation with offset model.
 //----------------------------------------------------------------------
-Real x_observe_start = 0.99 * DL;
-int num_observer_points = std::round(DH_C / resolution_ref); //**Every particle is regarded as a cell monitor*
-Real observe_spacing = DH_C / num_observer_points;
+Real x_observe_start = 0.99 * DL_total;
+int num_observer_points = std::round(DH_total / resolution_ref); //**Every particle is regarded as a cell monitor*
+Real observe_spacing = DH_total / num_observer_points;
 
 // By kernel weight.
 StdVec<Vecd> observation_location;
@@ -112,7 +114,7 @@ Vecd unit_direction_observe = Vecd(0.0, 1.0);
 Real observer_offset_distance = 2.0 * resolution_ref;
 
 //** For regression test *
-StdVec<Vecd> observer_location_center_point = {Vecd(0.5 * DL, 0.5 * DH)};
+StdVec<Vecd> observer_location_center_point = {Vecd(0.5 * DL_total, 0.5 * DH_total)};
 //----------------------------------------------------------------------
 //	Cases-dependent geometries
 //----------------------------------------------------------------------
@@ -127,29 +129,6 @@ std::vector<Vecd> createWaterBlockShape() //* Outflow case, no need to offset wa
     return water_block_shape;
 }
 
-// std::vector<Vecd> createOuterWallShape()
-// {
-//     std::vector<Vecd> water_block_shape;
-//     water_block_shape.push_back(Vecd(-DL_sponge - BW, 0.0));
-//     water_block_shape.push_back(Vecd(-DL_sponge - BW, DH));
-//     water_block_shape.push_back(Vecd(DL + BW, DH));
-//     water_block_shape.push_back(Vecd(DL + BW, 0.0));
-//     water_block_shape.push_back(Vecd(-DL_sponge - BW, 0.0));
-
-//     return water_block_shape;
-// }
-// std::vector<Vecd> createInnerWallShape()
-// {
-//     std::vector<Vecd> water_block_shape;
-//     water_block_shape.push_back(Vecd(-DL_sponge - 2.0 * BW, 0.0));
-//     water_block_shape.push_back(Vecd(-DL_sponge - 2.0 * BW, DH));
-//     water_block_shape.push_back(Vecd(DL + 2.0 * BW, DH));
-//     water_block_shape.push_back(Vecd(DL + 2.0 * BW, 0.0));
-//     water_block_shape.push_back(Vecd(-DL_sponge - 2.0 * BW, 0.0));
-
-//     return water_block_shape;
-// }
-
 std::vector<Vecd> createFlatPlate()
 {
     std::vector<Vecd> block_shape;
@@ -162,17 +141,17 @@ std::vector<Vecd> createFlatPlate()
     return block_shape;
 }
 
-std::vector<Vecd> createOffsetFlatPlate()
-{
-    std::vector<Vecd> block_shape;
-    block_shape.push_back(point_D + Vec2d(-offset_distance, -offset_distance));
-    block_shape.push_back(point_E + Vec2d(-offset_distance, offset_distance));
-    block_shape.push_back(point_F + Vec2d(offset_distance, offset_distance));
-    block_shape.push_back(point_G + Vec2d(offset_distance, -offset_distance));
-    block_shape.push_back(point_D + Vec2d(-offset_distance, -offset_distance));
+// std::vector<Vecd> createOffsetFlatPlate()
+// {
+//     std::vector<Vecd> block_shape;
+//     block_shape.push_back(point_D + Vec2d(-offset_distance, -offset_distance));
+//     block_shape.push_back(point_E + Vec2d(-offset_distance, offset_distance));
+//     block_shape.push_back(point_F + Vec2d(offset_distance, offset_distance));
+//     block_shape.push_back(point_G + Vec2d(offset_distance, -offset_distance));
+//     block_shape.push_back(point_D + Vec2d(-offset_distance, -offset_distance));
 
-    return block_shape;
-}
+//     return block_shape;
+// }
 
 /**
  * @brief 	Wall boundary body definition.
@@ -194,8 +173,8 @@ class WaterBlock : public ComplexShape
     {
         MultiPolygon computational_domain(createWaterBlockShape());
         add<MultiPolygonShape>(computational_domain, "ComputationalDomain");
-
-        computational_domain.addAPolygon(createOffsetFlatPlate(), ShapeBooleanOps::sub);
+        MultiPolygon solid_space(createFlatPlate());
+        subtract<ExtrudeShape<MultiPolygonShape>>(offset_distance, solid_space, "SubSolid");
     }
 };
 //----------------------------------------------------------------------
@@ -223,7 +202,7 @@ struct InflowVelocity
             target_velocity[0] = u_ave;
             break;
         case 1:
-            target_velocity[0] = 1.5 * u_ave * (1.0 - position[1] * position[1] / half_channel_height / half_channel_height);
+            target_velocity[0] = 1.5 * u_ave * (1.0 - position[1] * position[1] / half_DH_total / half_DH_total);
             break;
         }
 
@@ -231,7 +210,7 @@ struct InflowVelocity
         {
             //** Impose fully-developed velocity from PYTHON result */
             //** Calculate the distance to wall, Y. position[1] is the distance to the centerline */
-            Real Y = half_channel_height - std::abs(position[1]);
+            Real Y = half_DH_total - std::abs(position[1]);
             int polynomial_order = 8;
             int num_coefficient = polynomial_order + 1;
             //** Coefficient of the polynomial, 8th-order, from py21 dp=0.024 */
@@ -251,7 +230,7 @@ struct InflowVelocity
                 polynomial_value += coeff[i] * std::pow(Y, i);
             }
 
-            if (Y > half_channel_height || Y < 0.0)
+            if (Y > half_DH_total || Y < 0.0)
             {
                 std::cout << "position[1]=" << position[1] << std::endl;
                 std::cout << "Y=" << Y << std::endl;
@@ -266,7 +245,7 @@ struct InflowVelocity
             // target_velocity[0] = polynomial_value;
         }
 
-        if (position[1] > half_channel_height)
+        if (position[1] > half_DH_total)
         {
             std::cout << "Particles out of domain, wrong inlet velocity." << std::endl;
             std::cout << position[1] << std::endl;

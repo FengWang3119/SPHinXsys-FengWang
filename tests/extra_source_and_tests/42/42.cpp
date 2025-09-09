@@ -20,7 +20,8 @@ int main(int ac, char *av[])
      */
 
     FluidBody water_block(sph_system, makeShared<WaterBlock>("WaterBody"));
-    water_block.defineBodyLevelSetShape();
+    // std::cout << "DL_total= " << DL_total << std::endl;
+    //  water_block.defineBodyLevelSetShape();
     water_block.defineClosure<WeaklyCompressibleFluid, Viscosity>(ConstructArgs(rho0_f, c_f), mu_f);
     ParticleBuffer<ReserveSizeFactor> inlet_particle_buffer(0.5);
     (!sph_system.RunParticleRelaxation() && sph_system.ReloadParticles())
@@ -292,6 +293,8 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------------------------------------
     //	Main loop starts here.
     //----------------------------------------------------------------------------------------------------
+    std::cout << "Press any key to start";
+    std::cin.get();
     int num_output_file = 0;
     while (physical_time < end_time)
     {
