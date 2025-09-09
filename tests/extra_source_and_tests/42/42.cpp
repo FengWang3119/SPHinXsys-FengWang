@@ -87,47 +87,47 @@ int main(int ac, char *av[])
         //----------------------------------------------------------------------
         /** Random reset the insert body particle position. */
         SimpleDynamics<RandomizeParticlePosition> random_inserted_body_particles(wall_boundary);
-        SimpleDynamics<RandomizeParticlePosition> random_inserted_body_particles_water(water_block);
+        // SimpleDynamics<RandomizeParticlePosition> random_inserted_body_particles_water(water_block);
         /** Write the body state to Vtp file. */
         BodyStatesRecordingToVtp write_inserted_body_to_vtp(wall_boundary);
-        BodyStatesRecordingToVtp write_inserted_body_to_vtp_water(water_block);
+        // BodyStatesRecordingToVtp write_inserted_body_to_vtp_water(water_block);
         /** Write the particle reload files. */
         ReloadParticleIO write_particle_reload_files(wall_boundary);
-        ReloadParticleIO write_particle_reload_files_water(water_block);
+        // ReloadParticleIO write_particle_reload_files_water(water_block);
         /** A  Physics relaxation step. */
         RelaxationStepLevelSetCorrectionInner relaxation_step_inner(wall_boundary_inner);
-        RelaxationStepLevelSetCorrectionInner relaxation_step_inner_water(water_block_inner);
+        // RelaxationStepLevelSetCorrectionInner relaxation_step_inner_water(water_block_inner);
         //----------------------------------------------------------------------
         //	Particle relaxation starts here.
         //----------------------------------------------------------------------
         random_inserted_body_particles.exec(0.25);
-        random_inserted_body_particles_water.exec(0.25);
+        // random_inserted_body_particles_water.exec(0.25);
 
         relaxation_step_inner.SurfaceBounding().exec();
-        relaxation_step_inner_water.SurfaceBounding().exec();
+        // relaxation_step_inner_water.SurfaceBounding().exec();
 
         write_inserted_body_to_vtp.writeToFile(0);
-        write_inserted_body_to_vtp_water.writeToFile(0);
+        // write_inserted_body_to_vtp_water.writeToFile(0);
 
         int ite_p = 0;
         while (ite_p < 1000)
         {
             relaxation_step_inner.exec();
-            relaxation_step_inner_water.exec();
+            // relaxation_step_inner_water.exec();
             ite_p += 1;
             if (ite_p % 200 == 0)
             {
                 std::cout << std::fixed << std::setprecision(9) << "Relaxation steps for the inserted body N = " << ite_p << "\n";
                 write_inserted_body_to_vtp.writeToFile(ite_p);
-                write_inserted_body_to_vtp_water.writeToFile(ite_p);
+                // write_inserted_body_to_vtp_water.writeToFile(ite_p);
             }
         }
         std::cout << "The physics relaxation process of the wall_boundary finish !" << std::endl;
-        std::cout << "The physics relaxation process of the water_block finish !" << std::endl;
+        // std::cout << "The physics relaxation process of the water_block finish !" << std::endl;
 
         /** Output results. */
         write_particle_reload_files.writeToFile(0);
-        write_particle_reload_files_water.writeToFile(0);
+        // write_particle_reload_files_water.writeToFile(0);
         return 0;
     }
 
