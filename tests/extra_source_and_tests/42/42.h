@@ -41,8 +41,8 @@ bool is_source_term_linearisation = false;
 //----------------------------------------------------------------------
 Real plate_thickness = resolution_ref * 4;
 
-Real BW = resolution_ref * 4; /**< Reference size of the emitter. */
-Real DL_sponge = resolution_ref * 20;
+Real BW = resolution_ref * 4;
+Real DL_sponge = resolution_ref * 5.0; //* The latest Velocity inlet, 5 layers are OK
 
 Real DH_half_flow_region = 0.03125 * plate_length;
 
@@ -67,7 +67,7 @@ Real half_DH_total = DH_total / 2.0;
 //----------------------------------------------------------------------
 //	Domain bounds of the system.
 //----------------------------------------------------------------------
-Vec2d point_left_down = point_O - 2.0 * Vec2d(BW, BW);
+Vec2d point_left_down = point_O - 2.0 * Vec2d(BW, BW) - Vec2d(DL_sponge, 0.0);
 Vec2d point_right_up = point_B + 2.0 * Vec2d(BW, BW);
 BoundingBox system_domain_bounds(point_left_down, point_right_up);
 
@@ -95,11 +95,11 @@ StdVec<Real> initial_turbu_values = {initial_k, initial_epsilon, initial_mut};
 //----------------------------------------------------------------------
 //	The emitter block with offset model.
 //----------------------------------------------------------------------
-Vec2d left_buffer_halfsize = Vec2d(2.5 * resolution_ref, 0.5 * DH_total);
+Vec2d left_buffer_halfsize = Vec2d(0.5 * DL_sponge, 0.5 * DH_total);
 Vec2d left_buffer_translation = left_buffer_halfsize + Vec2d(-DL_sponge, 0.0);
 
-Vec2d right_buffer_halfsize = Vec2d(2.5 * resolution_ref, 0.5 * DH_total);
-Vec2d right_buffer_translation = Vec2d(DL_total - 2.5 * resolution_ref, 0.5 * DH_total);
+Vec2d right_buffer_halfsize = Vec2d(0.5 * DL_sponge, 0.5 * DH_total);
+Vec2d right_buffer_translation = Vec2d(DL_total - 0.5 * DL_sponge, 0.5 * DH_total);
 //----------------------------------------------------------------------
 // Observation with offset model.
 //----------------------------------------------------------------------
