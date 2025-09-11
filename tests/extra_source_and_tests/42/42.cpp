@@ -217,7 +217,10 @@ int main(int ac, char *av[])
     SimpleDynamics<fluid_dynamics::PressureConditionCorrection<RightOutflowPressure>> right_outflow_pressure_condition(right_emitter);
     //----------------------------------------------------------------------
 
-    InteractionWithUpdate<fluid_dynamics::DensitySummationPressureComplex> update_fluid_density_pressure(water_block_inner, water_wall_contact);
+    InteractionWithUpdate<fluid_dynamics::DensitySummationFreeStreamComplex> update_fluid_density_summation(water_block_inner, water_wall_contact);
+
+    SimpleDynamics<fluid_dynamics::FreeStreamVelocityCorrection<FreeStreamVelocity>> velocity_boundary_condition_constraint(water_block);
+    pressure_relaxation.post_processes_.push_back(&velocity_boundary_condition_constraint);
 
     /** Choose one, ordinary or turbulent. Time step size without considering sound wave speed. */
     ReduceDynamics<fluid_dynamics::TurbulentAdvectionTimeStepSize> get_turbulent_fluid_advection_time_step_size(water_block, U_f);
@@ -280,7 +283,7 @@ int main(int ac, char *av[])
     int screen_output_interval = 100;
     int observation_sample_interval = screen_output_interval * 2;
     Real end_time = 200.0;               /**< End time. */
-    Real Output_Time = end_time / 200.0; /**< Time stamps for output of body states. */
+    Real Output_Time = end_time / 100.0; /**< Time stamps for output of body states. */
     Real dt = 0.0;                       /**< Default acoustic time step sizes. */
     //----------------------------------------------------------------------
     //	Statistics for CPU time
@@ -295,8 +298,8 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------------------------------------
     //	Main loop starts here.
     //----------------------------------------------------------------------------------------------------
-    std::cout << "Press any key to start";
-    std::cin.get();
+    // std::cout << "Press any key to start";
+    // std::cin.get();
     int num_output_file = 0;
     while (physical_time < end_time)
     {
@@ -311,8 +314,7 @@ int main(int ac, char *av[])
 
             // inlet_outlet_surface_particle_indicator.exec();
 
-            // update_density_by_summation.exec();
-            update_fluid_density_pressure.exec();
+            update_fluid_density_summation.exec();
 
             corrected_configuration_fluid.exec();
             corrected_configuration_fluid_only_inner.exec();

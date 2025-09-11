@@ -98,7 +98,7 @@ StdVec<Real> initial_turbu_values = {initial_k, initial_epsilon, initial_mut};
 Vec2d left_buffer_halfsize = Vec2d(0.5 * DL_sponge, 0.5 * DH_total);
 Vec2d left_buffer_translation = left_buffer_halfsize + Vec2d(-DL_sponge, 0.0);
 
-Vec2d right_buffer_halfsize = Vec2d(0.5 * DL_sponge, 0.5 * DH_total);
+Vec2d right_buffer_halfsize = Vec2d(0.5 * DL_sponge, 0.75 * DH_total); //* free stream case, disposer should be larger
 Vec2d right_buffer_translation = Vec2d(DL_total - 0.5 * DL_sponge, 0.5 * DH_total);
 //----------------------------------------------------------------------
 // Observation with offset model.
@@ -276,5 +276,24 @@ struct LeftInflowPressure
     Real operator()(Real p, Real current_time)
     {
         return p;
+    }
+};
+
+//----------------------------------------------------------------------
+//	Free-stream velocity
+//----------------------------------------------------------------------
+struct FreeStreamVelocity
+{
+    Real u_ref_, t_ref_;
+
+    template <class BoundaryConditionType>
+    FreeStreamVelocity(BoundaryConditionType &boundary_condition)
+        : u_ref_(U_f), t_ref_(2.0) {}
+
+    Vecd operator()(Vecd &position, Vecd &velocity, Real current_time)
+    {
+        Vecd target_velocity = Vecd::Zero();
+        target_velocity[0] = current_time < t_ref_ ? 0.5 * u_ref_ * (1.0 - cos(Pi * current_time / t_ref_)) : u_ref_;
+        return target_velocity;
     }
 };
