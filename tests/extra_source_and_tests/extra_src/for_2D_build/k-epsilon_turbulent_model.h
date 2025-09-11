@@ -22,8 +22,8 @@
  * ------------------------------------------------------------------------*/
 /**
  * @file 	k-epsilon_turbulent_model.h
- * @brief 	
- * @details     
+ * @brief
+ * @details
  * @author Xiangyu Hu
  */
 
@@ -156,9 +156,9 @@ class BaseTurbulentModel<Base, DataDelegationType>
 };
 //=================================================================================================//
 /**
-	 * @class K_TurbulentModelInner
-	 * @brief  K_TurbulentModelInner
-	 */
+ * @class K_TurbulentModelInner
+ * @brief  K_TurbulentModelInner
+ */
 class K_TurbulentModelInner : public BaseTurbulentModel<Base, DataDelegateInner>
 {
   public:
@@ -188,9 +188,9 @@ class K_TurbulentModelInner : public BaseTurbulentModel<Base, DataDelegateInner>
 };
 //=================================================================================================//
 /**
-	 * @class E_TurbulentModelInner
-	 * @brief  E_TurbulentModelInner
-	 */
+ * @class E_TurbulentModelInner
+ * @brief  E_TurbulentModelInner
+ */
 class E_TurbulentModelInner : public BaseTurbulentModel<Base, DataDelegateInner>
 {
   public:
@@ -346,9 +346,9 @@ class TurbulentEddyViscosity : public LocalDynamics, public BaseTurbuClosureCoef
 };
 //=================================================================================================//
 /**
-	 * @class TurbulentAdvectionTimeStepSize
-	 * @brief Computing the turbulent advection time step size
-	 */
+ * @class TurbulentAdvectionTimeStepSize
+ * @brief Computing the turbulent advection time step size
+ */
 class TurbulentAdvectionTimeStepSize : public LocalDynamicsReduce<ReduceMax>
 {
   public:
@@ -367,16 +367,17 @@ class TurbulentAdvectionTimeStepSize : public LocalDynamicsReduce<ReduceMax>
 };
 //=================================================================================================//
 /**
-	* @class   InflowTurbulentCondition
-	* @brief   Inflow boundary condition which imposes directly to a given velocity profile.
-	*          TargetVelocity gives the velocity profile along the inflow direction,
-	*          i.e. x direction in local frame.
-	*/
+ * @class   InflowTurbulentCondition
+ * @brief   Inflow boundary condition which imposes directly to a given velocity profile.
+ *          TargetVelocity gives the velocity profile along the inflow direction,
+ *          i.e. x direction in local frame.
+ */
 class InflowTurbulentCondition : public BaseFlowBoundaryCondition, public BaseTurbuClosureCoeff
 {
   public:
     explicit InflowTurbulentCondition(BodyPartByCell &body_part,
-                                      Real CharacteristicLength, Real relaxation_rate, int type_turbu_inlet);
+                                      Real CharacteristicLength, Real relaxation_rate,
+                                      int type_turbu_inlet, const StdVec<Real> &initial_values);
     virtual ~InflowTurbulentCondition(){};
     void update(size_t index_i, Real dt = 0.0);
 
@@ -387,6 +388,7 @@ class InflowTurbulentCondition : public BaseFlowBoundaryCondition, public BaseTu
     Real *turbu_k_;
     Real *turbu_epsilon_;
     Real TurbulentLength_;
+    Real initial_k_, initial_epsilon_;
 
     virtual Real getTurbulentInflowK(Vecd &position, Vecd &velocity, Real &turbu_k);
     virtual Real getTurbulentInflowE(Vecd &position, Real &turbu_k, Real &turbu_E);

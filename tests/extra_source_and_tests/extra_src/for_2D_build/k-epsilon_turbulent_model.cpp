@@ -19,12 +19,12 @@ BaseTurbuClosureCoeff::BaseTurbuClosureCoeff()
 Real WallFunction::get_distance_from_P_to_wall(Real y_p_constant)
 {
     //** Check the distance. *
-    //if (y_p_constant < 0.05 * dp_wall)
+    // if (y_p_constant < 0.05 * dp_wall)
     //{
     //	std::cout << "y_p_j < 0.05 * wall_particle_spacing_" << std::endl;
     //	std::cin.get();
     //}
-    //y_p_j = abs(e_j_n.dot(r_ij * e_ij)) - 0.5 * wall_particle_spacing_;
+    // y_p_j = abs(e_j_n.dot(r_ij * e_ij)) - 0.5 * wall_particle_spacing_;
 
     //** Use the constant y_p strategy. *
     return y_p_constant;
@@ -47,11 +47,11 @@ Real WallFunction::get_dimensionless_velocity(Real y_star, Real time)
         std::cout << "y_star=" << y_star << std::endl;
         std::cin.get();
     }
-    //if (dimensionless_velocity<0.0)
+    // if (dimensionless_velocity<0.0)
     //{
     //	std::cout << "dimensionless_velocity<0.0" << dimensionless_velocity << std::endl;
     //	std::cin.get();
-    //}
+    // }
 
     return dimensionless_velocity;
 }
@@ -130,7 +130,7 @@ void GetVelocityGradient<Inner<>>::update(size_t index_i, Real dt)
 {
     if (is_near_wall_P1_[index_i] != 1)
     {
-        //velocity_gradient_[index_i] *= B_[index_i];
+        // velocity_gradient_[index_i] *= B_[index_i];
         velocity_gradient_[index_i] *= turbu_B_[index_i];
     }
 }
@@ -212,7 +212,7 @@ K_TurbulentModelInner::K_TurbulentModelInner(BaseInnerRelation &inner_relation, 
     particles_->addVariableToSort<int>("TurbulentIndicator");
     particles_->addVariableToWrite<int>("TurbulentIndicator");
 
-    //std::fill(is_extra_viscous_dissipation_.begin(), is_extra_viscous_dissipation_.end(), is_extr_visc_dissipa);
+    // std::fill(is_extra_viscous_dissipation_.begin(), is_extra_viscous_dissipation_.end(), is_extr_visc_dissipa);
 }
 //=================================================================================================//
 void K_TurbulentModelInner::interaction(size_t index_i, Real dt)
@@ -244,7 +244,7 @@ void K_TurbulentModelInner::interaction(size_t index_i, Real dt)
     strain_rate = 0.5 * (velocity_gradient_[index_i].transpose() + velocity_gradient_[index_i]);
 
     Re_stress = 2.0 * strain_rate * turbu_mu_i / rho_i - (2.0 / 3.0) * turbu_k_i * Matd::Identity();
-    //Re_stress = 2.0 * strain_rate * turbu_mu_i / rho_i;
+    // Re_stress = 2.0 * strain_rate * turbu_mu_i / rho_i;
 
     Matd k_production_matrix = Re_stress.array() * velocity_gradient_[index_i].array();
     //** The near wall k production is updated in wall function part *
@@ -377,11 +377,11 @@ void TKEnergyForce<Inner<>>::interaction(size_t index_i, Real dt)
         size_t index_j = inner_neighborhood.j_[n];
         Vecd nablaW_ijV_j = inner_neighborhood.dW_ij_[n] * this->Vol_[index_j] * inner_neighborhood.e_ij_[n];
         //** strong form *
-        //k_gradient += -1.0*(turbu_k_i - turbu_k_[index_j]) * nablaW_ijV_j;
+        // k_gradient += -1.0*(turbu_k_i - turbu_k_[index_j]) * nablaW_ijV_j;
         //** weak form *
         k_gradient += (turbu_k_i + turbu_k_[index_j]) * nablaW_ijV_j;
         //** If use RKGC *
-        //k_gradient += (turbu_k_i * B_[index_j] + turbu_k_[index_j] * B_[index_i]) * nablaW_ijV_j;
+        // k_gradient += (turbu_k_i * B_[index_j] + turbu_k_[index_j] * B_[index_i]) * nablaW_ijV_j;
     }
     force = -1.0 * (2.0 / 3.0) * k_gradient * mass_[index_i];
     force_[index_i] += force;
@@ -410,7 +410,7 @@ void TKEnergyForce<Contact<>>::interaction(size_t index_i, Real dt)
             //** weak form *
             k_gradient += (turbu_k_i + turbu_k_i) * nablaW_ijV_j;
             //** If use RKGC *
-            //k_gradient +=  (turbu_k_i + turbu_k_i)* B_[index_i] * nablaW_ijV_j;
+            // k_gradient +=  (turbu_k_i + turbu_k_i)* B_[index_i] * nablaW_ijV_j;
         }
     }
     force = -1.0 * (2.0 / 3.0) * k_gradient * mass_[index_i];
@@ -582,12 +582,14 @@ Real TurbulentAdvectionTimeStepSize::outputResult(Real reduced_value)
     return advectionCFL_ * smoothing_length_min_ / (SMAX(speed_max, speed_ref_turbu_) + TinyReal);
 }
 //=================================================================================================//
-InflowTurbulentCondition::InflowTurbulentCondition(BodyPartByCell &body_part, Real CharacteristicLength, Real relaxation_rate, int type_turbu_inlet)
+InflowTurbulentCondition::InflowTurbulentCondition(BodyPartByCell &body_part, Real CharacteristicLength,
+                                                   Real relaxation_rate, int type_turbu_inlet, const StdVec<Real> &initial_values)
     : BaseFlowBoundaryCondition(body_part), type_turbu_inlet_(type_turbu_inlet),
       relaxation_rate_(relaxation_rate),
       CharacteristicLength_(CharacteristicLength),
       turbu_k_(particles_->getVariableDataByName<Real>("TurbulenceKineticEnergy")),
-      turbu_epsilon_(particles_->getVariableDataByName<Real>("TurbulentDissipation"))
+      turbu_epsilon_(particles_->getVariableDataByName<Real>("TurbulentDissipation")),
+      initial_k_(initial_values[0]), initial_epsilon_(initial_values[1])
 {
     TurbulentLength_ = turbulent_length_ratio_for_epsilon_inlet_ * CharacteristicLength_;
 }
@@ -652,6 +654,11 @@ Real InflowTurbulentCondition::getTurbulentInflowK(Vecd &position, Vecd &velocit
 
         temp_in_turbu_k = polynomial_value;
     }
+    else if (type_turbu_inlet_ == 2)
+    {
+        temp_in_turbu_k = initial_k_;
+    }
+
     if (position[0] < 0.0) //** Temporarily treatment *
     {
         turbu_k_original = temp_in_turbu_k;
@@ -711,6 +718,11 @@ Real InflowTurbulentCondition::getTurbulentInflowE(Vecd &position, Real &turbu_k
 
         temp_in_turbu_E = polynomial_value;
     }
+    else if (type_turbu_inlet_ == 2)
+    {
+        temp_in_turbu_E = initial_epsilon_;
+    }
+
     if (position[0] < 0.0) //** Temporarily treatment *
     {
         turbu_E_original = temp_in_turbu_E;
@@ -825,7 +837,7 @@ void JudgeIsNearWall::interaction(size_t index_i, Real dt)
         }
     }
     //** This is a temporary treatment, particles in inlet region is not corrected by wall function *
-    //if (is_near_contact > 0 && pos_[index_i][0] > 0.0)
+    // if (is_near_contact > 0 && pos_[index_i][0] > 0.0)
     if (is_near_contact > 0)
     {
         is_near_wall_P2_[index_i] = 10; //** Particles that have contact are defined as in region P2 *
@@ -928,7 +940,7 @@ void StandardWallFunctionCorrection::interaction(size_t index_i, Real dt)
     Real current_time = *physical_time_;
 
     //** If use level-set to get distance from P to wall, activate this *
-    //y_p_[index_i]= distance_to_dummy_interface_levelset_[index_i];
+    // y_p_[index_i]= distance_to_dummy_interface_levelset_[index_i];
 
     if (is_near_wall_P2_[index_i] == 10)
     {
@@ -938,15 +950,15 @@ void StandardWallFunctionCorrection::interaction(size_t index_i, Real dt)
         Real turbu_k_i_15 = pow(turbu_k_[index_i], 1.5);
 
         //** Choose one kind of the distance to calculate the wall-nearest values *
-        //Real r_dummy_normal = distance_to_dummy_interface_up_average_[index_i];
-        //Real r_dummy_normal = distance_to_dummy_interface_[index_i];
-        //Real r_dummy_normal = distance_to_dummy_interface_levelset_[index_i];
+        // Real r_dummy_normal = distance_to_dummy_interface_up_average_[index_i];
+        // Real r_dummy_normal = distance_to_dummy_interface_[index_i];
+        // Real r_dummy_normal = distance_to_dummy_interface_levelset_[index_i];
 
-        //if (r_dummy_normal <= TinyReal)
+        // if (r_dummy_normal <= TinyReal)
         //{
-        //std::cout << "r_dummy_normal <= TinyReal" << std::endl;
-        //std::cin.get();
-        //}
+        // std::cout << "r_dummy_normal <= TinyReal" << std::endl;
+        // std::cin.get();
+        // }
         Vecd e_i_nearest_tau = e_nearest_tau_[index_i];
         Vecd e_i_nearest_n = e_nearest_normal_[index_i];
         const Vecd &vel_i = vel_[index_i];
@@ -1149,8 +1161,8 @@ NonDimensionalisePressure::
 //=================================================================================================//
 void NonDimensionalisePressure::update(size_t index_i, Real dt)
 {
-    //p_dimensionless_[index_i] = p_[index_i] / rho_[index_i]; //% actually is P/rho U * U, U=1 neglect
-    //p_dimensionless_[index_i] = p_[index_i] / (rho_[index_i] * 20.0);
+    // p_dimensionless_[index_i] = p_[index_i] / rho_[index_i]; //% actually is P/rho U * U, U=1 neglect
+    // p_dimensionless_[index_i] = p_[index_i] / (rho_[index_i] * 20.0);
     p_dimensionless_[index_i] = p_[index_i] / ((rho_[index_i] - 1.0));
 }
 //=================================================================================================//

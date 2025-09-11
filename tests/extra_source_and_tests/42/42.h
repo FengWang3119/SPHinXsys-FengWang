@@ -26,7 +26,7 @@ int is_inflow_velocity_from_python = 0; // ** Overwrite the inflow_velocity_type
 
 Real characteristic_length = plate_length; /**<It needs characteristic Length to calculate turbulent length and the inflow turbulent epsilon>*/
 //** For K and Epsilon, type of the turbulent inlet, 0 is freestream, 1 is from interpolation from PY21, 2 is determined from inital values *
-int type_turbulent_inlet = 0;
+int type_turbulent_inlet = 2;
 Real relaxation_rate_turbulent_inlet = 0.8;
 //** Tag for AMRD *
 int is_AMRD = 0;
