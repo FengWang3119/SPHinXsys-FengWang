@@ -41,21 +41,12 @@ int main(int ac, char *av[])
     ObserverBody observer_center_point(sph_system, "ObserverCenterPoint");
     observer_center_point.generateParticles<ObserverParticles>(observer_location_center_point);
 
-    for (int i = 0; i < num_observer_points; ++i)
-    {
-        Vecd pos_observer_i = pos_observe_start + i * observe_spacing * unit_direction_observe;
-        if (i == 0)
-        {
-            pos_observer_i -= observer_offset_distance * unit_direction_observe;
-        }
-        if (i == num_observer_points - 1)
-        {
-            pos_observer_i += observer_offset_distance * unit_direction_observe;
-        }
-        observation_location.push_back(pos_observer_i);
-    }
+    getPositionsOfMultipleObserveLines();
+    output_observe_positions();
+    output_observe_theoretical_y();
+    output_number_observe_points_on_lines();
     ObserverBody fluid_observer(sph_system, "FluidObserver");
-    fluid_observer.generateParticles<ObserverParticles>(observation_location);
+    fluid_observer.generateParticles<ObserverParticles>(observation_locations);
 
     ObserverBody observer_body(sph_system, makeShared<WaterBlock>("ObserverBody")); //% Average
     // (!sph_system.RunParticleRelaxation() && sph_system.ReloadParticles())
@@ -408,20 +399,20 @@ int main(int ac, char *av[])
             left_bidirection_buffer.tag_buffer_particles.exec();
             right_bidirection_buffer.tag_buffer_particles.exec();
 
-            if (physical_time > end_time * 0.6)
+            if (physical_time > end_time * 0.8)
             {
                 write_recorded_water_velocity.writeToFile(number_of_iterations);
                 write_recorded_water_k.writeToFile(number_of_iterations);
                 write_recorded_water_mut.writeToFile(number_of_iterations);
                 write_recorded_water_epsilon.writeToFile(number_of_iterations);
 
-                fluid_observer_contact2.updateConfiguration();
+                // fluid_observer_contact2.updateConfiguration();
                 //% Average pressure
-                observing_pressure.exec();
-                average_pressure.exec();
+                //  observing_pressure.exec();
+                //  average_pressure.exec();
                 //% Average density
-                observing_density.exec();
-                average_density.exec();
+                //  observing_density.exec();
+                //  average_density.exec();
             }
             // if (physical_time > end_time * 0.5)
             // body_states_recording.writeToFile();
@@ -431,7 +422,7 @@ int main(int ac, char *av[])
         observer_centerpoint_contact.updateConfiguration();
         num_output_file++;
 
-        write_observation_states.writeToFile(); //% Average
+        // write_observation_states.writeToFile(); //% Average
 
         // if (num_output_file == 100)
         //     system("pause");
