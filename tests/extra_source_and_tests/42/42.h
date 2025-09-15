@@ -15,8 +15,9 @@ Real plate_length = 100.0;
 Real num_fluid_cross_plate_length = 800.0;
 Real resolution_ref = plate_length / num_fluid_cross_plate_length; /**< Initial reference particle spacing. */
 
-Real y_p_constant = resolution_ref / 2.0; //** For the first try *
-// Real y_p_constant = 0.05;
+// Real y_p_constant = resolution_ref / 2.0; //** For the first try *
+Real y_p_constant = 0.0625;
+
 Real offset_distance = y_p_constant - resolution_ref / 2.0; //** Basically offset distance is large than or equal to 0 *
 //----------------------------------------------------------------------
 //	Unique control parameters for turbulence.
@@ -39,7 +40,8 @@ bool is_source_term_linearisation = false;
 //----------------------------------------------------------------------
 //	Geometry settings.
 //----------------------------------------------------------------------
-Real plate_thickness = resolution_ref * 4;
+// Real plate_thickness = resolution_ref * 4;
+Real plate_thickness = 0.5;
 
 Real BW = resolution_ref * 4;
 Real DL_sponge = resolution_ref * 5.0; //* The latest Velocity inlet, 5 layers are OK
