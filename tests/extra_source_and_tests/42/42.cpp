@@ -32,6 +32,7 @@ int main(int ac, char *av[])
      * @brief 	Particle and body creation of wall boundary.
      */
     SolidBody wall_boundary(sph_system, makeShared<WallBoundary>("Wall"));
+    wall_boundary.defineAdaptationRatios(1.15, 2.0);
     wall_boundary.defineBodyLevelSetShape();
     wall_boundary.defineMaterial<Solid>();
     (!sph_system.RunParticleRelaxation() && sph_system.ReloadParticles())
