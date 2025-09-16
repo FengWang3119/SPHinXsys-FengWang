@@ -15,8 +15,8 @@ Real plate_length = 100.0;
 Real num_fluid_cross_plate_length = 1600.0;
 Real resolution_ref = plate_length / num_fluid_cross_plate_length; /**< Initial reference particle spacing. */
 
-// Real y_p_constant = resolution_ref / 2.0; //** For the first try *
-Real y_p_constant = 0.0625;
+Real y_p_constant = resolution_ref / 2.0; //** For the first try *
+// Real y_p_constant = 0.0625;
 
 Real offset_distance = y_p_constant - resolution_ref / 2.0; //** Basically offset distance is large than or equal to 0 *
 //----------------------------------------------------------------------
@@ -30,10 +30,10 @@ Real characteristic_length = plate_length; /**<It needs characteristic Length to
 int type_turbulent_inlet = 2;
 Real relaxation_rate_turbulent_inlet = 0.8;
 //** Tag for AMRD *
-int is_AMRD = 0;
+int is_AMRD = 1;
 bool is_constrain_normal_velocity_in_P_region = false;
 //** Weight for correcting the velocity  gradient in the sub near wall region  *
-Real weight_vel_grad_sub_nearwall = 0.1;
+Real weight_vel_grad_sub_nearwall = 0.5;
 //** Tag for Source Term Linearisation *
 bool is_source_term_linearisation = false;
 
