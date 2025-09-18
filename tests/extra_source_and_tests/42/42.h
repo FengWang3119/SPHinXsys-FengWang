@@ -12,7 +12,7 @@ using namespace SPH;
 //	Basic geometry parameters and numerical setup.
 //----------------------------------------------------------------------
 Real plate_length = 100.0;
-Real num_fluid_cross_plate_length = 400.0;
+Real num_fluid_cross_plate_length = 3200.0;
 Real resolution_ref = plate_length / num_fluid_cross_plate_length; /**< Initial reference particle spacing. */
 
 Real y_p_constant = resolution_ref / 2.0; //** For the first try *
