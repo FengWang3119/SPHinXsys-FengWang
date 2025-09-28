@@ -20,13 +20,14 @@ Real DL = 0.004;                                             /**< Channel length
 Real DH = 0.001;                                             /**< Channel height. */
 Real resolution_ref = DH / 20.0;                             /**< Initial reference particle spacing. */
 Real BW = resolution_ref * 4;                                /**< Extending width for BCs. */
+Real DL_Sponge = resolution_ref * 5.0;
 StdVec<Vecd> observer_location = {Vecd(0.5 * DL, 0.5 * DH)}; /**< Displacement observation point. */
-BoundingBox system_domain_bounds(Vec2d(-BW, -BW), Vec2d(DL + BW, DH + BW));
+BoundingBox system_domain_bounds(Vec2d(-BW - DL_Sponge, -BW), Vec2d(DL + BW, DH + BW));
 //----------------------------------------------------------------------
 //	Material parameters.
 //----------------------------------------------------------------------
 Real Inlet_pressure = 0.2;
-Real Outlet_pressure = 0.0;
+Real Outlet_pressure = 0.1;
 Real rho0_f = 1000.0;
 Real Re = 50.0;
 Real mu_f = sqrt(rho0_f * pow(0.5 * DH, 3.0) * fabs(Inlet_pressure - Outlet_pressure) / (Re * DL));
@@ -36,9 +37,101 @@ Real c_f = 10.0 * U_f;
 //	Geometric shapes used in this case.
 //----------------------------------------------------------------------
 Vec2d bidirectional_buffer_halfsize = Vec2d(2.5 * resolution_ref, 0.5 * DH);
-Vec2d left_bidirectional_translation = bidirectional_buffer_halfsize;
+Vec2d left_bidirectional_translation = bidirectional_buffer_halfsize - Vec2d(DL_Sponge, 0.0);
 Vec2d right_bidirectional_translation = Vec2d(DL - 2.5 * resolution_ref, 0.5 * DH);
 Vec2d normal = Vec2d(1.0, 0.0);
+//----------------------------------------------------------------------
+// Observation with offset model.
+//----------------------------------------------------------------------
+// ** By kernel weight. *
+const int number_observe_line = 1;
+Real observer_offset_distance = 0.0 * resolution_ref;
+Vec2d unit_direction_observe(1.0, 0.0);
+// ** Determine the observing start point. *
+Real observe_start_x[number_observe_line] = {
+     0.0 };
+Real observe_start_y[number_observe_line] = {
+    DH / 2.0 };
+
+// ** Determine the length of the observing line and other information. *
+Real observe_line_length[number_observe_line] = { 0.0 };
+int num_observer_points[number_observe_line] = { 0 };
+
+void getObservingLineLengthAndEndPoints()
+{
+    for (int i = 0; i < number_observe_line; ++i)
+    {
+        observe_line_length[i] = DL;
+        num_observer_points[i] = std::round(observe_line_length[i] / resolution_ref);
+    }
+}
+
+StdVec<Vecd> observation_locations;
+StdVec<Vecd> observation_theoretical_locations;
+void getPositionsOfMultipleObserveLines()
+{
+    getObservingLineLengthAndEndPoints();
+    for (int k = 0; k < number_observe_line; ++k)
+    {
+        Vecd pos_observe_start(observe_start_x[k], observe_start_y[k]);
+        int num_observer_point = num_observer_points[k];
+        Real observe_spacing = observe_line_length[k] / num_observer_point;
+        for (int i = 0; i < num_observer_point; ++i)
+        {
+            Real offset = 0.0;
+            offset = (i == 0 ? -observer_offset_distance : (i == num_observer_point - 1 ? observer_offset_distance : 0.0));
+            Vecd pos_observer_i = pos_observe_start + (i * observe_spacing + offset) * unit_direction_observe;
+            Vecd pos_observer_i_no_offset = pos_observe_start + i * observe_spacing * unit_direction_observe;
+            observation_locations.push_back(pos_observer_i);
+            observation_theoretical_locations.push_back(pos_observer_i_no_offset);
+        }
+    }
+}
+void output_observe_positions()
+{
+    std::string filename = "../bin/output/observer_positions.dat";
+    std::ofstream outfile(filename);
+    if (!outfile.is_open())
+    {
+        std::cerr << "Error: Unable to open file " << filename << " for writing." << std::endl;
+        return;
+    }
+    for (const Vecd& position : observation_locations)
+    {
+        outfile << position[0] << " " << position[1] << "\n";
+    }
+    outfile.close();
+}
+void output_observe_theoretical_x()
+{
+    std::string filename = "../bin/output/observer_theoretical_x.dat";
+    std::ofstream outfile(filename);
+    if (!outfile.is_open())
+    {
+        std::cerr << "Error: Unable to open file " << filename << " for writing." << std::endl;
+        return;
+    }
+    for (const Vecd& position : observation_theoretical_locations)
+    {
+        outfile << position[0] << "\n";
+    }
+    outfile.close();
+}
+void output_number_observe_points_on_lines()
+{
+    std::string filename = "../bin/output/observer_num_points_on_lines.dat";
+    std::ofstream outfile(filename);
+    if (!outfile.is_open())
+    {
+        std::cerr << "Error: Unable to open file " << filename << " for writing." << std::endl;
+        return;
+    }
+    for (const int& number : num_observer_points)
+    {
+        outfile << number << "\n";
+    }
+    outfile.close();
+}
 //----------------------------------------------------------------------
 //	Pressure boundary definition.
 //----------------------------------------------------------------------
@@ -102,11 +195,11 @@ class WaterBlock : public MultiPolygonShape
     explicit WaterBlock(const std::string &shape_name) : MultiPolygonShape(shape_name)
     {
         std::vector<Vecd> water_block_shape;
-        water_block_shape.push_back(Vecd(0.0, 0.0));
-        water_block_shape.push_back(Vecd(0.0, DH));
+        water_block_shape.push_back(Vecd(0.0 - DL_Sponge, 0.0));
+        water_block_shape.push_back(Vecd(0.0 - DL_Sponge, DH));
         water_block_shape.push_back(Vecd(DL, DH));
         water_block_shape.push_back(Vecd(DL, 0.0));
-        water_block_shape.push_back(Vecd(0.0, 0.0));
+        water_block_shape.push_back(Vecd(0.0 - DL_Sponge, 0.0));
         multi_polygon_.addAPolygon(water_block_shape, ShapeBooleanOps::add);
     }
 };
@@ -120,17 +213,17 @@ class WallBoundary : public MultiPolygonShape
     explicit WallBoundary(const std::string &shape_name) : MultiPolygonShape(shape_name)
     {
         std::vector<Vecd> outer_wall_shape;
-        outer_wall_shape.push_back(Vecd(0.0, -BW));
-        outer_wall_shape.push_back(Vecd(0.0, DH + BW));
+        outer_wall_shape.push_back(Vecd(0.0 - DL_Sponge, -BW));
+        outer_wall_shape.push_back(Vecd(0.0 - DL_Sponge, DH + BW));
         outer_wall_shape.push_back(Vecd(DL, DH + BW));
         outer_wall_shape.push_back(Vecd(DL, -BW));
-        outer_wall_shape.push_back(Vecd(0.0, -BW));
+        outer_wall_shape.push_back(Vecd(0.0 - DL_Sponge, -BW));
         std::vector<Vecd> inner_wall_shape;
-        inner_wall_shape.push_back(Vecd(-BW, 0.0));
-        inner_wall_shape.push_back(Vecd(-BW, DH));
+        inner_wall_shape.push_back(Vecd(-BW - DL_Sponge, 0.0));
+        inner_wall_shape.push_back(Vecd(-BW - DL_Sponge, DH));
         inner_wall_shape.push_back(Vecd(DL + BW, DH));
         inner_wall_shape.push_back(Vecd(DL + BW, 0.0));
-        inner_wall_shape.push_back(Vecd(-BW, 0.0));
+        inner_wall_shape.push_back(Vecd(-BW - DL_Sponge, 0.0));
 
         multi_polygon_.addAPolygon(outer_wall_shape, ShapeBooleanOps::add);
         multi_polygon_.addAPolygon(inner_wall_shape, ShapeBooleanOps::sub);
@@ -161,6 +254,13 @@ int main(int ac, char *av[])
 
     ObserverBody velocity_observer(sph_system, "VelocityObserver");
     velocity_observer.generateParticles<ObserverParticles>(observer_location);
+
+    getPositionsOfMultipleObserveLines();
+    output_observe_positions();
+    output_observe_theoretical_x();
+    output_number_observe_points_on_lines();
+    ObserverBody fluid_observer(sph_system, "FluidObserver");
+    fluid_observer.generateParticles<ObserverParticles>(observation_locations);
     //----------------------------------------------------------------------
     //	Define body relation map.
     //	The contact map gives the topological connections between the bodies.
@@ -170,6 +270,7 @@ int main(int ac, char *av[])
     InnerRelation water_block_inner(water_block);
     ContactRelation water_block_contact(water_block, {&wall_boundary});
     ContactRelation velocity_observer_contact(velocity_observer, {&water_block});
+    ContactRelation fluid_observer_contact(fluid_observer, { &water_block });
     //----------------------------------------------------------------------
     // Combined relations built from basic relations
     // which is only used for update configuration.
@@ -234,6 +335,10 @@ int main(int ac, char *av[])
     body_states_recording.addToWrite<Matd>(water_block, "LinearGradientCorrectionMatrix");
     body_states_recording.addToWrite<Vecd>(water_block, "ZeroGradientResidue");
     body_states_recording.addToWrite<Vecd>(water_block, "KernelSummation");
+
+    ObservedQuantityRecording<Vecd> write_recorded_water_velocity("Velocity", fluid_observer_contact);
+    ObservedQuantityRecording<Real> write_recorded_water_pressure("Pressure", fluid_observer_contact);
+
     RegressionTestDynamicTimeWarping<ObservedQuantityRecording<Vecd>> write_centerline_velocity("Velocity", velocity_observer_contact);
     //----------------------------------------------------------------------
     //	Prepare the simulation with cell linked list, configuration
@@ -324,10 +429,20 @@ int main(int ac, char *av[])
             right_disposer_outflow_deletion.exec();
             water_block.updateCellLinkedListWithParticleSort(100);
             water_block_complex.updateConfiguration();
+
+            fluid_observer_contact.updateConfiguration();
+
             interval_updating_configuration += TickCount::now() - time_instance;
             boundary_indicator.exec();
             left_emitter_inflow_injection.tag_buffer_particles.exec();
             right_emitter_inflow_injection.tag_buffer_particles.exec();
+
+            if (GlobalStaticVariables::physical_time_ > end_time * 0.8)
+            {
+                write_recorded_water_velocity.writeToFile(number_of_iterations);
+                write_recorded_water_pressure.writeToFile(number_of_iterations);
+            }
+
         }
         TickCount t2 = TickCount::now();
         body_states_recording.writeToFile();
