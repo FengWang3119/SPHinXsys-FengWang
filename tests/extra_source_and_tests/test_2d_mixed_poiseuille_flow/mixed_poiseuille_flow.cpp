@@ -45,13 +45,13 @@ Vec2d normal = Vec2d(1.0, 0.0);
 //----------------------------------------------------------------------
 // ** By kernel weight. *
 const int number_observe_line = 1;
-Real observer_offset_distance = 0.0 * resolution_ref;
-Vec2d unit_direction_observe(1.0, 0.0);
+Real observer_offset_distance = 2.0 * resolution_ref;
+Vec2d unit_direction_observe(0.0, 1.0);
 // ** Determine the observing start point. *
 Real observe_start_x[number_observe_line] = {
-     0.0 };
+     DL - 5.0 * resolution_ref };
 Real observe_start_y[number_observe_line] = {
-    DH / 2.0 };
+    0.5 * resolution_ref };
 
 // ** Determine the length of the observing line and other information. *
 Real observe_line_length[number_observe_line] = { 0.0 };
@@ -61,7 +61,7 @@ void getObservingLineLengthAndEndPoints()
 {
     for (int i = 0; i < number_observe_line; ++i)
     {
-        observe_line_length[i] = DL;
+        observe_line_length[i] = DH;
         num_observer_points[i] = std::round(observe_line_length[i] / resolution_ref);
     }
 }
@@ -117,6 +117,23 @@ void output_observe_theoretical_x()
     }
     outfile.close();
 }
+
+void output_observe_theoretical_y()
+{
+    std::string filename = "../bin/output/observer_theoretical_y.dat";
+    std::ofstream outfile(filename);
+    if (!outfile.is_open())
+    {
+        std::cerr << "Error: Unable to open file " << filename << " for writing." << std::endl;
+        return;
+    }
+    for (const Vecd& position : observation_theoretical_locations)
+    {
+        outfile << position[1] << "\n";
+    }
+    outfile.close();
+}
+
 void output_number_observe_points_on_lines()
 {
     std::string filename = "../bin/output/observer_num_points_on_lines.dat";
@@ -257,7 +274,7 @@ int main(int ac, char *av[])
 
     getPositionsOfMultipleObserveLines();
     output_observe_positions();
-    output_observe_theoretical_x();
+    output_observe_theoretical_y();
     output_number_observe_points_on_lines();
     ObserverBody fluid_observer(sph_system, "FluidObserver");
     fluid_observer.generateParticles<ObserverParticles>(observation_locations);
