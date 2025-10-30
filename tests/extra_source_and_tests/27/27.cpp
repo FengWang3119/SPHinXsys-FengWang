@@ -121,9 +121,9 @@ int main(int ac, char *av[])
     InteractionWithUpdate<LinearGradientCorrectionMatrixInner> corrected_configuration_fluid(water_block_inner);
     InteractionWithUpdate<fluid_dynamics::TurbulentLinearGradientCorrectionMatrixInner> corrected_configuration_fluid_only_inner(water_block_inner);
 
-    Dynamics1Level<fluid_dynamics::Integration1stHalfInnerRiemann> pressure_relaxation(water_block_inner);
+    // Dynamics1Level<fluid_dynamics::Integration1stHalfInnerRiemann> pressure_relaxation(water_block_inner);
     //** Turbulence */
-    //Dynamics1Level<fluid_dynamics::Integration1stHalfCorrectionForOpenBoundaryFlowInnerRiemann> pressure_relaxation(water_block_inner);
+    Dynamics1Level<fluid_dynamics::Integration1stHalfCorrectionForOpenBoundaryFlowInnerRiemann> pressure_relaxation(water_block_inner);
 
     Dynamics1Level<fluid_dynamics::Integration2ndHalfInnerRiemann> density_relaxation(water_block_inner);
 
@@ -173,24 +173,24 @@ int main(int ac, char *av[])
     /** Turbulence InflowTurbulentCondition.It needs characteristic Length to calculate turbulent length  */
     SimpleDynamics<fluid_dynamics::InflowTurbulentCondition> impose_turbulent_inflow_condition(left_emitter, characteristic_length, relaxation_rate_turbulent_inlet, type_turbulent_inlet);
 
-    SimpleDynamics<fluid_dynamics::PressureCondition<LeftInflowPressure>> left_inflow_pressure_condition(left_emitter);
-    SimpleDynamics<fluid_dynamics::PressureCondition<RightInflowPressure>> right_inflow_pressure_condition(right_emitter);
-    SimpleDynamics<fluid_dynamics::PressureCondition<LeftInflowPressure>> static_up_inflow_pressure_condition(static_emitter_up);
-    SimpleDynamics<fluid_dynamics::PressureCondition<LeftInflowPressure>> static_down_inflow_pressure_condition(static_emitter_down);
-    SimpleDynamics<fluid_dynamics::PressureCondition<FreestreamPressure>> up_pressure_condition(up_emitter);
-    SimpleDynamics<fluid_dynamics::PressureCondition<FreestreamPressure>> down_pressure_condition(down_emitter);
+    //SimpleDynamics<fluid_dynamics::PressureCondition<LeftInflowPressure>> left_inflow_pressure_condition(left_emitter);
+    //SimpleDynamics<fluid_dynamics::PressureCondition<RightInflowPressure>> right_inflow_pressure_condition(right_emitter);
+    //SimpleDynamics<fluid_dynamics::PressureCondition<LeftInflowPressure>> static_up_inflow_pressure_condition(static_emitter_up);
+    //SimpleDynamics<fluid_dynamics::PressureCondition<LeftInflowPressure>> static_down_inflow_pressure_condition(static_emitter_down);
+    //SimpleDynamics<fluid_dynamics::PressureCondition<FreestreamPressure>> up_pressure_condition(up_emitter);
+    //SimpleDynamics<fluid_dynamics::PressureCondition<FreestreamPressure>> down_pressure_condition(down_emitter);
     //** Turbulence */
-    // SimpleDynamics<fluid_dynamics::PressureConditionCorrection<LeftInflowPressure>> left_inflow_pressure_condition(left_emitter);
-    // SimpleDynamics<fluid_dynamics::PressureConditionCorrection<RightInflowPressure>> right_inflow_pressure_condition(right_emitter);
-    // SimpleDynamics<fluid_dynamics::PressureConditionCorrection<LeftInflowPressure>> static_up_inflow_pressure_condition(static_emitter_up);
-    // SimpleDynamics<fluid_dynamics::PressureConditionCorrection<LeftInflowPressure>> static_down_inflow_pressure_condition(static_emitter_down);
-    // SimpleDynamics<fluid_dynamics::PressureConditionCorrection<FreestreamPressure>> up_pressure_condition(up_emitter);
-    // SimpleDynamics<fluid_dynamics::PressureConditionCorrection<FreestreamPressure>> down_pressure_condition(down_emitter);
+     SimpleDynamics<fluid_dynamics::PressureConditionCorrection<LeftInflowPressure>> left_inflow_pressure_condition(left_emitter);
+     SimpleDynamics<fluid_dynamics::PressureConditionCorrection<RightInflowPressure>> right_inflow_pressure_condition(right_emitter);
+     SimpleDynamics<fluid_dynamics::PressureConditionCorrection<LeftInflowPressure>> static_up_inflow_pressure_condition(static_emitter_up);
+     SimpleDynamics<fluid_dynamics::PressureConditionCorrection<LeftInflowPressure>> static_down_inflow_pressure_condition(static_emitter_down);
+     SimpleDynamics<fluid_dynamics::PressureConditionCorrection<FreestreamPressure>> up_pressure_condition(up_emitter);
+     SimpleDynamics<fluid_dynamics::PressureConditionCorrection<FreestreamPressure>> down_pressure_condition(down_emitter);
 
     //InteractionWithUpdate<fluid_dynamics::TransportVelocityCorrectionInner<NoLimiter, BulkParticlesWithoutInlet>> transport_velocity_correction(water_block_inner);
     //** Turbulence */
-    InteractionWithUpdate<fluid_dynamics::TVC_ModifiedLimited_NoRKGC_Inner<BulkParticlesWithoutInlet>> transport_velocity_correction(water_block_inner);
-    //InteractionWithUpdate<fluid_dynamics::TVC_ModifiedLimited_RKGC_OBC_Inner<BulkParticlesWithoutInlet>> transport_velocity_correction(water_block_inner);
+    // InteractionWithUpdate<fluid_dynamics::TVC_ModifiedLimited_NoRKGC_Inner<BulkParticlesWithoutInlet>> transport_velocity_correction(water_block_inner);
+    InteractionWithUpdate<fluid_dynamics::TVC_ModifiedLimited_RKGC_OBC_Inner<BulkParticlesWithoutInlet>> transport_velocity_correction(water_block_inner);
 
     /** Turbulence */
     SimpleDynamics<fluid_dynamics::TurbulentEddyViscosity> update_eddy_viscosity(water_block);
