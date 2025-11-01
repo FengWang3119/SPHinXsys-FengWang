@@ -136,35 +136,42 @@ Real cutoff_time = 50.0;            //** cutoff_time should be a integral and th
 // Observation with offset model.
 //----------------------------------------------------------------------
 // ** By kernel weight. *
-int number_observe_line = 2;
+//------------¡ý User input ¡ý------------
+const int number_observe_line = 2;
 Real observer_offset_distance = 2.0 * resolution_ref;
 Vec2d unit_direction_observe(0.0, 1.0);
 // ** Determine the observing start point. *
-Real observe_start_x[2] = {
-    (point_E[0] + point_F[0]) / 2.0,
-    (point_C[0] + point_D[0]) / 2.0};
-Real observe_start_y[2] = {
-    DH1 + offset_distance + 0.5 * resolution_ref,
-    point_C[1] + offset_distance + 0.5 * resolution_ref};
+Real observe_start_x[number_observe_line] = 
+{
+    5.0,
+    12.0
+};
+Real observe_start_y[number_observe_line] = 
+{
+    DH1  + 0.5 * resolution_ref,
+    point_C[1]  + 0.5 * resolution_ref
+};
+
 // ** Determine the length of the observing line and other information. *
-Real observe_line_length[2] = {0.0};
-int num_observer_points[2] = {0};
+Real observe_line_length[number_observe_line] = {0.0};
+int num_observer_points[number_observe_line] = {0};
 void getObservingLineLengthAndEndPoints()
 {
     for (int i = 0; i < number_observe_line; ++i)
     {
-        if (observe_start_x[i] < point_E[0] && observe_start_x[i] >= point_F[0])
+        if (i==0)
         {
-            observe_line_length[i] = DH - DH1 - 2.0 * offset_distance;
+            observe_line_length[i] = DH - DH1;
             num_observer_points[i] = std::round(observe_line_length[i] / resolution_ref);
         }
-        else if (observe_start_x[i] >= point_D[0])
+        else if (i == 1)
         {
-            observe_line_length[i] = DH_C;
+            observe_line_length[i] = DH;
             num_observer_points[i] = std::round(observe_line_length[i] / resolution_ref);
         }
     }
 }
+//------------¡ü User input ¡ü------------
 
 StdVec<Vecd> observation_locations;
 StdVec<Vecd> observation_theoretical_locations;
