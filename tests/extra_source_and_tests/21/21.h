@@ -137,18 +137,22 @@ Real cutoff_time = 50.0;            //** cutoff_time should be a integral and th
 //----------------------------------------------------------------------
 // ** By kernel weight. *
 //------------¡ý User input ¡ý------------
-const int number_observe_line = 2;
+const int number_observe_line = 4;
 Real observer_offset_distance = 2.0 * resolution_ref;
 Vec2d unit_direction_observe(0.0, 1.0);
 // ** Determine the observing start point. *
 Real observe_start_x[number_observe_line] = 
 {
     5.0,
-    12.0
+    7.0,
+    9.0,
+    11.0
 };
 Real observe_start_y[number_observe_line] = 
 {
     DH1  + 0.5 * resolution_ref,
+    point_C[1]  + 0.5 * resolution_ref,
+    point_C[1]  + 0.5 * resolution_ref,
     point_C[1]  + 0.5 * resolution_ref
 };
 
@@ -164,7 +168,7 @@ void getObservingLineLengthAndEndPoints()
             observe_line_length[i] = DH - DH1;
             num_observer_points[i] = std::round(observe_line_length[i] / resolution_ref);
         }
-        else if (i == 1)
+        else
         {
             observe_line_length[i] = DH;
             num_observer_points[i] = std::round(observe_line_length[i] / resolution_ref);
