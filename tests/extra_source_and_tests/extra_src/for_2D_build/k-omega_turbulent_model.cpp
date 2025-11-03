@@ -517,12 +517,16 @@ void kOmega_TSDR_Diffusion_and_Gradient_Dot_Inner::interaction(size_t index_i, R
 
         Vecd nablaW_ijV_j = inner_neighborhood.dW_ij_[n] * this->Vol_[index_j] * inner_neighborhood.e_ij_[n];
         //** non-conservative form *
-        //k_gradient += -1.0 * (turbu_k_i - turbu_k_[index_j]) * nablaW_ijV_j;
-        //omega_gradient += -1.0 * (turbu_omega_i - turbu_omega_[index_j]) * nablaW_ijV_j;
+        k_gradient += -1.0 * (turbu_k_i - turbu_k_[index_j]) * nablaW_ijV_j;
+        omega_gradient += -1.0 * (turbu_omega_i - turbu_omega_[index_j]) * nablaW_ijV_j;
         //** non-conservative form, with correction *
-        k_gradient += -1.0 * (turbu_k_i - turbu_k_[index_j]) * (B_[index_i] * nablaW_ijV_j);
-        omega_gradient += -1.0 * (turbu_omega_i - turbu_omega_[index_j]) * (B_[index_i] * nablaW_ijV_j);
+        //k_gradient += -1.0 * (turbu_k_i - turbu_k_[index_j]) * (B_[index_i] * nablaW_ijV_j);
+        //omega_gradient += -1.0 * (turbu_omega_i - turbu_omega_[index_j]) * (B_[index_i] * nablaW_ijV_j);
     }
+    //** If correction outside *
+    k_gradient = B_[index_i] * k_gradient;
+    omega_gradient = B_[index_i] * omega_gradient;
+    
     omega_diffusion_[index_i] = omega_lap / rho_i;
     gradient_dot_k_omega_[index_i] = k_gradient.dot(omega_gradient);
 }
