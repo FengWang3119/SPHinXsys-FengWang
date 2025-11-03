@@ -145,7 +145,7 @@ int main(int ac, char *av[])
     SimpleDynamics<fluid_dynamics::kOmega_kTransportEquationInner> k_equation_relaxation(water_block_inner, initial_turbu_values, is_AMRD);
     InteractionDynamics<fluid_dynamics::kOmega_TKE_Diffusion> compute_TKE_diffusion(water_block_inner);
     SimpleDynamics<fluid_dynamics::kOmega_omegaTransportEquationInner> epsilon_equation_relaxation(water_block_inner);
-    InteractionDynamics<fluid_dynamics::kOmega_TSDR_Diffusion_Gradient_Dot> compute_TSDR_diffusion_and_gradient_k_omega(water_block_inner);
+    InteractionDynamics<fluid_dynamics::kOmega_TSDR_Diffusion_and_Gradient_Dot_Inner> compute_TSDR_diffusion_and_gradient_k_omega(water_block_inner);
 
     InteractionDynamics<fluid_dynamics::TKEnergyForceComplex> turbulent_kinetic_energy_force(water_block_inner, water_wall_contact);
     InteractionDynamics<fluid_dynamics::kOmega_WallFunctionCorrection> standard_wall_function_correction(water_block_inner, water_wall_contact);

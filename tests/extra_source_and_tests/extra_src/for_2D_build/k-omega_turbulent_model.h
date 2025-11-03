@@ -126,11 +126,11 @@ class kOmega_omegaTransportEquationInner : public kOmega_BaseTurbulentModel<Base
     int *is_near_wall_P1_;
 };
 //=================================================================================================//
-class kOmega_TSDR_Diffusion_Gradient_Dot : public kOmega_BaseTurbulentModel<Base, DataDelegateInner>
+class kOmega_TSDR_Diffusion_and_Gradient_Dot_Inner : public kOmega_BaseTurbulentModel<Base, DataDelegateInner>
 {
   public:
-    explicit kOmega_TSDR_Diffusion_Gradient_Dot(BaseInnerRelation &inner_relation);
-    virtual ~kOmega_TSDR_Diffusion_Gradient_Dot(){};
+    explicit kOmega_TSDR_Diffusion_and_Gradient_Dot_Inner(BaseInnerRelation &inner_relation);
+    virtual ~kOmega_TSDR_Diffusion_and_Gradient_Dot_Inner(){};
 
     inline void interaction(size_t index_i, Real dt = 0.0);
 

@@ -483,14 +483,14 @@ void kOmega_omegaTransportEquationInner::update(size_t index_i, Real dt)
     omega_cross_diffusion_[index_i] = omega_cross_diffusion;
 }
 //=================================================================================================//
-kOmega_TSDR_Diffusion_Gradient_Dot::kOmega_TSDR_Diffusion_Gradient_Dot(BaseInnerRelation &inner_relation)
+kOmega_TSDR_Diffusion_and_Gradient_Dot_Inner::kOmega_TSDR_Diffusion_and_Gradient_Dot_Inner(BaseInnerRelation &inner_relation)
     : kOmega_BaseTurbulentModel<Base, DataDelegateInner>(inner_relation),
       gradient_dot_k_omega_(particles_->getVariableDataByName<Real>("GradientDotKOmega")),
       omega_diffusion_(particles_->getVariableDataByName<Real>("omega_Diffusion")),
       turbu_omega_(particles_->getVariableDataByName<Real>("TurbulentSpecificDissipation")),
       turbu_k_(particles_->getVariableDataByName<Real>("TurbulenceKineticEnergy")) {}
 //=================================================================================================//
-void kOmega_TSDR_Diffusion_Gradient_Dot::interaction(size_t index_i, Real dt)
+void kOmega_TSDR_Diffusion_and_Gradient_Dot_Inner::interaction(size_t index_i, Real dt)
 {
     Real rho_i = rho_[index_i];
     Real turbu_k_i = turbu_k_[index_i];
