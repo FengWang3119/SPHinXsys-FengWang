@@ -139,6 +139,7 @@ class kOmega_TSDR_Diffusion_and_Gradient_Dot_Inner : public kOmega_BaseTurbulent
     Real *omega_diffusion_;
     Real *turbu_omega_;
     Real *turbu_k_;
+    Matd *B_;
 };
 //=================================================================================================//
 class kOmegaTurbulentEddyViscosity : public LocalDynamics,
