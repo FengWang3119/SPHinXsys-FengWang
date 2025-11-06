@@ -143,16 +143,19 @@ Vec2d unit_direction_observe(0.0, 1.0);
 // ** Determine the observing start point. *
 Real observe_start_x[number_observe_line] = 
 {
+    4.0,
     5.0,
-    7.0,
-    9.0,
-    11.0
+    6.0,
+    7.0
 };
+Vec2d point_on_left_slope(4.0, (4.0 - point_G[xAxis]) * tan(incline_angle));
+Vec2d point_on_right_slope(6.0, (point_D[xAxis] - 6.0) * tan(incline_angle));
+
 Real observe_start_y[number_observe_line] = 
 {
+    point_on_left_slope[yAxis] + 0.5 * resolution_ref,
     DH1  + 0.5 * resolution_ref,
-    point_C[1]  + 0.5 * resolution_ref,
-    point_C[1]  + 0.5 * resolution_ref,
+    point_on_right_slope[yAxis] + 0.5 * resolution_ref,
     point_C[1]  + 0.5 * resolution_ref
 };
 
@@ -163,12 +166,22 @@ void getObservingLineLengthAndEndPoints()
 {
     for (int i = 0; i < number_observe_line; ++i)
     {
-        if (i==0)
+        if (i == 0) //** x=4 *
+        {
+            observe_line_length[i] = DH - point_on_left_slope[yAxis];
+            num_observer_points[i] = std::round(observe_line_length[i] / resolution_ref);
+        }
+        else if (i == 1)
         {
             observe_line_length[i] = DH - DH1;
             num_observer_points[i] = std::round(observe_line_length[i] / resolution_ref);
         }
-        else
+        else if (i == 2)
+        {
+            observe_line_length[i] = DH - point_on_right_slope[yAxis];
+            num_observer_points[i] = std::round(observe_line_length[i] / resolution_ref);
+        }
+        else if (i == 3)
         {
             observe_line_length[i] = DH;
             num_observer_points[i] = std::round(observe_line_length[i] / resolution_ref);
