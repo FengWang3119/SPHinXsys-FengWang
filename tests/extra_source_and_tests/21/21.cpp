@@ -257,6 +257,7 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------------------------------------
     int num_output_file = 0;
     //Real start_time_turbulence = 70.0;
+    std::ofstream logfile("output.log");
     //std::cout << "Press any key to start";
     //std::cin.get();
     while (physical_time < end_time)
@@ -358,6 +359,10 @@ int main(int ac, char *av[])
                 std::cout << std::fixed << std::setprecision(9) << "N=" << number_of_iterations << "	Time = "
                           << physical_time
                           << "	Dt = " << Dt << "	dt = " << dt << "\n";
+                logfile << std::fixed << std::setprecision(9) << "N=" << number_of_iterations << "	Time = "
+                        << physical_time
+                        << "	Dt = " << Dt << "	dt = " << dt << std::endl;
+                ;
             }
             number_of_iterations++;
 
@@ -406,5 +411,11 @@ int main(int ac, char *av[])
     tt = t4 - t1 - interval;
     std::cout << "Total wall time for computation: " << tt.seconds()
               << " seconds." << std::endl;
+    std::cout << "Cutoff_time: " << cutoff_time
+              << " seconds." << std::endl;
+    std::cout << "For checking fully-developed or not, index of the cutoff output file =  " << index_check_file_fully_developed << std::endl;
+    logfile << "Total wall time for computation: " << tt.seconds()
+            << " seconds." << std::endl;
+    logfile.close();
     return 0;
 }

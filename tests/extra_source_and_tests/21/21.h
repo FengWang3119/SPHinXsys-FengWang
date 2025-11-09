@@ -20,7 +20,7 @@ using namespace SPH;
 //	Basic geometry parameters and numerical setup.
 //----------------------------------------------------------------------
 Real DH = 2.0; /**< Channel height. */
-Real num_fluid_cross_section = 320.0;
+Real num_fluid_cross_section = 160.0;
 Real extend_in = 2.0;
 Real extend_out = 4.0 + 5.0;
 Real extend_compensate_relaxation = 0.0;
@@ -130,8 +130,12 @@ BoundingBox system_domain_bounds(left_bottom_point + Vec2d(-2.0 * BW, -2.0 * BW)
 //----------------------------------------------------------------------
 int screen_output_interval = 100;
 Real end_time = 100.0;              /**< End time. */
-Real Output_Time = end_time / 40.0; /**< Time stamps for output of body states. */
-Real cutoff_time = 50.0;            //** cutoff_time should be a integral and the same as the PY script */
+Real cutoff_ratio = 0.5; //** cutoff_time should be a integral and the same as the PY script */
+Real cutoff_time = end_time * cutoff_ratio; //** cutoff_time should be a integral and the same as the PY script */
+Real num_output_files = 40.0;
+Real Output_Time = end_time / num_output_files; /**< Time stamps for output of body states. */
+Real index_check_file_fully_developed = num_output_files * cutoff_ratio;
+Real dt = 0.0; /**< Default acoustic time step sizes. */
 //----------------------------------------------------------------------
 // Observation with offset model.
 //----------------------------------------------------------------------
