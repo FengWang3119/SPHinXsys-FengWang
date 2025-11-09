@@ -257,7 +257,7 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------------------------------------
     int num_output_file = 0;
     //Real start_time_turbulence = 70.0;
-    std::ofstream logfile("output.log");
+    std::ofstream logfile("output/output.log");
     //std::cout << "Press any key to start";
     //std::cin.get();
     while (physical_time < end_time)
