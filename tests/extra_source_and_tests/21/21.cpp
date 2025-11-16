@@ -91,7 +91,7 @@ int main(int ac, char *av[])
         write_inserted_body_to_vtp_water.writeToFile(0);
 
         int ite_p = 0;
-        while (ite_p < 1000)
+        while (ite_p < 2000)
         {
             relaxation_step_inner.exec();
             relaxation_step_inner_water.exec();
@@ -257,6 +257,7 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------------------------------------
     int num_output_file = 0;
     //Real start_time_turbulence = 70.0;
+    std::ofstream logfile("output.log");
     //std::cout << "Press any key to start";
     //std::cin.get();
     while (physical_time < end_time)
@@ -358,6 +359,9 @@ int main(int ac, char *av[])
                 std::cout << std::fixed << std::setprecision(9) << "N=" << number_of_iterations << "	Time = "
                           << physical_time
                           << "	Dt = " << Dt << "	dt = " << dt << "\n";
+                          logfile << std::fixed << std::setprecision(9) << "N=" << number_of_iterations << "	Time = "
+                          << physical_time
+                          << "	Dt = " << Dt << "	dt = " << dt << std::endl;
             }
             number_of_iterations++;
 
@@ -406,5 +410,8 @@ int main(int ac, char *av[])
     tt = t4 - t1 - interval;
     std::cout << "Total wall time for computation: " << tt.seconds()
               << " seconds." << std::endl;
+    logfile << "Total wall time for computation: " << tt.seconds()
+              << " seconds." << std::endl;
+    logfile.close();
     return 0;
 }

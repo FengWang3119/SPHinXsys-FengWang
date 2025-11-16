@@ -57,9 +57,9 @@ bool is_always_lattice_arrange_fluid = false;
 //** Tag for Source Term Linearisation *
 bool is_source_term_linearisation = true;
 //** Empirical parameter for initial stability*
-Real turbulent_module_activate_time = 2.5;
+Real turbulent_module_activate_time = 6.0;
 //** Initial values for K, Omega and Mu_t *
-StdVec<Real> initial_turbu_values = {0.000180001, 2.056, 1.0e-3};
+StdVec<Real> initial_turbu_values = {0.0180001, 2.056, 1.0e-1};
 
 Real y_p_constant = DH / 2.0 / num_fluid_cross_section; //** For the first try *
 //Real y_p_constant = 0.025;
@@ -136,7 +136,7 @@ Real cutoff_time = 50.0;            //** cutoff_time should be a integral and th
 // Observation with offset model.
 //----------------------------------------------------------------------
 // ** By kernel weight. *
-//------------¡ý User input ¡ý------------
+//------------ï¿½ï¿½ User input ï¿½ï¿½------------
 const int number_observe_line = 4;
 Real observer_offset_distance = 2.0 * resolution_ref;
 Vec2d unit_direction_observe(0.0, 1.0);
@@ -188,7 +188,7 @@ void getObservingLineLengthAndEndPoints()
         }
     }
 }
-//------------¡ü User input ¡ü------------
+//------------ï¿½ï¿½ User input ï¿½ï¿½------------
 
 StdVec<Vecd> observation_locations;
 StdVec<Vecd> observation_theoretical_locations;
