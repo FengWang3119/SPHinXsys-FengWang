@@ -131,7 +131,8 @@ int main(int ac, char *av[])
     Dynamics1Level<fluid_dynamics::Integration1stHalfCorrectionForOpenBoundaryFlowWithWallRiemann> pressure_relaxation(water_block_inner, water_wall_contact);
 
     /** Density relaxation algorithm by using position verlet time stepping. */
-    Dynamics1Level<fluid_dynamics::Integration2ndHalfWithWallNoRiemann> density_relaxation(water_block_inner, water_wall_contact);
+    //Dynamics1Level<fluid_dynamics::Integration2ndHalfWithWallNoRiemann> density_relaxation(water_block_inner, water_wall_contact);
+    Dynamics1Level<fluid_dynamics::Integration2ndHalfWithWallRiemann> density_relaxation(water_block_inner, water_wall_contact);
     // Dynamics1Level<fluid_dynamics::Integration2ndHalfInnerNoRiemann> density_relaxation(water_block_inner);
     //InteractionDynamics<fluid_dynamics::Integration2ndHalfOnlyWallAcousticRiemannAdjusted> density_relaxation_wall(water_wall_contact);
     //density_relaxation.post_processes_.push_back(&density_relaxation_wall);

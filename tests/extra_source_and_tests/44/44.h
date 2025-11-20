@@ -20,7 +20,7 @@ using namespace SPH;
 //	Basic geometry parameters and numerical setup.
 //----------------------------------------------------------------------
 Real DH = 2.0; /**< Channel height. */
-Real num_fluid_cross_section = 80.0;
+Real num_fluid_cross_section = 40.0;
 Real extend_in = 2.0;
 Real extend_out = 4.0 + 5.0;
 Real extend_compensate_relaxation = 0.0;
@@ -53,7 +53,7 @@ int is_AMRD = 1;
 bool is_constrain_normal_velocity_in_P_region = false;
 //** Weight for correcting the velocity  gradient in the sub near wall region  *
 Real weight_vel_grad_sub_nearwall = 0.1;
-bool is_always_lattice_arrange_fluid = true;
+bool is_always_lattice_arrange_fluid = false;
 //** Tag for Source Term Linearisation *
 bool is_source_term_linearisation = true;
 //** Empirical parameter for initial stability*
@@ -86,8 +86,8 @@ Real U_max = 3.0 * U_inlet; //** An estimated value, generally 1.5 U_inlet *
 Real c_f = 10.0 * U_max;
 Real rho0_f = 1.0; /**< Density. */
 
-// Real Re = 40000.0;
-Real Re = 200.0;
+Real Re = 40000.0;
+// Real Re = 200.0;
 
 Real mu_f = rho0_f * U_f * DH / Re;
 
