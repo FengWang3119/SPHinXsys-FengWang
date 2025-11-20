@@ -53,7 +53,7 @@ int is_AMRD = 1;
 bool is_constrain_normal_velocity_in_P_region = false;
 //** Weight for correcting the velocity  gradient in the sub near wall region  *
 Real weight_vel_grad_sub_nearwall = 0.1;
-bool is_always_lattice_arrange_fluid = false;
+bool is_always_lattice_arrange_fluid = true;
 //** Tag for Source Term Linearisation *
 bool is_source_term_linearisation = true;
 //** Empirical parameter for initial stability*
