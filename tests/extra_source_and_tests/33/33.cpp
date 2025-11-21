@@ -59,6 +59,7 @@ int main(int ac, char *av[])
     observe_centerline::get_observation_locations();
     observe_centerline::output_observer_theoretical_pos_on_line();
     ObserverBody fluid_observer_centerline(sph_system, "FluidObserverCenterline");
+    fluid_observer_centerline.defineAdaptationRatios(0.25, 1.0);
     fluid_observer_centerline.generateParticles<ObserverParticles>(observe_centerline::observation_location);
 
     observe_cross_sections::getPositionsOfMultipleObserveLines();
