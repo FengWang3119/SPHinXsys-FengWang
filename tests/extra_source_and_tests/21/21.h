@@ -20,7 +20,7 @@ using namespace SPH;
 //	Basic geometry parameters and numerical setup.
 //----------------------------------------------------------------------
 Real DH = 2.0; /**< Channel height. */
-Real num_fluid_cross_section = 160.0;
+Real num_fluid_cross_section = 40.0;
 Real extend_in = 2.0;
 Real extend_out = 4.0 + 5.0;
 Real extend_compensate_relaxation = 0.0;
@@ -49,7 +49,7 @@ Real relaxation_rate_turbulent_inlet = 0.8;
 //** Tag for wall treatment *
 int is_blended = 1;
 //** Tag for AMRD *
-int is_AMRD = 1;
+int is_AMRD = 0;
 bool is_constrain_normal_velocity_in_P_region = false;
 //** Weight for correcting the velocity  gradient in the sub near wall region  *
 Real weight_vel_grad_sub_nearwall = 0.1;
@@ -57,7 +57,7 @@ bool is_always_lattice_arrange_fluid = false;
 //** Tag for Source Term Linearisation *
 bool is_source_term_linearisation = true;
 //** Empirical parameter for initial stability*
-Real turbulent_module_activate_time = 2.5;
+Real turbulent_module_activate_time = 8;
 //** Initial values for K, Omega and Mu_t *
 StdVec<Real> initial_turbu_values = {0.000180001, 2.056, 1.0e-3};
 
