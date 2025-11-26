@@ -246,8 +246,14 @@ int main(int ac, char *av[])
     size_t number_of_iterations = sph_system.RestartStep();
     int screen_output_interval = 100;
     int observation_sample_interval = screen_output_interval * 2;
-    Real end_time = 200.0;              /**< End time. */
-    Real Output_Time = end_time / 40.0; /**< Time stamps for output of body states. */
+
+    Real end_time = 200.0;                      /**< End time. */
+    Real cutoff_ratio = 0.6;                    //** cutoff_time should be a integral and the same as the PY script */
+    Real cutoff_time = end_time * cutoff_ratio; //** cutoff_time should be a integral and the same as the PY script */
+    Real num_output_files = 40.0;
+    Real Output_Time = end_time / num_output_files; /**< Time stamps for output of body states. */
+    Real index_check_file_fully_developed = num_output_files * cutoff_ratio;
+
     Real dt = 0.0;                      /**< Default acoustic time step sizes. */
     //----------------------------------------------------------------------
     //	Statistics for CPU time
@@ -263,6 +269,7 @@ int main(int ac, char *av[])
     //	Main loop starts here.
     //----------------------------------------------------------------------------------------------------
     int num_output_file = 0;
+    std::ofstream logfile("output/output.log");
     while (physical_time < end_time)
     {
         Real integration_time = 0.0;
@@ -343,6 +350,9 @@ int main(int ac, char *av[])
                 {
                     write_centerpoint_quantity.writeToFile(number_of_iterations);
                 }
+                logfile << std::fixed << std::setprecision(9) << "N=" << number_of_iterations << "	Time = "
+                        << physical_time
+                        << "	Dt = " << Dt << "	dt = " << dt << std::endl;
             }
             number_of_iterations++;
 
@@ -368,7 +378,7 @@ int main(int ac, char *av[])
             left_bidirection_buffer.tag_buffer_particles.exec();
             right_bidirection_buffer.tag_buffer_particles.exec();
 
-            if (physical_time > end_time * 0.6)
+            if (physical_time > cutoff_time)
             {
                 write_recorded_water_velocity.writeToFile(number_of_iterations);
                 write_recorded_water_k.writeToFile(number_of_iterations);
@@ -392,7 +402,12 @@ int main(int ac, char *av[])
     tt = t4 - t1 - interval;
     std::cout << "Total wall time for computation: " << tt.seconds()
               << " seconds." << std::endl;
-
+    std::cout << "Cutoff_time: " << cutoff_time
+              << " seconds." << std::endl;
+    std::cout << "For checking fully-developed or not, index of the cutoff output file =  " << index_check_file_fully_developed << std::endl;
+    logfile << "Total wall time for computation: " << tt.seconds()
+            << " seconds." << std::endl;
+    logfile.close();
     if (sph_system.GenerateRegressionData())
     {
         write_centerpoint_quantity.generateDataBase(1.0e-3);
