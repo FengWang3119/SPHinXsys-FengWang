@@ -142,7 +142,7 @@ int main(int ac, char *av[])
     //InteractionWithUpdate<fluid_dynamics::GetVelocityGradientComplex> get_velocity_gradient(water_block_inner, water_wall_contact);
     //InteractionWithUpdate<fluid_dynamics::VelocityGradientWithWall<LinearGradientCorrection>> vel_grad_calculation(water_block_inner, water_wall_contact);
 
-    SimpleDynamics<fluid_dynamics::kOmega_kTransportEquationInner> k_equation_relaxation(water_block_inner, initial_turbu_values, is_AMRD);
+    SimpleDynamics<fluid_dynamics::kOmega_kTransportEquationInner> k_equation_relaxation(water_block_inner, initial_turbu_values, is_AMRD, is_blended);
     InteractionDynamics<fluid_dynamics::kOmega_TKE_Diffusion> compute_TKE_diffusion(water_block_inner);
     SimpleDynamics<fluid_dynamics::kOmega_omegaTransportEquationInner> epsilon_equation_relaxation(water_block_inner);
     InteractionDynamics<fluid_dynamics::kOmega_TSDR_Diffusion_and_Gradient_Dot_Inner> compute_TSDR_diffusion_and_gradient_k_omega(water_block_inner);

@@ -13,7 +13,7 @@ using namespace SPH;
 //	Basic geometry parameters and numerical setup.
 //----------------------------------------------------------------------
 Real DH = 2.0;  /**< Channel height. */
-Real DL = 30.0; /**< Channel length. */
+Real DL = 60.0; /**< Channel length. */
 Real num_fluid_cross_section = 20.0;
 
 //----------------------------------------------------------------------
@@ -23,6 +23,8 @@ Real characteristic_length = DH; /**<It needs characteristic Length to calculate
 //** For K and Epsilon, type of the turbulent inlet, 0 is freestream, 1 is from interpolation from PY21 *
 int type_turbulent_inlet = 1;
 Real relaxation_rate_turbulent_inlet = 0.8;
+//** Tag for wall treatment *
+int is_blended = 1;
 //** Tag for AMRD *
 int is_AMRD = 0;
 bool is_constrain_normal_velocity_in_P_region = false;
@@ -33,7 +35,9 @@ bool is_source_term_linearisation = false;
 //** Initial values for K, Omega and Mu_t *
 StdVec<Real> initial_turbu_values = {0.000180001, 2.056, 1.0e-9};
 
-Real y_p_constant = 0.05;
+//Real y_p_constant = 0.05;
+Real y_p_constant = DH / 2.0 / num_fluid_cross_section; //** For the first try or Not use BOT *
+
 Real resolution_ref = (DH - 2.0 * y_p_constant) / (num_fluid_cross_section - 1.0); /**< Initial reference particle spacing. */
 Real offset_distance = y_p_constant - resolution_ref / 2.0;                        //** Basically offset distance is large than or equal to 0 *
 
