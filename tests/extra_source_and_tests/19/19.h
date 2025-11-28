@@ -36,10 +36,14 @@ bool is_source_term_linearisation = false;
 StdVec<Real> initial_turbu_values = {0.000180001, 2.056, 1.0e-9};
 
 //Real y_p_constant = 0.05;
-Real y_p_constant = DH / 2.0 / num_fluid_cross_section; //** For the first try or Not use BOT *
+//Real y_p_constant = DH / 2.0 / num_fluid_cross_section; //** For the first try or Not use BOT *
+//Real resolution_ref = (DH - 2.0 * y_p_constant) / (num_fluid_cross_section - 1.0); /**< Initial reference particle spacing. */
+//Real offset_distance = y_p_constant - resolution_ref / 2.0;                        //** Basically offset distance is large than or equal to 0 *
 
-Real resolution_ref = (DH - 2.0 * y_p_constant) / (num_fluid_cross_section - 1.0); /**< Initial reference particle spacing. */
-Real offset_distance = y_p_constant - resolution_ref / 2.0;                        //** Basically offset distance is large than or equal to 0 *
+// ** If not use BOT *
+Real y_p_constant = DH / 2.0 / num_fluid_cross_section;            
+Real resolution_ref = DH / num_fluid_cross_section;
+Real offset_distance = 0.0;                        
 
 Real BW = resolution_ref * 4; /**< Reference size of the emitter. */
 Real DL_sponge = resolution_ref * 20;
@@ -108,6 +112,7 @@ void get_observation_locations()
 }
 void output_observer_theoretical_y()
 {
+    std::cout << "offset_distance=" << offset_distance << std::endl;
     std::string filename = "../bin/output/observer_theoretical_y.dat";
     std::ofstream outfile(filename);
     if (!outfile.is_open())
