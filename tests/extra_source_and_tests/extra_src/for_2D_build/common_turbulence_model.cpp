@@ -184,32 +184,6 @@ void kEpsilon_GetVelocityGradient<Inner<>>::update(size_t index_i, Real dt)
     }
 }
 //=================================================================================================//
-kEpsilon_GetVelocityGradient<Contact<Wall>>::kEpsilon_GetVelocityGradient(BaseContactRelation &contact_relation)
-    : InteractionWithWall<kEpsilon_GetVelocityGradient>(contact_relation),
-      velocity_gradient_(particles_->getVariableDataByName<Matd>("TurbulentVelocityGradient"))
-{
-    this->particles_->addVariableToSort<Matd>("Velocity_Gradient_Wall");
-}
-//=================================================================================================//
-void kEpsilon_GetVelocityGradient<Contact<Wall>>::interaction(size_t index_i, Real dt)
-{
-    //** The near wall velo grad is updated in wall function part *
-    if (is_near_wall_P1_[index_i] != 1)
-    {
-        Vecd vel_i = vel_[index_i];
-        for (size_t k = 0; k < DataDelegateContact::contact_configuration_.size(); ++k)
-        {
-            Neighborhood &contact_neighborhood = (*DataDelegateContact::contact_configuration_[k])[index_i];
-            for (size_t n = 0; n != contact_neighborhood.current_size_; ++n)
-            {
-                size_t index_j = contact_neighborhood.j_[n];
-                Vecd nablaW_ijV_j = contact_neighborhood.dW_ij_[n] * this->Vol_[index_j] * contact_neighborhood.e_ij_[n];
-                velocity_gradient_[index_i] += -1.0 * (vel_i)*nablaW_ijV_j.transpose();
-            }
-        }
-    }
-}
-//=================================================================================================//
 TKEnergyForce<Inner<>>::TKEnergyForce(BaseInnerRelation &inner_relation)
     : TKEnergyForce<Base, DataDelegateInner>(inner_relation),
       test_k_grad_rslt_(this->particles_->template getVariableDataByName<Vecd>("TkeGradResult")),
