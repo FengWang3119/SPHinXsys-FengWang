@@ -23,8 +23,8 @@ TKEnergyForce<Base, DataDelegationType>::
 //=================================================================================================//
 template <class DataDelegationType>
 template <class BaseRelationType>
-GetVelocityGradient<DataDelegationType>::
-    GetVelocityGradient(BaseRelationType &base_relation)
+kEpsilon_GetVelocityGradient<DataDelegationType>::
+    kEpsilon_GetVelocityGradient(BaseRelationType &base_relation)
     : LocalDynamics(base_relation.getSPHBody()), DataDelegationType(base_relation),
       Vol_(this->particles_->template getVariableDataByName<Real>("VolumetricMeasure")),
       vel_(this->particles_->template getVariableDataByName<Vecd>("Velocity")),

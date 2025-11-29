@@ -43,16 +43,16 @@ class WallFunction : public WallFunctionCoefficient
 };
 //=================================================================================================//
 template <typename... InteractionTypes>
-class GetVelocityGradient;
+class kEpsilon_GetVelocityGradient;
 
 template <class DataDelegationType>
-class GetVelocityGradient<DataDelegationType>
+class kEpsilon_GetVelocityGradient<DataDelegationType>
     : public LocalDynamics, public DataDelegationType
 {
   public:
     template <class BaseRelationType>
-    explicit GetVelocityGradient(BaseRelationType &base_relation);
-    virtual ~GetVelocityGradient(){};
+    explicit kEpsilon_GetVelocityGradient(BaseRelationType &base_relation);
+    virtual ~kEpsilon_GetVelocityGradient(){};
 
   protected:
     Real *Vol_;
@@ -66,11 +66,11 @@ class GetVelocityGradient<DataDelegationType>
 };
 //** Inner part *
 template <>
-class GetVelocityGradient<Inner<>> : public GetVelocityGradient<DataDelegateInner>
+class kEpsilon_GetVelocityGradient<Inner<>> : public kEpsilon_GetVelocityGradient<DataDelegateInner>
 {
   public:
-    explicit GetVelocityGradient(BaseInnerRelation &inner_relation, Real weight_sub);
-    virtual ~GetVelocityGradient(){};
+    explicit kEpsilon_GetVelocityGradient(BaseInnerRelation &inner_relation, Real weight_sub);
+    virtual ~kEpsilon_GetVelocityGradient(){};
     void interaction(size_t index_i, Real dt = 0.0);
     void update(size_t index_i, Real dt = 0.0);
 
@@ -80,15 +80,15 @@ class GetVelocityGradient<Inner<>> : public GetVelocityGradient<DataDelegateInne
     Matd *turbu_B_;
     Real weight_sub_nearwall_;
 };
-using GetVelocityGradientInner = GetVelocityGradient<Inner<>>;
+using kEpsilon_GetVelocityGradientInner = kEpsilon_GetVelocityGradient<Inner<>>;
 
 //** Wall part *
 template <>
-class GetVelocityGradient<Contact<Wall>> : public InteractionWithWall<GetVelocityGradient>
+class kEpsilon_GetVelocityGradient<Contact<Wall>> : public InteractionWithWall<kEpsilon_GetVelocityGradient>
 {
   public:
-    explicit GetVelocityGradient(BaseContactRelation &contact_relation);
-    virtual ~GetVelocityGradient(){};
+    explicit kEpsilon_GetVelocityGradient(BaseContactRelation &contact_relation);
+    virtual ~kEpsilon_GetVelocityGradient(){};
     void interaction(size_t index_i, Real dt = 0.0);
 
   protected:
@@ -96,7 +96,7 @@ class GetVelocityGradient<Contact<Wall>> : public InteractionWithWall<GetVelocit
 };
 
 //** Interface part *
-using GetVelocityGradientComplex = ComplexInteraction<GetVelocityGradient<Inner<>, Contact<Wall>>>;
+using GetVelocityGradientComplex = ComplexInteraction<kEpsilon_GetVelocityGradient<Inner<>, Contact<Wall>>>;
 //=================================================================================================//
 template <typename... InteractionTypes>
 class TKEnergyForce;

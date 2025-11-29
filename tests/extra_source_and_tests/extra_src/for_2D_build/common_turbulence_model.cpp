@@ -133,8 +133,8 @@ Real WallFunction::laminar_law_velocity_gradient(Real vel_fric_mag, Real dynamic
     return vel_fric_mag * vel_fric_mag / dynamic_viscosity;
 }
 //=================================================================================================//
-GetVelocityGradient<Inner<>>::GetVelocityGradient(BaseInnerRelation &inner_relation, Real weight_sub)
-    : GetVelocityGradient<DataDelegateInner>(inner_relation),
+kEpsilon_GetVelocityGradient<Inner<>>::kEpsilon_GetVelocityGradient(BaseInnerRelation &inner_relation, Real weight_sub)
+    : kEpsilon_GetVelocityGradient<DataDelegateInner>(inner_relation),
       velocity_gradient_(particles_->getVariableDataByName<Matd>("TurbulentVelocityGradient")),
       B_(particles_->getVariableDataByName<Matd>("LinearGradientCorrectionMatrix")),
       turbu_B_(particles_->getVariableDataByName<Matd>("TurbulentLinearGradientCorrectionMatrix")),
@@ -144,7 +144,7 @@ GetVelocityGradient<Inner<>>::GetVelocityGradient(BaseInnerRelation &inner_relat
     this->particles_->addVariableToWrite<Matd>("TurbulentVelocityGradient");
 }
 //=================================================================================================//
-void GetVelocityGradient<Inner<>>::interaction(size_t index_i, Real dt)
+void kEpsilon_GetVelocityGradient<Inner<>>::interaction(size_t index_i, Real dt)
 {
     //** The near wall velo grad is updated in wall function part *
     if (is_near_wall_P1_[index_i] != 1)
@@ -174,7 +174,7 @@ void GetVelocityGradient<Inner<>>::interaction(size_t index_i, Real dt)
     }
 }
 //=================================================================================================//
-void GetVelocityGradient<Inner<>>::update(size_t index_i, Real dt)
+void kEpsilon_GetVelocityGradient<Inner<>>::update(size_t index_i, Real dt)
 {
     if (is_near_wall_P1_[index_i] != 1)
     {
@@ -184,14 +184,14 @@ void GetVelocityGradient<Inner<>>::update(size_t index_i, Real dt)
     }
 }
 //=================================================================================================//
-GetVelocityGradient<Contact<Wall>>::GetVelocityGradient(BaseContactRelation &contact_relation)
-    : InteractionWithWall<GetVelocityGradient>(contact_relation),
+kEpsilon_GetVelocityGradient<Contact<Wall>>::kEpsilon_GetVelocityGradient(BaseContactRelation &contact_relation)
+    : InteractionWithWall<kEpsilon_GetVelocityGradient>(contact_relation),
       velocity_gradient_(particles_->getVariableDataByName<Matd>("TurbulentVelocityGradient"))
 {
     this->particles_->addVariableToSort<Matd>("Velocity_Gradient_Wall");
 }
 //=================================================================================================//
-void GetVelocityGradient<Contact<Wall>>::interaction(size_t index_i, Real dt)
+void kEpsilon_GetVelocityGradient<Contact<Wall>>::interaction(size_t index_i, Real dt)
 {
     //** The near wall velo grad is updated in wall function part *
     if (is_near_wall_P1_[index_i] != 1)
