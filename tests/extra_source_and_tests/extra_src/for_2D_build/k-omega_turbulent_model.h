@@ -35,6 +35,62 @@ class kOmega_BaseTurbuClosureCoeff
     Real C_mu_75_for_omega_inlet_;
 };
 //=================================================================================================//
+template <typename... InteractionTypes>
+class kOmega_GetVelocityGradient;
+
+template <class DataDelegationType>
+class kOmega_GetVelocityGradient<DataDelegationType>
+    : public LocalDynamics, public DataDelegationType
+{
+  public:
+    template <class BaseRelationType>
+    explicit kOmega_GetVelocityGradient(BaseRelationType &base_relation);
+    virtual ~kOmega_GetVelocityGradient() {};
+
+  protected:
+    Real *Vol_;
+    Vecd *vel_, *pos_;
+    int *is_near_wall_P1_;
+    int *is_near_wall_P2_;
+
+    Matd *velocity_gradient_;
+    //**For test*
+    Matd *velocity_gradient_wall;
+};
+//** Inner part *
+template <>
+class kOmega_GetVelocityGradient<Inner<>> : public kOmega_GetVelocityGradient<DataDelegateInner>
+{
+  public:
+    explicit kOmega_GetVelocityGradient(BaseInnerRelation &inner_relation, Real weight_sub);
+    virtual ~kOmega_GetVelocityGradient() {};
+    void interaction(size_t index_i, Real dt = 0.0);
+    void update(size_t index_i, Real dt = 0.0);
+
+  protected:
+    Matd *velocity_gradient_;
+    Matd *B_;
+    Matd *turbu_B_;
+    Real weight_sub_nearwall_;
+};
+using kOmega_GetVelocityGradientInner = kOmega_GetVelocityGradient<Inner<>>;
+
+//** Wall part *
+template <>
+class kOmega_GetVelocityGradient<Contact<Wall>> : public InteractionWithWall<kOmega_GetVelocityGradient>
+{
+  public:
+    explicit kOmega_GetVelocityGradient(BaseContactRelation &contact_relation);
+    virtual ~kOmega_GetVelocityGradient() {};
+    void interaction(size_t index_i, Real dt = 0.0);
+
+  protected:
+    Matd *velocity_gradient_;
+};
+
+//** Interface part *
+using kOmega_GetVelocityGradientComplex = ComplexInteraction<kOmega_GetVelocityGradient<Inner<>, Contact<Wall>>>;
+//=================================================================================================//
 template <typename... T>
 class kOmega_BaseTurbulentModel;
 

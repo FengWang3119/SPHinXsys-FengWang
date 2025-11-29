@@ -25,7 +25,19 @@ kOmega_BaseTurbulentModel<Base, DataDelegationType>::kOmega_BaseTurbulentModel(B
       dimension_(2) {}
 //A temporarily treatment for dimension
 //=================================================================================================//
-
+template <class DataDelegationType>
+template <class BaseRelationType>
+kOmega_GetVelocityGradient<DataDelegationType>::
+    kOmega_GetVelocityGradient(BaseRelationType &base_relation)
+    : LocalDynamics(base_relation.getSPHBody()), DataDelegationType(base_relation),
+      Vol_(this->particles_->template getVariableDataByName<Real>("VolumetricMeasure")),
+      vel_(this->particles_->template getVariableDataByName<Vecd>("Velocity")),
+      pos_(this->particles_->template getVariableDataByName<Vecd>("Position")),
+      is_near_wall_P1_(this->particles_->template getVariableDataByName<int>("IsNearWallP1")),
+      is_near_wall_P2_(this->particles_->template getVariableDataByName<int>("IsNearWallP2")),
+      velocity_gradient_(this->particles_->template registerStateVariable<Matd>("TurbulentVelocityGradient")),
+      velocity_gradient_wall(this->particles_->template registerStateVariable<Matd>("Velocity_Gradient_Wall")) {} 
+//=================================================================================================//
 } // namespace fluid_dynamics
 //=================================================================================================//
 } // namespace SPH

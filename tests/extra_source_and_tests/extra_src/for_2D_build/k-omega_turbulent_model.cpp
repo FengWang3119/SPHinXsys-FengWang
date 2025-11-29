@@ -18,6 +18,83 @@ kOmega_BaseTurbuClosureCoeff::kOmega_BaseTurbuClosureCoeff()
     std_kw_beta_star_5_ = pow(std_kw_beta_star_, 0.5);
 }
 //=================================================================================================//
+kOmega_GetVelocityGradient<Inner<>>::kOmega_GetVelocityGradient(BaseInnerRelation &inner_relation, Real weight_sub)
+    : kOmega_GetVelocityGradient<DataDelegateInner>(inner_relation),
+      velocity_gradient_(particles_->getVariableDataByName<Matd>("TurbulentVelocityGradient")),
+      B_(particles_->getVariableDataByName<Matd>("LinearGradientCorrectionMatrix")),
+      turbu_B_(particles_->getVariableDataByName<Matd>("TurbulentLinearGradientCorrectionMatrix")),
+      weight_sub_nearwall_(weight_sub)
+{
+    this->particles_->addVariableToSort<Matd>("TurbulentVelocityGradient");
+    this->particles_->addVariableToWrite<Matd>("TurbulentVelocityGradient");
+}
+//=================================================================================================//
+void kOmega_GetVelocityGradient<Inner<>>::interaction(size_t index_i, Real dt)
+{
+    //** The near wall velo grad is updated in wall function part *
+    if (is_near_wall_P1_[index_i] != 1)
+    {
+        velocity_gradient_[index_i] = Matd::Zero();
+        Vecd vel_i = vel_[index_i];
+        const Neighborhood &inner_neighborhood = inner_configuration_[index_i];
+        for (size_t n = 0; n != inner_neighborhood.current_size_; ++n)
+        {
+            size_t index_j = inner_neighborhood.j_[n];
+            Vecd nablaW_ijV_j = inner_neighborhood.dW_ij_[n] * this->Vol_[index_j] * inner_neighborhood.e_ij_[n];
+
+            Real r_ij = inner_neighborhood.r_ij_[n];
+            const Vecd &e_ij = inner_neighborhood.e_ij_[n];
+            if (is_near_wall_P2_[index_i] == 10 && is_near_wall_P1_[index_j] == 1)
+            {
+                Matd P1 = -(vel_i - vel_[index_j]) * nablaW_ijV_j.transpose();
+                Vecd vel_diff = velocity_gradient_[index_j] * r_ij * e_ij;
+                Matd P2 = -vel_diff * nablaW_ijV_j.transpose();
+                velocity_gradient_[index_i] += (1 - weight_sub_nearwall_) * P1 + weight_sub_nearwall_ * P2;
+            }
+            else
+            {
+                velocity_gradient_[index_i] += -(vel_i - vel_[index_j]) * nablaW_ijV_j.transpose();
+            }
+        }
+    }
+}
+//=================================================================================================//
+void kOmega_GetVelocityGradient<Inner<>>::update(size_t index_i, Real dt)
+{
+    if (is_near_wall_P1_[index_i] != 1)
+    {
+        // velocity_gradient_[index_i] *= B_[index_i];
+        velocity_gradient_[index_i] *= turbu_B_[index_i];
+        // velocity_gradient_[index_i] = turbu_B_[index_i] * velocity_gradient_[index_i];
+    }
+}
+//=================================================================================================//
+kOmega_GetVelocityGradient<Contact<Wall>>::kOmega_GetVelocityGradient(BaseContactRelation &contact_relation)
+    : InteractionWithWall<kOmega_GetVelocityGradient>(contact_relation),
+      velocity_gradient_(particles_->getVariableDataByName<Matd>("TurbulentVelocityGradient"))
+{
+    this->particles_->addVariableToSort<Matd>("Velocity_Gradient_Wall");
+}
+//=================================================================================================//
+void kOmega_GetVelocityGradient<Contact<Wall>>::interaction(size_t index_i, Real dt)
+{
+    //** The near wall velo grad is updated in wall function part *
+    if (is_near_wall_P1_[index_i] != 1)
+    {
+        Vecd vel_i = vel_[index_i];
+        for (size_t k = 0; k < DataDelegateContact::contact_configuration_.size(); ++k)
+        {
+            Neighborhood &contact_neighborhood = (*DataDelegateContact::contact_configuration_[k])[index_i];
+            for (size_t n = 0; n != contact_neighborhood.current_size_; ++n)
+            {
+                size_t index_j = contact_neighborhood.j_[n];
+                Vecd nablaW_ijV_j = contact_neighborhood.dW_ij_[n] * this->Vol_[index_j] * contact_neighborhood.e_ij_[n];
+                velocity_gradient_[index_i] += -1.0 * (vel_i)*nablaW_ijV_j.transpose();
+            }
+        }
+    }
+}
+//=================================================================================================//
 kOmegaTurbulentEddyViscosity::
     kOmegaTurbulentEddyViscosity(SPHBody &sph_body)
     : LocalDynamics(sph_body),
