@@ -44,17 +44,22 @@ void kOmega_GetVelocityGradient<Inner<>>::interaction(size_t index_i, Real dt)
 
             Real r_ij = inner_neighborhood.r_ij_[n];
             const Vecd &e_ij = inner_neighborhood.e_ij_[n];
-            if (is_near_wall_P2_[index_i] == 10 && is_near_wall_P1_[index_j] == 1)
-            {
-                Matd P1 = -(vel_i - vel_[index_j]) * nablaW_ijV_j.transpose();
-                Vecd vel_diff = velocity_gradient_[index_j] * r_ij * e_ij;
-                Matd P2 = -vel_diff * nablaW_ijV_j.transpose();
-                velocity_gradient_[index_i] += (1 - weight_sub_nearwall_) * P1 + weight_sub_nearwall_ * P2;
-            }
-            else
-            {
-                velocity_gradient_[index_i] += -(vel_i - vel_[index_j]) * nablaW_ijV_j.transpose();
-            }
+            
+            //** If use sub near wall weighting scheme *
+            //if (is_near_wall_P2_[index_i] == 10 && is_near_wall_P1_[index_j] == 1)
+            //{
+            //    Matd P1 = -(vel_i - vel_[index_j]) * nablaW_ijV_j.transpose();
+            //    Vecd vel_diff = velocity_gradient_[index_j] * r_ij * e_ij;
+            //    Matd P2 = -vel_diff * nablaW_ijV_j.transpose();
+            //    velocity_gradient_[index_i] += (1 - weight_sub_nearwall_) * P1 + weight_sub_nearwall_ * P2;
+            //}
+            //else
+            //{
+            //    velocity_gradient_[index_i] += -(vel_i - vel_[index_j]) * nablaW_ijV_j.transpose();
+            //}
+
+            //** If not use sub near wall weighting scheme *
+            velocity_gradient_[index_i] += -(vel_i - vel_[index_j]) * nablaW_ijV_j.transpose();
         }
     }
 }
