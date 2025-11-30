@@ -62,7 +62,7 @@ template <>
 class kOmega_GetVelocityGradient<Inner<>> : public kOmega_GetVelocityGradient<DataDelegateInner>
 {
   public:
-    explicit kOmega_GetVelocityGradient(BaseInnerRelation &inner_relation, Real weight_sub);
+    explicit kOmega_GetVelocityGradient(BaseInnerRelation &inner_relation);
     virtual ~kOmega_GetVelocityGradient() {};
     void interaction(size_t index_i, Real dt = 0.0);
     void update(size_t index_i, Real dt = 0.0);
@@ -71,7 +71,6 @@ class kOmega_GetVelocityGradient<Inner<>> : public kOmega_GetVelocityGradient<Da
     Matd *velocity_gradient_;
     Matd *B_;
     Matd *turbu_B_;
-    Real weight_sub_nearwall_;
 };
 using kOmega_GetVelocityGradientInner = kOmega_GetVelocityGradient<Inner<>>;
 
