@@ -257,6 +257,8 @@ class kOmega_WallFunctionCorrection : public LocalDynamics,
     StdVec<Vecd *> contact_n_;
     Real *physical_time_;
     int *is_blended_;
+    Real *turbu_strain_rate_magnitude_;
+    Real *laminar_fraction_for_blend_;
 };
 //=================================================================================================//
 class kOmega_InflowTurbulentCondition : public BaseFlowBoundaryCondition,

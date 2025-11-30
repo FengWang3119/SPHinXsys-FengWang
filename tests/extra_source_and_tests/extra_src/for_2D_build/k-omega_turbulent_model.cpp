@@ -138,7 +138,9 @@ kOmega_WallFunctionCorrection::
       e_nearest_tau_(particles_->getVariableDataByName<Vecd>("WallNearestTangentialUnitVector")),
       e_nearest_normal_(particles_->getVariableDataByName<Vecd>("WallNearestNormalUnitVector")),
       physical_time_(sph_system_.getSystemVariableDataByName<Real>("PhysicalTime")),
-      is_blended_(particles_->getVariableDataByName<int>("TurbulentWallTreatmentType"))
+      is_blended_(particles_->getVariableDataByName<int>("TurbulentWallTreatmentType")),
+      turbu_strain_rate_magnitude_(particles_->getVariableDataByName<Real>("TurbulentStrainRateMagnitude")),
+      laminar_fraction_for_blend_(particles_->registerStateVariable<Real>("LaminarFractionForBlend")) // ** For test *
 {
     for (size_t k = 0; k != contact_particles_.size(); ++k)
     {
@@ -146,29 +148,27 @@ kOmega_WallFunctionCorrection::
         contact_Vol_.push_back(contact_particles_[k]->getVariableDataByName<Real>("VolumetricMeasure"));
     }
 
-    //particles_->registerStateVariable(y_p_, "Y_P");
     particles_->addVariableToSort<Real>("Y_P");
     particles_->addVariableToWrite<Real>("Y_P");
 
     //** Fixed y_p_ as a constant distance *
     //std::fill(y_p_.begin(), y_p_.end(), y_p_constant);
 
-    //particles_->registerStateVariable(wall_Y_plus_, "WallYplus");
     particles_->addVariableToSort<Real>("WallYplus");
     particles_->addVariableToWrite<Real>("WallYplus");
 
     //** Initial value is important, especially when use log law *
-    //particles_->registerStateVariable(wall_Y_star_, "WallYstar", TinyReal);
     particles_->addVariableToSort<Real>("WallYstar");
     particles_->addVariableToWrite<Real>("WallYstar");
 
-    //particles_->registerStateVariable(velo_tan_, "TangentialVelocity");
     particles_->addVariableToSort<Real>("TangentialVelocity");
     particles_->addVariableToWrite<Real>("TangentialVelocity");
 
-    //particles_->registerStateVariable(velo_friction_, "FrictionVelocity");
     particles_->addVariableToSort<Vecd>("FrictionVelocity");
     particles_->addVariableToWrite<Vecd>("FrictionVelocity");
+
+    particles_->addVariableToSort<Real>("LaminarFractionForBlend");
+    particles_->addVariableToWrite<Real>("LaminarFractionForBlend");
 };
 //=================================================================================================//
 void kOmega_WallFunctionCorrection::interaction(size_t index_i, Real dt)
@@ -324,8 +324,11 @@ void kOmega_WallFunctionCorrection::interaction(size_t index_i, Real dt)
                         Real omega_p_j_turbu = u_tau_temp / (std_kw_beta_star_5_ * Karman_ * y_p_j);
                         Real G_k_p_j_turbu = (u_tau_temp * vel_i_tau_mag / u_star_j) * (u_tau_temp * vel_i_tau_mag / u_star_j) / (nu_i * Karman_ * y_star_j);
 
+                        Real G_lam_k_p = turbu_mu_[index_i] / rho_i * turbu_strain_rate_magnitude_[index_i] * turbu_strain_rate_magnitude_[index_i];
+
                         omega_p_j = lam_frac * omega_p_j_lam + turbu_frac * omega_p_j_turbu;
-                        G_k_p_j = turbu_frac * G_k_p_j_turbu;
+                        //G_k_p_j = turbu_frac * G_k_p_j_turbu;
+                        G_k_p_j = lam_frac * G_lam_k_p + turbu_frac * G_k_p_j_turbu;
                     }
                     else
                     {
@@ -361,6 +364,9 @@ void kOmega_WallFunctionCorrection::interaction(size_t index_i, Real dt)
             velocity_gradient_[index_i] = Q.transpose() * vel_grad_i_tn * Q;
 
             k_production_[index_i] = G_k_p_weighted_sum / total_weight;
+
+            //** For test *
+            laminar_fraction_for_blend_[index_i] = std::exp(-1.0 * y_p_constant_i * turbu_k_i_05 / nu_i / 11.0);
         }
     }
 }
@@ -377,8 +383,8 @@ kOmega_kTransportEquationInner::kOmega_kTransportEquationInner(BaseInnerRelation
       is_blended_(particles_->registerStateVariable<int>("TurbulentWallTreatmentType", is_blended)),
       turbu_indicator_(particles_->registerStateVariable<int>("TurbulentIndicator")),
       k_diffusion_(particles_->registerStateVariable<Real>("K_Diffusion")),
-      turbu_strain_rate_(particles_->getVariableDataByName<Matd>("TurbulentStrainRate")),
-      turbu_strain_rate_magnitude_(particles_->getVariableDataByName<Real>("TurbulentStrainRateMagnitude")),
+      turbu_strain_rate_(particles_->registerStateVariable<Matd>("TurbulentStrainRate")),
+      turbu_strain_rate_magnitude_(particles_->registerStateVariable<Real>("TurbulentStrainRateMagnitude")),
       is_near_wall_P1_(particles_->getVariableDataByName<int>("IsNearWallP1")),
       velocity_gradient_(particles_->getVariableDataByName<Matd>("TurbulentVelocityGradient"))
 {
