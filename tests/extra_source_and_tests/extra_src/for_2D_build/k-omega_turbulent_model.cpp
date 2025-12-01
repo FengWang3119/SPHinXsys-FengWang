@@ -86,7 +86,8 @@ void kOmega_GetVelocityGradient<Contact<Wall>>::interaction(size_t index_i, Real
         {
             size_t index_j = contact_neighborhood.j_[n];
             Vecd nablaW_ijV_j = contact_neighborhood.dW_ij_[n] * Vol_k[index_j] * contact_neighborhood.e_ij_[n];
-            vel_grad += -1.0 * (vel_i - vel_ave_k[index_j]) * nablaW_ijV_j.transpose();
+            //vel_grad += -1.0 * (vel_i - vel_ave_k[index_j]) * nablaW_ijV_j.transpose();
+            vel_grad += -1.0 * 2.0 * (vel_[index_i] - vel_ave_k[index_j]) * nablaW_ijV_j.transpose();
         }
     }
     velocity_gradient_[index_i] += vel_grad;
