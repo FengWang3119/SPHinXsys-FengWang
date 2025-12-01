@@ -14,7 +14,7 @@ using namespace SPH;
 //----------------------------------------------------------------------
 Real DH = 2.0;  /**< Channel height. */
 Real DL = 60.0; /**< Channel length. */
-Real num_fluid_cross_section = 80.0;
+Real num_fluid_cross_section = 20.0;
 
 //----------------------------------------------------------------------
 //	Unique parameters for turbulence.
@@ -128,6 +128,98 @@ void output_observer_theoretical_y()
 }
 //** For regression test *
 StdVec<Vecd> observer_location_center_point = {Vecd(0.5 * DL, 0.5 * DH)};
+
+//** For getting near wall friction velocity or wall shear stress *
+namespace observe_nearwall
+{
+constexpr const char *namespace_prefix = "nearwall";
+const int number_observe_line = 1;
+Real sparse_ratio = 4.0;
+Real observer_offset_distance = 0.0 * resolution_ref; //** Offset the first and last observing point *
+Real observer_offset_distance_whole_line = 2.0 * resolution_ref;
+Vec2d unit_direction_observe(1.0, 0.0);
+// ** Determine the observing start point of the each line. *
+Real observe_start_x[number_observe_line] = {0.0};
+Real observe_start_y[number_observe_line] = {0.5 * resolution_ref - observer_offset_distance_whole_line};
+// ** Determine the length of the observing line and other information. *
+Real observe_line_length[number_observe_line] = {0.0};
+int num_observer_points[number_observe_line] = {0};
+void getObservingLineLengthAndEndPoints()
+{
+    for (int i = 0; i < number_observe_line; ++i)
+    {
+        observe_line_length[i] = DL;
+        num_observer_points[i] = std::round(observe_line_length[i] / resolution_ref / sparse_ratio);
+    }
+}
+
+StdVec<Vecd> observation_locations;
+StdVec<Vecd> observation_theoretical_locations;
+void getPositionsOfMultipleObserveLines()
+{
+    getObservingLineLengthAndEndPoints();
+    for (int k = 0; k < number_observe_line; ++k)
+    {
+        Vecd pos_observe_start(observe_start_x[k], observe_start_y[k]);
+        int num_observer_point = num_observer_points[k];
+        Real observe_spacing = observe_line_length[k] / num_observer_point;
+        for (int i = 0; i < num_observer_point; ++i)
+        {
+            Real offset = 0.0;
+            offset = (i == 0 ? -observer_offset_distance : (i == num_observer_point - 1 ? observer_offset_distance : 0.0));
+            Vecd pos_observer_i = pos_observe_start + (i * observe_spacing + offset) * unit_direction_observe;
+            Vecd pos_observer_i_no_offset = pos_observe_start + i * observe_spacing * unit_direction_observe;
+            observation_locations.push_back(pos_observer_i);
+            observation_theoretical_locations.push_back(pos_observer_i_no_offset);
+        }
+    }
+}
+void output_observe_positions()
+{
+    std::string filename = "../bin/output/" + std::string(namespace_prefix) + "observer_positions.dat";
+    std::ofstream outfile(filename);
+    if (!outfile.is_open())
+    {
+        std::cerr << "Error: Unable to open file " << filename << " for writing." << std::endl;
+        return;
+    }
+    for (const Vecd &position : observation_locations)
+    {
+        outfile << position[0] << " " << position[1] << "\n";
+    }
+    outfile.close();
+}
+void output_observe_theoretical_x()
+{
+    std::string filename = "../bin/output/" + std::string(namespace_prefix) + "observer_theoretical_x.dat";
+    std::ofstream outfile(filename);
+    if (!outfile.is_open())
+    {
+        std::cerr << "Error: Unable to open file " << filename << " for writing." << std::endl;
+        return;
+    }
+    for (const Vecd &position : observation_theoretical_locations)
+    {
+        outfile << position[0] << "\n";
+    }
+    outfile.close();
+}
+void output_number_observe_points_on_lines()
+{
+    std::string filename = "../bin/output/" + std::string(namespace_prefix) + "observer_num_points_on_lines.dat";
+    std::ofstream outfile(filename);
+    if (!outfile.is_open())
+    {
+        std::cerr << "Error: Unable to open file " << filename << " for writing." << std::endl;
+        return;
+    }
+    for (const int &number : num_observer_points)
+    {
+        outfile << number << "\n";
+    }
+    outfile.close();
+}
+} // namespace observe_nearwall
 //----------------------------------------------------------------------
 //	Cases-dependent geometries
 //----------------------------------------------------------------------

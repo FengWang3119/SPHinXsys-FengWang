@@ -123,6 +123,7 @@ kOmega_WallFunctionCorrection::
       wall_Y_star_(particles_->registerStateVariable<Real>("WallYstar")),
       velo_tan_(particles_->registerStateVariable<Real>("TangentialVelocity")),
       velo_friction_(particles_->registerStateVariable<Vecd>("FrictionVelocity")),
+      wall_shear_stress_(particles_->registerStateVariable<Real>("WallShearStress")),
       vel_(particles_->getVariableDataByName<Vecd>("Velocity")), rho_(particles_->getVariableDataByName<Real>("Density")),
       viscosity_(DynamicCast<Viscosity>(this, particles_->getBaseMaterial())),
       molecular_viscosity_(viscosity_.ReferenceViscosity()),
@@ -256,6 +257,9 @@ void kOmega_WallFunctionCorrection::interaction(size_t index_i, Real dt)
         velo_friction_[index_i] = velo_fric_mag * e_i_nearest_tau;
         if (vel_i.dot(velo_friction_[index_i]) < 0.0)
             velo_friction_[index_i] = -1.0 * velo_friction_[index_i];
+
+        //** Calculate wall shear stress*
+        wall_shear_stress_[index_i] = rho_i * velo_fric_mag * velo_fric_mag;
 
         //** Calculate Y_plus  *
         wall_Y_plus_[index_i] = y_p_constant_i * velo_fric_mag / nu_i;

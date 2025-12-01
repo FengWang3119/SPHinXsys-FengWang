@@ -236,6 +236,7 @@ class kOmega_WallFunctionCorrection : public LocalDynamics,
     Real *wall_Y_star_;
     Real *velo_tan_;
     Vecd *velo_friction_;
+    Real *wall_shear_stress_;
 
     Vecd *vel_;
     Real *rho_;

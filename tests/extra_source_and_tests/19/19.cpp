@@ -45,11 +45,20 @@ int main(int ac, char *av[])
     ObserverBody fluid_observer(sph_system, "FluidObserver");
     fluid_observer.generateParticles<ObserverParticles>(observation_location);
 
+    observe_nearwall::getObservingLineLengthAndEndPoints();
+    observe_nearwall::getPositionsOfMultipleObserveLines();
+    observe_nearwall::output_observe_positions();
+    observe_nearwall::output_observe_theoretical_x();
+    observe_nearwall::output_number_observe_points_on_lines();
+    ObserverBody friction_velocity_observer(sph_system, "NearwallFrictionVelocityObserver");
+    friction_velocity_observer.generateParticles<ObserverParticles>(observe_nearwall::observation_locations);
+
     /** topology */
     InnerRelation water_block_inner(water_block);
     ContactRelation water_wall_contact(water_block, {&wall_boundary});
     ContactRelation fluid_observer_contact(fluid_observer, {&water_block});
     ContactRelation observer_centerpoint_contact(observer_center_point, {&water_block});
+    ContactRelation friction_velocity_observer_contact(friction_velocity_observer, {&water_block});
     //----------------------------------------------------------------------
     // Combined relations built from basic relations
     // which is only used for update configuration.
@@ -225,6 +234,9 @@ int main(int ac, char *av[])
     ObservedQuantityRecording<Real> write_recorded_water_omega("TurbulentSpecificDissipation", fluid_observer_contact);
     body_states_recording.addToWrite<int>(water_block, "BufferParticleIndicator");
     RegressionTestDynamicTimeWarping<ObservedQuantityRecording<Real>> write_centerpoint_quantity("TurbulentViscosity", observer_centerpoint_contact);
+    
+    ObservedQuantityRecording<Real> write_nearwall_friction_velocity("WallShearStress", friction_velocity_observer_contact);
+    
     /**
      * @brief Setup geometry and initial conditions.
      */
@@ -371,6 +383,7 @@ int main(int ac, char *av[])
             water_block.updateCellLinkedList();
             water_block_complex.updateConfiguration();
             fluid_observer_contact.updateConfiguration();
+            friction_velocity_observer_contact.updateConfiguration();
 
             /** Tag truncated inlet/outlet particles*/
             inlet_outlet_surface_particle_indicator.exec();
@@ -384,6 +397,7 @@ int main(int ac, char *av[])
                 write_recorded_water_k.writeToFile(number_of_iterations);
                 write_recorded_water_mut.writeToFile(number_of_iterations);
                 write_recorded_water_omega.writeToFile(number_of_iterations);
+                write_nearwall_friction_velocity.writeToFile(number_of_iterations);
             }
             //if (GlobalStaticVariables::physical_time_ > end_time * 0.5)
             //body_states_recording.writeToFile();
