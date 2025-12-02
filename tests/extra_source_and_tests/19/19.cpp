@@ -259,8 +259,8 @@ int main(int ac, char *av[])
     int screen_output_interval = 100;
     int observation_sample_interval = screen_output_interval * 2;
 
-    Real end_time = 200.0;                      /**< End time. */
-    Real cutoff_ratio = 0.6;                    //** cutoff_time should be a integral and the same as the PY script */
+    Real end_time = 100.0;                      /**< End time. */
+    Real cutoff_ratio = 0.8;                    //** cutoff_time should be a integral and the same as the PY script */
     Real cutoff_time = end_time * cutoff_ratio; //** cutoff_time should be a integral and the same as the PY script */
     Real num_output_files = 40.0;
     Real Output_Time = end_time / num_output_files; /**< Time stamps for output of body states. */
