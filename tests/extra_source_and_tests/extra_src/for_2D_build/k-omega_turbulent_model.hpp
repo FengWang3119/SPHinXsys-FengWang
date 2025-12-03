@@ -12,9 +12,6 @@ template <class DataDelegationType>
 template <class BaseRelationType>
 kOmega_BaseTurbulentModel<Base, DataDelegationType>::kOmega_BaseTurbulentModel(BaseRelationType &base_relation)
     : LocalDynamics(base_relation.getSPHBody()), DataDelegationType(base_relation),
-      turbu_strain_rate_(this->particles_->template registerStateVariable<Matd>("TurbulentStrainRate")),
-      turbu_strain_rate_magnitude_(this->particles_->template registerStateVariable<Real>("TurbulentStrainRateMagnitude")),
-      turbu_strain_rate_traceless_magnitude_(this->particles_->template registerStateVariable<Real>("TurbulentStrainRateTracelessMagnitude")),
       viscosity_(DynamicCast<Viscosity>(this, this->particles_->getBaseMaterial())),
       mu_(viscosity_.ReferenceViscosity()),
       smoothing_length_(this->sph_body_.sph_adaptation_->ReferenceSmoothingLength()),

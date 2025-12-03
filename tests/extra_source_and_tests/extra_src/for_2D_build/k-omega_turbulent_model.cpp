@@ -390,6 +390,7 @@ kOmega_kTransportEquationInner::kOmega_kTransportEquationInner(BaseInnerRelation
       k_diffusion_(particles_->registerStateVariable<Real>("K_Diffusion")),
       turbu_strain_rate_(particles_->registerStateVariable<Matd>("TurbulentStrainRate")),
       turbu_strain_rate_magnitude_(particles_->registerStateVariable<Real>("TurbulentStrainRateMagnitude")),
+      turbu_strain_rate_traceless_magnitude_(particles_->registerStateVariable<Real>("TurbulentStrainRateTracelessMagnitude")),
       is_near_wall_P1_(particles_->getVariableDataByName<int>("IsNearWallP1")),
       velocity_gradient_(particles_->getVariableDataByName<Matd>("TurbulentVelocityGradient"))
 {

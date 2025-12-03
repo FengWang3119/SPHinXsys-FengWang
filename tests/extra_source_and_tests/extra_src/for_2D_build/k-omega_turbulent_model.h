@@ -103,10 +103,6 @@ class kOmega_BaseTurbulentModel<Base, DataDelegationType>
     virtual ~kOmega_BaseTurbulentModel(){};
 
   protected:
-    Matd *turbu_strain_rate_; //** temporary naming to distinguish the regular strain rate *
-    Real *turbu_strain_rate_magnitude_;
-    Real *turbu_strain_rate_traceless_magnitude_;
-
     Viscosity &viscosity_;
     Real mu_, smoothing_length_, particle_spacing_min_;
     Real *rho_;
@@ -138,6 +134,7 @@ class kOmega_kTransportEquationInner : public kOmega_BaseTurbulentModel<Base, Da
 
     Matd *turbu_strain_rate_;
     Real *turbu_strain_rate_magnitude_;
+    Real *turbu_strain_rate_traceless_magnitude_;
     int *is_near_wall_P1_; //** This is used to specially treat near wall region  *
     Matd *velocity_gradient_;
 };
