@@ -366,7 +366,7 @@ void kOmega_WallFunctionCorrection::interaction(size_t index_i, Real dt)
 
             Q = getTransformationMatrix(e_i_nearest_n);
 
-            velocity_gradient_[index_i] = Q.transpose() * vel_grad_i_tn * Q;
+            //velocity_gradient_[index_i] = Q.transpose() * vel_grad_i_tn * Q;
 
             k_production_[index_i] = G_k_p_weighted_sum / total_weight;
 
