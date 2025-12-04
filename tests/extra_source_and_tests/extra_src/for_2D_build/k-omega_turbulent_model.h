@@ -71,6 +71,9 @@ class kOmega_GetVelocityGradient<Inner<>> : public kOmega_GetVelocityGradient<Da
     Matd *velocity_gradient_;
     Matd *B_;
     Matd *turbu_B_;
+    Matd *turbu_strain_rate_;
+    Real *turbu_strain_rate_magnitude_;
+    Real *turbu_strain_rate_traceless_magnitude_;
 };
 using kOmega_GetVelocityGradientInner = kOmega_GetVelocityGradient<Inner<>>;
 
@@ -133,8 +136,6 @@ class kOmega_kTransportEquationInner : public kOmega_BaseTurbulentModel<Base, Da
     Real *k_diffusion_;
 
     Matd *turbu_strain_rate_;
-    Real *turbu_strain_rate_magnitude_;
-    Real *turbu_strain_rate_traceless_magnitude_;
     int *is_near_wall_P1_; //** This is used to specially treat near wall region  *
     Matd *velocity_gradient_;
 };

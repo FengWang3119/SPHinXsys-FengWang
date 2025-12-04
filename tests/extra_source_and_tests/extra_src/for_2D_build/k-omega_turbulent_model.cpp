@@ -22,7 +22,10 @@ kOmega_GetVelocityGradient<Inner<>>::kOmega_GetVelocityGradient(BaseInnerRelatio
     : kOmega_GetVelocityGradient<DataDelegateInner>(inner_relation),
       velocity_gradient_(particles_->getVariableDataByName<Matd>("TurbulentVelocityGradient")),
       B_(particles_->getVariableDataByName<Matd>("LinearGradientCorrectionMatrix")),
-      turbu_B_(particles_->getVariableDataByName<Matd>("TurbulentLinearGradientCorrectionMatrix"))
+      turbu_B_(particles_->getVariableDataByName<Matd>("TurbulentLinearGradientCorrectionMatrix")),
+      turbu_strain_rate_(particles_->registerStateVariable<Matd>("TurbulentStrainRate")),
+      turbu_strain_rate_magnitude_(particles_->registerStateVariable<Real>("TurbulentStrainRateMagnitude")),
+      turbu_strain_rate_traceless_magnitude_(particles_->registerStateVariable<Real>("TurbulentStrainRateTracelessMagnitude"))
 {
     this->particles_->addVariableToSort<Matd>("TurbulentVelocityGradient");
     this->particles_->addVariableToWrite<Matd>("TurbulentVelocityGradient");
@@ -64,6 +67,15 @@ void kOmega_GetVelocityGradient<Inner<>>::update(size_t index_i, Real dt)
     velocity_gradient_[index_i] *= B_[index_i];
     // velocity_gradient_[index_i] *= turbu_B_[index_i];
     // velocity_gradient_[index_i] = turbu_B_[index_i] * velocity_gradient_[index_i];
+
+    turbu_strain_rate_[index_i] = 0.5 * (velocity_gradient_[index_i].transpose() + velocity_gradient_[index_i]);
+    Real strain_rate_trace = turbu_strain_rate_[index_i].trace();
+    Matd strain_rate_traceless = turbu_strain_rate_[index_i] - (1.0 / Dimensions) * strain_rate_trace * Matd::Identity(); //** For [2008 wilcox AIAA] *
+
+    Real strain_rate_squire = (turbu_strain_rate_[index_i].array() * turbu_strain_rate_[index_i].array()).sum();
+    turbu_strain_rate_magnitude_[index_i] = sqrt(2.0 * strain_rate_squire);
+    Real strain_rate_traceless_squire = (strain_rate_traceless.array() * strain_rate_traceless.array()).sum();
+    turbu_strain_rate_traceless_magnitude_[index_i] = sqrt(2.0 * strain_rate_traceless_squire);
 }
 //=================================================================================================//
 kOmega_GetVelocityGradient<Contact<Wall>>::kOmega_GetVelocityGradient(BaseContactRelation &contact_relation)
@@ -388,9 +400,7 @@ kOmega_kTransportEquationInner::kOmega_kTransportEquationInner(BaseInnerRelation
       is_blended_(particles_->registerStateVariable<int>("TurbulentWallTreatmentType", is_blended)),
       turbu_indicator_(particles_->registerStateVariable<int>("TurbulentIndicator")),
       k_diffusion_(particles_->registerStateVariable<Real>("K_Diffusion")),
-      turbu_strain_rate_(particles_->registerStateVariable<Matd>("TurbulentStrainRate")),
-      turbu_strain_rate_magnitude_(particles_->registerStateVariable<Real>("TurbulentStrainRateMagnitude")),
-      turbu_strain_rate_traceless_magnitude_(particles_->registerStateVariable<Real>("TurbulentStrainRateTracelessMagnitude")),
+      turbu_strain_rate_(particles_->getVariableDataByName<Matd>("TurbulentStrainRate")),
       is_near_wall_P1_(particles_->getVariableDataByName<int>("IsNearWallP1")),
       velocity_gradient_(particles_->getVariableDataByName<Matd>("TurbulentVelocityGradient"))
 {
@@ -436,25 +446,15 @@ void kOmega_kTransportEquationInner::update(size_t index_i, Real dt)
     Real turbu_k_i = turbu_k_[index_i];
     Real turbu_omega_i = turbu_omega_[index_i];
     Real k_diffusion = k_diffusion_[index_i];
+    Matd strain_rate = turbu_strain_rate_[index_i];
 
     Real k_dissipation = std_kw_beta_star_ * turbu_k_i * turbu_omega_i;
 
     dk_dt_[index_i] = 0.0;
     dk_dt_without_dissipation_[index_i] = 0.0;
-    Matd strain_rate = Matd::Zero();
-    Matd strain_rate_traceless = Matd::Zero();
-    Matd Re_stress = Matd::Zero();
 
     Real k_production(0.0);
-
-    strain_rate = 0.5 * (velocity_gradient_[index_i].transpose() + velocity_gradient_[index_i]);
-    Real strain_rate_trace = strain_rate.trace();
-    strain_rate_traceless = strain_rate - (1.0 / Dimensions) * strain_rate_trace * Matd::Identity(); //** For [2008 wilcox AIAA] *
-
-    Real strain_rate_squire = (strain_rate.array() * strain_rate.array()).sum();
-    turbu_strain_rate_magnitude_[index_i] = sqrt(2.0 * strain_rate_squire);
-    Real strain_rate_traceless_squire = (strain_rate_traceless.array() * strain_rate_traceless.array()).sum();
-    turbu_strain_rate_traceless_magnitude_[index_i] = sqrt(2.0 * strain_rate_traceless_squire);
+    Matd Re_stress = Matd::Zero();
 
     Re_stress = 2.0 * strain_rate * turbu_mu_i / rho_i - (2.0 / 3.0) * turbu_k_i * Matd::Identity();
     //Re_stress = 2.0 * strain_rate * turbu_mu_i / rho_i;
@@ -471,9 +471,6 @@ void kOmega_kTransportEquationInner::update(size_t index_i, Real dt)
     dk_dt_without_dissipation_[index_i] = k_production + k_diffusion;
 
     turbu_k_[index_i] += dk_dt_[index_i] * dt;
-
-    //** for record */
-    turbu_strain_rate_[index_i] = strain_rate;
 }
 //=================================================================================================//
 kOmega_TKE_Diffusion::kOmega_TKE_Diffusion(BaseInnerRelation &inner_relation)
