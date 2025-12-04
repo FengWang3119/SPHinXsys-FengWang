@@ -194,6 +194,9 @@ void kOmega_WallFunctionCorrection::interaction(size_t index_i, Real dt)
     wall_Y_star_[index_i] = 0.0;
     Real current_time = *physical_time_;
 
+    //** For test *
+    laminar_fraction_for_blend_[index_i] = 0.0;
+
     //** If use level-set to get distance from P to wall, activate this *
     //y_p_[index_i]= distance_to_dummy_interface_levelset_[index_i];
 
