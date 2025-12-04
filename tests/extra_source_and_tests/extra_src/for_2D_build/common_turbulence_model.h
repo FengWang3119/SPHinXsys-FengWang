@@ -377,8 +377,8 @@ class TurbulentIntegration2ndHalf<Contact<Wall>, RiemannSolverType>
   protected:
     RiemannSolverType riemann_solver_;
 };
-//using Integration2ndHalfOnlyWallAcousticRiemannAdjusted = TurbulentIntegration2ndHalf<Contact<Wall>, DissipativeRiemannSolver>;
-using Integration2ndHalfOnlyWallAcousticRiemannAdjusted = TurbulentIntegration2ndHalf<Contact<Wall>, AcousticRiemannSolver>;
+using Integration2ndHalfOnlyWallAcousticRiemannAdjusted = TurbulentIntegration2ndHalf<Contact<Wall>, DissipativeRiemannSolver>;
+// using Integration2ndHalfOnlyWallAcousticRiemannAdjusted = TurbulentIntegration2ndHalf<Contact<Wall>, AcousticRiemannSolver>;
 //=================================================================================================//
 } // namespace fluid_dynamics
 } // namespace SPH
