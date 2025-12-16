@@ -160,6 +160,27 @@ void InitialiseColorIndicator::update(size_t index_i, Real dt)
     }
 }
 //=============================================================================================//
+InitialiseColorIndicator2::InitialiseColorIndicator2(SPHBody &sph_body, const StdVec<Vecd> &box)
+    : LocalDynamics(sph_body),
+      color_indicator_(particles_->registerStateVariable<int>("ColorIndicator")),
+      pos_(particles_->getVariableDataByName<Vecd>("Position")),
+      box_(box) {}
+//=============================================================================================//
+void InitialiseColorIndicator2::update(size_t index_i, Real dt)
+{
+    Real R = 11.0;
+
+    for (int n = 1; n <= 8; ++n)
+    {
+        int actual_n = n - 1;
+        Real dist = (pos_[index_i] - box_[actual_n]).norm();
+        if (dist < R)
+        {
+            color_indicator_[index_i] = n;
+        }
+    }
+}
+//=============================================================================================//
 ClearBufferParticleIndicator::ClearBufferParticleIndicator(SPHBody &sph_body, int third_dimension, Real lower_bound, Real upper_bound)
     : LocalDynamics(sph_body),
       buffer_particle_indicator_(particles_->getVariableDataByName<int>("BufferParticleIndicator")),

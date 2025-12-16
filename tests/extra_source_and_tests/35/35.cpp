@@ -43,6 +43,11 @@ int main(int ac, char *av[])
     ObserverBody observer_center_point(sph_system, "ObserverCenterPoint");
     observer_center_point.generateParticles<ObserverParticles>(observer_location_center_point);
 
+    ObserverBody observer_body(sph_system, makeShared<WaterBlock>("ObserverBody")); //% Average
+    (!sph_system.RunParticleRelaxation() && sph_system.ReloadParticles())
+        ? observer_body.generateParticles<BaseParticles, Reload>(water_block.getName())
+        : observer_body.generateParticles<BaseParticles, Lattice>();
+
     // observe_centerline::get_observation_locations();
     // observe_centerline::output_observer_theoretical_pos_on_line();
     // ObserverBody fluid_observer_centerline(sph_system, "FluidObserverCenterline");
@@ -61,6 +66,9 @@ int main(int ac, char *av[])
     // ContactRelation fluid_observer_centerline_contact(fluid_observer_centerline, {&water_block});
     // ContactRelation fluid_observer_cross_section_contact(fluid_observer_cross_section, {&water_block});
     ContactRelation observer_centerpoint_contact(observer_center_point, {&water_block});
+
+    ContactRelation fluid_observer_contact2(observer_body, {&water_block}); //% Average
+
     //----------------------------------------------------------------------
     // Combined relations built from basic relations
     // which is only used for update configuration.
@@ -237,6 +245,8 @@ int main(int ac, char *av[])
     // SimpleDynamics<GravityForce<StartupAcceleration>> apply_gravity_force(water_block, time_dependent_acceleration);
 
     SimpleDynamics<InitialiseColorIndicator> initialise_color_indicator(water_block);
+    getInitialBoundingBox();
+    SimpleDynamics<InitialiseColorIndicator2> initialise_color_indicator2(water_block, box_initial_bounding);
     //----------------------------------------------------------------------
     // Inlet buffers
     //----------------------------------------------------------------------
@@ -317,6 +327,10 @@ int main(int ac, char *av[])
     /** Time step size with considering sound wave speed. */
     ReduceDynamics<fluid_dynamics::AcousticTimeStep> get_fluid_time_step_size(water_block);
 
+    ObservingAQuantity<Real> observing_pressure(fluid_observer_contact2, "Pressure");          //% Average pressure
+    SimpleDynamics<ParticleSnapshotAverage<Real>> average_pressure(observer_body, "Pressure"); //% Average pressure
+    //ObservingAQuantity<int> observing_buffer_particle_indicator(fluid_observer_contact2, "BufferParticleIndicator");          //% Average
+
     //----------------------------------------------------------------------
     //	Define the configuration related particles dynamics.
     //----------------------------------------------------------------------
@@ -347,6 +361,13 @@ int main(int ac, char *av[])
     water_block.updateCellLinkedList();
 
     initialise_color_indicator.exec();
+    initialise_color_indicator2.exec();
+
+    BodyStatesRecordingToVtp write_observation_states(observer_body);     //% Average
+    write_observation_states.addToWrite<Real>(observer_body, "Pressure"); //% Average pressure
+    //write_observation_states.addToWrite<int>(observer_body, "BufferParticleIndicator");  //% Average
+    // body_states_recording.addToWrite<int>(observer_body, "BufferParticleIndicator"); //% Average
+
     /**
      * @brief Setup geometry and initial conditions.
      */
@@ -382,6 +403,9 @@ int main(int ac, char *av[])
     Real Output_Time = end_time / num_output_files; /**< Time stamps for output of body states. */
     Real index_check_file_fully_developed = num_output_files * cutoff_ratio;
     Real dt = 0.0; /**< Default acoustic time step sizes. */
+
+    Real time_output_average_data = 400.0; //% Average
+
     //----------------------------------------------------------------------
     //	Statistics for CPU time
     //----------------------------------------------------------------------
@@ -395,8 +419,8 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------------------------------------
     //	Main loop starts here.
     //----------------------------------------------------------------------------------------------------
-    // std::cout << "Simulation starts?" << std::endl;
-    // std::cin.get();
+     //std::cout << "Simulation starts?" << std::endl;
+     //std::cin.get();
     int num_output_file = 0;
     while (physical_time < end_time)
     {
@@ -520,6 +544,15 @@ int main(int ac, char *av[])
             bidirection_buffer_8.tag_buffer_particles.exec();
             outlet_bidirection_buffer.tag_buffer_particles.exec();
 
+            if (physical_time > time_output_average_data)
+            {
+                fluid_observer_contact2.updateConfiguration(); //% Average
+                //% Average pressure
+                observing_pressure.exec();
+                average_pressure.exec();
+                // observing_buffer_particle_indicator.exec();
+            }
+
             // if (physical_time > cutoff_time)
             // {
             //     write_recorded_water_centerline_velocity.writeToFile(number_of_iterations);
@@ -536,6 +569,11 @@ int main(int ac, char *av[])
         //if (num_output_file == 100)
         //    system("pause");
         //TickCount t3 = TickCount::now();
+        
+        if (physical_time > time_output_average_data)
+        {
+            write_observation_states.writeToFile(); //% Average
+        }
     }
     TickCount t4 = TickCount::now();
 

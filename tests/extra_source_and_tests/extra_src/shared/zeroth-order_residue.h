@@ -149,6 +149,19 @@ class InitialiseColorIndicator : public LocalDynamics
     int *color_indicator_;
     Vecd *pos_;
 };
+class InitialiseColorIndicator2 : public LocalDynamics
+{
+  public:
+    explicit InitialiseColorIndicator2(SPHBody &sph_body, const StdVec<Vecd> &box);
+    virtual ~InitialiseColorIndicator2() {};
+    void update(size_t index_i, Real dt = 0.0);
+
+  protected:
+    int *color_indicator_;
+    Vecd *pos_;
+    const StdVec<Vecd> &box_;
+};
+
 class ClearBufferParticleIndicator : public LocalDynamics
 {
   public:
