@@ -316,7 +316,7 @@ int main(int ac, char *av[])
     SimpleDynamics<fluid_dynamics::PressureConditionCorrection<RightOutflowPressure>> outflow_pressure_condition(outlet_buffer);
     //----------------------------------------------------------------------
 
-    SimpleDynamics<ClearBufferParticleIndicator> clear_buffer_particle_indicator(water_block, zAxis, H_inlet, H_inlet + BW); //% This is case-dependent
+    //SimpleDynamics<ClearBufferParticleIndicator> clear_buffer_particle_indicator(water_block, zAxis, H_inlet, H_inlet + BW); //% This is case-dependent
 
     //InteractionWithUpdate<fluid_dynamics::DensitySummationPressureComplex> update_fluid_density_pressure(water_block_inner, water_wall_contact);
     InteractionWithUpdate<fluid_dynamics::DensitySummationFreeStreamComplex> update_fluid_density_freestream(water_block_inner, water_wall_contact);
