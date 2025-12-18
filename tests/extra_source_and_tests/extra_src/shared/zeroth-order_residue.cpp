@@ -162,13 +162,13 @@ void InitialiseColorIndicator::update(size_t index_i, Real dt)
 //=============================================================================================//
 InitialiseColorIndicator2::InitialiseColorIndicator2(SPHBody &sph_body, const StdVec<Vecd> &box)
     : LocalDynamics(sph_body),
-      color_indicator_(particles_->registerStateVariable<int>("ColorIndicator")),
+      color_indicator_(particles_->getVariableDataByName<int>("ColorIndicator")),
       pos_(particles_->getVariableDataByName<Vecd>("Position")),
       box_(box) {}
 //=============================================================================================//
 void InitialiseColorIndicator2::update(size_t index_i, Real dt)
 {
-    Real R = 11.0;
+    Real R = 12.0;
 
     for (int n = 1; n <= 8; ++n)
     {
@@ -232,6 +232,72 @@ void DisposerForSplashParticleDeletion::update(size_t index_i, Real dt)
         particles_->switchToBufferParticle(index_i);
     }
     mutex_switch_to_buffer_.unlock();
+}
+//=================================================================================================//
+TagMixedParticle::TagMixedParticle(BaseInnerRelation &inner_relation, Real mixing_rate_interactive_radius)
+    : LocalDynamics(inner_relation.getSPHBody()), DataDelegateInner(inner_relation),
+      is_mixed_(particles_->registerStateVariable<int>("IsMixed")),
+      color_indicator_(particles_->getVariableDataByName<int>("ColorIndicator")),
+      interactive_radius_(mixing_rate_interactive_radius) 
+{
+    particles_->addVariableToSort<int>("IsMixed");
+    particles_->addVariableToWrite<int>("IsMixed");
+}
+//=================================================================================================//
+void TagMixedParticle::interaction(size_t index_i, Real dt)
+{
+    is_mixed_[index_i] = 0;
+    const Neighborhood &inner_neighborhood = inner_configuration_[index_i];
+    for (size_t n = 0; n != inner_neighborhood.current_size_; ++n)
+    {
+        size_t index_j = inner_neighborhood.j_[n];
+        Real r_ij = inner_neighborhood.r_ij_[n];
+        if (r_ij < interactive_radius_)
+        {
+            if (color_indicator_[index_i] != color_indicator_[index_j])
+            {
+                is_mixed_[index_i] = 1;
+                return;
+            }
+        }
+    }
+}
+//=================================================================================================//
+CalculateFluidParticleNumberInOutletChannel::CalculateFluidParticleNumberInOutletChannel(SPHBody &sph_body, Real radius_chamber, Real h_inlet)
+    : LocalDynamicsReduce<ReduceSum<int>>(sph_body),
+      pos_(particles_->getVariableDataByName<Vecd>("Position")),
+      radius_chamber_(radius_chamber),
+      height_inlet_channel_(h_inlet) {}
+//=================================================================================================//
+int CalculateFluidParticleNumberInOutletChannel::reduce(size_t index_i, Real dt)
+{
+    if (pos_[index_i][xAxis] > radius_chamber_ && pos_[index_i][zAxis] > 2.0 * height_inlet_channel_) //** Tempprary treatment *
+    {
+        return 1;
+    }
+    else
+    {
+        return 0;
+    }
+}
+//=================================================================================================//
+CalculateMixedFluidParticleNumberInOutletChannel::CalculateMixedFluidParticleNumberInOutletChannel(SPHBody &sph_body, Real radius_chamber, Real h_inlet)
+    : LocalDynamicsReduce<ReduceSum<int>>(sph_body),
+      pos_(particles_->getVariableDataByName<Vecd>("Position")),
+      is_mixed_(particles_->getVariableDataByName<int>("IsMixed")), 
+      radius_chamber_(radius_chamber),
+      height_inlet_channel_(h_inlet) {}
+//=================================================================================================//
+int CalculateMixedFluidParticleNumberInOutletChannel::reduce(size_t index_i, Real dt)
+{
+    if (pos_[index_i][xAxis] > radius_chamber_ && pos_[index_i][zAxis] > 2.0 * height_inlet_channel_) //** Tempprary treatment *
+    {
+        return is_mixed_[index_i];
+    }
+    else
+    {
+        return 0;
+    }
 }
 //=================================================================================================//
 } // namespace SPH

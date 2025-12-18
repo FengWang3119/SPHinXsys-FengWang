@@ -331,6 +331,10 @@ int main(int ac, char *av[])
     SimpleDynamics<ParticleSnapshotAverage<Real>> average_pressure(observer_body, "Pressure"); //% Average pressure
     //ObservingAQuantity<int> observing_buffer_particle_indicator(fluid_observer_contact2, "BufferParticleIndicator");          //% Average
 
+    InteractionDynamics<TagMixedParticle> tag_mixed_particle(water_block_inner, mixing_rate_interactive_radius);
+    ReduceDynamics<CalculateFluidParticleNumberInOutletChannel> calculate_fluid_particle_number_in_outlet_channel(water_block, Radius_chamber, H_inlet);
+    ReduceDynamics<CalculateMixedFluidParticleNumberInOutletChannel> calculate_mixed_fluid_particle_number_in_outlet_channel(water_block, Radius_chamber, H_inlet);
+
     //----------------------------------------------------------------------
     //	Define the configuration related particles dynamics.
     //----------------------------------------------------------------------
@@ -422,6 +426,8 @@ int main(int ac, char *av[])
      //std::cout << "Simulation starts?" << std::endl;
      //std::cin.get();
     int num_output_file = 0;
+    std::ofstream logfile("output/output.log");
+    std::ofstream mixing_file("output/mixing_rate.dat");
     while (physical_time < end_time)
     {
         Real integration_time = 0.0;
@@ -493,6 +499,9 @@ int main(int ac, char *av[])
                 std::cout << std::fixed << std::setprecision(9) << "N=" << number_of_iterations << "	Time = "
                           << physical_time
                           << "	Dt = " << Dt << "	dt = " << dt << "\n";
+                logfile << std::fixed << std::setprecision(9) << "N=" << number_of_iterations << "	Time = "
+                        << physical_time
+                        << "	Dt = " << Dt << "	dt = " << dt << std::endl;
             }
             number_of_iterations++;
 
@@ -544,7 +553,24 @@ int main(int ac, char *av[])
             bidirection_buffer_8.tag_buffer_particles.exec();
             outlet_bidirection_buffer.tag_buffer_particles.exec();
 
+            /** Tag mixed particles*/
+            tag_mixed_particle.exec();
+            /** Calculate mixing rate */
             if (physical_time > time_output_average_data)
+            {
+                int number_fluid_particle_in_outlet_channel = calculate_fluid_particle_number_in_outlet_channel.exec();
+                int number_mixed_fluid_particle_in_outlet_channel = calculate_mixed_fluid_particle_number_in_outlet_channel.exec();
+                Real mixing_rate_outlet_channel = number_fluid_particle_in_outlet_channel == 0 ? 0.0 : Real(number_mixed_fluid_particle_in_outlet_channel) / Real(number_fluid_particle_in_outlet_channel);
+                // std::cout << "number_fluid_particle_in_outlet_channel= " << number_fluid_particle_in_outlet_channel << std::endl;
+                // std::cout << "number_mixed_fluid_particle_in_outlet_channel= " << number_mixed_fluid_particle_in_outlet_channel << std::endl;
+                // std::cout << "mixing_rate_outlet_channel= " << mixing_rate_outlet_channel << std::endl;
+                mixing_file
+                    << std::fixed << std::setprecision(6)
+                    << physical_time << " "
+                    << mixing_rate_outlet_channel << "\n";
+            }
+
+            if (physical_time > time_output_average_data * 100.0)
             {
                 fluid_observer_contact2.updateConfiguration(); //% Average
                 //% Average pressure
@@ -584,6 +610,9 @@ int main(int ac, char *av[])
     std::cout << "Cutoff_time: " << cutoff_time
               << " seconds." << std::endl;
     std::cout << "For checking fully-developed or not, index of the cutoff output file =  " << index_check_file_fully_developed << std::endl;
-
+    logfile << "Total wall time for computation: " << tt.seconds()
+            << " seconds." << std::endl;
+    logfile.close();
+    mixing_file.close();
     return 0;
 }

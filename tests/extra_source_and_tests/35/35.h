@@ -77,6 +77,8 @@ Real mu_f = rho0_f * U_f * D_hydraulic / Re;
 Real Re_calculated = U_f * D_hydraulic * rho0_f / mu_f;
 
 Real t_ref = 2.0; //% An estimated value
+
+Real mixing_rate_interactive_radius = 1.4 * resolution_ref;
 //----------------------------------------------------------------------
 //	The open boundary setting.
 //----------------------------------------------------------------------

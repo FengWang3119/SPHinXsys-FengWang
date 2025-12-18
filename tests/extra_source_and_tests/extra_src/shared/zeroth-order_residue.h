@@ -203,5 +203,48 @@ class DisposerForSplashParticleDeletion : public LocalDynamics
     std::mutex mutex_switch_to_buffer_; /**< mutex exclusion for memory conflict */
     Real *pos_div_;
 };
+//=================================================================================================//
+class TagMixedParticle : public LocalDynamics, public DataDelegateInner
+{
+  public:
+    explicit TagMixedParticle(BaseInnerRelation &inner_relation, Real mixing_rate_interactive_radius);
+    virtual ~TagMixedParticle() {};
+    void interaction(size_t index_i, Real dt = 0.0);
+
+  protected:
+    int *is_mixed_;
+    int *color_indicator_;
+    Real interactive_radius_;
+};
+//=================================================================================================//
+class CalculateFluidParticleNumberInOutletChannel : public LocalDynamicsReduce<ReduceSum<int>>
+{
+  public:
+    explicit CalculateFluidParticleNumberInOutletChannel(SPHBody &sph_body, Real radius_chamber, Real h_inlet);
+    virtual ~CalculateFluidParticleNumberInOutletChannel() {};
+
+    int reduce(size_t index_i, Real dt = 0.0);
+
+  protected:
+    Vecd *pos_;
+    Real radius_chamber_;
+    Real height_inlet_channel_;
+};
+//=================================================================================================//
+class CalculateMixedFluidParticleNumberInOutletChannel : public LocalDynamicsReduce<ReduceSum<int>>
+{
+  public:
+    explicit CalculateMixedFluidParticleNumberInOutletChannel(SPHBody &sph_body, Real radius_chamber, Real h_inlet);
+    virtual ~CalculateMixedFluidParticleNumberInOutletChannel() {};
+
+    int reduce(size_t index_i, Real dt = 0.0);
+
+  protected:
+    Vecd *pos_;
+    int *is_mixed_;
+    Real radius_chamber_;
+    Real height_inlet_channel_;
+};
+//=================================================================================================//
 } // namespace SPH
 #endif // K_EPSILON_TURBULENT_MODEL_H
