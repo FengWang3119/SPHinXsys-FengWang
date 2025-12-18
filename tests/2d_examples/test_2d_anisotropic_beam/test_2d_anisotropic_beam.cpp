@@ -23,7 +23,7 @@ Vec2d scaling_vector = Vec2d(1.0, 1.0 / ratio_); // scaling_vector for defining 
 Real scaling_factor = 1.0 / ratio_;              // scaling factor to calculate the time step
 Real BW = resolution_ref * 4;                    // boundary width, at least three particles
 /** Domain bounds of the system. */
-BoundingBox system_domain_bounds(Vec2d(-SL - BW, -PL / 2.0),
+BoundingBoxd system_domain_bounds(Vec2d(-SL - BW, -PL / 2.0),
                                  Vec2d(PL + 3.0 * BW, PL / 2.0));
 //----------------------------------------------------------------------
 //	Material properties of the solid.
@@ -74,7 +74,7 @@ class ParticleGenerator<BaseParticles, Beam> : public ParticleGenerator<BasePart
 {
   public:
     ParticleGenerator(SPHBody &sph_body, BaseParticles &base_particles)
-        : ParticleGenerator<BaseParticles>(sph_body, base_particles){};
+        : ParticleGenerator<BaseParticles>(sph_body, base_particles) {};
 
     virtual void prepareGeometricData() override
     {
@@ -99,7 +99,7 @@ class BeamInitialCondition
   public:
     explicit BeamInitialCondition(SPHBody &sph_body)
         : solid_dynamics::ElasticDynamicsInitialCondition(sph_body),
-          elastic_solid_(DynamicCast<ElasticSolid>(this, sph_body_.getBaseMaterial())){};
+          elastic_solid_(DynamicCast<ElasticSolid>(this, sph_body_->getBaseMaterial())) {};
 
     void update(size_t index_i, Real dt)
     {
@@ -136,10 +136,10 @@ class AnisotropicCorrectConfiguration : public LocalDynamics, public DataDelegat
         : LocalDynamics(inner_relation.getSPHBody()),
           DataDelegateInner(inner_relation),
           beta_(beta), alpha_(alpha), Vol_(particles_->getVariableDataByName<Real>("VolumetricMeasure")),
-          B_(particles_->registerStateVariable<Matd>("LinearGradientCorrectionMatrix", IdentityMatrix<Matd>::value)),
+          B_(particles_->registerStateVariableData<Matd>("LinearGradientCorrectionMatrix", IdentityMatrix<Matd>::value)),
           pos_(particles_->getVariableDataByName<Vecd>("Position")),
-          show_neighbor_(particles_->registerStateVariable<Real>("ShowingNeighbor", Real(0.0))){};
-    virtual ~AnisotropicCorrectConfiguration(){};
+          show_neighbor_(particles_->registerStateVariableData<Real>("ShowingNeighbor", Real(0.0))) {};
+    virtual ~AnisotropicCorrectConfiguration() {};
 
   protected:
   protected:
@@ -196,12 +196,12 @@ int main(int ac, char *av[])
     //	Creating body, materials and particles.
     //----------------------------------------------------------------------
     SolidBody beam_body(system, makeShared<Beam>("BeamBody"));
-    beam_body.sph_adaptation_->resetKernel<AnisotropicKernel<KernelWendlandC2>>(scaling_vector);
+    beam_body.getSPHAdaptation().resetKernel<AnisotropicKernel<KernelWendlandC2>>(scaling_vector);
     beam_body.defineMaterial<SaintVenantKirchhoffSolid>(rho0_s, Youngs_modulus, poisson);
     beam_body.generateParticles<BaseParticles, Beam>();
 
     ObserverBody beam_observer(system, "BeamObserver");
-    beam_observer.sph_adaptation_->resetKernel<AnisotropicKernel<KernelWendlandC2>>(scaling_vector);
+    beam_observer.getSPHAdaptation().resetKernel<AnisotropicKernel<KernelWendlandC2>>(scaling_vector);
     beam_observer.generateParticles<ObserverParticles>(observation_location);
     //----------------------------------------------------------------------
     //	Define body relation map.
@@ -216,7 +216,7 @@ int main(int ac, char *av[])
     // Generally, the geometric models or simple objects without data dependencies,
     // such as gravity, should be initiated first.
     // Then the major physical particle dynamics model should be introduced.
-    // Finally, the auxillary models such as time step estimator, initial condition,
+    // Finally, the auxiliary models such as time step estimator, initial condition,
     // boundary condition and other constraints should be defined.
     //----------------------------------------------------------------------
     InteractionWithUpdate<AnisotropicCorrectConfiguration> beam_corrected_configuration(beam_body_inner);
@@ -230,7 +230,6 @@ int main(int ac, char *av[])
     //-----------------------------------------------------------------------------
     // outputs
     //-----------------------------------------------------------------------------
-    IOEnvironment io_environment(system);
     BodyStatesRecordingToVtp write_beam_states(beam_body);
     write_beam_states.addToWrite<Real>(beam_body, "ShowingNeighbor");
     RegressionTestEnsembleAverage<ObservedQuantityRecording<Vecd>>

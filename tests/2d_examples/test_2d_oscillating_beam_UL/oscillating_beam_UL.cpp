@@ -19,7 +19,7 @@ Real SL = 0.06; // depth of the insert
 Real resolution_ref = PH / 10;
 Real BW = resolution_ref * 4; // boundary width, at least three particles
 /** Domain bounds of the system. */
-BoundingBox system_domain_bounds(Vec2d(-SL - BW, -PL / 2.0),
+BoundingBoxd system_domain_bounds(Vec2d(-SL - BW, -PL / 2.0),
                                  Vec2d(PL + 3.0 * BW, PL / 2.0));
 //----------------------------------------------------------------------
 //	Material properties of the fluid.
@@ -70,7 +70,7 @@ class BeamInitialCondition
 {
   public:
     explicit BeamInitialCondition(RealBody &beam_column)
-        : fluid_dynamics::FluidInitialCondition(beam_column){};
+        : fluid_dynamics::FluidInitialCondition(beam_column) {};
 
   protected:
     void update(size_t index_i, Real dt)
@@ -103,7 +103,7 @@ int main(int ac, char *av[])
     //	Build up the environment of a SPHSystem with global controls.
     //----------------------------------------------------------------------
     SPHSystem sph_system(system_domain_bounds, resolution_ref);
-    sph_system.handleCommandlineOptions(ac, av)->setIOEnvironment();
+    sph_system.handleCommandlineOptions(ac, av);
     //----------------------------------------------------------------------
     //	Creating body, materials and particles.
     //----------------------------------------------------------------------
@@ -112,7 +112,7 @@ int main(int ac, char *av[])
     beam_body.generateParticles<BaseParticles, Lattice>();
 
     ObserverBody beam_observer(sph_system, "BeamObserver");
-    beam_observer.sph_adaptation_->resetAdaptationRatios(1.15, 2.0);
+    beam_observer.getSPHAdaptation().resetAdaptationRatios(1.15, 2.0);
     beam_observer.generateParticles<ObserverParticles>(observation_location);
     //----------------------------------------------------------------------
     //	Define body relation map.
@@ -135,7 +135,7 @@ int main(int ac, char *av[])
     InteractionWithUpdate<continuum_dynamics::ShearStressRelaxationHourglassControl1stHalf> beam_shear_stress(beam_body_inner);
     InteractionDynamics<continuum_dynamics::ShearStressRelaxationHourglassControl2ndHalf> beam_shear_acceleration(beam_body_inner);
     SimpleDynamics<fluid_dynamics::ContinuumVolumeUpdate> beam_volume_update(beam_body);
-    ReduceDynamics<fluid_dynamics::AdvectionViscousTimeStep> advection_time_step(beam_body, U_ref, 0.2);
+    ReduceDynamics<fluid_dynamics::AdvectionTimeStep> advection_time_step(beam_body, U_ref, 0.2);
     ReduceDynamics<fluid_dynamics::AcousticTimeStep> acoustic_time_step(beam_body, 0.4);
     // clamping a solid body part.
     BodyRegionByParticle beam_base(beam_body, makeShared<MultiPolygonShape>(createBeamConstrainShape()));

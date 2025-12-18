@@ -12,7 +12,7 @@
  * (Deutsche Forschungsgemeinschaft) DFG HU1527/6-1, HU1527/10-1,            *
  *  HU1527/12-1 and HU1527/12-4.                                             *
  *                                                                           *
- * Portions copyright (c) 2017-2023 Technical University of Munich and       *
+ * Portions copyright (c) 2017-2025 Technical University of Munich and       *
  * the authors' affiliations.                                                *
  *                                                                           *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may   *
@@ -57,14 +57,14 @@ class BidirectionalBuffer
     class TagBufferParticles : public BaseLocalDynamics<BodyPartByCell>
     {
       public:
-        TagBufferParticles(BodyAlignedBoxByCell &aligned_box_part)
+        TagBufferParticles(AlignedBoxByCell &aligned_box_part)
             : BaseLocalDynamics<BodyPartByCell>(aligned_box_part),
               part_id_(aligned_box_part.getPartID()),
               pos_(particles_->getVariableDataByName<Vecd>("Position")),
-              aligned_box_(aligned_box_part.getAlignedBoxShape()),
-              buffer_particle_indicator_(particles_->registerStateVariable<int>("BufferParticleIndicator"))
+              aligned_box_(aligned_box_part.getAlignedBox()),
+              buffer_indicator_(particles_->registerStateVariableData<int>("BufferIndicator"))
         {
-            particles_->addVariableToSort<int>("BufferParticleIndicator");
+            particles_->addEvolvingVariable<int>("BufferIndicator");
         };
         virtual ~TagBufferParticles(){};
 
@@ -72,34 +72,34 @@ class BidirectionalBuffer
         {
             if (aligned_box_.checkContain(pos_[index_i]))
             {
-                buffer_particle_indicator_[index_i] = part_id_;
+                buffer_indicator_[index_i] = part_id_;
             }
         };
 
       protected:
         int part_id_;
         Vecd *pos_;
-        AlignedBoxShape &aligned_box_;
-        int *buffer_particle_indicator_;
+        AlignedBox &aligned_box_;
+        int *buffer_indicator_;
     };
 
     class Injection : public BaseLocalDynamics<BodyPartByCell>
     {
       public:
-        Injection(BodyAlignedBoxByCell &aligned_box_part, ParticleBuffer<Base> &particle_buffer,
+        Injection(AlignedBoxByCell &aligned_box_part, ParticleBuffer<Base> &particle_buffer,
                   TargetPressure &target_pressure)
             : BaseLocalDynamics<BodyPartByCell>(aligned_box_part),
               part_id_(aligned_box_part.getPartID()),
               particle_buffer_(particle_buffer),
-              aligned_box_(aligned_box_part.getAlignedBoxShape()),
+              aligned_box_(aligned_box_part.getAlignedBox()),
               fluid_(DynamicCast<Fluid>(this, particles_->getBaseMaterial())),
               pos_(particles_->getVariableDataByName<Vecd>("Position")),
               rho_(particles_->getVariableDataByName<Real>("Density")),
               p_(particles_->getVariableDataByName<Real>("Pressure")),
               previous_surface_indicator_(particles_->getVariableDataByName<int>("PreviousSurfaceIndicator")),
-              buffer_particle_indicator_(particles_->getVariableDataByName<int>("BufferParticleIndicator")),
-              upper_bound_fringe_(0.5 * sph_body_.getSPHBodyResolutionRef()),
-              physical_time_(sph_system_.getSystemVariableDataByName<Real>("PhysicalTime")),
+              buffer_indicator_(particles_->getVariableDataByName<int>("BufferIndicator")),
+              upper_bound_fringe_(0.5 * sph_body_->getSPHBodyResolutionRef()),
+              physical_time_(sph_system_->getSystemVariableDataByName<Real>("PhysicalTime")),
               color_indicator_(particles_->getVariableDataByName<int>("ColorIndicator")),
               target_pressure_(target_pressure)
         {
@@ -112,13 +112,13 @@ class BidirectionalBuffer
             if (!aligned_box_.checkInBounds(pos_[index_i]))
             {
                 if (aligned_box_.checkUpperBound(pos_[index_i], upper_bound_fringe_) &&
-                    buffer_particle_indicator_[index_i] == part_id_ &&
+                    buffer_indicator_[index_i] == part_id_ &&
                     index_i < particles_->TotalRealParticles())
                 {
                     mutex_switch.lock();
                     particle_buffer_.checkEnoughBuffer(*particles_);
                     size_t new_particle_index = particles_->createRealParticleFrom(index_i);
-                    buffer_particle_indicator_[new_particle_index] = 0;
+                    buffer_indicator_[new_particle_index] = 0;
 
                     color_indicator_[index_i] = part_id_;
 
@@ -137,11 +137,11 @@ class BidirectionalBuffer
         int part_id_;
         std::mutex mutex_switch;
         ParticleBuffer<Base> &particle_buffer_;
-        AlignedBoxShape &aligned_box_;
+        AlignedBox &aligned_box_;
         Fluid &fluid_;
         Vecd *pos_;
         Real *rho_, *p_;
-        int *previous_surface_indicator_, *buffer_particle_indicator_;
+        int *previous_surface_indicator_, *buffer_indicator_;
         Real upper_bound_fringe_;
         Real *physical_time_;
         int *color_indicator_;
@@ -153,13 +153,13 @@ class BidirectionalBuffer
     class Deletion : public BaseLocalDynamics<BodyPartByCell>
     {
       public:
-        Deletion(BodyAlignedBoxByCell &aligned_box_part)
+        Deletion(AlignedBoxByCell &aligned_box_part)
             : BaseLocalDynamics<BodyPartByCell>(aligned_box_part),
               part_id_(aligned_box_part.getPartID()),
-              aligned_box_(aligned_box_part.getAlignedBoxShape()),
+              aligned_box_(aligned_box_part.getAlignedBox()),
               pos_(particles_->getVariableDataByName<Vecd>("Position")),
-              buffer_particle_indicator_(particles_->getVariableDataByName<int>("BufferParticleIndicator")){};
-        virtual ~Deletion(){};
+              buffer_indicator_(particles_->getVariableDataByName<int>("BufferIndicator")) {};
+        virtual ~Deletion() {};
 
         void update(size_t index_i, Real dt = 0.0)
         {
@@ -167,7 +167,7 @@ class BidirectionalBuffer
             {
                 mutex_switch.lock();
                 while (aligned_box_.checkLowerBound(pos_[index_i]) &&
-                       buffer_particle_indicator_[index_i] == part_id_ &&
+                       buffer_indicator_[index_i] == part_id_ &&
                        index_i < particles_->TotalRealParticles())
                 {
                     particles_->switchToBufferParticle(index_i);
@@ -179,18 +179,19 @@ class BidirectionalBuffer
       protected:
         int part_id_;
         std::mutex mutex_switch;
-        AlignedBoxShape &aligned_box_;
+        AlignedBox &aligned_box_;
         Vecd *pos_;
-        int *buffer_particle_indicator_;
+        int *buffer_indicator_;
     };
 
   public:
-    BidirectionalBuffer(BodyAlignedBoxByCell &aligned_box_part, ParticleBuffer<Base> &particle_buffer)
-        : target_pressure_(*this),
+    template <typename... Args>
+    BidirectionalBuffer(AlignedBoxByCell &aligned_box_part, ParticleBuffer<Base> &particle_buffer, Args &&...args)
+        : target_pressure_(*this, std::forward<Args>(args)...),
           tag_buffer_particles(aligned_box_part),
           injection(aligned_box_part, particle_buffer, target_pressure_),
           deletion(aligned_box_part){};
-    virtual ~BidirectionalBuffer(){};
+    virtual ~BidirectionalBuffer() {};
 
     SimpleDynamics<TagBufferParticles, ExecutionPolicy> tag_buffer_particles;
     SimpleDynamics<Injection, ExecutionPolicy> injection;

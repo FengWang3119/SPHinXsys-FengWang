@@ -23,7 +23,7 @@ Real particle_spacing_ref = 2.0 * radius_mid_surface * Pi * 80.0 / 360.0 / (Real
 int BWD = 1;                                /** Width of the boundary layer measured by number of particles. */
 Real BW = particle_spacing_ref * (Real)BWD; /** Boundary width, determined by specific layer of boundary particles. */
 /** Domain bounds of the system. */
-BoundingBox system_domain_bounds(Vec3d(-radius - thickness, 0.0, -radius - thickness),
+BoundingBoxd system_domain_bounds(Vec3d(-radius - thickness, 0.0, -radius - thickness),
                                  Vec3d(radius + thickness + BW, height, radius + thickness));
 // Observer location
 StdVec<Vecd> observation_location = {Vecd(radius_mid_surface * cos((50.0 - 2.0 * 80.0 / particle_number) / 180.0 * Pi),
@@ -56,7 +56,8 @@ template <>
 class ParticleGenerator<SurfaceParticles, Cylinder> : public ParticleGenerator<SurfaceParticles>
 {
   public:
-    explicit ParticleGenerator(SPHBody &sph_body, SurfaceParticles &surface_particles) : ParticleGenerator<SurfaceParticles>(sph_body, surface_particles){};
+    explicit ParticleGenerator(SPHBody &sph_body, SurfaceParticles &surface_particles)
+        : ParticleGenerator<SurfaceParticles>(sph_body, surface_particles) {};
     virtual void prepareGeometricData() override
     {
         // the cylinder and boundary
@@ -78,21 +79,18 @@ class ParticleGenerator<SurfaceParticles, Cylinder> : public ParticleGenerator<S
 class BoundaryGeometry : public BodyPartByParticle
 {
   public:
-    BoundaryGeometry(SPHBody &body, const std::string &body_part_name)
-        : BodyPartByParticle(body, body_part_name)
+    BoundaryGeometry(SPHBody &body) : BodyPartByParticle(body)
     {
         TaggingParticleMethod tagging_particle_method = std::bind(&BoundaryGeometry::tagManually, this, _1);
         tagParticles(tagging_particle_method);
     };
-    virtual ~BoundaryGeometry(){};
+    virtual ~BoundaryGeometry() {};
 
   private:
-    void tagManually(size_t index_i)
+    bool tagManually(size_t index_i)
     {
-        if (base_particles_.ParticlePositions()[index_i][1] < 0.0 || base_particles_.ParticlePositions()[index_i][1] > height + 0.5 * particle_spacing_ref)
-        {
-            body_part_particles_.push_back(index_i);
-        }
+        return base_particles_.ParticlePositions()[index_i][1] < 0.0 ||
+               base_particles_.ParticlePositions()[index_i][1] > height + 0.5 * particle_spacing_ref;
     };
 };
 } // namespace SPH
@@ -133,14 +131,13 @@ int main(int ac, char *av[])
 
     /** Time step size calculation. */
     ReduceDynamics<thin_structure_dynamics::ShellAcousticTimeStepSize> computing_time_step_size(cylinder_body);
-    BoundaryGeometry boundary_geometry(cylinder_body, "BoundaryGeometry");
+    BoundaryGeometry boundary_geometry(cylinder_body);
     SimpleDynamics<FixedInAxisDirection> constrain_holder(boundary_geometry, Vecd(0.0, 1.0, 0.0));
     DampingWithRandomChoice<InteractionSplit<DampingProjectionInner<Vec3d, FixedDampingRate>>>
         cylinder_position_damping(0.3, cylinder_body_inner, "Velocity", physical_viscosity);
     DampingWithRandomChoice<InteractionSplit<DampingProjectionInner<Vec3d, FixedDampingRate>>>
         cylinder_rotation_damping(0.3, cylinder_body_inner, "AngularVelocity", physical_viscosity);
     /** Output */
-    IOEnvironment io_environment(sph_system);
     BodyStatesRecordingToVtp write_states(sph_system);
     RegressionTestDynamicTimeWarping<ObservedQuantityRecording<Vecd>>
         write_cylinder_max_displacement("Position", cylinder_observer_contact);

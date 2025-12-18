@@ -38,7 +38,7 @@ class SphinxsysRegressionTestByCTest:
     def run_case(self) -> None:
         print('Start case simulation...')
         print(self.enter_sphinxsys_exec_folder)
-        command = f".{os.sep}{self.sphinxsys_case_name} --regression=true"
+        command = f".{os.sep}{self.sphinxsys_case_name} --regression=true --state_recording=false"
         os.system(self.enter_sphinxsys_exec_folder)
         os.system(command)
         print('Simulating case is finished...')
@@ -46,7 +46,7 @@ class SphinxsysRegressionTestByCTest:
     def run_case_with_reload(self) -> None:
         print('Start case simulation with particle reload...')
         print(self.enter_sphinxsys_exec_folder)
-        command = f".{os.sep}{self.sphinxsys_case_name} --reload=true --regression=true"
+        command = f".{os.sep}{self.sphinxsys_case_name} --reload=true --relax=false --regression=true --state_recording=false"
         os.system(self.enter_sphinxsys_exec_folder)
         os.system(command)
         print('Simulating case is finished...')
@@ -56,6 +56,13 @@ class SphinxsysRegressionTestByCTest:
         ifconverged = file.readline(4)
         file.close()
         return ifconverged
+
+    def clean_input_folder(folder_path, keep_file="regression_test_tool.py"):
+        for filename in os.listdir(folder_path):
+            file_path = os.path.join(folder_path, filename)
+            if filename != keep_file and os.path.isfile(file_path):
+                os.remove(file_path)
+                print(f"Deleted: {file_path}")
 
 
 class SphinxsysRegressionTest:
@@ -116,6 +123,13 @@ class SphinxsysRegressionTest:
         os.chdir(self.sphinxsys_exec_path)
         os.system(command)
         print('Simulating case is finished...')
+
+    def clean_input_folder(folder_path, keep_file="regression_test_tool.py"):
+        for filename in os.listdir(folder_path):
+            file_path = os.path.join(folder_path, filename)
+            if filename != keep_file and os.path.isfile(file_path):
+                os.remove(file_path)
+                print(f"Deleted: {file_path}")
 
     def read_dat_file(self):
         file = open(self.condition_file_path)

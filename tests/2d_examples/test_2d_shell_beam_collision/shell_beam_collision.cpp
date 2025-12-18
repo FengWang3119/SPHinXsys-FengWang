@@ -15,7 +15,7 @@ Real resolution_ref = 0.025;          /**< reference resolution. */
 Real BW = resolution_ref * 4.;        /**< wall width for BCs. */
 Real thickness = resolution_ref * 1.; /**< shell thickness. */
 Real level_set_refinement_ratio = resolution_ref / (0.1 * thickness);
-BoundingBox system_domain_bounds(Vec2d(-BW, -BW), Vec2d(DL + BW, DH + BW));
+BoundingBoxd system_domain_bounds(Vec2d(-BW, -BW), Vec2d(DL + BW, DH + BW));
 Vec2d circle_center(2.0, 2.0);
 Real circle_radius = 0.5;
 //----------------------------------------------------------------------
@@ -86,7 +86,7 @@ int main(int ac, char *av[])
     sph_system.setRunParticleRelaxation(false);
     /** Tag for starting with relaxed body-fitted particles distribution */
     sph_system.setReloadParticles(true);
-    sph_system.handleCommandlineOptions(ac, av)->setIOEnvironment();
+    sph_system.handleCommandlineOptions(ac, av);
     //----------------------------------------------------------------------
     //	Creating body, materials and particles.
     //----------------------------------------------------------------------
@@ -99,7 +99,8 @@ int main(int ac, char *av[])
     }
     else
     {
-        shell.defineBodyLevelSetShape(level_set_refinement_ratio)->writeLevelSet(sph_system);
+        shell.defineBodyLevelSetShape(level_set_refinement_ratio, UsageType::Surface)
+            ->writeLevelSet(sph_system);
         shell.generateParticles<SurfaceParticles, Lattice>(thickness);
     }
 
@@ -144,7 +145,6 @@ int main(int ac, char *av[])
         //----------------------------------------------------------------------
         BodyStatesRecordingToVtp write_relaxed_particles(sph_system);
         write_relaxed_particles.addToWrite<int>(shell, "UpdatedIndicator");
-        MeshRecordingToPlt write_mesh_cell_linked_list(sph_system, shell.getCellLinkedList());
         ReloadParticleIO write_particle_reload_files(shell);
         //----------------------------------------------------------------------
         //	Particle relaxation starts here.
@@ -154,7 +154,6 @@ int main(int ac, char *av[])
         relaxation_step_shell_inner.MidSurfaceBounding().exec();
         write_relaxed_particles.writeToFile(0);
         shell.updateCellLinkedList();
-        write_mesh_cell_linked_list.writeToFile(0);
         //----------------------------------------------------------------------
         //	From here iteration for particle relaxation begins.
         //----------------------------------------------------------------------

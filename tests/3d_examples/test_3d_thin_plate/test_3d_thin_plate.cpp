@@ -22,7 +22,7 @@ Real resolution_ref = PL / (Real)particle_number; /** Initial reference particle
 int BWD = 1;                                      /** Width of the boundary layer measured by number of particles. */
 Real BW = resolution_ref * (Real)BWD;             /** Boundary width, determined by specific layer of boundary particles. */
 /** Domain bounds of the system. */
-BoundingBox system_domain_bounds(Vec3d(-BW, -BW, -0.5 * resolution_ref),
+BoundingBoxd system_domain_bounds(Vec3d(-BW, -BW, -0.5 * resolution_ref),
                                  Vec3d(PL + BW, PH + BW, 0.5 * resolution_ref));
 // Observer location
 StdVec<Vecd> observation_location = {Vecd(0.5 * PL, 0.5 * PH, 0.0)};
@@ -56,7 +56,7 @@ template <>
 class ParticleGenerator<SurfaceParticles, Plate> : public ParticleGenerator<SurfaceParticles>
 {
   public:
-    explicit ParticleGenerator(SPHBody &sph_body, SurfaceParticles &surface_particles) : ParticleGenerator<SurfaceParticles>(sph_body, surface_particles){};
+    explicit ParticleGenerator(SPHBody &sph_body, SurfaceParticles &surface_particles) : ParticleGenerator<SurfaceParticles>(sph_body, surface_particles) {};
     virtual void prepareGeometricData() override
     {
         // the plate and boundary
@@ -76,41 +76,37 @@ class ParticleGenerator<SurfaceParticles, Plate> : public ParticleGenerator<Surf
 class BoundaryGeometryParallelToXAxis : public BodyPartByParticle
 {
   public:
-    BoundaryGeometryParallelToXAxis(SPHBody &body, const std::string &body_part_name)
-        : BodyPartByParticle(body, body_part_name)
+    BoundaryGeometryParallelToXAxis(SPHBody &body)
+        : BodyPartByParticle(body)
     {
         TaggingParticleMethod tagging_particle_method = std::bind(&BoundaryGeometryParallelToXAxis::tagManually, this, _1);
         tagParticles(tagging_particle_method);
     };
-    virtual ~BoundaryGeometryParallelToXAxis(){};
+    virtual ~BoundaryGeometryParallelToXAxis() {};
 
   private:
-    void tagManually(size_t index_i)
+    bool tagManually(size_t index_i)
     {
-        if (base_particles_.ParticlePositions()[index_i][1] < 0.0 || base_particles_.ParticlePositions()[index_i][1] > PH)
-        {
-            body_part_particles_.push_back(index_i);
-        }
+        return base_particles_.ParticlePositions()[index_i][1] < 0.0 ||
+               base_particles_.ParticlePositions()[index_i][1] > PH;
     };
 };
 class BoundaryGeometryParallelToYAxis : public BodyPartByParticle
 {
   public:
-    BoundaryGeometryParallelToYAxis(SPHBody &body, const std::string &body_part_name)
-        : BodyPartByParticle(body, body_part_name)
+    BoundaryGeometryParallelToYAxis(SPHBody &body)
+        : BodyPartByParticle(body)
     {
         TaggingParticleMethod tagging_particle_method = std::bind(&BoundaryGeometryParallelToYAxis::tagManually, this, _1);
         tagParticles(tagging_particle_method);
     };
-    virtual ~BoundaryGeometryParallelToYAxis(){};
+    virtual ~BoundaryGeometryParallelToYAxis() {};
 
   private:
-    void tagManually(size_t index_i)
+    bool tagManually(size_t index_i)
     {
-        if (base_particles_.ParticlePositions()[index_i][0] < 0.0 || base_particles_.ParticlePositions()[index_i][0] > PL)
-        {
-            body_part_particles_.push_back(index_i);
-        }
+        return base_particles_.ParticlePositions()[index_i][0] < 0.0 ||
+               base_particles_.ParticlePositions()[index_i][0] > PL;
     };
 };
 } // namespace SPH
@@ -152,10 +148,10 @@ int main(int ac, char *av[])
     /** Time step size calculation. */
     ReduceDynamics<thin_structure_dynamics::ShellAcousticTimeStepSize> computing_time_step_size(plate_body);
     /** Constrain the Boundary. */
-    BoundaryGeometryParallelToXAxis boundary_geometry_x(plate_body, "BoundaryGeometryParallelToXAxis");
+    BoundaryGeometryParallelToXAxis boundary_geometry_x(plate_body);
     SimpleDynamics<thin_structure_dynamics::ConstrainShellBodyRegionAlongAxis>
         constrain_holder_x(boundary_geometry_x, 0);
-    BoundaryGeometryParallelToYAxis boundary_geometry_y(plate_body, "BoundaryGeometryParallelToYAxis");
+    BoundaryGeometryParallelToYAxis boundary_geometry_y(plate_body);
     SimpleDynamics<thin_structure_dynamics::ConstrainShellBodyRegionAlongAxis>
         constrain_holder_y(boundary_geometry_y, 1);
     DampingWithRandomChoice<InteractionSplit<DampingPairwiseInner<Vec3d, FixedDampingRate>>>
@@ -163,7 +159,6 @@ int main(int ac, char *av[])
     DampingWithRandomChoice<InteractionSplit<DampingPairwiseInner<Vec3d, FixedDampingRate>>>
         plate_rotation_damping(0.5, plate_body_inner, "AngularVelocity", physical_viscosity);
     /** Output */
-    IOEnvironment io_environment(sph_system);
     BodyStatesRecordingToVtp write_states(sph_system);
     ObservedQuantityRecording<Vecd> write_plate_max_displacement("Position", plate_observer_contact);
 

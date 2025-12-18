@@ -19,7 +19,7 @@ Real BW = resolution_ref * 4;
 Vec3d domain_lower_bound(-half_width - BW, -half_width - 1.5 * BW, -BW);
 Vec3d domain_upper_bound(half_width + BW, half_width + BW, 2.0 * half_width + BW);
 // Domain bounds of the system.
-BoundingBox system_domain_bounds(domain_lower_bound, domain_upper_bound);
+BoundingBoxd system_domain_bounds(domain_lower_bound, domain_upper_bound);
 //----------------------------------------------------------------------
 //	Global parameters for material properties.
 //----------------------------------------------------------------------
@@ -45,7 +45,7 @@ class StationaryPlate : public ComplexShape
     {
         Vecd halfsize_plate(half_width + BW, 0.5 * BW, half_width + BW);
         Vecd translation_plate(0.0, -half_width - 0.75 * BW, half_width);
-        add<TransformShape<GeometricShapeBox>>(Transform(translation_plate), halfsize_plate);
+        add<GeometricShapeBox>(Transform(translation_plate), halfsize_plate);
     }
 };
 //----------------------------------------------------------------------
@@ -65,7 +65,6 @@ int main(int ac, char *av[])
     // handle command line arguments
     sph_system.handleCommandlineOptions(ac, av);
 #endif
-    IOEnvironment io_environment(sph_system);
     //----------------------------------------------------------------------
     //	Creating body, materials and particles.
     //----------------------------------------------------------------------

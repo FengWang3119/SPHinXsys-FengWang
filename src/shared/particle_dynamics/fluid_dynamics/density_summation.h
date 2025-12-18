@@ -12,7 +12,7 @@
  * (Deutsche Forschungsgemeinschaft) DFG HU1527/6-1, HU1527/10-1,            *
  *  HU1527/12-1 and HU1527/12-4.                                             *
  *                                                                           *
- * Portions copyright (c) 2017-2023 Technical University of Munich and       *
+ * Portions copyright (c) 2017-2025 Technical University of Munich and       *
  * the authors' affiliations.                                                *
  *                                                                           *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may   *
@@ -48,7 +48,7 @@ class DensitySummation<Base, DataDelegationType>
   public:
     template <class BaseRelationType>
     explicit DensitySummation(BaseRelationType &base_relation);
-    virtual ~DensitySummation(){};
+    virtual ~DensitySummation() {};
 
   protected:
     Real *rho_, *mass_, *rho_sum_, *Vol_;
@@ -60,8 +60,8 @@ class DensitySummation<Inner<Base>> : public DensitySummation<Base, DataDelegate
 {
   public:
     explicit DensitySummation(BaseInnerRelation &inner_relation)
-        : DensitySummation<Base, DataDelegateInner>(inner_relation){};
-    virtual ~DensitySummation(){};
+        : DensitySummation<Base, DataDelegateInner>(inner_relation) {};
+    virtual ~DensitySummation() {};
 };
 
 template <>
@@ -69,19 +69,19 @@ class DensitySummation<Inner<>> : public DensitySummation<Inner<Base>>
 {
   public:
     explicit DensitySummation(BaseInnerRelation &inner_relation)
-        : DensitySummation<Inner<Base>>(inner_relation){};
-    virtual ~DensitySummation(){};
+        : DensitySummation<Inner<Base>>(inner_relation) {};
+    virtual ~DensitySummation() {};
     void interaction(size_t index_i, Real dt = 0.0);
     void update(size_t index_i, Real dt = 0.0);
 };
 using DensitySummationInner = DensitySummation<Inner<>>;
 
 template <>
-class DensitySummation<Inner<Adaptive>> : public DensitySummation<Inner<Base>>
+class DensitySummation<Inner<AdaptiveSmoothingLength>> : public DensitySummation<Inner<Base>>
 {
   public:
     explicit DensitySummation(BaseInnerRelation &inner_relation);
-    virtual ~DensitySummation(){};
+    virtual ~DensitySummation() {};
     void interaction(size_t index_i, Real dt = 0.0);
     void update(size_t index_i, Real dt = 0.0);
 
@@ -96,7 +96,7 @@ class DensitySummation<Contact<Base>> : public DensitySummation<Base, DataDelega
 {
   public:
     explicit DensitySummation(BaseContactRelation &contact_relation);
-    virtual ~DensitySummation(){};
+    virtual ~DensitySummation() {};
 
   protected:
     StdVec<Real> contact_inv_rho0_;
@@ -109,17 +109,17 @@ class DensitySummation<Contact<>> : public DensitySummation<Contact<Base>>
 {
   public:
     explicit DensitySummation(BaseContactRelation &contact_relation)
-        : DensitySummation<Contact<Base>>(contact_relation){};
-    virtual ~DensitySummation(){};
+        : DensitySummation<Contact<Base>>(contact_relation) {};
+    virtual ~DensitySummation() {};
     void interaction(size_t index_i, Real dt = 0.0);
 };
 
 template <>
-class DensitySummation<Contact<Adaptive>> : public DensitySummation<Contact<Base>>
+class DensitySummation<Contact<AdaptiveSmoothingLength>> : public DensitySummation<Contact<Base>>
 {
   public:
     explicit DensitySummation(BaseContactRelation &contact_relation);
-    virtual ~DensitySummation(){};
+    virtual ~DensitySummation() {};
     void interaction(size_t index_i, Real dt = 0.0);
 
   protected:
@@ -133,7 +133,7 @@ class DensitySummation<Inner<FreeSurface, SummationType...>> : public DensitySum
   public:
     template <typename... Args>
     explicit DensitySummation(Args &&...args);
-    virtual ~DensitySummation(){};
+    virtual ~DensitySummation() {};
     void update(size_t index_i, Real dt = 0.0);
 };
 using DensitySummationFreeSurfaceInner = DensitySummation<Inner<FreeSurface>>;
@@ -165,7 +165,7 @@ class DensitySummation<Inner<NearSurfaceType, SummationType...>>
   public:
     template <typename... Args>
     explicit DensitySummation(Args &&...args);
-    virtual ~DensitySummation(){};
+    virtual ~DensitySummation() {};
     void update(size_t index_i, Real dt = 0.0);
 
   protected:
@@ -180,11 +180,11 @@ template <class InnerInteractionType, class... ContactInteractionTypes>
 using BaseDensitySummationComplex = ComplexInteraction<DensitySummation<InnerInteractionType, ContactInteractionTypes...>>;
 
 using DensitySummationComplex = BaseDensitySummationComplex<Inner<>, Contact<>>;
-using DensitySummationComplexAdaptive = BaseDensitySummationComplex<Inner<Adaptive>, Contact<Adaptive>>;
+using DensitySummationComplexAdaptive = BaseDensitySummationComplex<Inner<AdaptiveSmoothingLength>, Contact<AdaptiveSmoothingLength>>;
 using DensitySummationComplexFreeSurface = BaseDensitySummationComplex<Inner<FreeSurface>, Contact<>>;
-using DensitySummationFreeSurfaceComplexAdaptive = BaseDensitySummationComplex<Inner<FreeSurface, Adaptive>, Contact<Adaptive>>;
+using DensitySummationFreeSurfaceComplexAdaptive = BaseDensitySummationComplex<Inner<FreeSurface, AdaptiveSmoothingLength>, Contact<AdaptiveSmoothingLength>>;
 using DensitySummationFreeStreamComplex = BaseDensitySummationComplex<Inner<FreeStream>, Contact<>>;
-using DensitySummationFreeStreamComplexAdaptive = BaseDensitySummationComplex<Inner<FreeStream, Adaptive>, Contact<Adaptive>>;
+using DensitySummationFreeStreamComplexAdaptive = BaseDensitySummationComplex<Inner<FreeStream, AdaptiveSmoothingLength>, Contact<AdaptiveSmoothingLength>>;
 using DensitySummationNotNearSurfaceComplex = BaseDensitySummationComplex<Inner<NotNearSurface>, Contact<>>;
 } // namespace fluid_dynamics
 } // namespace SPH

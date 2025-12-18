@@ -12,7 +12,7 @@
  * (Deutsche Forschungsgemeinschaft) DFG HU1527/6-1, HU1527/10-1,            *
  *  HU1527/12-1 and HU1527/12-4.                                             *
  *                                                                           *
- * Portions copyright (c) 2017-2023 Technical University of Munich and       *
+ * Portions copyright (c) 2017-2025 Technical University of Munich and       *
  * the authors' affiliations.                                                *
  *                                                                           *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may   *
@@ -29,11 +29,9 @@
 #ifndef PARTICLE_ITERATORS_H
 #define PARTICLE_ITERATORS_H
 
-#include "base_data_package.h"
-#include "execution.h"
+#include "base_data_type_package.h"
+#include "implementation.h"
 #include "sphinxsys_containers.h"
-
-#include <numeric>
 
 namespace SPH
 {
@@ -61,7 +59,7 @@ inline void particle_for(const SequencedPolicy &seq, const IndexRange &particles
 };
 
 template <class LocalDynamicsFunction>
-inline void particle_for(const ParallelPolicy &par, const IndexRange &particles_range,
+inline void particle_for(const ParallelPolicy &par_host, const IndexRange &particles_range,
                          const LocalDynamicsFunction &local_dynamics_function)
 {
     parallel_for(
@@ -88,7 +86,7 @@ inline void particle_for(const SequencedPolicy &seq, const IndexVector &body_par
 };
 
 template <class LocalDynamicsFunction>
-inline void particle_for(const ParallelPolicy &par, const IndexVector &body_part_particles,
+inline void particle_for(const ParallelPolicy &par_host, const IndexVector &body_part_particles,
                          const LocalDynamicsFunction &local_dynamics_function)
 {
     parallel_for(
@@ -120,7 +118,7 @@ inline void particle_for(const SequencedPolicy &seq, const ConcurrentCellLists &
 }
 
 template <class LocalDynamicsFunction>
-inline void particle_for(const ParallelPolicy &par, const ConcurrentCellLists &body_part_cells,
+inline void particle_for(const ParallelPolicy &par_host, const ConcurrentCellLists &body_part_cells,
                          const LocalDynamicsFunction &local_dynamics_function)
 {
     parallel_for(
@@ -150,7 +148,7 @@ inline void particle_for(const SequencedPolicy &seq, const DataListsInCells &bod
 };
 
 template <class LocalDynamicsFunction>
-inline void particle_for(const ParallelPolicy &par, const DataListsInCells &body_part_cells,
+inline void particle_for(const ParallelPolicy &par_host, const DataListsInCells &body_part_cells,
                          const LocalDynamicsFunction &local_dynamics_function)
 {
     parallel_for(
@@ -191,7 +189,7 @@ inline ReturnType particle_reduce(const SequencedPolicy &seq, const IndexRange &
 }
 
 template <class ReturnType, typename Operation, class LocalDynamicsFunction>
-inline ReturnType particle_reduce(const ParallelPolicy &par, const IndexRange &particles_range,
+inline ReturnType particle_reduce(const ParallelPolicy &par_host, const IndexRange &particles_range,
                                   ReturnType temp, Operation &&operation,
                                   const LocalDynamicsFunction &local_dynamics_function)
 {
@@ -225,7 +223,7 @@ inline ReturnType particle_reduce(const SequencedPolicy &seq, const IndexVector 
 }
 
 template <class ReturnType, typename Operation, class LocalDynamicsFunction>
-inline ReturnType particle_reduce(const ParallelPolicy &par, const IndexVector &body_part_particles,
+inline ReturnType particle_reduce(const ParallelPolicy &par_host, const IndexVector &body_part_particles,
                                   ReturnType temp, Operation &&operation,
                                   const LocalDynamicsFunction &local_dynamics_function)
 {
@@ -245,6 +243,7 @@ inline ReturnType particle_reduce(const ParallelPolicy &par, const IndexVector &
             return operation(x, y);
         });
 };
+
 /**
  * BodypartByCell-wise reduce iterators (for sequential and parallel computing).
  */
@@ -266,7 +265,7 @@ inline ReturnType particle_reduce(const SequencedPolicy &seq, const ConcurrentCe
 }
 
 template <class ReturnType, typename Operation, class LocalDynamicsFunction>
-inline ReturnType particle_reduce(const ParallelPolicy &par, const ConcurrentCellLists &body_part_cells,
+inline ReturnType particle_reduce(const ParallelPolicy &par_host, const ConcurrentCellLists &body_part_cells,
                                   ReturnType temp, Operation &&operation,
                                   const LocalDynamicsFunction &local_dynamics_function)
 {
@@ -287,43 +286,6 @@ inline ReturnType particle_reduce(const ParallelPolicy &par, const ConcurrentCel
         },
         [&](const ReturnType &x, const ReturnType &y) -> ReturnType
         { return operation(x, y); });
-}
-
-template <typename T, typename Op>
-T exclusive_scan(const SequencedPolicy &seq_policy, T *first, T *d_first, UnsignedInt d_size, Op op)
-{
-    UnsignedInt scan_size = d_size - 1;
-    std::exclusive_scan(first, first + d_size, d_first, T{0}, op);
-    return d_first[scan_size];
-}
-
-template <typename T, typename Op>
-T exclusive_scan(const ParallelPolicy &par_policy, T *first, T *d_first, UnsignedInt d_size, Op op)
-{
-    // Exclusive scan is the same as inclusive, but shifted by one
-    UnsignedInt scan_size = d_size - 1;
-    d_first[0] = T{0};
-    using range_type = tbb::blocked_range<UnsignedInt>;
-    tbb::parallel_scan(
-        range_type(0, scan_size), d_first[0],
-        [=](const range_type &r, T sum, bool is_final_scan) -> T
-        {
-            T tmp = sum;
-            for (UnsignedInt i = r.begin(); i < r.end(); ++i)
-            {
-                tmp = op(tmp, first[i]);
-                if (is_final_scan)
-                {
-                    d_first[i + 1] = tmp;
-                }
-            }
-            return tmp;
-        },
-        [&](const T &a, const T &b)
-        {
-            return op(a, b);
-        });
-    return d_first[scan_size];
 }
 } // namespace SPH
 #endif // PARTICLE_ITERATORS_H

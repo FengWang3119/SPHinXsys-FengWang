@@ -12,7 +12,7 @@
  * (Deutsche Forschungsgemeinschaft) DFG HU1527/6-1, HU1527/10-1,            *
  *  HU1527/12-1 and HU1527/12-4.                                             *
  *                                                                           *
- * Portions copyright (c) 2017-2023 Technical University of Munich and       *
+ * Portions copyright (c) 2017-2025 Technical University of Munich and       *
  * the authors' affiliations.                                                *
  *                                                                           *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may   *
@@ -29,15 +29,20 @@
 #ifndef SPHINXSYS_CONTAINERS_H
 #define SPHINXSYS_CONTAINERS_H
 
-#include "base_data_package.h"
+#include "base_data_type_package.h"
 #include "base_data_type.h"
 #include "sphinxsys_constant.h"
 #include "sphinxsys_variable.h"
 
 namespace SPH
 {
-class Base;             // Indicating base class
-class Adaptive;         // Indicating with adaptive resolution
+class Base;  // Indicating base class
+class SingleValued
+{
+};
+class Continuous
+{
+};
 class Lattice;          // Indicating with lattice points
 class UnstructuredMesh; // Indicating with unstructured mesh
 class BaseMaterial;
@@ -56,12 +61,32 @@ class Inner; /**< Inner interaction: interaction within a body*/
 template <typename... ContactParameters>
 class Contact; /**< Contact interaction: interaction between a body with one or several another bodies */
 
-class Boundary;        /**< Interaction with boundary */
-class Wall;            /**< Interaction with wall boundary */
-class Extended;        /**< An extened method of an interaction type */
-class SpatialTemporal; /**< A interaction considering spatial temporal correlations */
-class Dynamic;         /**< A dynamic interaction */
+class Boundary; /**< Interaction with boundary */
+class Wall;     /**< Interaction with wall boundary */
+class Extended; /**< An extened method of an interaction type */
 
+template <typename...>
+class Dirichlet; /**< Contact interaction with Dirichlet boundary condition */
+//----------------------------------------------------------------------
+// Time stepping type identifies
+//----------------------------------------------------------------------
+class ForwardEuler;
+class RungeKutta;
+class RungeKutta1stStage;
+class RungeKutta2ndStage;
+template <typename... ControlTypes>
+class Dirichlet; /**< Contact interaction with Dirichlet boundary condition */
+template <typename... ControlTypes>
+class Neumann; /**< Contact interaction with Neumann boundary condition */
+template <typename... ControlTypes>
+class Robin; /**< Contact interaction with Neumann boundary condition */
+//----------------------------------------------------------------------
+// Spatial temporal type identifies
+//----------------------------------------------------------------------
+class SpatialTemporal;
+//----------------------------------------------------------------------
+// Other type identifies
+//----------------------------------------------------------------------
 using MaterialVector = StdVec<BaseMaterial *>;
 using SPHBodyVector = StdVec<SPHBody *>;
 using SolidBodyVector = StdVec<SolidBody *>;
@@ -74,8 +99,8 @@ using ParticlesBound = std::pair<size_t, size_t>;
 
 /** List data pair: first for indexes, second for particle position. */
 using ListData = std::pair<size_t, Vecd>;
-using ListDataVector = StdLargeVec<ListData>;
-using DataListsInCells = StdLargeVec<ListDataVector *>;
+using ListDataVector = StdVec<ListData>;
+using DataListsInCells = StdVec<ListDataVector *>;
 using ConcurrentCellLists = ConcurrentVec<ConcurrentIndexVector *>;
 /** Cell list for periodic boundary condition algorithms. */
 using CellLists = std::pair<ConcurrentCellLists, DataListsInCells>;
@@ -86,11 +111,5 @@ typedef DataContainerAssemble<AllocatedData> ParticleData;
 typedef DataContainerAddressAssemble<DiscreteVariable> ParticleVariables;
 /** Generalized particle variable type*/
 typedef DataContainerAddressAssemble<SingularVariable> SingularVariables;
-
-/** Generalized mesh data type */
-// template <typename DataType>
-// using MeshVariable = DiscreteVariable<DataType>;
-typedef DataContainerAddressAssemble<MeshVariable> MeshVariableAssemble;
-
 } // namespace SPH
 #endif // SPHINXSYS_CONTAINERS_H

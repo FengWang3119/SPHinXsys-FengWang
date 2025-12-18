@@ -12,7 +12,7 @@
  * (Deutsche Forschungsgemeinschaft) DFG HU1527/6-1, HU1527/10-1,            *
  *  HU1527/12-1 and HU1527/12-4.                                             *
  *                                                                           *
- * Portions copyright (c) 2017-2023 Technical University of Munich and       *
+ * Portions copyright (c) 2017-2025 Technical University of Munich and       *
  * the authors' affiliations.                                                *
  *                                                                           *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may   *
@@ -29,9 +29,9 @@
 #ifndef IO_BASE_H
 #define IO_BASE_H
 
-#include "all_physical_dynamics.h"
 #include "base_body.h"
-#include "base_data_package.h"
+#include "base_data_type_package.h"
+#include "base_particle_dynamics.h"
 #include "parameterization.h"
 #include "sphinxsys_containers.h"
 #include "xml_engine.h"
@@ -45,6 +45,7 @@ namespace fs = std::filesystem;
 namespace SPH
 {
 class SPHSystem;
+class IOEnvironment;
 
 /**
  * @class BaseIO
@@ -54,7 +55,7 @@ class BaseIO
 {
   public:
     explicit BaseIO(SPHSystem &sph_system);
-    virtual ~BaseIO(){};
+    virtual ~BaseIO() {};
 
     /** write with filename indicated by iteration step */
     virtual void writeToFile(size_t iteration_step) = 0;
@@ -62,7 +63,7 @@ class BaseIO
   protected:
     SPHSystem &sph_system_;
     IOEnvironment &io_environment_;
-    SingularVariable<Real> &sv_physical_time_;
+    SingularVariable<Real> *sv_physical_time_;
 
     std::string convertPhysicalTimeToString(Real physical_time);
 
@@ -75,21 +76,6 @@ class BaseIO
     }
 
     bool isBodyIncluded(const SPHBodyVector &bodies, SPHBody *sph_body);
-
-    struct prepareVariablesToWrite
-    {
-        prepareVariablesToWrite(){};
-
-        template <class ExecutionPolicy, typename DataType>
-        void operator()(DataContainerAddressKeeper<DiscreteVariable<DataType>> &variables,
-                        const ExecutionPolicy &ex_policy)
-        {
-            for (size_t i = 0; i != variables.size(); ++i)
-            {
-                variables[i]->prepareForOutput(ex_policy);
-            }
-        };
-    };
 };
 
 /**
@@ -102,35 +88,13 @@ class BodyStatesRecording : public BaseIO
   public:
     BodyStatesRecording(SPHSystem &sph_system);
     BodyStatesRecording(SPHBody &body);
-    virtual ~BodyStatesRecording(){};
+    virtual ~BodyStatesRecording() {};
     /** write with filename indicated by physical time */
-    void writeToFile();
-
-    void writeToFile(const ParallelDevicePolicy &ex_policy)
-    {
-        for (size_t i = 0; i < bodies_.size(); ++i)
-        {
-            dv_all_pos_[i]->prepareForOutput(ex_policy);
-            prepare_variable_to_write_[i](ex_policy);
-        }
-
-        writeToFile();
-    };
-
-    void writeToFile(const ParallelPolicy &ex_policy)
-    {
-        writeToFile();
-    };
-
-    void writeToFile(const SequencedPolicy &ex_policy)
-    {
-        writeToFile();
-    };
-
+    virtual void writeToFile();
     virtual void writeToFile(size_t iteration_step) override;
 
     template <typename DataType>
-    void addToWrite(SPHBody &sph_body, const std::string &name)
+    BodyStatesRecording &addToWrite(SPHBody &sph_body, const std::string &name)
     {
         if (isBodyIncluded(bodies_, &sph_body))
         {
@@ -143,11 +107,12 @@ class BodyStatesRecording : public BaseIO
             std::cout << __FILE__ << ':' << __LINE__ << std::endl;
             exit(1);
         }
+        return *this;
     };
 
     template <typename DerivedVariableMethod,
               typename DynamicsIdentifier, typename... Args>
-    void addDerivedVariableRecording(DynamicsIdentifier &identifier, Args &&...args)
+    BodyStatesRecording &addDerivedVariableRecording(DynamicsIdentifier &identifier, Args &&...args)
     {
         SPHBody &sph_body = identifier.getSPHBody();
         if (isBodyIncluded(bodies_, &sph_body))
@@ -163,16 +128,13 @@ class BodyStatesRecording : public BaseIO
             std::cout << __FILE__ << ':' << __LINE__ << std::endl;
             exit(1);
         }
+        return *this;
     };
 
   protected:
     SPHBodyVector bodies_;
     StdVec<BaseDynamics<void> *> derived_variables_;
-    StdVec<DiscreteVariable<Vecd> *> dv_all_pos_;
     bool state_recording_;
-    StdVec<OperationOnDataAssemble<ParticleVariables, prepareVariablesToWrite>>
-        prepare_variable_to_write_;
-
     virtual void writeWithFileName(const std::string &sequence) = 0;
 
   private:
@@ -189,27 +151,14 @@ class RestartIO : public BaseIO
     SPHBodyVector bodies_;
     std::string overall_file_path_;
     StdVec<std::string> file_names_;
-    StdVec<OperationOnDataAssemble<ParticleVariables, prepareVariablesToWrite>>
-        prepare_variable_to_restart_;
 
     Real readRestartTime(size_t restart_step);
 
   public:
     RestartIO(SPHSystem &sph_system);
-    virtual ~RestartIO(){};
+    virtual ~RestartIO() {};
 
     virtual void writeToFile(size_t iteration_step = 0) override;
-
-    template <class ExecutionPolicy>
-    void writeToFile(const ExecutionPolicy &ex_policy, size_t iteration_step = 0)
-    {
-        for (size_t i = 0; i < bodies_.size(); ++i)
-        {
-            prepare_variable_to_restart_[i](ex_policy);
-        }
-        writeToFile(iteration_step);
-    };
-
     virtual void readFromFile(size_t iteration_step = 0);
 
     virtual Real readRestartFiles(size_t restart_step)
@@ -228,21 +177,20 @@ class ReloadParticleIO : public BaseIO
   protected:
     SPHBodyVector bodies_;
     StdVec<std::string> file_names_;
-    StdVec<OperationOnDataAssemble<ParticleVariables, prepareVariablesToWrite>>
-        prepare_variable_to_reload_;
 
   public:
+    ReloadParticleIO(SPHSystem &sph_system);
     ReloadParticleIO(SPHBodyVector bodies);
     ReloadParticleIO(SPHBody &sph_body);
     ReloadParticleIO(SPHBody &sph_body, const std::string &given_body_name);
-    virtual ~ReloadParticleIO(){};
+    virtual ~ReloadParticleIO() {};
 
     template <typename DataType>
     void addToReload(SPHBody &sph_body, const std::string &name)
     {
         if (isBodyIncluded(bodies_, &sph_body))
         {
-            sph_body.getBaseParticles().addVariableToReload<DataType>(name);
+            sph_body.getBaseParticles().addEvolvingVariable<DataType>(name);
         }
         else
         {
@@ -254,16 +202,6 @@ class ReloadParticleIO : public BaseIO
     };
 
     virtual void writeToFile(size_t iteration_step = 0) override;
-
-    template <class ExecutionPolicy>
-    void writeToFile(const ExecutionPolicy &ex_policy, size_t iteration_step = 0)
-    {
-        for (size_t i = 0; i < bodies_.size(); ++i)
-        {
-            prepare_variable_to_reload_[i](ex_policy);
-        }
-        writeToFile(iteration_step);
-    };
 };
 
 class ParticleGenerationRecording : public BaseIO

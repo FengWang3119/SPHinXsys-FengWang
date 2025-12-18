@@ -45,8 +45,8 @@ class WallBoundary : public ComplexShape
         Vecd outer_wall_translation = Vecd(-BW, -BW, -BW) + outer_wall_halfsize;
         Vecd inner_wall_halfsize = Vecd(0.5 * DL, 0.5 * DH, 0.5 * DW);
         Vecd inner_wall_translation = inner_wall_halfsize;
-        add<TransformShape<GeometricShapeBox>>(Transform(outer_wall_translation), outer_wall_halfsize);
-        subtract<TransformShape<GeometricShapeBox>>(Transform(inner_wall_translation), inner_wall_halfsize);
+        add<GeometricShapeBox>(Transform(outer_wall_translation), outer_wall_halfsize);
+        subtract<GeometricShapeBox>(Transform(inner_wall_translation), inner_wall_halfsize);
     }
 };
 //----------------------------------------------------------------------
@@ -56,7 +56,7 @@ class SoilInitialCondition : public continuum_dynamics::ContinuumInitialConditio
 {
   public:
     explicit SoilInitialCondition(RealBody &granular_column)
-        : continuum_dynamics::ContinuumInitialCondition(granular_column){};
+        : continuum_dynamics::ContinuumInitialCondition(granular_column) {};
 
   protected:
     void update(size_t index_i, Real dt)
@@ -76,11 +76,11 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     //	Build up an SPHSystem.
     //----------------------------------------------------------------------
-    BoundingBox system_domain_bounds(Vecd(-BW, -BW, -BW), Vecd(DL + BW, DH + BW, DW + BW));
+    BoundingBoxd system_domain_bounds(Vecd(-BW, -BW, -BW), Vecd(DL + BW, DH + BW, DW + BW));
     SPHSystem sph_system(system_domain_bounds, resolution_ref);
     sph_system.setRunParticleRelaxation(false);
     sph_system.setReloadParticles(true);
-    sph_system.handleCommandlineOptions(ac, av)->setIOEnvironment();
+    sph_system.handleCommandlineOptions(ac, av);
     //----------------------------------------------------------------------
     //	Creating bodies with corresponding materials and particles.
     //----------------------------------------------------------------------

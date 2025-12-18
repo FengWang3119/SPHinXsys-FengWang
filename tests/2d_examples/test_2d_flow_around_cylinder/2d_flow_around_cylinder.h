@@ -18,7 +18,7 @@ Real DH_sponge = resolution_ref * 2.0;  /**< Sponge region to impose freestream 
 Vec2d insert_circle_center(4.0, 5.0);   /**< Location of the cylinder center. */
 Real insert_circle_radius = 0.75;       /**< Radius of the cylinder. */
 /** Domain bounds of the system. */
-BoundingBox system_domain_bounds(Vec2d(-DL_sponge, -DH_sponge), Vec2d(DL, DH + DH_sponge));
+BoundingBoxd system_domain_bounds(Vec2d(-DL_sponge, -DH_sponge), Vec2d(DL, DH + DH_sponge));
 // Observation locations
 Vec2d point_coordinate_1(3.0, 5.0);
 Vec2d point_coordinate_2(4.0, 5.0);
@@ -82,11 +82,11 @@ class WaterBlock : public ComplexShape
 //----------------------------------------------------------------------
 //	Define parametrization for this case.
 //----------------------------------------------------------------------
-class ParameterizedWaterMaterial : public BaseParameterization<WeaklyCompressibleFluid>
+class ParameterizedViscosity : public BaseParameterization<Viscosity>
 {
   public:
-    ParameterizedWaterMaterial(ParameterizationIO &parameterization_io, Real rho0, Real c0, Real mu)
-        : BaseParameterization<WeaklyCompressibleFluid>(parameterization_io, rho0, c0, mu)
+    ParameterizedViscosity(ConstructArgs<ParameterizationIO *, Real> args)
+        : BaseParameterization<Viscosity>(std::get<0>(args), std::get<1>(args))
     {
         getAParameter("WaterMaterial", "Viscosity", mu_);
     }
@@ -114,7 +114,7 @@ class FreeStreamCondition : public fluid_dynamics::FlowVelocityBuffer
     FreeStreamCondition(BodyPartByCell &constrained_region)
         : fluid_dynamics::FlowVelocityBuffer(constrained_region),
           u_ave_(0), u_ref_(U_f), t_ref(2.0),
-          physical_time_(sph_system_.getSystemVariableDataByName<Real>("PhysicalTime")) {}
+          physical_time_(sph_system_->getSystemVariableDataByName<Real>("PhysicalTime")) {}
     Vecd getTargetVelocity(Vecd &position, Vecd &velocity) override
     {
         return Vecd(u_ave_, 0.0);

@@ -19,7 +19,7 @@ int particle_number = 40;                         /** Particle number in the dir
 Real resolution_ref = PL / (Real)particle_number; /** Initial reference particle spacing. */
 int BWD = 1;                                      /** number of boundary particles layers . */
 Real BW = resolution_ref * (Real)BWD;             /** Boundary width, determined by specific layer of boundary particles. */
-BoundingBox system_domain_bounds(Vec2d(-BW, -0.5 * resolution_ref), Vec2d(PL + BW, 0.5 * resolution_ref));
+BoundingBoxd system_domain_bounds(Vec2d(-BW, -0.5 * resolution_ref), Vec2d(PL + BW, 0.5 * resolution_ref));
 StdVec<Vecd> observation_location = {Vecd(0.5 * PL, 0.0)};
 //----------------------------------------------------------------------
 //	Material properties of the fluid.
@@ -46,7 +46,7 @@ class ParticleGenerator<SurfaceParticles, Plate> : public ParticleGenerator<Surf
 {
   public:
     explicit ParticleGenerator(SPHBody &sph_body, SurfaceParticles &surface_particles)
-        : ParticleGenerator<SurfaceParticles>(sph_body, surface_particles){};
+        : ParticleGenerator<SurfaceParticles>(sph_body, surface_particles) {};
     virtual void prepareGeometricData() override
     {
         // the plate and boundary
@@ -62,21 +62,18 @@ class ParticleGenerator<SurfaceParticles, Plate> : public ParticleGenerator<Surf
 class BoundaryGeometry : public BodyPartByParticle
 {
   public:
-    BoundaryGeometry(SPHBody &body, const std::string &body_part_name)
-        : BodyPartByParticle(body, body_part_name)
+    BoundaryGeometry(SPHBody &body) : BodyPartByParticle(body)
     {
         TaggingParticleMethod tagging_particle_method = std::bind(&BoundaryGeometry::tagManually, this, _1);
         tagParticles(tagging_particle_method);
     };
-    virtual ~BoundaryGeometry(){};
+    virtual ~BoundaryGeometry() {};
 
   private:
-    void tagManually(size_t index_i)
+    bool tagManually(size_t index_i)
     {
-        if (base_particles_.ParticlePositions()[index_i][0] < 0.0 || base_particles_.ParticlePositions()[index_i][0] > PL)
-        {
-            body_part_particles_.push_back(index_i);
-        }
+        return base_particles_.ParticlePositions()[index_i][0] < 0.0 ||
+               base_particles_.ParticlePositions()[index_i][0] > PL;
     };
 };
 } // namespace SPH
@@ -89,7 +86,7 @@ int main(int ac, char *av[])
     //	Build up -- a SPHSystem
     //----------------------------------------------------------------------
     SPHSystem sph_system(system_domain_bounds, resolution_ref);
-    sph_system.handleCommandlineOptions(ac, av)->setIOEnvironment();
+    sph_system.handleCommandlineOptions(ac, av);
     //----------------------------------------------------------------------
     //	Creating body, materials and particles.
     //----------------------------------------------------------------------
@@ -120,7 +117,7 @@ int main(int ac, char *av[])
     SimpleDynamics<solid_dynamics::DistributingPointForces>
         apply_point_force(plate_body, point_force, reference_position, time_to_full_external_force, resolution_ref);
     /** Constrain the Boundary. */
-    BoundaryGeometry boundary_geometry(plate_body, "BoundaryGeometry");
+    BoundaryGeometry boundary_geometry(plate_body);
     SimpleDynamics<thin_structure_dynamics::ConstrainShellBodyRegion> constrain_holder(boundary_geometry);
     DampingWithRandomChoice<InteractionSplit<DampingPairwiseInner<Vec2d, FixedDampingRate>>>
         plate_position_damping(0.2, plate_body_inner, "Velocity", physical_viscosity);

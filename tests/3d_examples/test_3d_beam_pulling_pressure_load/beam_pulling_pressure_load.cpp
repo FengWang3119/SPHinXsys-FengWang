@@ -11,7 +11,7 @@ using namespace SPH;
 /** Geometry parameters. */
 Real resolution_ref = 0.005;
 /** Domain bounds of the system. */
-BoundingBox system_domain_bounds(Vecd(-0.026, -0.026, -0.021), Vecd(0.026, 0.026, 0.101));
+BoundingBoxd system_domain_bounds(Vecd(-0.026, -0.026, -0.021), Vecd(0.026, 0.026, 0.101));
 StdVec<Vecd> observation_location = {Vecd(0.0, 0.0, 0.04)};
 
 /** Physical parameters */
@@ -78,7 +78,7 @@ class PullingForce : public solid_dynamics::BaseLoadingForce<BodyPartByParticle>
 
   protected:
     Real *mass_n_;
-    StdLargeVec<Real> area_0_;
+    StdVec<Real> area_0_;
     Real *Vol_;
     Matd *F_;
 
@@ -114,7 +114,6 @@ int main(int ac, char *av[])
     // handle command line arguments
     sph_system.handleCommandlineOptions(ac, av);
 #endif
-    IOEnvironment io_environment(sph_system);
 
     /** Import a beam body, with corresponding material and particles. */
     SolidBody beam_body(sph_system, makeShared<Beam>("beam"));

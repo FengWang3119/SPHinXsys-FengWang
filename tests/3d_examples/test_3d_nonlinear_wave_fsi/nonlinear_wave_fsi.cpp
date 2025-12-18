@@ -15,12 +15,12 @@ int main(int ac, char *av[])
     //	Build up the Structure Relax SPHSystem with global controls.
     //----------------------------------------------------------------------
     SPHSystem system_fit(system_domain_bounds, particle_spacing_structure);
-    system_fit.handleCommandlineOptions(ac, av)->setIOEnvironment();
+    system_fit.handleCommandlineOptions(ac, av);
     SolidBody structure_fit(system_fit, makeShared<FloatingStructure>("Structure_Fit"));
-    structure_fit.defineAdaptation<ParticleRefinementNearSurface>(1.3, 0.7, 3);
+    structure_fit.defineAdaptation<AdaptiveNearSurface>(1.3, 0.7, 3);
     structure_fit.defineBodyLevelSetShape()->correctLevelSetSign()->writeLevelSet(system_fit);
     structure_fit.defineMaterial<Solid>(StructureDensity);
-    structure_fit.generateParticles<BaseParticles, Lattice, Adaptive>();
+    structure_fit.generateParticles<BaseParticles, Lattice, AdaptiveByShape>();
 
     //----------------------------------------------------------------------
     //	Define body relation map.
@@ -68,13 +68,13 @@ int main(int ac, char *av[])
     //	Build up the Main environment of a SPHSystem with global controls.
     //----------------------------------------------------------------------
     SPHSystem sph_system(system_domain_bounds, particle_spacing_ref);
-    sph_system.handleCommandlineOptions(ac, av)->setIOEnvironment();
+    sph_system.handleCommandlineOptions(ac, av);
 
     //----------------------------------------------------------------------
     //	Creating body, materials and particles.
     //----------------------------------------------------------------------
     FluidBody water_block(sph_system, makeShared<WaterBlock>("WaterBody"));
-    water_block.defineMaterial<WeaklyCompressibleFluid>(rho0_f, c_f, mu_f);
+    water_block.defineClosure<WeaklyCompressibleFluid, Viscosity>(ConstructArgs(rho0_f, c_f), mu_f);
     water_block.generateParticles<BaseParticles, Lattice>();
 
     SolidBody wall_boundary(sph_system, makeShared<WallBoundary>("Wall"));
@@ -149,7 +149,7 @@ int main(int ac, char *av[])
     SimpleDynamics<NormalDirectionFromBodyShape> structure_normal_direction(structure);
     InteractionWithUpdate<LinearGradientCorrectionMatrixInner> structure_corrected_configuration(structure_inner);
 
-    InteractionWithUpdate<LinearGradientCorrectionMatrixComplex> corrected_configuration_fluid(ConstructorArgs(water_block_inner, 0.1), water_block_contact);
+    InteractionWithUpdate<LinearGradientCorrectionMatrixComplex> corrected_configuration_fluid(DynamicsArgs(water_block_inner, 0.1), water_block_contact);
     Dynamics1Level<fluid_dynamics::Integration1stHalfCorrectionWithWallRiemann> pressure_relaxation(water_block_inner, water_block_contact);
     Dynamics1Level<fluid_dynamics::Integration2ndHalfWithWallRiemann> density_relaxation(water_block_inner, water_block_contact);
     InteractionWithUpdate<fluid_dynamics::DensitySummationComplexFreeSurface> update_density_by_summation(water_block_inner, water_block_contact);
@@ -159,7 +159,7 @@ int main(int ac, char *av[])
     /** Damp waves */
     Vecd translation_damping(0.5 * DW, 9.5, 0.5 * HWM);
     Vecd damping(0.5 * DW, 0.5, 0.5 * HWM);
-    TransformShape<GeometricShapeBox> damping_buffer_shape(Transform(translation_damping), damping);
+    GeometricShapeBox damping_buffer_shape(Transform(translation_damping), damping);
     BodyRegionByCell damping_buffer(water_block, damping_buffer_shape);
     SimpleDynamics<fluid_dynamics::DampingBoundaryCondition> damping_wave(damping_buffer);
 
@@ -167,7 +167,7 @@ int main(int ac, char *av[])
     InteractionWithUpdate<solid_dynamics::ViscousForceFromFluid> viscous_force_on_solid(structure_contact);
     InteractionWithUpdate<solid_dynamics::PressureForceFromFluid<decltype(density_relaxation)>> pressure_force_on_structure(structure_contact);
     /** constrain region of the part of wall boundary. */
-    TransformShape<GeometricShapeBox> transform_wave_maker_shape(Transform(translation_wave_maker), wave_maker_shape);
+    GeometricShapeBox transform_wave_maker_shape(Transform(translation_wave_maker), wave_maker_shape);
     BodyRegionByParticle wave_maker(wall_boundary, transform_wave_maker_shape);
     SimpleDynamics<WaveMaking> wave_making(wave_maker);
     //----------------------------------------------------------------------
@@ -264,7 +264,7 @@ int main(int ac, char *av[])
     BodyStatesRecordingToVtp write_real_body_states(sph_system);
     write_real_body_states.addToWrite<Real>(water_block, "Pressure");
     /** WaveProbes. */
-    BodyRegionByCell wave_probe_buffer(water_block, makeShared<TransformShape<GeometricShapeBox>>(Transform(translation_WGauge), WGaugeDim));
+    BodyRegionByCell wave_probe_buffer(water_block, makeShared<GeometricShapeBox>(Transform(translation_WGauge), WGaugeDim));
     ReducedQuantityRecording<UpperFrontInAxisDirection<BodyPartByCell>>
         wave_gauge(wave_probe_buffer, "FreeSurfaceHeight");
 

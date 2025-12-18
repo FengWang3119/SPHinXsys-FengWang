@@ -13,11 +13,11 @@ DensitySummation<Base, DataDelegationType>::DensitySummation(BaseRelationType &b
     : LocalDynamics(base_relation.getSPHBody()), DataDelegationType(base_relation),
       rho_(this->particles_->template getVariableDataByName<Real>("Density")),
       mass_(this->particles_->template getVariableDataByName<Real>("Mass")),
-      rho_sum_(this->particles_->template registerStateVariable<Real>("DensitySummation")),
+      rho_sum_(this->particles_->template registerStateVariableData<Real>("DensitySummation")),
       Vol_(this->particles_->template getVariableDataByName<Real>("VolumetricMeasure")),
-      rho0_(this->sph_body_.base_material_->ReferenceDensity()),
-      inv_sigma0_(1.0 / this->sph_body_.sph_adaptation_->LatticeNumberDensity()),
-      W0_(this->sph_body_.sph_adaptation_->getKernel()->W0(ZeroVecd)) {}
+      rho0_(this->sph_body_->getBaseMaterial().ReferenceDensity()),
+      inv_sigma0_(1.0 / this->getSPHAdaptation().LatticeNumberDensity()),
+      W0_(this->getSPHAdaptation().getKernel()->W0(ZeroVecd)) {}
 //=================================================================================================//
 template <typename... SummationType>
 template <typename... Args>
@@ -43,8 +43,6 @@ void DensitySummation<Inner<NearSurfaceType, SummationType...>>::update(size_t i
         isNearFreeSurface(index_i)
             ? near_surface_rho_(this->rho_sum_[index_i], this->rho0_, this->rho_[index_i])
             : this->rho_sum_[index_i];
-    //** Temporary treatment *
-    this->Vol_[index_i] = this->mass_[index_i] / this->rho_[index_i];
 }
 //=================================================================================================//
 template <typename NearSurfaceType, typename... SummationType>

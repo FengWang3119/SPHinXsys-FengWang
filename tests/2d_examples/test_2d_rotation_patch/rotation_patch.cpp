@@ -14,7 +14,7 @@ Real LL = 1.0;                        /**< Liquid column length. */
 Real LH = 1.0;                        /**< Liquid column height. */
 Real particle_spacing_ref = LL / 100; /**< Initial reference particle spacing. */
 Real BW = particle_spacing_ref * 4;   /**< Extending width for boundary conditions. */
-BoundingBox system_domain_bounds(Vec2d(-BW, -BW), Vec2d(LL + BW, LH + BW));
+BoundingBoxd system_domain_bounds(Vec2d(-BW, -BW), Vec2d(LL + BW, LH + BW));
 //----------------------------------------------------------------------
 //	Material parameters.
 //----------------------------------------------------------------------
@@ -61,7 +61,7 @@ class InitialVelocity
         : fluid_dynamics::FluidInitialCondition(sph_body),
           fluid_particles_(dynamic_cast<BaseParticles *>(&sph_body.getBaseParticles())),
           p_(fluid_particles_->getVariableDataByName<Real>("Pressure")),
-          rho_(fluid_particles_->getVariableDataByName<Real>("Density")){};
+          rho_(fluid_particles_->getVariableDataByName<Real>("Density")) {};
 
     void update(size_t index_i, Real dt)
     {
@@ -112,9 +112,9 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     //	Build up an SPHSystem.
     //----------------------------------------------------------------------
-    BoundingBox system_domain_bounds(Vec2d(-LL, -LL), Vec2d(LL + 10 * BW, LH + 10 * BW));
+    BoundingBoxd system_domain_bounds(Vec2d(-LL, -LL), Vec2d(LL + 10 * BW, LH + 10 * BW));
     SPHSystem sph_system(system_domain_bounds, particle_spacing_ref);
-    sph_system.handleCommandlineOptions(ac, av)->setIOEnvironment();
+    sph_system.handleCommandlineOptions(ac, av);
     //----------------------------------------------------------------------
     //	Creating bodies with corresponding materials and particles.
     //----------------------------------------------------------------------
@@ -141,7 +141,7 @@ int main(int ac, char *av[])
     // Generally, the geometric models or simple objects without data dependencies,
     // such as gravity, should be initiated first.
     // Then the major physical particle dynamics model should be introduced.
-    // Finally, the auxillary models such as time step estimator, initial condition,
+    // Finally, the auxiliary models such as time step estimator, initial condition,
     // boundary condition and other constraints should be defined.
     //----------------------------------------------------------------------
     InteractionWithUpdate<SpatialTemporalFreeSurfaceIndicationInner> free_surface_indicator(water_body_inner);
@@ -150,7 +150,7 @@ int main(int ac, char *av[])
     Dynamics1Level<fluid_dynamics::Integration2ndHalfInnerRiemann> fluid_density_relaxation(water_body_inner);
     InteractionWithUpdate<fluid_dynamics::DensitySummationInnerFreeStream> update_density_by_summation(water_body_inner);
     InteractionWithUpdate<fluid_dynamics::TransportVelocityCorrectionInner<NoLimiter, BulkParticles>> transport_velocity_correction(water_body_inner);
-    ReduceDynamics<fluid_dynamics::AdvectionViscousTimeStep> fluid_advection_time_step(water_block, U_max);
+    ReduceDynamics<fluid_dynamics::AdvectionTimeStep> fluid_advection_time_step(water_block, U_max);
     ReduceDynamics<fluid_dynamics::AcousticTimeStep> fluid_acoustic_time_step(water_block);
     SimpleDynamics<InitialVelocity> initial_condition(water_block);
     //----------------------------------------------------------------------

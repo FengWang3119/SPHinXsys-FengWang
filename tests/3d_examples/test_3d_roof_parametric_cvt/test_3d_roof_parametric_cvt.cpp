@@ -7,7 +7,9 @@
  */
 
 #include "sphinxsys.h"
+
 #include <gtest/gtest.h>
+#include <numeric>
 
 using namespace SPH;
 
@@ -62,7 +64,7 @@ class ParticleGenerator<SurfaceParticles, ShellRoof> : public ParticleGenerator<
           pos_0_(pos_0),
           center_(center),
           particle_area_(particle_area),
-          thickness_(thickness){};
+          thickness_(thickness) {};
     virtual void prepareGeometricData() override
     {
         for (const auto &pos : pos_0_)
@@ -78,7 +80,7 @@ class ParticleGenerator<SurfaceParticles, ShellRoof> : public ParticleGenerator<
 } // namespace SPH
 
 template <typename VectorType>
-BoundingBox get_particles_bounding_box(const VectorType &pos_0)
+BoundingBoxd get_particles_bounding_box(const VectorType &pos_0)
 {
     Vec3d lower(pos_0[0]);
     Vec3d upper(pos_0[0]);
@@ -92,11 +94,11 @@ BoundingBox get_particles_bounding_box(const VectorType &pos_0)
                 upper[i] = pos[i];
         }
     }
-    return BoundingBox(lower, upper);
+    return BoundingBoxd(lower, upper);
 }
 
 template <typename VectorType>
-BoundingBox get_particles_bounding_box(VectorType *pos, size_t total_real_particles)
+BoundingBoxd get_particles_bounding_box(VectorType *pos, size_t total_real_particles)
 {
     Vec3d lower(pos[0]);
     Vec3d upper(pos[0]);
@@ -110,7 +112,7 @@ BoundingBox get_particles_bounding_box(VectorType *pos, size_t total_real_partic
                 upper[i] = pos[index_i][i];
         }
     }
-    return BoundingBox(lower, upper);
+    return BoundingBoxd(lower, upper);
 }
 
 StdVec<Vec3d> read_obj_vertices(const std::string &file_name)
@@ -148,9 +150,9 @@ DataType interpolate_observer(
     const Vec3d &observer_pos_0,
     std::function<DataType(size_t)> get_variable_value)
 {
-    Kernel *kernel_ptr = particles.getSPHBody().sph_adaptation_->getKernel();
-    Real smoothing_length = particles.getSPHBody().sph_adaptation_->ReferenceSmoothingLength();
-    Vecd *pos0_ = particles.registerStateVariableFrom<Vecd>("InitialPosition", "Position");
+    Kernel *kernel_ptr = particles.getSPHBody().getSPHAdaptation().getKernel();
+    Real smoothing_length = particles.getSPHBody().getSPHAdaptation().ReferenceSmoothingLength();
+    Vecd *pos0_ = particles.registerStateVariableDataFrom<Vecd>("InitialPosition", "Position");
     DataType variable_sum = DataType::Zero();
     Real kernel_sum = 0;
     for (auto id : neighbor_ids)
@@ -235,7 +237,7 @@ class ParticleGenerator<SurfaceParticles, Cylinder> : public ParticleGenerator<S
     explicit ParticleGenerator(SPHBody &sph_body, SurfaceParticles &surface_particles,
                                Real particle_number = 16)
         : ParticleGenerator<SurfaceParticles>(sph_body, surface_particles),
-          particle_number_(particle_number){};
+          particle_number_(particle_number) {};
     virtual void prepareGeometricData() override
     {
         // Real radius = 24.875;								/** Radius of the inner boundary of the cylinder. */
@@ -318,7 +320,7 @@ return_data roof_under_self_weight(Real dp, bool cvt = true, int particle_number
     // gravity
     Vec3d gravity = -9.8066 * radial_vec;
     // system bounding box
-    BoundingBox bb_system;
+    BoundingBoxd bb_system;
     StdVec<Vec3d> obj_vertices;
     Real particle_area = -1; // initialized when CVT-based mesh is used
 
@@ -327,7 +329,7 @@ return_data roof_under_self_weight(Real dp, bool cvt = true, int particle_number
         // generating particles from predefined positions from obj file
         obj_vertices = read_obj_vertices("input/shell_50mm_80d_" + std::to_string(dp_cm) + "cm.txt");
         particle_area = total_area / obj_vertices.size();
-        // find out BoundingBox
+        // find out BoundingBoxd
         bb_system = get_particles_bounding_box(obj_vertices); // store this
     }
 
@@ -336,7 +338,6 @@ return_data roof_under_self_weight(Real dp, bool cvt = true, int particle_number
 
     // starting the actual simulation
     SPHSystem system(bb_system, dp);
-    system.setIOEnvironment(false);
     SolidBody shell_body(system, shell_shape);
     shell_body.defineMaterial<LinearElasticSolid>(rho, E, mu);
     if (cvt)
@@ -351,9 +352,9 @@ return_data roof_under_self_weight(Real dp, bool cvt = true, int particle_number
 
     auto shell_particles = dynamic_cast<SurfaceParticles *>(&shell_body.getBaseParticles());
     bb_system = get_particles_bounding_box(shell_particles->ParticlePositions(), shell_particles->TotalRealParticles());
-    system.system_domain_bounds_ = bb_system;
-    std::cout << "bb_system.first_: " << bb_system.first_ << std::endl;
-    std::cout << "bb_system.second_: " << bb_system.second_ << std::endl;
+    system.setSystemDomainBounds(bb_system);
+    std::cout << "bb_system.lower_: " << bb_system.lower_ << std::endl;
+    std::cout << "bb_system.upper_: " << bb_system.upper_ << std::endl;
     { // recalculate the volume/area after knowing the particle positions
       // for (auto& vol: shell_particles->Vol_) vol = total_area / shell_particles->TotalRealParticles();
       // for (auto& mass: shell_particles->mass_) mass = total_area*rho / shell_particles->TotalRealParticles();
@@ -370,13 +371,13 @@ return_data roof_under_self_weight(Real dp, bool cvt = true, int particle_number
 
     ReduceDynamics<thin_structure_dynamics::ShellAcousticTimeStepSize> computing_time_step_size(shell_body);
 
-    BodyPartByParticle constrained_edges(shell_body, "constrained_edges");
+    BodyPartByParticle constrained_edges(shell_body);
     BaseParticles &base_particles = shell_body.getBaseParticles();
     auto constrained_edge_ids = [&]() { // brute force finding the edges
         IndexVector ids;
         for (size_t i = 0; i < base_particles.TotalRealParticles(); ++i)
-            if (base_particles.ParticlePositions()[i][length_axis] < bb_system.first_[length_axis] + dp / 2 ||
-                base_particles.ParticlePositions()[i][length_axis] > bb_system.second_[length_axis] - dp / 2)
+            if (base_particles.ParticlePositions()[i][length_axis] < bb_system.lower_[length_axis] + dp / 2 ||
+                base_particles.ParticlePositions()[i][length_axis] > bb_system.upper_[length_axis] - dp / 2)
                 ids.push_back(i);
         return ids;
     }();
@@ -401,11 +402,11 @@ return_data roof_under_self_weight(Real dp, bool cvt = true, int particle_number
     vtp_output.writeToFile(0);
     ReduceDynamics<VariableNorm<Vecd, ReduceMax>> maximum_displace_norm(shell_body, "Displacement");
 
-    Vecd *pos0_ = shell_particles->registerStateVariableFrom<Vecd>("InitialPosition", "Position");
+    Vecd *pos0_ = shell_particles->registerStateVariableDataFrom<Vecd>("InitialPosition", "Position");
     // observer points A & B
     point_A.neighbor_ids = [&]() { // only neighbors on the edges
         IndexVector ids;
-        Real smoothing_length = shell_particles->getSPHBody().sph_adaptation_->ReferenceSmoothingLength();
+        Real smoothing_length = shell_particles->getSPHBody().getSPHAdaptation().ReferenceSmoothingLength();
         Real x_min = std::abs(point_A.pos_0[tangential_axis]) - dp / 2;
         for (size_t i = 0; i < shell_particles->TotalRealParticles(); ++i)
         {
@@ -417,7 +418,7 @@ return_data roof_under_self_weight(Real dp, bool cvt = true, int particle_number
     }();
     point_B.neighbor_ids = [&]() { // full neighborhood
         IndexVector ids;
-        Real smoothing_length = shell_particles->getSPHBody().sph_adaptation_->ReferenceSmoothingLength();
+        Real smoothing_length = shell_particles->getSPHBody().getSPHAdaptation().ReferenceSmoothingLength();
         for (size_t i = 0; i < shell_particles->TotalRealParticles(); ++i)
         {
             if ((pos0_[i] - point_B.pos_0).norm() < smoothing_length)

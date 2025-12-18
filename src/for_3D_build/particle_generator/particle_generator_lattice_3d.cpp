@@ -1,10 +1,10 @@
 #include "particle_generator_lattice.h"
 
 #include "base_body.h"
-#include "base_mesh.h"
+#include "base_mesh.hpp"
 #include "base_particle_dynamics.h"
 #include "base_particles.h"
-#include "complex_shape.h"
+#include "complex_geometry.h"
 
 namespace SPH
 {

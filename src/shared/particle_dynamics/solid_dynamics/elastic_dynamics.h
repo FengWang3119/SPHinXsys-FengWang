@@ -12,7 +12,7 @@
  * (Deutsche Forschungsgemeinschaft) DFG HU1527/6-1, HU1527/10-1,            *
  *  HU1527/12-1 and HU1527/12-4.                                             *
  *                                                                           *
- * Portions copyright (c) 2017-2023 Technical University of Munich and       *
+ * Portions copyright (c) 2017-2025 Technical University of Munich and       *
  * the authors' affiliations.                                                *
  *                                                                           *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may   *
@@ -35,7 +35,6 @@
 #include "base_general_dynamics.h"
 #include "base_kernel.h"
 #include "elastic_solid.h"
-#include "solid_body.h"
 
 namespace SPH
 {
@@ -50,7 +49,7 @@ class ElasticDynamicsInitialCondition : public LocalDynamics
 {
   public:
     explicit ElasticDynamicsInitialCondition(SPHBody &sph_body);
-    virtual ~ElasticDynamicsInitialCondition(){};
+    virtual ~ElasticDynamicsInitialCondition() {};
 
   protected:
     Vecd *pos_, *vel_;
@@ -70,7 +69,7 @@ class UpdateElasticNormalDirection : public LocalDynamics
 
   public:
     explicit UpdateElasticNormalDirection(SPHBody &sph_body);
-    virtual ~UpdateElasticNormalDirection(){};
+    virtual ~UpdateElasticNormalDirection() {};
 
     void update(size_t index_i, Real dt = 0.0);
 };
@@ -87,11 +86,11 @@ class AcousticTimeStep : public LocalDynamicsReduce<ReduceMin>
     ElasticSolid &elastic_solid_;
     Vecd *vel_, *force_, *force_prior_;
     Real *mass_;
-    Real smoothing_length_, c0_;
+    Real smoothing_length_min_, c0_;
 
   public:
     explicit AcousticTimeStep(SPHBody &sph_body, Real CFL = 0.6);
-    virtual ~AcousticTimeStep(){};
+    virtual ~AcousticTimeStep() {};
 
     Real reduce(size_t index_i, Real dt = 0.0);
 };
@@ -104,7 +103,7 @@ class DeformationGradientBySummation : public LocalDynamics, public DataDelegate
 {
   public:
     explicit DeformationGradientBySummation(BaseInnerRelation &inner_relation);
-    virtual ~DeformationGradientBySummation(){};
+    virtual ~DeformationGradientBySummation() {};
 
     inline void interaction(size_t index_i, Real dt = 0.0)
     {
@@ -137,7 +136,7 @@ class BaseElasticIntegration : public LocalDynamics, public DataDelegateInner
 {
   public:
     explicit BaseElasticIntegration(BaseInnerRelation &inner_relation);
-    virtual ~BaseElasticIntegration(){};
+    virtual ~BaseElasticIntegration() {};
 
   protected:
     Real *Vol_;
@@ -147,14 +146,14 @@ class BaseElasticIntegration : public LocalDynamics, public DataDelegateInner
 
 /**
  * @class BaseIntegration1stHalf
- * @brief computing stress relaxation process by verlet time stepping
+ * @brief computing stress relaxation process by Verlet time stepping
  * This is the first step
  */
 class BaseIntegration1stHalf : public BaseElasticIntegration
 {
   public:
     explicit BaseIntegration1stHalf(BaseInnerRelation &inner_relation);
-    virtual ~BaseIntegration1stHalf(){};
+    virtual ~BaseIntegration1stHalf() {};
     void update(size_t index_i, Real dt = 0.0);
 
   protected:
@@ -167,14 +166,14 @@ class BaseIntegration1stHalf : public BaseElasticIntegration
 
 /**
  * @class Integration1stHalf
- * @brief computing stress relaxation process by verlet time stepping
+ * @brief computing stress relaxation process by Verlet time stepping
  * This is the first step
  */
 class Integration1stHalf : public BaseIntegration1stHalf
 {
   public:
     explicit Integration1stHalf(BaseInnerRelation &inner_relation);
-    virtual ~Integration1stHalf(){};
+    virtual ~Integration1stHalf() {};
 
     inline void interaction(size_t index_i, Real dt = 0.0)
     {
@@ -205,7 +204,7 @@ class Integration1stHalf : public BaseIntegration1stHalf
   protected:
     Matd *stress_PK1_B_;
     Real numerical_dissipation_factor_;
-    Real inv_W0_ = 1.0 / sph_body_.sph_adaptation_->getKernel()->W0(ZeroVecd);
+    Real inv_W0_ = 1.0 / getSPHAdaptation().getKernel()->W0(ZeroVecd);
 };
 
 /**
@@ -216,7 +215,7 @@ class Integration1stHalfPK2 : public Integration1stHalf
 {
   public:
     explicit Integration1stHalfPK2(BaseInnerRelation &inner_relation);
-    virtual ~Integration1stHalfPK2(){};
+    virtual ~Integration1stHalfPK2() {};
     void initialization(size_t index_i, Real dt = 0.0);
 };
 
@@ -227,7 +226,7 @@ class Integration1stHalfCauchy : public Integration1stHalf
 {
   public:
     explicit Integration1stHalfCauchy(BaseInnerRelation &inner_relation);
-    virtual ~Integration1stHalfCauchy(){};
+    virtual ~Integration1stHalfCauchy() {};
     void initialization(size_t index_i, Real dt = 0.0);
 };
 
@@ -239,7 +238,7 @@ class Integration1stHalfKirchhoff : public Integration1stHalf
 {
   public:
     explicit Integration1stHalfKirchhoff(BaseInnerRelation &inner_relation);
-    virtual ~Integration1stHalfKirchhoff(){};
+    virtual ~Integration1stHalfKirchhoff() {};
     void initialization(size_t index_i, Real dt = 0.0);
 };
 
@@ -262,7 +261,7 @@ class DecomposedIntegration1stHalf : public BaseIntegration1stHalf
 {
   public:
     explicit DecomposedIntegration1stHalf(BaseInnerRelation &inner_relation);
-    virtual ~DecomposedIntegration1stHalf(){};
+    virtual ~DecomposedIntegration1stHalf() {};
     void initialization(size_t index_i, Real dt = 0.0);
 
     inline void interaction(size_t index_i, Real dt = 0.0)
@@ -289,16 +288,47 @@ class DecomposedIntegration1stHalf : public BaseIntegration1stHalf
 };
 
 /**
+ * @class Integration1stHalfPK2RightCauchy
+ * @brief Using PK2 stress constitute relation and right Cauchy damping
+ */
+class Integration1stHalfPK2RightCauchy : public Integration1stHalfPK2
+{
+  public:
+    explicit Integration1stHalfPK2RightCauchy(BaseInnerRelation &inner_relation)
+        : Integration1stHalfPK2(inner_relation),
+          h_ratio_(particles_->registerStateVariableData<Real>("SmoothingLengthRatio", Real(1.0))) {};
+    void initialization(size_t index_i, Real dt = 0.0);
+    inline void interaction(size_t index_i, Real dt = 0.0)
+    {
+        // including gravity and force from fluid
+        Vecd force = Vecd::Zero();
+        const Neighborhood &inner_neighborhood = inner_configuration_[index_i];
+        for (size_t n = 0; n != inner_neighborhood.current_size_; ++n)
+        {
+            size_t index_j = inner_neighborhood.j_[n];
+            Vecd e_ij = inner_neighborhood.e_ij_[n];
+            force += mass_[index_i] * inv_rho0_ * inner_neighborhood.dW_ij_[n] * Vol_[index_j] *
+                     (stress_PK1_B_[index_i] + stress_PK1_B_[index_j]) * e_ij;
+        }
+
+        force_[index_i] = force;
+    }
+
+  private:
+    Real *h_ratio_;
+};
+
+/**
  * @class Integration2ndHalf
- * @brief computing stress relaxation process by verlet time stepping
+ * @brief computing stress relaxation process by Verlet time stepping
  * This is the second step
  */
 class Integration2ndHalf : public BaseElasticIntegration
 {
   public:
     explicit Integration2ndHalf(BaseInnerRelation &inner_relation)
-        : BaseElasticIntegration(inner_relation){};
-    virtual ~Integration2ndHalf(){};
+        : BaseElasticIntegration(inner_relation) {};
+    virtual ~Integration2ndHalf() {};
     void initialization(size_t index_i, Real dt = 0.0);
 
     inline void interaction(size_t index_i, Real dt = 0.0)

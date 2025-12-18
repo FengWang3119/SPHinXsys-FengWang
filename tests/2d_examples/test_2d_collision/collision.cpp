@@ -14,7 +14,7 @@ Real DL = 8.0;                /**< box length. */
 Real DH = 4.0;                /**< box height. */
 Real resolution_ref = 0.025;  /**< reference resolution. */
 Real BW = resolution_ref * 4; /**< wall width for BCs. */
-BoundingBox system_domain_bounds(Vec2d(-BW, -BW), Vec2d(DL + BW, DH + BW));
+BoundingBoxd system_domain_bounds(Vec2d(-BW, -BW), Vec2d(DL + BW, DH + BW));
 Vec2d ball_center_1(2.0, 2.0);
 Vec2d ball_center_2(6.0, 2.0);
 Real ball_radius = 0.5;
@@ -84,7 +84,7 @@ int main(int ac, char *av[])
     sph_system.setRunParticleRelaxation(false);
     /** Tag for starting with relaxed body-fitted particles distribution */
     sph_system.setReloadParticles(false);
-    sph_system.handleCommandlineOptions(ac, av)->setIOEnvironment();
+    sph_system.handleCommandlineOptions(ac, av);
     //----------------------------------------------------------------------
     //	Creating body, materials and particles.
     //----------------------------------------------------------------------
@@ -179,7 +179,7 @@ int main(int ac, char *av[])
     // Generally, the geometric models or simple objects without data dependencies,
     // such as gravity, should be initiated first.
     // Then the major physical particle dynamics model should be introduced.
-    // Finally, the auxillary models such as time step estimator, initial condition,
+    // Finally, the auxiliary models such as time step estimator, initial condition,
     // boundary condition and other constraints should be defined.
     //----------------------------------------------------------------------
     Gravity gravity(Vecd(0.0, -gravity_g));
@@ -200,7 +200,7 @@ int main(int ac, char *av[])
     InteractionWithUpdate<solid_dynamics::ContactForceFromWall> damping_ball_compute_solid_contact_forces(damping_ball_contact);
     /** Damping for one ball */
     DampingWithRandomChoice<InteractionSplit<DampingPairwiseInner<Vec2d, FixedDampingRate>>>
-        damping(0.5, ConstructorArgs(damping_ball_inner, "Velocity", physical_viscosity));
+        damping(0.5, DynamicsArgs(damping_ball_inner, "Velocity", physical_viscosity));
 
     ReduceDynamics<solid_dynamics::AcousticTimeStep> free_ball_get_time_step_size(free_ball);
     ReduceDynamics<solid_dynamics::AcousticTimeStep> damping_ball_get_time_step_size(damping_ball);

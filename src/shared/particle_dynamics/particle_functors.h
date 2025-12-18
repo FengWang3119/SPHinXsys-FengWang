@@ -12,7 +12,7 @@
  * (Deutsche Forschungsgemeinschaft) DFG HU1527/6-1, HU1527/10-1,            *
  *  HU1527/12-1 and HU1527/12-4.                                             *
  *                                                                           *
- * Portions copyright (c) 2017-2023 Technical University of Munich and       *
+ * Portions copyright (c) 2017-2025 Technical University of Munich and       *
  * the authors' affiliations.                                                *
  *                                                                           *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may   *
@@ -30,6 +30,7 @@
 #define PARTICLE_FUNCTORS_H
 
 #include "base_particles.hpp"
+#include "reduce_functors.h"
 
 namespace SPH
 {
@@ -53,7 +54,7 @@ class WithinScope
 class AllParticles : public WithinScope
 {
   public:
-    explicit AllParticles(BaseParticles *base_particles) : WithinScope(){};
+    explicit AllParticles(BaseParticles *base_particles) : WithinScope() {};
     bool operator()(size_t index_i)
     {
         return true;
@@ -68,7 +69,7 @@ class IndicatedParticles : public WithinScope
   public:
     explicit IndicatedParticles(BaseParticles *base_particles)
         : WithinScope(),
-          indicator_(base_particles->getVariableDataByName<int>("Indicator")){};
+          indicator_(base_particles->getVariableDataByName<int>("Indicator")) {};
     bool operator()(size_t index_i)
     {
         return indicator_[index_i] == INDICATOR;
@@ -85,13 +86,46 @@ class NotIndicatedParticles : public WithinScope
   public:
     explicit NotIndicatedParticles(BaseParticles *base_particles)
         : WithinScope(),
-          indicator_(base_particles->getVariableDataByName<int>("Indicator")){};
+          indicator_(base_particles->getVariableDataByName<int>("Indicator")) {};
     bool operator()(size_t index_i)
     {
         return indicator_[index_i] != INDICATOR;
     };
 };
 
+using ExcludeFreeSurfaceParticles = NotIndicatedParticles<1>;
+//----------------------------------------------------------------------
+// Particle parameter functors
+//----------------------------------------------------------------------
+class ParticleParameter // base class to indicate the concept of particle parameter
+{
+};
+
+template <typename T>
+class ParameterFixed : public ParticleParameter
+{
+    T parameter_;
+
+  public:
+    explicit ParameterFixed(const T &c) : ParticleParameter(), parameter_(c) {};
+    T &operator()(size_t index_i)
+    {
+        return parameter_;
+    };
+};
+
+template <typename T>
+class ParameterVariable : public ParticleParameter
+{
+    T *v_;
+
+  public:
+    explicit ParameterVariable(T *v) : ParticleParameter(), v_(v) {};
+    T &operator()(size_t index_i)
+    {
+        return v_[index_i];
+    };
+};
 //----------------------------------------------------------------------
 // Particle average functors
 //----------------------------------------------------------------------
@@ -102,14 +136,14 @@ class ParticleAverage // base class to indicate the concept of particle average
 template <typename T>
 class PairAverageFixed : public ParticleAverage
 {
-    const T average_;
+    T average_;
 
   public:
     PairAverageFixed(const T &c1, const T &c2)
-        : ParticleAverage(), average_(0.5 * (c1 + c2)){};
+        : ParticleAverage(), average_(0.5 * (c1 + c2)) {};
     explicit PairAverageFixed(const T &c)
-        : PairAverageFixed(c, c){};
-    T operator()(size_t index_i, size_t index_j)
+        : PairAverageFixed(c, c) {};
+    T &operator()(size_t index_i, size_t index_j)
     {
         return average_;
     };
@@ -118,7 +152,7 @@ class PairAverageFixed : public ParticleAverage
 class GeomAverage : public ParticleAverage
 {
   public:
-    GeomAverage() : ParticleAverage(){};
+    GeomAverage() : ParticleAverage() {};
 
   protected:
     Real inverse(const Real &x) { return 1.0 / x; };
@@ -130,14 +164,14 @@ class GeomAverage : public ParticleAverage
 template <typename T>
 class PairGeomAverageFixed : public GeomAverage
 {
-    const T geom_average_;
+    T geom_average_;
 
   public:
     PairGeomAverageFixed(const T &c1, const T &c2)
-        : GeomAverage(), geom_average_(2.0 * c1 * c2 * inverse(c1 + c2)){};
+        : GeomAverage(), geom_average_(2.0 * c1 * c2 * inverse(c1 + c2)) {};
     explicit PairGeomAverageFixed(const T &c)
-        : PairGeomAverageFixed(c, c){};
-    T operator()(size_t index_i, size_t index_j)
+        : PairGeomAverageFixed(c, c) {};
+    T &operator()(size_t index_i, size_t index_j)
     {
         return geom_average_;
     };
@@ -150,9 +184,9 @@ class PairAverageVariable : public ParticleAverage
 
   public:
     PairAverageVariable(T *v1, T *v2)
-        : ParticleAverage(), v1_(v1), v2_(v2){};
+        : ParticleAverage(), v1_(v1), v2_(v2) {};
     explicit PairAverageVariable(T *v)
-        : PairAverageVariable(v, v){};
+        : PairAverageVariable(v, v) {};
     T operator()(size_t index_i, size_t index_j)
     {
         return 0.5 * (v1_[index_i] + v2_[index_j]);
@@ -166,9 +200,9 @@ class PairGeomAverageVariable : public GeomAverage
 
   public:
     PairGeomAverageVariable(T *v1, T *v2)
-        : GeomAverage(), v1_(v1), v2_(v2){};
+        : GeomAverage(), v1_(v1), v2_(v2) {};
     explicit PairGeomAverageVariable(T *v)
-        : PairGeomAverageVariable(v, v){};
+        : PairGeomAverageVariable(v, v) {};
 
     T operator()(size_t index_i, size_t index_j)
     {
@@ -181,10 +215,11 @@ class PairGeomAverageVariable : public GeomAverage
 class KernelCorrection // base class to indicate the concept of kernel correction
 {
 };
+
 class NoKernelCorrection : public KernelCorrection
 {
   public:
-    NoKernelCorrection(BaseParticles *particles) : KernelCorrection(){};
+    NoKernelCorrection(BaseParticles *particles) : KernelCorrection() {};
     Real operator()(size_t index_i, size_t index_j)
     {
         return 1.0;
@@ -201,7 +236,7 @@ class LinearGradientCorrection : public KernelCorrection
   public:
     LinearGradientCorrection(BaseParticles *particles)
         : KernelCorrection(),
-          B_(particles->getVariableDataByName<Matd>("LinearGradientCorrectionMatrix")){};
+          B_(particles->getVariableDataByName<Matd>("LinearGradientCorrectionMatrix")) {};
 
     Matd operator()(size_t index_i, size_t index_j)
     {
@@ -223,7 +258,7 @@ class LinearGradientCorrectionWithBulkScope : public KernelCorrection
     LinearGradientCorrectionWithBulkScope(BaseParticles *particles)
         : KernelCorrection(),
           B_(particles->getVariableDataByName<Matd>("LinearGradientCorrectionMatrix")),
-          within_scope_(particles){};
+          within_scope_(particles) {};
 
     Matd operator()(size_t index_j, size_t index_i)
     {
@@ -238,90 +273,6 @@ class LinearGradientCorrectionWithBulkScope : public KernelCorrection
   protected:
     Matd *B_;
     BulkParticles within_scope_;
-};
-
-class SingleResolution
-{
-  public:
-    SingleResolution(BaseParticles *particles){};
-    Real operator()(size_t index_i)
-    {
-        return 1.0;
-    };
-};
-//----------------------------------------------------------------------
-// Particle adaptation functors
-//----------------------------------------------------------------------
-class AdaptiveResolution
-{
-  public:
-    AdaptiveResolution(BaseParticles *particles)
-        : h_ratio_(particles->getVariableDataByName<Real>("SmoothingLengthRatio")){};
-
-    Real operator()(size_t index_i)
-    {
-        return h_ratio_[index_i];
-    };
-
-  protected:
-    Real *h_ratio_;
-};
-//----------------------------------------------------------------------
-// Particle reduce functors
-//----------------------------------------------------------------------
-template <class ReturnType>
-struct ReduceSum
-{
-    ReturnType reference_ = ZeroData<ReturnType>::value;
-    ReturnType operator()(const ReturnType &x, const ReturnType &y) const { return x + y; };
-};
-
-struct ReduceMax
-{
-    Real reference_ = MinReal;
-    Real operator()(Real x, Real y) const { return SMAX(x, y); };
-};
-
-struct ReduceMin
-{
-    Real reference_ = MaxReal;
-    Real operator()(Real x, Real y) const { return SMIN(x, y); };
-};
-
-struct ReduceOR
-{
-    bool reference_ = false;
-    bool operator()(bool x, bool y) const { return x || y; };
-};
-
-struct ReduceAND
-{
-    bool reference_ = true;
-    bool operator()(bool x, bool y) const { return x && y; };
-};
-
-struct ReduceLowerBound
-{
-    Vecd reference_ = MaxReal * Vecd::Ones();
-    Vecd operator()(const Vecd &x, const Vecd &y) const
-    {
-        Vecd lower_bound;
-        for (int i = 0; i < lower_bound.size(); ++i)
-            lower_bound[i] = SMIN(x[i], y[i]);
-        return lower_bound;
-    };
-};
-
-struct ReduceUpperBound
-{
-    Vecd reference_ = MinReal * Vecd::Ones();
-    Vecd operator()(const Vecd &x, const Vecd &y) const
-    {
-        Vecd upper_bound;
-        for (int i = 0; i < upper_bound.size(); ++i)
-            upper_bound[i] = SMAX(x[i], y[i]);
-        return upper_bound;
-    };
 };
 } // namespace SPH
 #endif // PARTICLE_FUNCTORS_H

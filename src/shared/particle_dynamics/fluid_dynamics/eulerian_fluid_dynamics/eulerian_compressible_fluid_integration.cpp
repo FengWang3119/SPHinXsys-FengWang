@@ -9,12 +9,12 @@ BaseIntegrationInCompressible::BaseIntegrationInCompressible(BaseInnerRelation &
     : BaseIntegration(inner_relation),
       compressible_fluid_(CompressibleFluid(1.0, 1.4)),
       Vol_(particles_->getVariableDataByName<Real>("VolumetricMeasure")),
-      E_(particles_->registerStateVariable<Real>("TotalEnergy")),
-      dE_dt_(particles_->registerStateVariable<Real>("TotalEnergyChangeRate")),
-      dmass_dt_(particles_->registerStateVariable<Real>("MassChangeRate")),
-      mom_(particles_->registerStateVariable<Vecd>("Momentum")),
-      force_(particles_->registerStateVariable<Vecd>("Force")),
-      force_prior_(particles_->registerStateVariable<Vecd>("ForcePrior")){};
+      E_(particles_->registerStateVariableData<Real>("TotalEnergy")),
+      dE_dt_(particles_->registerStateVariableData<Real>("TotalEnergyChangeRate")),
+      dmass_dt_(particles_->registerStateVariableData<Real>("MassChangeRate")),
+      mom_(particles_->registerStateVariableData<Vecd>("Momentum")),
+      force_(particles_->registerStateVariableData<Vecd>("Force")),
+      force_prior_(particles_->registerStateVariableData<Vecd>("ForcePrior")) {};
 //=================================================================================================//
 CompressibleFluidInitialCondition::CompressibleFluidInitialCondition(SPHBody &sph_body)
     : FluidInitialCondition(sph_body),
@@ -31,7 +31,7 @@ EulerianCompressibleAcousticTimeStepSize::
       rho_(particles_->getVariableDataByName<Real>("Density")),
       p_(particles_->getVariableDataByName<Real>("Pressure")),
       vel_(particles_->getVariableDataByName<Vecd>("Velocity")),
-      smoothing_length_(sph_body.sph_adaptation_->ReferenceSmoothingLength()),
+      smoothing_length_(sph_body.getSPHAdaptation().ReferenceSmoothingLength()),
       compressible_fluid_(CompressibleFluid(1.0, 1.4))
 {
     acousticCFL_ = acousticCFL;

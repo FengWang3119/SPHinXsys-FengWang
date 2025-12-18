@@ -1,8 +1,8 @@
 #include "particle_generator_network.h"
+#include "all_io.h"
 #include "base_body.h"
 #include "base_particles.h"
 #include "cell_linked_list.h"
-#include "io_all.h"
 #include "level_set.h"
 #include "sph_system.h"
 
@@ -15,7 +15,7 @@ ParticleGenerator<BaseParticles, Network>::
     : ParticleGenerator<BaseParticles>(sph_body, base_particles),
       starting_pnt_(starting_pnt), second_pnt_(second_pnt),
       n_it_(iterator), fascicles_(true), segments_in_branch_(10),
-      segment_length_(sph_body.sph_adaptation_->ReferenceSpacing()),
+      segment_length_(sph_body.getSPHAdaptation().ReferenceSpacing()),
       grad_factor_(grad_factor), sph_body_(sph_body), initial_shape_(sph_body.getInitialShape()),
       cell_linked_list_(DynamicCast<RealBody>(this, sph_body).getCellLinkedList()),
       tree_(DynamicCast<TreeBody>(this, &sph_body))

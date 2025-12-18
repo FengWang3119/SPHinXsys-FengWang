@@ -50,7 +50,7 @@ class ParticleGenerator<SurfaceParticles, WallBoundary> : public ParticleGenerat
                                Real resolution_ref, Real wall_thickness)
         : ParticleGenerator<SurfaceParticles>(sph_body, surface_particles),
           DL_sponge_(20 * resolution_ref), BW_(4 * resolution_ref),
-          resolution_ref_(resolution_ref), wall_thickness_(wall_thickness){};
+          resolution_ref_(resolution_ref), wall_thickness_(wall_thickness) {};
     void prepareGeometricData() override
     {
         auto particle_number_mid_surface = int((DL + DL_sponge_ + 2 * BW_) / resolution_ref_);
@@ -77,7 +77,7 @@ class ParticleGenerator<SurfaceParticles, WallBoundary> : public ParticleGenerat
 struct InflowVelocity
 {
     Real u_ref_, t_ref_;
-    AlignedBoxShape &aligned_box_;
+    AlignedBox &aligned_box_;
     Vecd halfsize_;
 
     template <class BoundaryConditionType>
@@ -139,7 +139,7 @@ void channel_flow_shell(const Real resolution_ref, const Real wall_thickness)
     Real BW = resolution_ref * 4.0;         /**< Boundary width, determined by specific layer of boundary particles. */
 
     /** Domain bounds of the system. */
-    BoundingBox system_domain_bounds(Vec2d(-DL_sponge - BW, -wall_thickness), Vec2d(DL + BW, DH + wall_thickness));
+    BoundingBoxd system_domain_bounds(Vec2d(-DL_sponge - BW, -wall_thickness), Vec2d(DL + BW, DH + wall_thickness));
     //----------------------------------------------------------------------
     //	define geometry of SPH bodies
     //----------------------------------------------------------------------
@@ -162,12 +162,11 @@ void channel_flow_shell(const Real resolution_ref, const Real wall_thickness)
     //	Build up the environment of a SPHSystem with global controls.
     //----------------------------------------------------------------------
     SPHSystem sph_system(system_domain_bounds, resolution_ref);
-    IOEnvironment io_environment(sph_system);
     //----------------------------------------------------------------------
     //	Creating body, materials and particles.
     //----------------------------------------------------------------------
     FluidBody water_block(sph_system, makeShared<WaterBlock>(createWaterBlockShape(), "WaterBody"));
-    water_block.defineMaterial<WeaklyCompressibleFluid>(rho0_f, c_f, mu_f);
+    water_block.defineClosure<WeaklyCompressibleFluid, Viscosity>(ConstructArgs(rho0_f, c_f), mu_f);
     water_block.generateParticles<BaseParticles, Lattice>();
 
     SolidBody wall_boundary(sph_system, makeShared<DefaultShape>("Wall"));
@@ -201,7 +200,7 @@ void channel_flow_shell(const Real resolution_ref, const Real wall_thickness)
     //	Define the main numerical methods used in the simulation.
     //	Note that there may be data dependence on the constructors of these methods.
     //----------------------------------------------------------------------
-    /** Pressure relaxation using verlet time stepping. */
+    /** Pressure relaxation using Verlet time stepping. */
     /** Here, we do not use Riemann solver for pressure as the flow is viscous. */
     Dynamics1Level<fluid_dynamics::Integration1stHalfWithWallRiemann> pressure_relaxation(water_block_inner, water_block_contact);
     Dynamics1Level<fluid_dynamics::Integration2ndHalfWithWallNoRiemann> density_relaxation(water_block_inner, water_block_contact);
@@ -215,8 +214,8 @@ void channel_flow_shell(const Real resolution_ref, const Real wall_thickness)
     InteractionWithUpdate<fluid_dynamics::TransportVelocityCorrectionComplex<AllParticles>> transport_correction(water_block_inner, water_block_contact);
     InteractionWithUpdate<fluid_dynamics::ViscousForceWithWall> viscous_acceleration(water_block_inner, water_block_contact);
     /** Inflow boundary condition. */
-    BodyAlignedBoxByCell inflow_buffer(
-        water_block, makeShared<AlignedBoxShape>(xAxis, Transform(Vec2d(buffer_translation)), buffer_halfsize));
+    AlignedBoxByCell inflow_buffer(
+        water_block, AlignedBox(xAxis, Transform(Vec2d(buffer_translation)), buffer_halfsize));
     SimpleDynamics<fluid_dynamics::InflowVelocityCondition<InflowVelocity>> parabolic_inflow(inflow_buffer);
     /** Periodic BCs in x direction. */
     PeriodicAlongAxis periodic_along_x(water_block.getSPHBodyBounds(), xAxis);

@@ -45,7 +45,7 @@ class TaylorGreenInitialCondition
 {
   public:
     explicit TaylorGreenInitialCondition(SPHBody &sph_body)
-        : fluid_dynamics::FluidInitialCondition(sph_body){};
+        : fluid_dynamics::FluidInitialCondition(sph_body) {};
 
     void update(size_t index_i, Real dt)
     {
@@ -64,17 +64,17 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     //	Build up an SPHSystem.
     //----------------------------------------------------------------------
-    BoundingBox system_domain_bounds(Vec2d::Zero(), Vec2d(DL, DH));
+    BoundingBoxd system_domain_bounds(Vec2d::Zero(), Vec2d(DL, DH));
     SPHSystem sph_system(system_domain_bounds, resolution_ref);
     /** Tag for computation start with relaxed body fitted particles distribution. */
     sph_system.setReloadParticles(false);
     // handle command line arguments
-    sph_system.handleCommandlineOptions(ac, av)->setIOEnvironment();
+    sph_system.handleCommandlineOptions(ac, av);
     //----------------------------------------------------------------------
     //	Creating bodies with corresponding materials and particles.
     //----------------------------------------------------------------------
     FluidBody water_block(sph_system, makeShared<WaterBlock>("WaterBody"));
-    water_block.defineMaterial<WeaklyCompressibleFluid>(rho0_f, c_f, mu_f);
+    water_block.defineClosure<WeaklyCompressibleFluid, Viscosity>(ConstructArgs(rho0_f, c_f), mu_f);
     // Using relaxed particle distribution if needed
     sph_system.ReloadParticles()
         ? water_block.generateParticles<BaseParticles, Reload>(water_block.getName())
@@ -94,11 +94,11 @@ int main(int ac, char *av[])
     // Generally, the geometric models or simple objects without data dependencies,
     // such as gravity, should be initiated first.
     // Then the major physical particle dynamics model should be introduced.
-    // Finally, the auxillary models such as time step estimator, initial condition,
+    // Finally, the auxiliary models such as time step estimator, initial condition,
     // boundary condition and other constraints should be defined.
     //----------------------------------------------------------------------
     SimpleDynamics<TaylorGreenInitialCondition> initial_condition(water_block);
-    /** Pressure relaxation algorithm by using verlet time stepping. */
+    /** Pressure relaxation algorithm by using Verlet time stepping. */
     /** Here, we do not use Riemann solver for pressure as the flow is viscous.
      * The other reason is that we are using transport velocity formulation,
      * which will also introduce numerical dissipation slightly. */

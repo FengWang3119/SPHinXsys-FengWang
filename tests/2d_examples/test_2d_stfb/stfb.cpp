@@ -14,19 +14,19 @@ int main(int ac, char *av[])
     //	Build up the environment of a SPHSystem with global controls.
     //----------------------------------------------------------------------
     SPHSystem sph_system(system_domain_bounds, particle_spacing_ref);
-    sph_system.handleCommandlineOptions(ac, av)->setIOEnvironment();
+    sph_system.handleCommandlineOptions(ac, av);
     //----------------------------------------------------------------------
     //	Creating body, materials and particles.
     //----------------------------------------------------------------------
     FluidBody water_block(sph_system, makeShared<WaterBlock>("WaterBody"));
-    water_block.defineMaterial<WeaklyCompressibleFluid>(rho0_f, c_f, mu_f);
+    water_block.defineClosure<WeaklyCompressibleFluid, Viscosity>(ConstructArgs(rho0_f, c_f), mu_f);
     water_block.generateParticles<BaseParticles, Lattice>();
 
     SolidBody wall_boundary(sph_system, makeShared<WallBoundary>("WallBoundary"));
     wall_boundary.defineMaterial<Solid>();
     wall_boundary.generateParticles<BaseParticles, Lattice>();
 
-    TransformShape<GeometricShapeBox> structure_shape(Transform(structure_translation), structure_halfsize, "Structure");
+    GeometricShapeBox structure_shape(Transform(structure_translation), structure_halfsize, "Structure");
     SolidBody structure(sph_system, structure_shape);
     structure.defineMaterial<Solid>(rho_s);
     structure.generateParticles<BaseParticles, Lattice>();
@@ -43,10 +43,8 @@ int main(int ac, char *av[])
     //  inner and contact relations.
     //----------------------------------------------------------------------
     InnerRelation water_block_inner(water_block);
-    InnerRelation structure_inner(structure);
     ContactRelation water_block_contact(water_block, {&wall_boundary, &structure});
     ContactRelation structure_contact(structure, {&water_block});
-    ContactRelation observer_contact_with_water(observer, {&water_block});
     ContactRelation observer_contact_with_structure(observer, {&structure});
     //----------------------------------------------------------------------
     // Combined relations built from basic relations
@@ -59,7 +57,7 @@ int main(int ac, char *av[])
     // Generally, the geometric models or simple objects without data dependencies,
     // such as gravity, should be initiated first.
     // Then the major physical particle dynamics model should be introduced.
-    // Finally, the auxillary models such as time step estimator, initial condition,
+    // Finally, the auxiliary models such as time step estimator, initial condition,
     // boundary condition and other constraints should be defined.
     //----------------------------------------------------------------------
     SimpleDynamics<OffsetInitialPosition> structure_offset_position(structure, offset);
@@ -154,12 +152,10 @@ int main(int ac, char *av[])
     //	Define the methods for I/O operations and observations of the simulation.
     //----------------------------------------------------------------------
     BodyStatesRecordingToVtp write_real_body_states(sph_system);
-    TransformShape<GeometricShapeBox> wave_probe_buffer_shape(Transform(gauge_translation), gauge_halfsize, "FreeSurfaceGauge");
+    GeometricShapeBox wave_probe_buffer_shape(Transform(gauge_translation), gauge_halfsize, "FreeSurfaceGauge");
     BodyRegionByCell wave_probe_buffer(water_block, wave_probe_buffer_shape);
     RegressionTestDynamicTimeWarping<ReducedQuantityRecording<UpperFrontInAxisDirection<BodyPartByCell>>>
         wave_gauge(wave_probe_buffer, "FreeSurfaceHeight");
-    InteractionDynamics<InterpolatingAQuantity<Vecd>>
-        interpolation_observer_position(observer_contact_with_structure, "Position", "Position");
     RegressionTestDynamicTimeWarping<ObservedQuantityRecording<Vecd>>
         write_str_displacement("Position", observer_contact_with_structure);
     //----------------------------------------------------------------------
@@ -223,7 +219,6 @@ int main(int ac, char *av[])
                     integ.stepBy(dt);
                     constraint_on_structure.exec();
                 }
-                interpolation_observer_position.exec();
 
                 relaxation_time += dt;
                 integral_time += dt;
@@ -245,13 +240,11 @@ int main(int ac, char *av[])
                 particle_sorting.exec();
             }
             water_block.updateCellLinkedList();
-            wall_boundary.updateCellLinkedList();
             structure.updateCellLinkedList();
             water_block_complex.updateConfiguration();
             structure_contact.updateConfiguration();
-            observer_contact_with_water.updateConfiguration();
 
-            if (total_time >= relax_time)
+            if (total_time >= relax_time && number_of_iterations % 100 == 0)
             {
                 write_str_displacement.writeToFile(number_of_iterations);
                 wave_gauge.writeToFile(number_of_iterations);

@@ -19,7 +19,7 @@ Vecd translation_cantilever(0.5 * (PL - SL), 0.5 * PH, 0.5 * PW);
 Vecd halfsize_holder(0.5 * SL, 0.5 * PH, 0.5 * PW);
 Vecd translation_holder(-0.5 * SL, 0.5 * PH, 0.5 * PW);
 /** Domain bounds of the system. */
-BoundingBox system_domain_bounds(Vecd(-SL - BW, -BW, -BW),
+BoundingBoxd system_domain_bounds(Vecd(-SL - BW, -BW, -BW),
                                  Vecd(PL + BW, PH + BW, PH + BW));
 // Observer location
 StdVec<Vecd> observation_location = {Vecd(PL, PH, PW)};
@@ -29,8 +29,8 @@ Real poisson = 0.45;
 Real Youngs_modulus = 1.7e7;
 Real a = Youngs_modulus / (2.0 * (1.0 + poisson));
 Real a_f = 0.0 * a;
-Real a0[4] = {a, a_f, 0.0, 0.0};
-Real b0[4] = {1.0, 0.0, 0.0, 0.0};
+std::array<Real, 4> a0 = {a, a_f, 0.0, 0.0};
+std::array<Real, 4> b0 = {1.0, 0.0, 0.0, 0.0};
 Vec3d fiber_direction(1.0, 0.0, 0.0);
 Vec3d sheet_direction(0.0, 1.0, 0.0);
 Real bulk_modulus = Youngs_modulus / 3.0 / (1.0 - 2.0 * poisson);
@@ -41,8 +41,8 @@ class Cantilever : public ComplexShape
   public:
     explicit Cantilever(const std::string &shape_name) : ComplexShape(shape_name)
     {
-        add<TransformShape<GeometricShapeBox>>(Transform(translation_cantilever), halfsize_cantilever);
-        add<TransformShape<GeometricShapeBox>>(Transform(translation_holder), halfsize_holder);
+        add<GeometricShapeBox>(Transform(translation_cantilever), halfsize_cantilever);
+        add<GeometricShapeBox>(Transform(translation_holder), halfsize_holder);
     }
 };
 /**
@@ -53,7 +53,7 @@ class CantileverInitialCondition
 {
   public:
     explicit CantileverInitialCondition(SPHBody &sph_body)
-        : solid_dynamics::ElasticDynamicsInitialCondition(sph_body){};
+        : solid_dynamics::ElasticDynamicsInitialCondition(sph_body) {};
 
     void update(size_t index_i, Real dt)
     {
@@ -96,11 +96,10 @@ int main(int ac, char *av[])
     /** Time step size calculation. */
     ReduceDynamics<solid_dynamics::AcousticTimeStep> computing_time_step_size(cantilever_body);
     /** Constrain the holder. */
-    TransformShape<GeometricShapeBox> holder_shape(Transform(translation_holder), halfsize_holder, "Holder");
+    GeometricShapeBox holder_shape(Transform(translation_holder), halfsize_holder, "Holder");
     BodyRegionByParticle holder(cantilever_body, holder_shape);
     SimpleDynamics<FixBodyPartConstraint> constraint_holder(holder);
     /** Output */
-    IOEnvironment io_environment(sph_system);
     BodyStatesRecordingToVtp write_states(sph_system);
     RegressionTestDynamicTimeWarping<ObservedQuantityRecording<Vecd>>
         write_displacement("Position", cantilever_observer_contact);

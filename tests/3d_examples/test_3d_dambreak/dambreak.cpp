@@ -31,7 +31,7 @@ class WaterBlock : public ComplexShape
     {
         Vecd halfsize_water(0.5 * LL, 0.5 * LH, 0.5 * LW);
         Transform translation_water(halfsize_water);
-        add<TransformShape<GeometricShapeBox>>(Transform(translation_water), halfsize_water);
+        add<GeometricShapeBox>(Transform(translation_water), halfsize_water);
     }
 };
 //	define the static solid wall boundary shape
@@ -43,8 +43,8 @@ class WallBoundary : public ComplexShape
         Vecd halfsize_outer(0.5 * DL + BW, 0.5 * DH + BW, 0.5 * DW + BW);
         Vecd halfsize_inner(0.5 * DL, 0.5 * DH, 0.5 * DW);
         Transform translation_wall(halfsize_inner);
-        add<TransformShape<GeometricShapeBox>>(Transform(translation_wall), halfsize_outer);
-        subtract<TransformShape<GeometricShapeBox>>(Transform(translation_wall), halfsize_inner);
+        add<GeometricShapeBox>(Transform(translation_wall), halfsize_outer);
+        subtract<GeometricShapeBox>(Transform(translation_wall), halfsize_inner);
     }
 };
 
@@ -66,9 +66,9 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     //	Build up an SPHSystem.
     //----------------------------------------------------------------------
-    BoundingBox system_domain_bounds(Vecd(-BW, -BW, -BW), Vecd(DL + BW, DH + BW, DW + BW));
+    BoundingBoxd system_domain_bounds(Vecd(-BW, -BW, -BW), Vecd(DL + BW, DH + BW, DW + BW));
     SPHSystem sph_system(system_domain_bounds, resolution_ref);
-    sph_system.handleCommandlineOptions(ac, av)->setIOEnvironment();
+    sph_system.handleCommandlineOptions(ac, av);
     //----------------------------------------------------------------------
     //	Creating bodies with corresponding materials and particles.
     //----------------------------------------------------------------------
@@ -112,7 +112,7 @@ int main(int ac, char *av[])
     Dynamics1Level<fluid_dynamics::Integration2ndHalfWithWallRiemann> density_relaxation(water_block_inner, water_wall_contact);
     InteractionWithUpdate<fluid_dynamics::DensitySummationComplexFreeSurface> update_density_by_summation(water_block_inner, water_wall_contact);
 
-    ReduceDynamics<fluid_dynamics::AdvectionViscousTimeStep> get_fluid_advection_time_step_size(water_block, U_f);
+    ReduceDynamics<fluid_dynamics::AdvectionTimeStep> get_fluid_advection_time_step_size(water_block, U_f);
     ReduceDynamics<fluid_dynamics::AcousticTimeStep> get_fluid_time_step_size(water_block);
     //----------------------------------------------------------------------
     //	Define the configuration related particles dynamics.

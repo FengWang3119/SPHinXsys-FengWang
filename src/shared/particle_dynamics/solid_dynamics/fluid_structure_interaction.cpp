@@ -1,5 +1,7 @@
 #include "fluid_structure_interaction.hpp"
 
+#include "viscosity.h"
+
 namespace SPH
 {
 //=====================================================================================================//
@@ -8,7 +10,7 @@ namespace solid_dynamics
 //=================================================================================================//
 BaseForceFromFluid::BaseForceFromFluid(BaseContactRelation &contact_relation, const std::string &force_name)
     : ForcePrior(contact_relation.getSPHBody(), force_name), DataDelegateContact(contact_relation),
-      solid_(DynamicCast<Solid>(this, sph_body_.getBaseMaterial())),
+      solid_(DynamicCast<Solid>(this, sph_body_->getBaseMaterial())),
       Vol_(particles_->getVariableDataByName<Real>("VolumetricMeasure")),
       force_from_fluid_(particles_->getVariableDataByName<Vecd>(force_name))
 {
@@ -26,8 +28,9 @@ ViscousForceFromFluid::ViscousForceFromFluid(BaseContactRelation &contact_relati
     {
         contact_vel_.push_back(contact_particles_[k]->getVariableDataByName<Vecd>("Velocity"));
         contact_Vol_.push_back(contact_particles_[k]->getVariableDataByName<Real>("VolumetricMeasure"));
-        mu_.push_back(contact_fluids_[k]->ReferenceViscosity());
-        smoothing_length_.push_back(contact_bodies_[k]->sph_adaptation_->ReferenceSmoothingLength());
+        Viscosity &viscosity_k = DynamicCast<Viscosity>(this, contact_particles_[k]->getBaseMaterial());
+        mu_.push_back(viscosity_k.ReferenceViscosity());
+        smoothing_length_.push_back(contact_bodies_[k]->getSPHAdaptation().ReferenceSmoothingLength());
     }
 }
 //=================================================================================================//
@@ -59,7 +62,7 @@ InitializeDisplacement::
     InitializeDisplacement(SPHBody &sph_body)
     : LocalDynamics(sph_body),
       pos_(particles_->getVariableDataByName<Vecd>("Position")),
-      pos_temp_(particles_->registerStateVariable<Vecd>("TemporaryPosition")) {}
+      pos_temp_(particles_->registerStateVariableData<Vecd>("TemporaryPosition")) {}
 //=================================================================================================//
 void InitializeDisplacement::update(size_t index_i, Real dt)
 {
@@ -82,9 +85,9 @@ void UpdateAverageVelocityAndAcceleration::update(size_t index_i, Real dt)
 }
 //=================================================================================================//
 AverageVelocityAndAcceleration::
-    AverageVelocityAndAcceleration(SolidBody &solid_body)
-    : initialize_displacement_(solid_body),
-      update_averages_(solid_body) {}
+    AverageVelocityAndAcceleration(SPHBody &sph_body)
+    : initialize_displacement_(sph_body),
+      update_averages_(sph_body) {}
 //=================================================================================================//
 } // namespace solid_dynamics
 } // namespace SPH

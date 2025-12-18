@@ -19,7 +19,7 @@ Vecd translation_cantilever(0.5 * (PL - SL), 0.5 * PH, 0.5 * PW);
 Vecd halfsize_holder(0.5 * SL, 0.5 * PH, 0.5 * PW);
 Vecd translation_holder(-0.5 * SL, 0.5 * PH, 0.5 * PW);
 /** Domain bounds of the system. */
-BoundingBox system_domain_bounds(Vecd(-SL, 0, 0), Vecd(PL, PH, PH));
+BoundingBoxd system_domain_bounds(Vecd(-SL, 0, 0), Vecd(PL, PH, PH));
 // Observer location
 StdVec<Vecd> observation_location = {Vecd(PL, PH, PW)};
 /** For material properties of the solid. */
@@ -36,8 +36,8 @@ class Cantilever : public ComplexShape
   public:
     explicit Cantilever(const std::string &shape_name) : ComplexShape(shape_name)
     {
-        add<TransformShape<GeometricShapeBox>>(Transform(translation_cantilever), halfsize_cantilever);
-        add<TransformShape<GeometricShapeBox>>(Transform(translation_holder), halfsize_holder);
+        add<GeometricShapeBox>(Transform(translation_cantilever), halfsize_cantilever);
+        add<GeometricShapeBox>(Transform(translation_holder), halfsize_holder);
     }
 };
 
@@ -80,13 +80,12 @@ int main(int ac, char *av[])
     /** Time step size calculation. */
     ReduceDynamics<solid_dynamics::AcousticTimeStep> computing_time_step_size(cantilever_body);
     /** Constrain the holder. */
-    TransformShape<GeometricShapeBox> holder_shape(Transform(translation_holder), halfsize_holder, "Holder");
+    GeometricShapeBox holder_shape(Transform(translation_holder), halfsize_holder, "Holder");
     BodyRegionByParticle holder(cantilever_body, holder_shape);
     SimpleDynamics<FixBodyPartConstraint> constraint_holder(holder);
     DampingWithRandomChoice<InteractionSplit<DampingProjectionInner<Vec3d, FixedDampingRate>>>
         muscle_damping(0.1, cantilever_body_inner, "Velocity", physical_viscosity);
     /** Output */
-    IOEnvironment io_environment(sph_system);
     BodyStatesRecordingToVtp write_states(sph_system);
     RegressionTestDynamicTimeWarping<ObservedQuantityRecording<Vecd>>
         write_displacement("Position", cantilever_observer_contact);

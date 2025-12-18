@@ -14,7 +14,7 @@ Real DH = 1.0;                    /**< box height. */
 Real resolution_ref = 1.0 / 50.0; /**< Global reference resolution. */
 Real BW = resolution_ref * 6;     /**< Extending width for BCs. */
 /** Domain bounds of the system. */
-BoundingBox system_domain_bounds(Vec2d(-BW, -BW), Vec2d(DL + BW, DH + BW));
+BoundingBoxd system_domain_bounds(Vec2d(-BW, -BW), Vec2d(DL + BW, DH + BW));
 //----------------------------------------------------------------------
 //	Material properties of the fluid.
 //----------------------------------------------------------------------
@@ -97,8 +97,8 @@ StdVec<Vecd> VelocityXObserverParticle()
 
     for (size_t i = 0; i < number_of_observation_point; ++i)
     {
-        Vec2d point_corrdinate(range_of_measure * (Real)i / (Real)(number_of_observation_point - 1) + start_of_measure, 0.5 * DL);
-        observation_points.push_back(point_corrdinate);
+        Vec2d point_coordinate(range_of_measure * (Real)i / (Real)(number_of_observation_point - 1) + start_of_measure, 0.5 * DL);
+        observation_points.push_back(point_coordinate);
     }
     return observation_points;
 }
@@ -111,10 +111,10 @@ StdVec<Vecd> VelocityYObserverParticle()
     Real start_of_measure = 0.5 * resolution_ref;
     for (size_t i = 0; i < number_of_observation_point; ++i)
     {
-        Vec2d point_corrdinate(0.5 * DH, range_of_measure * (Real)i /
+        Vec2d point_coordinate(0.5 * DH, range_of_measure * (Real)i /
                                                  (Real)(number_of_observation_point - 1) +
                                              start_of_measure);
-        observation_points.push_back(point_corrdinate);
+        observation_points.push_back(point_coordinate);
     }
     return observation_points;
 }
@@ -131,13 +131,12 @@ int main(int ac, char *av[])
     sph_system.setRunParticleRelaxation(false);
     // Tag for computation start with relaxed body fitted particles distribution.
     sph_system.setReloadParticles(false);
-    IOEnvironment io_environment(sph_system);
     sph_system.handleCommandlineOptions(ac, av);
     //----------------------------------------------------------------------
     //	Creating body, materials and particles.
     //----------------------------------------------------------------------
     FluidBody water_body(sph_system, makeShared<WaterBlock>("WaterBody"));
-    water_body.defineMaterial<WeaklyCompressibleFluid>(rho0_f, c_f, mu_f);
+    water_body.defineClosure<WeaklyCompressibleFluid, Viscosity>(ConstructArgs(rho0_f, c_f), mu_f);
     water_body.generateParticles<BaseParticles, Lattice>();
 
     SolidBody wall_boundary(sph_system, makeShared<WallBoundary>("Wall"));
@@ -171,7 +170,7 @@ int main(int ac, char *av[])
     InteractionWithUpdate<LinearGradientCorrectionMatrixComplex> kernel_correction_complex(water_block_inner, water_block_contact);
     /** Evaluation of density by summation approach. */
     InteractionWithUpdate<fluid_dynamics::DensitySummationComplex> update_density_by_summation(water_block_inner, water_block_contact);
-    /** Pressure and density relaxation algorithm by using verlet time stepping. */
+    /** Pressure and density relaxation algorithm by using Verlet time stepping. */
     Dynamics1Level<fluid_dynamics::Integration1stHalfCorrectionWithWallRiemann> pressure_relaxation(water_block_inner, water_block_contact);
     Dynamics1Level<fluid_dynamics::Integration2ndHalfWithWallRiemann> density_relaxation(water_block_inner, water_block_contact);
     InteractionWithUpdate<fluid_dynamics::TransportVelocityLimitedCorrectionCorrectedComplex<AllParticles>>

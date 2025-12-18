@@ -12,7 +12,7 @@
  * (Deutsche Forschungsgemeinschaft) DFG HU1527/6-1, HU1527/10-1,            *
  *  HU1527/12-1 and HU1527/12-4.                                             *
  *                                                                           *
- * Portions copyright (c) 2017-2023 Technical University of Munich and       *
+ * Portions copyright (c) 2017-2025 Technical University of Munich and       *
  * the authors' affiliations.                                                *
  *                                                                           *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may   *
@@ -57,10 +57,10 @@ class ContactRelationCrossResolution : public BaseContactRelation
             target_cell_linked_lists_.push_back(target_cell_linked_list);
             get_search_depths_.push_back(
                 search_depth_ptrs_keeper_.createPtr<SearchDepthContact>(
-                    sph_body_, target_cell_linked_list));
+                    sph_body_, target_cell_linked_list->getMesh()));
         }
     };
-    virtual ~ContactRelationCrossResolution(){};
+    virtual ~ContactRelationCrossResolution() {};
     StdVec<CellLinkedList *> getContactCellLinkedList() { return target_cell_linked_lists_; }
 
   protected:
@@ -79,7 +79,7 @@ class ContactRelation : public ContactRelationCrossResolution
 
   public:
     ContactRelation(SPHBody &sph_body, RealBodyVector contact_bodies);
-    virtual ~ContactRelation(){};
+    virtual ~ContactRelation() {};
     virtual void updateConfiguration() override;
 
   protected:
@@ -103,8 +103,8 @@ class ShellSurfaceContactRelation : public ContactRelationCrossResolution
     ShellSurfaceContactRelation(SPHBody &sph_body, RealBodyVector contact_bodies);
     ShellSurfaceContactRelation(SelfSurfaceContactRelation &solid_body_relation_self_contact,
                                 RealBodyVector contact_bodies)
-        : ShellSurfaceContactRelation(*solid_body_relation_self_contact.real_body_, contact_bodies){};
-    virtual ~ShellSurfaceContactRelation(){};
+        : ShellSurfaceContactRelation(*solid_body_relation_self_contact.real_body_, contact_bodies) {};
+    virtual ~ShellSurfaceContactRelation() {};
     virtual void updateConfiguration() override;
 
   protected:
@@ -127,7 +127,7 @@ class ContactRelationToBodyPart : public ContactRelationCrossResolution
     StdVec<NeighborBuilderContactBodyPart *> get_part_contact_neighbors_;
 
     ContactRelationToBodyPart(SPHBody &sph_body, BodyPartVector contact_body_parts_);
-    virtual ~ContactRelationToBodyPart(){};
+    virtual ~ContactRelationToBodyPart() {};
 
     virtual void updateConfiguration() override;
 };
@@ -144,12 +144,12 @@ class AdaptiveContactRelation : public BaseContactRelation
 
   protected:
     StdVec<StdVec<SearchDepthAdaptiveContact *>> get_multi_level_search_range_;
-    StdVec<StdVec<CellLinkedList *>> cell_linked_list_levels_;
+    StdVec<BaseCellLinkedList *> cell_linked_lists_;
     StdVec<StdVec<NeighborBuilderContactAdaptive *>> get_contact_neighbors_adaptive_;
 
   public:
     AdaptiveContactRelation(SPHBody &body, RealBodyVector contact_bodies);
-    virtual ~AdaptiveContactRelation(){};
+    virtual ~AdaptiveContactRelation() {};
 
     virtual void updateConfiguration() override;
 };
@@ -211,7 +211,7 @@ class SurfaceContactRelation : public ContactRelationCrossResolution
                            StdVec<bool> normal_corrections = {})
         : SurfaceContactRelation(*solid_body_relation_self_contact.real_body_,
                                  std::move(contact_bodies),
-                                 std::move(normal_corrections)){};
+                                 std::move(normal_corrections)) {};
     ~SurfaceContactRelation() override = default;
     void updateConfiguration() override;
     BodySurfaceLayer *get_body_surface_layer() { return body_surface_layer_; }

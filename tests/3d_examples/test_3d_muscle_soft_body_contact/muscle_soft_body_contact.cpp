@@ -19,7 +19,7 @@ Vecd halfsize_stationary_plate(0.5 * BW, 0.5 * L + BW, 0.5 * L + BW);
 Vecd translation_stationary_plate(-0.5 * BW, 0.0, 0.0);
 Vecd halfsize_moving_plate(0.5 * BW, 0.5 * PL, 0.5 * PL);
 Vecd translation_moving_plate(L + BW, 0.0, 0.0);
-BoundingBox system_domain_bounds(Vecd(-BW, -0.5 * PL, -0.5 * PL),
+BoundingBoxd system_domain_bounds(Vecd(-BW, -0.5 * PL, -0.5 * PL),
                                  Vecd(2.0 * L + BW, 0.5 * PL, 0.5 * PL));
 //----------------------------------------------------------------------
 //	Material parameters.
@@ -36,8 +36,8 @@ class Myocardium : public ComplexShape
   public:
     explicit Myocardium(const std::string &shape_name) : ComplexShape(shape_name)
     {
-        add<TransformShape<GeometricShapeBox>>(Transform(translation_myocardium), halfsize_myocardium);
-        add<TransformShape<GeometricShapeBox>>(Transform(translation_stationary_plate), halfsize_stationary_plate);
+        add<GeometricShapeBox>(Transform(translation_myocardium), halfsize_myocardium);
+        add<GeometricShapeBox>(Transform(translation_stationary_plate), halfsize_stationary_plate);
     }
 };
 
@@ -46,7 +46,7 @@ class MovingPlate : public ComplexShape
   public:
     explicit MovingPlate(const std::string &shape_name) : ComplexShape(shape_name)
     {
-        add<TransformShape<GeometricShapeBox>>(Transform(translation_moving_plate), halfsize_moving_plate);
+        add<GeometricShapeBox>(Transform(translation_moving_plate), halfsize_moving_plate);
     }
 };
 //----------------------------------------------------------------------
@@ -58,7 +58,7 @@ int main(int ac, char *av[])
     //	Build up an SPHSystem and IO environment.
     //----------------------------------------------------------------------
     SPHSystem sph_system(system_domain_bounds, resolution_ref);
-    sph_system.handleCommandlineOptions(ac, av)->setIOEnvironment();
+    sph_system.handleCommandlineOptions(ac, av);
     //----------------------------------------------------------------------
     //	Creating bodies with corresponding materials and particles.
     //----------------------------------------------------------------------
@@ -99,7 +99,7 @@ int main(int ac, char *av[])
     InteractionWithUpdate<solid_dynamics::ContactForce> myocardium_compute_solid_contact_forces(myocardium_plate_contact);
     InteractionWithUpdate<solid_dynamics::ContactForce> plate_compute_solid_contact_forces(plate_myocardium_contact);
     /** Constrain the holder. */
-    TransformShape<GeometricShapeBox> holder_shape(Transform(translation_stationary_plate), halfsize_stationary_plate, "Holder");
+    GeometricShapeBox holder_shape(Transform(translation_stationary_plate), halfsize_stationary_plate, "Holder");
     BodyRegionByParticle holder(myocardium_body, holder_shape);
     SimpleDynamics<FixBodyPartConstraint> constraint_holder(holder);
     /** Add spring constraint on the plate. */

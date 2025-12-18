@@ -20,7 +20,7 @@ Real inlet_height = 1.0;      /**< Inflow location height */
 Real inlet_distance = -BW;    /**< Inflow location distance */
 Vec2d inlet_halfsize = Vec2d(0.5 * LL, 0.5 * LH);
 Vec2d inlet_translation = Vec2d(inlet_distance, inlet_height) + inlet_halfsize;
-BoundingBox system_domain_bounds(Vec2d(-BW, -BW), Vec2d(DL + BW, DH + BW));
+BoundingBoxd system_domain_bounds(Vec2d(-BW, -BW), Vec2d(DL + BW, DH + BW));
 // observer location
 StdVec<Vecd> observation_location = {Vecd(DL, 0.2)};
 Real rho0_f = 1.0;                                      /**< Reference density of fluid. */
@@ -73,7 +73,7 @@ class WallBoundary : public MultiPolygonShape
 class InletInflowCondition : public fluid_dynamics::EmitterInflowCondition
 {
   public:
-    InletInflowCondition(BodyAlignedBoxByParticle &aligned_box_part)
+    InletInflowCondition(AlignedBoxByParticle &aligned_box_part)
         : EmitterInflowCondition(aligned_box_part) {}
 
   protected:
@@ -93,9 +93,9 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     //	Creating body, materials and particles.
     //----------------------------------------------------------------------
-    TransformShape<GeometricShapeBox> water_inlet_shape(Transform(inlet_translation), inlet_halfsize);
+    GeometricShapeBox water_inlet_shape(Transform(inlet_translation), inlet_halfsize);
     FluidBody water_body(sph_system, water_inlet_shape, "WaterBody");
-    water_body.sph_adaptation_->resetKernel<KernelTabulated<KernelWendlandC2>>(20);
+    water_body.getSPHAdaptation().resetKernel<KernelTabulated<KernelWendlandC2>>(20);
     water_body.defineMaterial<WeaklyCompressibleFluid>(rho0_f, c_f);
     ParticleBuffer<ReserveSizeFactor> inlet_buffer(350.0);
     water_body.generateParticlesWithReserve<BaseParticles, Lattice>(inlet_buffer);
@@ -133,10 +133,10 @@ int main(int ac, char *av[])
 
     Gravity gravity(Vecd(0.0, -gravity_g));
     SimpleDynamics<GravityForce<Gravity>> constant_gravity(water_body, gravity);
-    ReduceDynamics<fluid_dynamics::AdvectionViscousTimeStep> get_fluid_advection_time_step_size(water_body, U_f);
+    ReduceDynamics<fluid_dynamics::AdvectionTimeStep> get_fluid_advection_time_step_size(water_body, U_f);
     ReduceDynamics<fluid_dynamics::AcousticTimeStep> get_fluid_time_step_size(water_body);
 
-    BodyAlignedBoxByParticle emitter(water_body, makeShared<AlignedBoxShape>(xAxis, Transform(inlet_translation), inlet_halfsize));
+    AlignedBoxByParticle emitter(water_body, AlignedBox(xAxis, Transform(inlet_translation), inlet_halfsize));
     SimpleDynamics<InletInflowCondition> inflow_condition(emitter);
     SimpleDynamics<fluid_dynamics::EmitterInflowInjection> emitter_injection(emitter, inlet_buffer);
     //----------------------------------------------------------------------
@@ -146,7 +146,6 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     //	File output and regression check.
     //----------------------------------------------------------------------
-    IOEnvironment io_environment(sph_system);
     BodyStatesRecordingToVtp body_states_recording(sph_system);
     body_states_recording.addToWrite<int>(water_body, "Indicator");
     RegressionTestDynamicTimeWarping<ReducedQuantityRecording<TotalMechanicalEnergy>> write_water_mechanical_energy(water_body, gravity);
