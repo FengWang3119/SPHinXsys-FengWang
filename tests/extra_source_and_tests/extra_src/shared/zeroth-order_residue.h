@@ -127,7 +127,7 @@ class NonDimensionalisePressure : public LocalDynamics
 class DisposerInBufferDeletion : public BaseLocalDynamics<BodyPartByCell>
 {
   public:
-    DisposerInBufferDeletion(BodyAlignedBoxByCell &aligned_box_part);
+    DisposerInBufferDeletion(AlignedBoxByCell &aligned_box_part);
     virtual ~DisposerInBufferDeletion(){};
 
     void update(size_t index_i, Real dt = 0.0);
@@ -135,7 +135,7 @@ class DisposerInBufferDeletion : public BaseLocalDynamics<BodyPartByCell>
   protected:
     std::mutex mutex_switch_to_buffer_; /**< mutex exclusion for memory conflict */
     Vecd *pos_;
-    AlignedBoxShape &aligned_box_;
+    AlignedBox &aligned_box_;
 };
 
 class InitialiseColorIndicator : public LocalDynamics

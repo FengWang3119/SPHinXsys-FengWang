@@ -83,7 +83,7 @@ void NonDimensionalisePressure::update(size_t index_i, Real dt)
 }
 //=================================================================================================//
 DisposerInBufferDeletion::
-    DisposerInBufferDeletion(BodyAlignedBoxByCell &aligned_box_part)
+    DisposerInBufferDeletion(AlignedBoxByCell &aligned_box_part)
     : BaseLocalDynamics<BodyPartByCell>(aligned_box_part),
       pos_(particles_->getVariableDataByName<Vecd>("Position")),
       aligned_box_(aligned_box_part.getAlignedBoxShape()) {}
