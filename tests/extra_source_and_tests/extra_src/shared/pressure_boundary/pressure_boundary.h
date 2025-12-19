@@ -77,7 +77,6 @@ class PressureBoundaryCondition : public BaseFlowBoundaryCondition
     Vecd *kernel_sum_;
     KernelCorrectionType kernel_correction_;
     Real *physical_time_;
-    Vecd *pos_;
 };
 
 template <typename TargetPressure>
