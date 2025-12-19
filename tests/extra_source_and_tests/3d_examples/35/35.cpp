@@ -329,7 +329,7 @@ int main(int ac, char *av[])
 
     ObservingAQuantity<Real> observing_pressure(fluid_observer_contact2, "Pressure");          //% Average pressure
     SimpleDynamics<ParticleSnapshotAverage<Real>> average_pressure(observer_body, "Pressure"); //% Average pressure
-    //ObservingAQuantity<int> observing_buffer_particle_indicator(fluid_observer_contact2, "BufferParticleIndicator");          //% Average
+    //ObservingAQuantity<int> observing_buffer_particle_indicator(fluid_observer_contact2, "BufferIndicator");          //% Average
 
     InteractionDynamics<TagMixedParticle> tag_mixed_particle(water_block_inner, mixing_rate_interactive_radius);
     ReduceDynamics<CalculateFluidParticleNumberInOutletChannel> calculate_fluid_particle_number_in_outlet_channel(water_block, Radius_chamber, H_inlet);
@@ -352,7 +352,7 @@ int main(int ac, char *av[])
     // ObservedQuantityRecording<Vecd> write_recorded_water_centerline_velocity("Velocity", fluid_observer_centerline_contact);
     // ObservedQuantityRecording<Real> write_recorded_water_centerline_pressure("Pressure", fluid_observer_centerline_contact);
     // ObservedQuantityRecording<Vecd> write_recorded_water_velocity_cross_section("Velocity", fluid_observer_cross_section_contact);
-    body_states_recording.addToWrite<int>(water_block, "BufferParticleIndicator");
+    body_states_recording.addToWrite<int>(water_block, "BufferIndicator");
     //body_states_recording.addToWrite<Real>(water_block, "VolumetricMeasure");
     //body_states_recording.addToWrite<Matd>(water_block, "LinearGradientCorrectionMatrix");
 
@@ -369,8 +369,8 @@ int main(int ac, char *av[])
 
     BodyStatesRecordingToVtp write_observation_states(observer_body);     //% Average
     write_observation_states.addToWrite<Real>(observer_body, "Pressure"); //% Average pressure
-    //write_observation_states.addToWrite<int>(observer_body, "BufferParticleIndicator");  //% Average
-    // body_states_recording.addToWrite<int>(observer_body, "BufferParticleIndicator"); //% Average
+    //write_observation_states.addToWrite<int>(observer_body, "BufferIndicator");  //% Average
+    // body_states_recording.addToWrite<int>(observer_body, "BufferIndicator"); //% Average
 
     /**
      * @brief Setup geometry and initial conditions.

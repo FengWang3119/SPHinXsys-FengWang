@@ -183,7 +183,7 @@ void InitialiseColorIndicator2::update(size_t index_i, Real dt)
 //=============================================================================================//
 ClearBufferParticleIndicator::ClearBufferParticleIndicator(SPHBody &sph_body, int third_dimension, Real lower_bound, Real upper_bound)
     : LocalDynamics(sph_body),
-      buffer_particle_indicator_(particles_->getVariableDataByName<int>("BufferParticleIndicator")),
+      buffer_particle_indicator_(particles_->getVariableDataByName<int>("BufferIndicator")),
       third_dimension_(third_dimension),
       lower_bound_(lower_bound),
       pos_(particles_->getVariableDataByName<Vecd>("Position")),
@@ -198,7 +198,7 @@ void ClearBufferParticleIndicator::update(size_t index_i, Real dt)
 DisposerForInitialParticleDeletion::DisposerForInitialParticleDeletion(SPHBody &sph_body)
     : LocalDynamics(sph_body),
       pos_(particles_->getVariableDataByName<Vecd>("Position")),
-      buffer_particle_indicator_(particles_->getVariableDataByName<int>("BufferParticleIndicator")) {}
+      buffer_particle_indicator_(particles_->getVariableDataByName<int>("BufferIndicator")) {}
 //=============================================================================================//
 void DisposerForInitialParticleDeletion::update(size_t index_i, Real dt)
 {
