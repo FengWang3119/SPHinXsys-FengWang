@@ -84,23 +84,23 @@ int main(int ac, char *av[])
         InnerRelation wall_boundary_inner(wall_boundary);
 
         AlignedBoxByCell inlet_1_detection_box(wall_boundary,
-                                                   makeShared<AlignedBox>(yAxis, Transform(Rotation3d(inlet_1_rotation), Vec3d(inlet_1_sub_buffer_translation)), inlet_buffer_halfsize));
+                                                   AlignedBox(yAxis, Transform(Rotation3d(inlet_1_rotation), Vec3d(inlet_1_sub_buffer_translation)), inlet_buffer_halfsize));
         AlignedBoxByCell inlet_2_detection_box(wall_boundary,
-                                                   makeShared<AlignedBox>(yAxis, Transform(Rotation3d(inlet_2_rotation), Vec3d(inlet_2_sub_buffer_translation)), inlet_buffer_halfsize));
+                                                   AlignedBox(yAxis, Transform(Rotation3d(inlet_2_rotation), Vec3d(inlet_2_sub_buffer_translation)), inlet_buffer_halfsize));
         AlignedBoxByCell inlet_3_detection_box(wall_boundary,
-                                                   makeShared<AlignedBox>(yAxis, Transform(Rotation3d(inlet_3_rotation), Vec3d(inlet_3_sub_buffer_translation)), inlet_buffer_halfsize));
+                                                   AlignedBox(yAxis, Transform(Rotation3d(inlet_3_rotation), Vec3d(inlet_3_sub_buffer_translation)), inlet_buffer_halfsize));
         AlignedBoxByCell inlet_4_detection_box(wall_boundary,
-                                                   makeShared<AlignedBox>(yAxis, Transform(Rotation3d(inlet_4_rotation), Vec3d(inlet_4_sub_buffer_translation)), inlet_buffer_halfsize));
+                                                   AlignedBox(yAxis, Transform(Rotation3d(inlet_4_rotation), Vec3d(inlet_4_sub_buffer_translation)), inlet_buffer_halfsize));
         AlignedBoxByCell inlet_5_detection_box(wall_boundary,
-                                                   makeShared<AlignedBox>(yAxis, Transform(Rotation3d(inlet_5_rotation), Vec3d(inlet_5_sub_buffer_translation)), inlet_buffer_halfsize));
+                                                   AlignedBox(yAxis, Transform(Rotation3d(inlet_5_rotation), Vec3d(inlet_5_sub_buffer_translation)), inlet_buffer_halfsize));
         AlignedBoxByCell inlet_6_detection_box(wall_boundary,
-                                                   makeShared<AlignedBox>(yAxis, Transform(Rotation3d(inlet_6_rotation), Vec3d(inlet_6_sub_buffer_translation)), inlet_buffer_halfsize));
+                                                   AlignedBox(yAxis, Transform(Rotation3d(inlet_6_rotation), Vec3d(inlet_6_sub_buffer_translation)), inlet_buffer_halfsize));
         AlignedBoxByCell inlet_7_detection_box(wall_boundary,
-                                                   makeShared<AlignedBox>(yAxis, Transform(Rotation3d(inlet_7_rotation), Vec3d(inlet_7_sub_buffer_translation)), inlet_buffer_halfsize));
+                                                   AlignedBox(yAxis, Transform(Rotation3d(inlet_7_rotation), Vec3d(inlet_7_sub_buffer_translation)), inlet_buffer_halfsize));
         AlignedBoxByCell inlet_8_detection_box(wall_boundary,
-                                                   makeShared<AlignedBox>(yAxis, Transform(Rotation3d(inlet_8_rotation), Vec3d(inlet_8_sub_buffer_translation)), inlet_buffer_halfsize));
+                                                   AlignedBox(yAxis, Transform(Rotation3d(inlet_8_rotation), Vec3d(inlet_8_sub_buffer_translation)), inlet_buffer_halfsize));
         AlignedBoxByCell outlet_detection_box(wall_boundary,
-                                                  makeShared<AlignedBox>(xAxis, Transform(Rotation3d(outlet_rotation), Vec3d(outlet_sub_buffer_translation)), outlet_buffer_halfsize));
+                                                  AlignedBox(xAxis, Transform(Rotation3d(outlet_rotation), Vec3d(outlet_sub_buffer_translation)), outlet_buffer_halfsize));
         //----------------------------------------------------------------------
         //	Methods used for particle relaxation.
         //----------------------------------------------------------------------
@@ -217,7 +217,7 @@ int main(int ac, char *av[])
     /** Turbulent standard wall function needs normal vectors of wall. */
     //NearShapeSurface near_surface(water_block, makeShared<WallBoundary>("Wall"));
 
-    InteractionWithUpdate<LinearGradientCorrectionMatrixComplex> corrected_configuration_fluid(ConstructorArgs(water_block_inner, 0.5), water_wall_contact);
+    InteractionWithUpdate<LinearGradientCorrectionMatrixComplex> corrected_configuration_fluid(DynamicsArgs(water_block_inner, 0.5), water_wall_contact);
 
     /** Pressure relaxation algorithm with Riemann solver for viscous flows. */
     //Dynamics1Level<fluid_dynamics::Integration1stHalfWithWallRiemann> pressure_relaxation(water_block_inner, water_wall_contact);

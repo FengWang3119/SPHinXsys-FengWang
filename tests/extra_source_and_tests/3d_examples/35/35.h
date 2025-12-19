@@ -47,7 +47,7 @@ Real length_outlet = L_inlet; //% Length of the outlet channel, Geometry depende
 //	Domain bounds of the system, STL relevant.
 //----------------------------------------------------------------------
 Real extend_domain_length = length_outlet; //% Geometry dependent
-BoundingBox system_domain_bounds(point_O +
+BoundingBoxd system_domain_bounds(point_O +
                                      Vecd(-Radius_chamber, -Radius_chamber, 0.0) +
                                      Vecd(-length_outlet, -length_outlet, 0.0) +
                                      2.0 * Vecd(-BW, -BW, -BW) +

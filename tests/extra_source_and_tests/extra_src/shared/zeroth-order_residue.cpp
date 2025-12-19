@@ -6,10 +6,10 @@ namespace SPH
 GetLimiterOfTransportVelocityCorrection::
     GetLimiterOfTransportVelocityCorrection(SPHBody &sph_body, Real slope)
     : LocalDynamics(sph_body),
-      h_ref_(sph_body_.sph_adaptation_->ReferenceSmoothingLength()),
+      h_ref_(sph_body.getSPHAdaptation().ReferenceSmoothingLength()),
       zero_gradient_residue_(particles_->getVariableDataByName<Vecd>("ZeroGradientResidue")),
       slope_(slope),
-      limiter_tvc_(particles_->registerStateVariable<Real>("LimiterOfTVC"))
+      limiter_tvc_(particles_->registerStateVariableData<Real>("LimiterOfTVC"))
 {
     particles_->addVariableToWrite<Real>("LimiterOfTVC");
 }
@@ -25,7 +25,7 @@ GetPressureGradientResidue::
     : LocalDynamics(sph_body),
       zero_gradient_residue_(particles_->getVariableDataByName<Vecd>("ZeroGradientResidue")),
       p_(particles_->getVariableDataByName<Real>("Pressure")),
-      pressure_gradient_residue_(particles_->registerStateVariable<Vecd>("PressureGradientResidue"))
+      pressure_gradient_residue_(particles_->registerStateVariableData<Vecd>("PressureGradientResidue"))
 {
     particles_->addVariableToWrite<Vecd>("PressureGradientResidue");
 }
@@ -72,7 +72,7 @@ NonDimensionalisePressure::
     : LocalDynamics(sph_body),
       rho_(particles_->getVariableDataByName<Real>("Density")),
       p_(particles_->getVariableDataByName<Real>("Pressure")),
-      p_dimensionless_(particles_->registerStateVariable<Real>("PressureDimensionless"))
+      p_dimensionless_(particles_->registerStateVariableData<Real>("PressureDimensionless"))
 {
     particles_->addVariableToWrite<Real>("PressureDimensionless");
 }
@@ -86,7 +86,7 @@ DisposerInBufferDeletion::
     DisposerInBufferDeletion(AlignedBoxByCell &aligned_box_part)
     : BaseLocalDynamics<BodyPartByCell>(aligned_box_part),
       pos_(particles_->getVariableDataByName<Vecd>("Position")),
-      aligned_box_(aligned_box_part.getAlignedBoxShape()) {}
+      aligned_box_(aligned_box_part.getAlignedBox()) {}
 //=================================================================================================//
 void DisposerInBufferDeletion::update(size_t index_i, Real dt)
 {
@@ -100,7 +100,7 @@ void DisposerInBufferDeletion::update(size_t index_i, Real dt)
 //=============================================================================================//
 InitialiseColorIndicator::InitialiseColorIndicator(SPHBody &sph_body)
     : LocalDynamics(sph_body),
-      color_indicator_(particles_->registerStateVariable<int>("ColorIndicator")),
+      color_indicator_(particles_->registerStateVariableData<int>("ColorIndicator")),
       pos_(particles_->getVariableDataByName<Vecd>("Position"))
 {
     particles_->addVariableToSort<int>("ColorIndicator");
@@ -236,7 +236,7 @@ void DisposerForSplashParticleDeletion::update(size_t index_i, Real dt)
 //=================================================================================================//
 TagMixedParticle::TagMixedParticle(BaseInnerRelation &inner_relation, Real mixing_rate_interactive_radius)
     : LocalDynamics(inner_relation.getSPHBody()), DataDelegateInner(inner_relation),
-      is_mixed_(particles_->registerStateVariable<int>("IsMixed")),
+      is_mixed_(particles_->registerStateVariableData<int>("IsMixed")),
       color_indicator_(particles_->getVariableDataByName<int>("ColorIndicator")),
       interactive_radius_(mixing_rate_interactive_radius) 
 {
