@@ -103,7 +103,7 @@ InitialiseColorIndicator::InitialiseColorIndicator(SPHBody &sph_body)
       color_indicator_(particles_->registerStateVariableData<int>("ColorIndicator")),
       pos_(particles_->getVariableDataByName<Vecd>("Position"))
 {
-    particles_->addVariableToSort<int>("ColorIndicator");
+    particles_->addEvolvingVariable<int>("ColorIndicator");
     particles_->addVariableToWrite<int>("ColorIndicator");
 }
 //=============================================================================================//
@@ -240,7 +240,7 @@ TagMixedParticle::TagMixedParticle(BaseInnerRelation &inner_relation, Real mixin
       color_indicator_(particles_->getVariableDataByName<int>("ColorIndicator")),
       interactive_radius_(mixing_rate_interactive_radius) 
 {
-    particles_->addVariableToSort<int>("IsMixed");
+    particles_->addEvolvingVariable<int>("IsMixed");
     particles_->addVariableToWrite<int>("IsMixed");
 }
 //=================================================================================================//
