@@ -261,14 +261,14 @@ Vecd point_out = point_out_temp * scale_temp;
 ///*
 //% For G14
 Vecd point_1(36.5, -42.0185, 2.0);
-Vecd point_2(55.5210, -3.90218, 2.0);
-Vecd point_3(42.0185, 36.5000, 2.0);
-Vecd point_4(3.90218, 55.5210, 2.0);
-Vecd point_5(-36.5000, 42.0185, 2.0);
-Vecd point_6(-55.5210, 3.90218, 2.0);
-Vecd point_7(-42.0185, -36.5000, 2.0);
-Vecd point_8(-3.90218, -55.5210, 2.0);
-Vecd point_out(56.1977, 0.0, 23.0000);
+//Vecd point_2(55.5210, -3.90218, 2.0);
+//Vecd point_3(42.0185, 36.5000, 2.0);
+//Vecd point_4(3.90218, 55.5210, 2.0);
+//Vecd point_5(-36.5000, 42.0185, 2.0);
+//Vecd point_6(-55.5210, 3.90218, 2.0);
+//Vecd point_7(-42.0185, -36.5000, 2.0);
+//Vecd point_8(-3.90218, -55.5210, 2.0);
+Vecd point_out(36.5, -27.0185, 2.0);
 
 
 //% For G14 Initial color bounding point 
@@ -276,13 +276,13 @@ StdVec<Vecd> box_initial_bounding;
 void getInitialBoundingBox()
 {
     box_initial_bounding.push_back(point_1);
-    box_initial_bounding.push_back(point_2);
-    box_initial_bounding.push_back(point_3);
-    box_initial_bounding.push_back(point_4);
-    box_initial_bounding.push_back(point_5);
-    box_initial_bounding.push_back(point_6);
-    box_initial_bounding.push_back(point_7);
-    box_initial_bounding.push_back(point_8);
+    //box_initial_bounding.push_back(point_2);
+    //box_initial_bounding.push_back(point_3);
+    //box_initial_bounding.push_back(point_4);
+    //box_initial_bounding.push_back(point_5);
+    //box_initial_bounding.push_back(point_6);
+    //box_initial_bounding.push_back(point_7);
+    //box_initial_bounding.push_back(point_8);
 }
 //*/
 
@@ -300,58 +300,58 @@ Eigen::AngleAxisd rotation_1(inlet_1_rotation_angle, axis_vector_z);
 Vecd inlet_1_flow_unit_vector = rotation_1 * axis_vector_y;
 Vecd inlet_1_buffer_translation = point_1 + 0.5 * buffer_thickness * inlet_1_flow_unit_vector;
 Vecd inlet_1_sub_buffer_translation = inlet_1_buffer_translation - buffer_thickness * inlet_1_flow_unit_vector;
-
-Real inlet_2_rotation_angle = 45.0 * M_PI / 180.0;
-Rotation3d inlet_2_rotation(inlet_2_rotation_angle, axis_vector_z);
-Eigen::AngleAxisd rotation_2(inlet_2_rotation_angle, axis_vector_z);
-Vecd inlet_2_flow_unit_vector = rotation_2 * axis_vector_y;
-Vecd inlet_2_buffer_translation = point_2 + 0.5 * buffer_thickness * inlet_2_flow_unit_vector;
-Vecd inlet_2_sub_buffer_translation = inlet_2_buffer_translation - buffer_thickness * inlet_2_flow_unit_vector;
-
-Real inlet_3_rotation_angle = 45.0 * 2.0 * M_PI / 180.0;
-Rotation3d inlet_3_rotation(inlet_3_rotation_angle, axis_vector_z);
-Eigen::AngleAxisd rotation_3(inlet_3_rotation_angle, axis_vector_z);
-Vecd inlet_3_flow_unit_vector = rotation_3 * axis_vector_y;
-Vecd inlet_3_buffer_translation = point_3 + 0.5 * buffer_thickness * inlet_3_flow_unit_vector;
-Vecd inlet_3_sub_buffer_translation = inlet_3_buffer_translation - buffer_thickness * inlet_3_flow_unit_vector;
-
-Real inlet_4_rotation_angle = 45.0 * 3.0 * M_PI / 180.0;
-Rotation3d inlet_4_rotation(inlet_4_rotation_angle, axis_vector_z);
-Eigen::AngleAxisd rotation_4(inlet_4_rotation_angle, axis_vector_z);
-Vecd inlet_4_flow_unit_vector = rotation_4 * axis_vector_y;
-Vecd inlet_4_buffer_translation = point_4 + 0.5 * buffer_thickness * inlet_4_flow_unit_vector;
-Vecd inlet_4_sub_buffer_translation = inlet_4_buffer_translation - buffer_thickness * inlet_4_flow_unit_vector;
-
-Real inlet_5_rotation_angle = 45.0 * 4.0 * M_PI / 180.0;
-Rotation3d inlet_5_rotation(inlet_5_rotation_angle, axis_vector_z);
-Eigen::AngleAxisd rotation_5(inlet_5_rotation_angle, axis_vector_z);
-Vecd inlet_5_flow_unit_vector = rotation_5 * axis_vector_y;
-Vecd inlet_5_buffer_translation = point_5 + 0.5 * buffer_thickness * inlet_5_flow_unit_vector;
-Vecd inlet_5_sub_buffer_translation = inlet_5_buffer_translation - buffer_thickness * inlet_5_flow_unit_vector;
-
-Real inlet_6_rotation_angle = 45.0 * 5.0 * M_PI / 180.0;
-Rotation3d inlet_6_rotation(inlet_6_rotation_angle, axis_vector_z);
-Eigen::AngleAxisd rotation_6(inlet_6_rotation_angle, axis_vector_z);
-Vecd inlet_6_flow_unit_vector = rotation_6 * axis_vector_y;
-Vecd inlet_6_buffer_translation = point_6 + 0.5 * buffer_thickness * inlet_6_flow_unit_vector;
-Vecd inlet_6_sub_buffer_translation = inlet_6_buffer_translation - buffer_thickness * inlet_6_flow_unit_vector;
-
-Real inlet_7_rotation_angle = 45.0 * 6.0 * M_PI / 180.0;
-Rotation3d inlet_7_rotation(inlet_7_rotation_angle, axis_vector_z);
-Eigen::AngleAxisd rotation_7(inlet_7_rotation_angle, axis_vector_z);
-Vecd inlet_7_flow_unit_vector = rotation_7 * axis_vector_y;
-Vecd inlet_7_buffer_translation = point_7 + 0.5 * buffer_thickness * inlet_7_flow_unit_vector;
-Vecd inlet_7_sub_buffer_translation = inlet_7_buffer_translation - buffer_thickness * inlet_7_flow_unit_vector;
-
-Real inlet_8_rotation_angle = 45.0 * 7.0 * M_PI / 180.0;
-Rotation3d inlet_8_rotation(inlet_8_rotation_angle, axis_vector_z);
-Eigen::AngleAxisd rotation_8(inlet_8_rotation_angle, axis_vector_z);
-Vecd inlet_8_flow_unit_vector = rotation_8 * axis_vector_y;
-Vecd inlet_8_buffer_translation = point_8 + 0.5 * buffer_thickness * inlet_8_flow_unit_vector;
-Vecd inlet_8_sub_buffer_translation = inlet_8_buffer_translation - buffer_thickness * inlet_8_flow_unit_vector;
+//
+//Real inlet_2_rotation_angle = 45.0 * M_PI / 180.0;
+//Rotation3d inlet_2_rotation(inlet_2_rotation_angle, axis_vector_z);
+//Eigen::AngleAxisd rotation_2(inlet_2_rotation_angle, axis_vector_z);
+//Vecd inlet_2_flow_unit_vector = rotation_2 * axis_vector_y;
+//Vecd inlet_2_buffer_translation = point_2 + 0.5 * buffer_thickness * inlet_2_flow_unit_vector;
+//Vecd inlet_2_sub_buffer_translation = inlet_2_buffer_translation - buffer_thickness * inlet_2_flow_unit_vector;
+//
+//Real inlet_3_rotation_angle = 45.0 * 2.0 * M_PI / 180.0;
+//Rotation3d inlet_3_rotation(inlet_3_rotation_angle, axis_vector_z);
+//Eigen::AngleAxisd rotation_3(inlet_3_rotation_angle, axis_vector_z);
+//Vecd inlet_3_flow_unit_vector = rotation_3 * axis_vector_y;
+//Vecd inlet_3_buffer_translation = point_3 + 0.5 * buffer_thickness * inlet_3_flow_unit_vector;
+//Vecd inlet_3_sub_buffer_translation = inlet_3_buffer_translation - buffer_thickness * inlet_3_flow_unit_vector;
+//
+//Real inlet_4_rotation_angle = 45.0 * 3.0 * M_PI / 180.0;
+//Rotation3d inlet_4_rotation(inlet_4_rotation_angle, axis_vector_z);
+//Eigen::AngleAxisd rotation_4(inlet_4_rotation_angle, axis_vector_z);
+//Vecd inlet_4_flow_unit_vector = rotation_4 * axis_vector_y;
+//Vecd inlet_4_buffer_translation = point_4 + 0.5 * buffer_thickness * inlet_4_flow_unit_vector;
+//Vecd inlet_4_sub_buffer_translation = inlet_4_buffer_translation - buffer_thickness * inlet_4_flow_unit_vector;
+//
+//Real inlet_5_rotation_angle = 45.0 * 4.0 * M_PI / 180.0;
+//Rotation3d inlet_5_rotation(inlet_5_rotation_angle, axis_vector_z);
+//Eigen::AngleAxisd rotation_5(inlet_5_rotation_angle, axis_vector_z);
+//Vecd inlet_5_flow_unit_vector = rotation_5 * axis_vector_y;
+//Vecd inlet_5_buffer_translation = point_5 + 0.5 * buffer_thickness * inlet_5_flow_unit_vector;
+//Vecd inlet_5_sub_buffer_translation = inlet_5_buffer_translation - buffer_thickness * inlet_5_flow_unit_vector;
+//
+//Real inlet_6_rotation_angle = 45.0 * 5.0 * M_PI / 180.0;
+//Rotation3d inlet_6_rotation(inlet_6_rotation_angle, axis_vector_z);
+//Eigen::AngleAxisd rotation_6(inlet_6_rotation_angle, axis_vector_z);
+//Vecd inlet_6_flow_unit_vector = rotation_6 * axis_vector_y;
+//Vecd inlet_6_buffer_translation = point_6 + 0.5 * buffer_thickness * inlet_6_flow_unit_vector;
+//Vecd inlet_6_sub_buffer_translation = inlet_6_buffer_translation - buffer_thickness * inlet_6_flow_unit_vector;
+//
+//Real inlet_7_rotation_angle = 45.0 * 6.0 * M_PI / 180.0;
+//Rotation3d inlet_7_rotation(inlet_7_rotation_angle, axis_vector_z);
+//Eigen::AngleAxisd rotation_7(inlet_7_rotation_angle, axis_vector_z);
+//Vecd inlet_7_flow_unit_vector = rotation_7 * axis_vector_y;
+//Vecd inlet_7_buffer_translation = point_7 + 0.5 * buffer_thickness * inlet_7_flow_unit_vector;
+//Vecd inlet_7_sub_buffer_translation = inlet_7_buffer_translation - buffer_thickness * inlet_7_flow_unit_vector;
+//
+//Real inlet_8_rotation_angle = 45.0 * 7.0 * M_PI / 180.0;
+//Rotation3d inlet_8_rotation(inlet_8_rotation_angle, axis_vector_z);
+//Eigen::AngleAxisd rotation_8(inlet_8_rotation_angle, axis_vector_z);
+//Vecd inlet_8_flow_unit_vector = rotation_8 * axis_vector_y;
+//Vecd inlet_8_buffer_translation = point_8 + 0.5 * buffer_thickness * inlet_8_flow_unit_vector;
+//Vecd inlet_8_sub_buffer_translation = inlet_8_buffer_translation - buffer_thickness * inlet_8_flow_unit_vector;
 
 //** axis-FLOW for X, L_outlet for Y, H_outlet for Z,  */
-Vecd outlet_buffer_halfsize = 0.5 * Vecd(buffer_thickness, L_outlet, H_outlet);
+Vecd outlet_buffer_halfsize = 0.5 * Vecd(L_inlet + 0.5 * resolution_ref, buffer_thickness, H_inlet);
 
 Real outlet_rotation_angle = 0.0 * M_PI / 180.0;
 Real outlet_rotation_angle_reverse = M_PI + outlet_rotation_angle; //%% In this code, the outlet is defined by the inflow direction
@@ -360,7 +360,7 @@ Rotation3d outlet_rotation(outlet_rotation_angle, axis_vector_z);
 Rotation3d outlet_rotation_reverse(outlet_rotation_angle_reverse, axis_vector_z);
 
 Eigen::AngleAxisd rotation_outlet(outlet_rotation_angle, axis_vector_z);
-Vecd outlet_flow_unit_vector = rotation_outlet * axis_vector_x;
+Vecd outlet_flow_unit_vector = rotation_outlet * axis_vector_y;
 Vecd outlet_buffer_translation = point_out - 0.5 * buffer_thickness * outlet_flow_unit_vector;
 Vecd outlet_sub_buffer_translation = outlet_buffer_translation + buffer_thickness * outlet_flow_unit_vector;
 
@@ -370,7 +370,7 @@ Vecd outlet_sub_buffer_translation = outlet_buffer_translation + buffer_thicknes
 //----------------------------------------------------------------------
 //	Cases-dependent geometries
 //----------------------------------------------------------------------
-std::string stl_fluid_path = "./input/g14_0p19.stl";
+std::string stl_fluid_path = "./input/g14-return-straight-0p19.stl";
 Real scale_factor_fluid = 1.0;
 Vecd translation_stl_fluid(0.0, 0.0, 0.0);
 class WaterBlock : public ComplexShape
@@ -383,7 +383,7 @@ class WaterBlock : public ComplexShape
 };
 
 /** Set the file path to the stl file. */
-std::string stl_structure_path = "./input/g14_0p19.stl"; //% This also denote which file we use
+std::string stl_structure_path = "./input/g14-return-straight-0p19.stl"; //% This also denote which file we use
 Real scale_factor = 1.0;
 Vecd translation_stl(0.0, 0.0, 0.0);
 class WallBoundaryFromSTL : public ComplexShape
