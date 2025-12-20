@@ -100,7 +100,6 @@ class BidirectionalBuffer
               buffer_indicator_(particles_->getVariableDataByName<int>("BufferIndicator")),
               upper_bound_fringe_(0.5 * sph_body_->getSPHBodyResolutionRef()),
               physical_time_(sph_system_->getSystemVariableDataByName<Real>("PhysicalTime")),
-              color_indicator_(particles_->getVariableDataByName<int>("ColorIndicator")),
               target_pressure_(target_pressure)
         {
             particle_buffer_.checkParticlesReserved();
@@ -119,8 +118,6 @@ class BidirectionalBuffer
                     particle_buffer_.checkEnoughBuffer(*particles_);
                     size_t new_particle_index = particles_->createRealParticleFrom(index_i);
                     buffer_indicator_[new_particle_index] = 0;
-
-                    color_indicator_[index_i] = part_id_;
 
                     /** Periodic bounding. */
                     pos_[index_i] = aligned_box_.getUpperPeriodic(pos_[index_i]);
@@ -144,7 +141,6 @@ class BidirectionalBuffer
         int *previous_surface_indicator_, *buffer_indicator_;
         Real upper_bound_fringe_;
         Real *physical_time_;
-        int *color_indicator_;
 
       private:
         TargetPressure &target_pressure_;
