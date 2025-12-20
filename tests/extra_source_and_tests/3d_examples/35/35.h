@@ -370,7 +370,7 @@ Vecd outlet_sub_buffer_translation = outlet_buffer_translation + buffer_thicknes
 //----------------------------------------------------------------------
 //	Cases-dependent geometries
 //----------------------------------------------------------------------
-std::string stl_fluid_path = "./input/g14_0p79.stl";
+std::string stl_fluid_path = "./input/g14_0p19.stl";
 Real scale_factor_fluid = 1.0;
 Vecd translation_stl_fluid(0.0, 0.0, 0.0);
 class WaterBlock : public ComplexShape
@@ -383,7 +383,7 @@ class WaterBlock : public ComplexShape
 };
 
 /** Set the file path to the stl file. */
-std::string stl_structure_path = "./input/g14_0p79.stl"; //% This also denote which file we use
+std::string stl_structure_path = "./input/g14_0p19.stl"; //% This also denote which file we use
 Real scale_factor = 1.0;
 Vecd translation_stl(0.0, 0.0, 0.0);
 class WallBoundaryFromSTL : public ComplexShape
