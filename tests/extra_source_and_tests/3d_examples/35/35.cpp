@@ -326,8 +326,8 @@ int main(int ac, char *av[])
 
     //SimpleDynamics<ClearBufferParticleIndicator> clear_buffer_particle_indicator(water_block, zAxis, H_inlet, H_inlet + BW); //% This is case-dependent
 
-    //InteractionWithUpdate<fluid_dynamics::DensitySummationPressureComplex> update_fluid_density_pressure(water_block_inner, water_wall_contact);
-    InteractionWithUpdate<fluid_dynamics::DensitySummationFreeStreamComplex> update_fluid_density_freestream(water_block_inner, water_wall_contact);
+    InteractionWithUpdate<fluid_dynamics::DensitySummationPressureComplex> update_fluid_density_pressure(water_block_inner, water_wall_contact);
+    //InteractionWithUpdate<fluid_dynamics::DensitySummationFreeStreamComplex> update_fluid_density_freestream(water_block_inner, water_wall_contact);
 
     /** Choose one, ordinary or turbulent. Time step size without considering sound wave speed. */
     ReduceDynamics<fluid_dynamics::AdvectionViscousTimeStep> get_fluid_advection_time_step_size(water_block, U_f);
@@ -468,8 +468,8 @@ int main(int ac, char *av[])
             //Real Dt = get_turbulent_fluid_advection_time_step_size.exec();
 
             //update_density_by_summation.exec();
-            //update_fluid_density_pressure.exec();
-            update_fluid_density_freestream.exec();
+            update_fluid_density_pressure.exec();
+            //update_fluid_density_freestream.exec();
 
             //** This is to address the bug in density summation *
             update_volume.exec();
