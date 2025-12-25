@@ -299,6 +299,21 @@ int CalculateMixedFluidParticleNumberInOutletChannel::reduce(size_t index_i, Rea
         return 0;
     }
 }
+//=============================================================================================//
+UpdateVolumeAndAddIndicatorAsEvolving::UpdateVolumeAndAddIndicatorAsEvolving(SPHBody& sph_body)
+    : LocalDynamics(sph_body),
+    indicator_(particles_->getVariableDataByName<int>("Indicator")),
+    rho_(this->particles_->template getVariableDataByName<Real>("Density")),
+    mass_(this->particles_->template getVariableDataByName<Real>("Mass")),
+    Vol_(this->particles_->template getVariableDataByName<Real>("VolumetricMeasure"))
+{
+    particles_->addEvolvingVariable<int>("Indicator");
+}
+//=============================================================================================//
+void UpdateVolumeAndAddIndicatorAsEvolving::update(size_t index_i, Real dt)
+{
+    Vol_[index_i] = mass_[index_i] / rho_[index_i];
+}
 //=================================================================================================//
 } // namespace SPH
   //=================================================================================================//

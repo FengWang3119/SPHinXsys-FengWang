@@ -246,5 +246,19 @@ class CalculateMixedFluidParticleNumberInOutletChannel : public LocalDynamicsRed
     Real height_inlet_channel_;
 };
 //=================================================================================================//
+class UpdateVolumeAndAddIndicatorAsEvolving : public LocalDynamics
+{
+public:
+    explicit UpdateVolumeAndAddIndicatorAsEvolving(SPHBody& sph_body);
+    virtual ~UpdateVolumeAndAddIndicatorAsEvolving() {};
+
+    void update(size_t index_i, Real dt = 0.0);
+
+protected:
+    int *indicator_;
+    Real *rho_, *mass_, *Vol_;
+};
+
+//=================================================================================================//
 } // namespace SPH
 #endif // K_EPSILON_TURBULENT_MODEL_H

@@ -8,6 +8,13 @@ int main(int ac, char *av[])
      */
     SPHSystem sph_system(system_domain_bounds, resolution_ref);
 
+    /** Restart. */
+    bool is_write_restart_file = false;
+    sph_system.setRestartStep(35000);
+
+    /** Average. */
+    bool is_write_average_contour_file = false;
+
     /** Tag for run particle relaxation for the initial body fitted distribution. */
     sph_system.setRunParticleRelaxation(false);
     /** Tag for computation start with relaxed body fitted particles distribution. */
@@ -336,6 +343,8 @@ int main(int ac, char *av[])
     ReduceDynamics<CalculateFluidParticleNumberInOutletChannel> calculate_fluid_particle_number_in_outlet_channel(water_block, Radius_chamber, H_inlet);
     ReduceDynamics<CalculateMixedFluidParticleNumberInOutletChannel> calculate_mixed_fluid_particle_number_in_outlet_channel(water_block, Radius_chamber, H_inlet);
 
+    SimpleDynamics<UpdateVolumeAndAddIndicatorAsEvolving> update_volume(water_block);
+
     //----------------------------------------------------------------------
     //	Define the configuration related particles dynamics.
     //----------------------------------------------------------------------
@@ -344,6 +353,10 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     //	File output and regression check.
     //----------------------------------------------------------------------
+
+    /** Restart. */
+    RestartIO restart_io(sph_system);
+
     /** Output the body states. */
     BodyStatesRecordingToVtp body_states_recording(sph_system);
     body_states_recording.addToWrite<Real>(water_block, "Pressure"); // output for debug
@@ -399,6 +412,18 @@ int main(int ac, char *av[])
     //	Setup computing and initial conditions.
     //----------------------------------------------------------------------
     Real &physical_time = *sph_system.getSystemVariableDataByName<Real>("PhysicalTime");
+
+    /** Restart. */
+    if (sph_system.RestartStep() != 0)
+    {
+        physical_time = restart_io.readRestartFiles(sph_system.RestartStep());
+        water_block.updateCellLinkedList();
+        water_block_complex.updateConfiguration();
+        observer_centerpoint_contact.updateConfiguration();
+        fluid_observer_contact2.updateConfiguration();
+    }
+    int restart_output_interval = 1000;
+
     size_t number_of_iterations = sph_system.RestartStep();
     int screen_output_interval = 100;
     Real end_time = 6000.0;                     /**< End time. */
@@ -409,7 +434,9 @@ int main(int ac, char *av[])
     Real index_check_file_fully_developed = num_output_files * cutoff_ratio;
     Real dt = 0.0; /**< Default acoustic time step sizes. */
 
-    Real time_output_average_data = 400.0; //% Average
+    Real time_output_contour_average_data = 400.0; //% Average
+
+    Real time_output_mixing_data = 400.0; //% Mixing
 
     //----------------------------------------------------------------------
     //	Statistics for CPU time
@@ -443,6 +470,9 @@ int main(int ac, char *av[])
             //update_density_by_summation.exec();
             //update_fluid_density_pressure.exec();
             update_fluid_density_freestream.exec();
+
+            //** This is to address the bug in density summation *
+            update_volume.exec();
 
             corrected_configuration_fluid.exec();
 
@@ -504,6 +534,14 @@ int main(int ac, char *av[])
                         << physical_time
                         << "	Dt = " << Dt << "	dt = " << dt << std::endl;
             }
+            /** Restart. */
+            if(is_write_restart_file)
+            { 
+                if (number_of_iterations % restart_output_interval == 0)
+                {
+                    restart_io.writeToFile(number_of_iterations);
+                }
+            }
             number_of_iterations++;
 
             // ** First do injection for all buffers *
@@ -557,7 +595,7 @@ int main(int ac, char *av[])
             /** Tag mixed particles*/
             tag_mixed_particle.exec();
             /** Calculate mixing rate */
-            if (physical_time > time_output_average_data)
+            if (physical_time > time_output_mixing_data)
             {
                 int number_fluid_particle_in_outlet_channel = calculate_fluid_particle_number_in_outlet_channel.exec();
                 int number_mixed_fluid_particle_in_outlet_channel = calculate_mixed_fluid_particle_number_in_outlet_channel.exec();
@@ -571,14 +609,18 @@ int main(int ac, char *av[])
                     << mixing_rate_outlet_channel << "\n";
             }
 
-            if (physical_time > time_output_average_data * 100.0)
+            if (is_write_average_contour_file)
             {
-                fluid_observer_contact2.updateConfiguration(); //% Average
-                //% Average pressure
-                observing_pressure.exec();
-                average_pressure.exec();
-                // observing_buffer_particle_indicator.exec();
+                if (physical_time > time_output_contour_average_data)
+                {
+                    fluid_observer_contact2.updateConfiguration(); //% Average
+                    //% Average pressure
+                    observing_pressure.exec();
+                    average_pressure.exec();
+                    // observing_buffer_particle_indicator.exec();
+                }
             }
+            
 
             // if (physical_time > cutoff_time)
             // {
@@ -597,9 +639,12 @@ int main(int ac, char *av[])
         //    system("pause");
         //TickCount t3 = TickCount::now();
         
-        if (physical_time > time_output_average_data)
+        if (is_write_average_contour_file)
         {
-            write_observation_states.writeToFile(); //% Average
+            if (physical_time > time_output_contour_average_data)
+            {
+                write_observation_states.writeToFile(); //% Average
+            }
         }
     }
     TickCount t4 = TickCount::now();
