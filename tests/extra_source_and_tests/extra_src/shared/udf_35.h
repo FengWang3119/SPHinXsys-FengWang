@@ -27,8 +27,8 @@
  * @author Xiangyu Hu
  */
 
-#ifndef ZEROTH_ORDER_RESIDUE_H
-#define ZEROTH_ORDER_RESIDUE_H
+#ifndef UDF_35_H
+#define UDF_35_H
 
 #include "sphinxsys.h"
 #include <mutex>
