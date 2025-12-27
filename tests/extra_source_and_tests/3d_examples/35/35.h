@@ -441,54 +441,54 @@ struct LeftInflowPressure
     }
 };
 //----------------------------------------------------------------------
-// Observation with offset model.
+// Observation.
 //----------------------------------------------------------------------
-//** For getting centerline velocity *
-// namespace observe_centerline
-// {
-// constexpr const char *namespace_prefix = "centerline";
-// Vecd pos_observe_start = point_O;
-// Real sparsity_ratio = 5.0;
-// Real length_observing_line = DL;
-// Vecd unit_direction_observe = Vecd(0.0, 0.0, 1.0);
-// Real observer_offset_distance = 0.0;
+//** For getting centerline velocity, at clip Z where half outlet channel height *
+ namespace observe_centerline
+ {
+ constexpr const char *namespace_prefix = "centerline";
+ Vecd pos_observe_start = Vecd(0.0, 0.0, point_out[zAxis]);
+ Real sparsity_ratio = 5.0;
+ Real length_observing_line = Radius_chamber + L_outlet;
+ Vecd unit_direction_observe = Vecd(1.0, 0.0, 0.0);
+ Real observer_offset_distance = 0.0;
 
-// int num_observer_points = std::round(length_observing_line / resolution_ref / sparsity_ratio); //**Every particle is regarded as a cell monitor*
-// Real observe_spacing = length_observing_line / num_observer_points;
+ int num_observer_points = std::round(length_observing_line / resolution_ref / sparsity_ratio); //**Every particle is regarded as a cell monitor*
+ Real observe_spacing = length_observing_line / num_observer_points;
 
-// StdVec<Vecd> observation_location;
-// void get_observation_locations()
-// {
-//     for (int i = 0; i < num_observer_points; ++i)
-//     {
-//         Vecd pos_observer_i = pos_observe_start + i * observe_spacing * unit_direction_observe;
-//         if (i == 0)
-//         {
-//             pos_observer_i -= observer_offset_distance * unit_direction_observe;
-//         }
-//         if (i == num_observer_points - 1)
-//         {
-//             pos_observer_i += observer_offset_distance * unit_direction_observe;
-//         }
-//         observation_location.push_back(pos_observer_i);
-//     }
-// }
-// void output_observer_theoretical_pos_on_line()
-// {
-//     std::string filename = "../bin/output/" + std::string(namespace_prefix) + "_theoretical_pos_on_line.dat";
-//     std::ofstream outfile(filename);
-//     if (!outfile.is_open())
-//     {
-//         std::cerr << "Error: Unable to open file " << filename << " for writing." << std::endl;
-//         return;
-//     }
-//     for (int i = 0; i < num_observer_points; ++i)
-//     {
-//         outfile << observation_location[i].dot(unit_direction_observe) << "\n";
-//     }
-//     outfile.close();
-// }
-// } // namespace observe_centerline
+ StdVec<Vecd> observation_location;
+ void get_observation_locations()
+ {
+     for (int i = 0; i < num_observer_points; ++i)
+     {
+         Vecd pos_observer_i = pos_observe_start + i * observe_spacing * unit_direction_observe;
+         if (i == 0)
+         {
+             pos_observer_i -= observer_offset_distance * unit_direction_observe;
+         }
+         if (i == num_observer_points - 1)
+         {
+             pos_observer_i += observer_offset_distance * unit_direction_observe;
+         }
+         observation_location.push_back(pos_observer_i);
+     }
+ }
+ void output_observer_theoretical_pos_on_line()
+ {
+     std::string filename = "../bin/output/" + std::string(namespace_prefix) + "_theoretical_pos_on_line.dat";
+     std::ofstream outfile(filename);
+     if (!outfile.is_open())
+     {
+         std::cerr << "Error: Unable to open file " << filename << " for writing." << std::endl;
+         return;
+     }
+     for (int i = 0; i < num_observer_points; ++i)
+     {
+         outfile << observation_location[i].dot(unit_direction_observe) << "\n";
+     }
+     outfile.close();
+ }
+ } // namespace observe_centerline
 
 // //** For getting cross-section velocity *
 // namespace observe_cross_sections

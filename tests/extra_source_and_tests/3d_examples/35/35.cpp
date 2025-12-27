@@ -10,10 +10,12 @@ int main(int ac, char *av[])
 
     /** Restart. */
     bool is_write_restart_file = false;
+    int restart_output_interval = 500;
     sph_system.setRestartStep(35000);
 
     /** Average. */
     bool is_write_average_contour_file = false;
+    Real time_output_contour_average_data = 400.0; //% Average
 
     /** Tag for run particle relaxation for the initial body fitted distribution. */
     sph_system.setRunParticleRelaxation(false);
@@ -55,10 +57,11 @@ int main(int ac, char *av[])
         ? observer_body.generateParticles<BaseParticles, Reload>(water_block.getName())
         : observer_body.generateParticles<BaseParticles, Lattice>();
 
-    // observe_centerline::get_observation_locations();
-    // observe_centerline::output_observer_theoretical_pos_on_line();
-    // ObserverBody fluid_observer_centerline(sph_system, "FluidObserverCenterline");
-    // fluid_observer_centerline.generateParticles<ObserverParticles>(observe_centerline::observation_location);
+     //** observe_centerline *
+     observe_centerline::get_observation_locations();
+     observe_centerline::output_observer_theoretical_pos_on_line();
+     ObserverBody fluid_observer_centerline(sph_system, "FluidObserverCenterline");
+     fluid_observer_centerline.generateParticles<ObserverParticles>(observe_centerline::observation_location);
 
     // observe_cross_sections::getPositionsOfMultipleObserveLines();
     // observe_cross_sections::output_observe_positions();
@@ -70,7 +73,7 @@ int main(int ac, char *av[])
     /** topology */
     InnerRelation water_block_inner(water_block);
     ContactRelation water_wall_contact(water_block, {&wall_boundary});
-    // ContactRelation fluid_observer_centerline_contact(fluid_observer_centerline, {&water_block});
+    ContactRelation fluid_observer_centerline_contact(fluid_observer_centerline, {&water_block}); //** observe_centerline *
     // ContactRelation fluid_observer_cross_section_contact(fluid_observer_cross_section, {&water_block});
     ContactRelation observer_centerpoint_contact(observer_center_point, {&water_block});
 
@@ -363,12 +366,15 @@ int main(int ac, char *av[])
     body_states_recording.addToWrite<int>(water_block, "Indicator"); // output for debug
     body_states_recording.addToWrite<Real>(water_block, "Density");  // output for debug
     //body_states_recording.addToWrite<Vecd>(water_block, "ZeroGradientResidue"); // output for debug
-    // ObservedQuantityRecording<Vecd> write_recorded_water_centerline_velocity("Velocity", fluid_observer_centerline_contact);
-    // ObservedQuantityRecording<Real> write_recorded_water_centerline_pressure("Pressure", fluid_observer_centerline_contact);
-    // ObservedQuantityRecording<Vecd> write_recorded_water_velocity_cross_section("Velocity", fluid_observer_cross_section_contact);
     body_states_recording.addToWrite<int>(water_block, "BufferIndicator");
     //body_states_recording.addToWrite<Real>(water_block, "VolumetricMeasure");
     body_states_recording.addToWrite<Matd>(water_block, "LinearGradientCorrectionMatrix");
+
+    //** observe_centerline *
+    ObservedQuantityRecording<Vecd> write_recorded_water_centerline_velocity("Velocity", fluid_observer_centerline_contact);
+    ObservedQuantityRecording<Real> write_recorded_water_centerline_pressure("Pressure", fluid_observer_centerline_contact);
+    
+    // ObservedQuantityRecording<Vecd> write_recorded_water_velocity_cross_section("Velocity", fluid_observer_cross_section_contact);
 
     WriteToVtpIfVelocityOutOfBound abnormal_velocity_recording(sph_system, 1.0e6 * U_max);
 
@@ -420,21 +426,23 @@ int main(int ac, char *av[])
         water_block.updateCellLinkedList();
         water_block_complex.updateConfiguration();
         observer_centerpoint_contact.updateConfiguration();
-        fluid_observer_contact2.updateConfiguration();
+        fluid_observer_contact2.updateConfiguration(); //** Average *
+        fluid_observer_centerline_contact.updateConfiguration(); //** observe_centerline *
     }
-    int restart_output_interval = 1000;
-
     size_t number_of_iterations = sph_system.RestartStep();
+    
+    //** output control *
     int screen_output_interval = 100;
     Real end_time = 6000.0;                     /**< End time. */
-    Real cutoff_ratio = 0.92;                   //** cutoff_time should be a integral and the same as the PY script */
-    Real cutoff_time = cutoff_ratio * end_time; //** cutoff_time should be a integral and the same as the PY script */
     Real num_output_files = 600.0;
     Real Output_Time = end_time / num_output_files; /**< Time stamps for output of body states. */
-    Real index_check_file_fully_developed = num_output_files * cutoff_ratio;
-    Real dt = 0.0; /**< Default acoustic time step sizes. */
 
-    Real time_output_contour_average_data = 400.0; //% Average
+    //** observe_centerline *
+    //Real cutoff_ratio = 0.92;                   //** cutoff_time should be a integral and the same as the PY script */
+    //Real cutoff_time = cutoff_ratio * end_time; //** cutoff_time should be a integral and the same as the PY script */
+    Real cutoff_time = 400.0;
+    Real cutoff_ratio = cutoff_time / end_time;
+    Real index_check_file_fully_developed = num_output_files * cutoff_ratio;
 
     Real time_output_mixing_data = 400.0; //% Mixing
 
@@ -453,6 +461,7 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------------------------------------
      //std::cout << "Simulation starts?" << std::endl;
      //std::cin.get();
+    Real dt = 0.0; /**< Default acoustic time step sizes. */
     int num_output_file = 0;
     std::ofstream logfile("output/output.log");
     std::ofstream mixing_file("output/mixing_rate.dat");
@@ -465,7 +474,6 @@ int main(int ac, char *av[])
             //apply_gravity_force.exec();
 
             Real Dt = get_fluid_advection_time_step_size.exec();
-            //Real Dt = get_turbulent_fluid_advection_time_step_size.exec();
 
             //update_density_by_summation.exec();
             update_fluid_density_pressure.exec();
@@ -477,7 +485,6 @@ int main(int ac, char *av[])
             corrected_configuration_fluid.exec();
 
             viscous_force.exec();
-            //turbulent_viscous_force.exec();
 
             transport_velocity_correction.exec();
 
@@ -572,7 +579,7 @@ int main(int ac, char *av[])
             }
             water_block.updateCellLinkedList();
             water_block_complex.updateConfiguration();
-            //fluid_observer_centerline_contact.updateConfiguration();
+            fluid_observer_centerline_contact.updateConfiguration(); //** observe_centerline *
             //fluid_observer_cross_section_contact.updateConfiguration();
 
             /** Tag truncated inlet/outlet particles*/
@@ -621,13 +628,14 @@ int main(int ac, char *av[])
                 }
             }
             
-
-            // if (physical_time > cutoff_time)
-            // {
-            //     write_recorded_water_centerline_velocity.writeToFile(number_of_iterations);
-            //     write_recorded_water_centerline_pressure.writeToFile(number_of_iterations);
-            //     write_recorded_water_velocity_cross_section.writeToFile(number_of_iterations);
-            // }
+             if (physical_time > cutoff_time)
+             {
+                 //** observe_centerline *
+                 write_recorded_water_centerline_velocity.writeToFile(number_of_iterations);
+                 write_recorded_water_centerline_pressure.writeToFile(number_of_iterations);
+                 
+                 //write_recorded_water_velocity_cross_section.writeToFile(number_of_iterations);
+             }
             //if (physical_time > end_time * 0.5)
             //body_states_recording.writeToFile();
         }
