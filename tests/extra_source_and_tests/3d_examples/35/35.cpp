@@ -14,8 +14,9 @@ int main(int ac, char *av[])
     sph_system.setRestartStep(35000);
 
     /** Average. */
-    bool is_write_average_contour_file = false;
-    Real time_output_contour_average_data = 400.0; //% Average
+    bool is_write_average_contour_file = true;
+    Real time_output_contour_average_data = 1170.0; //% Average
+    int num_output_contour_average_file_limit = 1;
 
     /** Tag for run particle relaxation for the initial body fitted distribution. */
     sph_system.setRunParticleRelaxation(false);
@@ -470,6 +471,7 @@ int main(int ac, char *av[])
      //std::cin.get();
     Real dt = 0.0; /**< Default acoustic time step sizes. */
     int num_output_file = 0;
+    int num_output_contour_average_file = 0;
     std::ofstream logfile("output/output.log");
     std::ofstream mixing_file("output/mixing_rate.dat");
     while (physical_time < end_time)
@@ -623,17 +625,16 @@ int main(int ac, char *av[])
                     << mixing_rate_outlet_channel << "\n";
             }
 
-            if (is_write_average_contour_file)
-            {
-                if (physical_time > time_output_contour_average_data)
-                {
-                    fluid_observer_contact2.updateConfiguration(); //% Average
-                    //% Average pressure
-                    observing_pressure.exec();
-                    average_pressure.exec();
-                    // observing_buffer_particle_indicator.exec();
-                }
-            }
+            //if (is_write_average_contour_file)
+            //{
+            //    if (physical_time > time_output_contour_average_data)
+            //    {
+            //        if (num_output_contour_average_file <= num_output_contour_average_file_limit)
+            //        {
+
+            //        }
+            //    }
+            //}
             
              if (physical_time > cutoff_time)
              {
@@ -658,7 +659,16 @@ int main(int ac, char *av[])
         {
             if (physical_time > time_output_contour_average_data)
             {
-                write_observation_states.writeToFile(); //% Average
+                if (num_output_contour_average_file < num_output_contour_average_file_limit)
+                {
+                    fluid_observer_contact2.updateConfiguration(); //% Average
+                    //% Average pressure
+                    observing_pressure.exec();
+                    average_pressure.exec();
+                    // observing_buffer_particle_indicator.exec();
+                    write_observation_states.writeToFile(); //% Average
+                    num_output_contour_average_file++;
+                }
             }
         }
     }
