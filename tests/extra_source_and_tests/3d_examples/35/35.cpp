@@ -3,9 +3,9 @@ using namespace SPH;
 
 int main(int ac, char *av[])
 {
-    /**
-     * @brief Build up -- a SPHSystem --
-     */
+     //---------------------------------------------------------------------------------------------------
+     // Build up -- a SPHSystem --
+     //---------------------------------------------------------------------------------------------------
     SPHSystem sph_system(system_domain_bounds, resolution_ref);
 
     /** Restart. */
@@ -25,13 +25,14 @@ int main(int ac, char *av[])
     sph_system.handleCommandlineOptions(ac, av);
     IOEnvironment io_environment(sph_system);
 
+    //---------------------------------------------------------------------------------------------------
+    // Build up -- Body --
+    //---------------------------------------------------------------------------------------------------
     FluidBody water_block(sph_system, makeShared<WaterBlock>("WaterBody"));
-
     std::cout << "mu_f=" << mu_f << std::endl;
     std::cout << "water_block.defineBodyLevelSetShape starts" << std::endl;
     water_block.defineBodyLevelSetShape()->correctLevelSetSign();
     std::cout << "water_block.defineBodyLevelSetShape ends" << std::endl;
-
     water_block.defineClosure<WeaklyCompressibleFluid, Viscosity>(ConstructArgs(rho0_f, c_f), mu_f);
     ParticleBuffer<ReserveSizeFactor> inlet_particle_buffer(0.5);
     (!sph_system.RunParticleRelaxation() && sph_system.ReloadParticles())
@@ -39,11 +40,9 @@ int main(int ac, char *av[])
         : water_block.generateParticlesWithReserve<BaseParticles, Lattice>(inlet_particle_buffer);
 
     SolidBody wall_boundary(sph_system, makeShared<WallBoundaryFromSTL>("WallFromSTL"));
-
     std::cout << "wall_boundary.defineBodyLevelSetShape starts" << std::endl;
     wall_boundary.defineBodyLevelSetShape()->correctLevelSetSign();
     std::cout << "wall_boundary.defineBodyLevelSetShape ends" << std::endl;
-
     wall_boundary.defineMaterial<Solid>();
     (!sph_system.RunParticleRelaxation() && sph_system.ReloadParticles())
         ? wall_boundary.generateParticles<BaseParticles, Reload>(wall_boundary.getName())
@@ -71,23 +70,25 @@ int main(int ac, char *av[])
     // ObserverBody fluid_observer_cross_section(sph_system, "FluidObserverCrossSections");
     // fluid_observer_cross_section.generateParticles<ObserverParticles>(observe_cross_sections::observation_locations);
 
-    /** topology */
+    //---------------------------------------------------------------------------------------------------
+    // Topology 
+    //---------------------------------------------------------------------------------------------------
     InnerRelation water_block_inner(water_block);
     ContactRelation water_wall_contact(water_block, {&wall_boundary});
     ContactRelation fluid_observer_centerline_contact(fluid_observer_centerline, {&water_block}); //** observe_centerline *
     // ContactRelation fluid_observer_cross_section_contact(fluid_observer_cross_section, {&water_block});
     ContactRelation observer_centerpoint_contact(observer_center_point, {&water_block});
-
     ContactRelation fluid_observer_contact2(observer_body, {&water_block}); //% Average
 
-    //----------------------------------------------------------------------
+    //---------------------------------------------------------------------------------------------------
     // Combined relations built from basic relations
     // which is only used for update configuration.
-    //----------------------------------------------------------------------
+    //---------------------------------------------------------------------------------------------------
     ComplexRelation water_block_complex(water_block_inner, water_wall_contact);
-    //----------------------------------------------------------------------
+
+    //---------------------------------------------------------------------------------------------------
     //	Run particle relaxation for body-fitted distribution if chosen.
-    //----------------------------------------------------------------------
+    //---------------------------------------------------------------------------------------------------
     if (sph_system.RunParticleRelaxation())
     {
         using namespace relax_dynamics;
@@ -219,6 +220,9 @@ int main(int ac, char *av[])
         return 0;
     }
 
+    //---------------------------------------------------------------------------------------------------
+    //	Dynamics relevant.
+    //---------------------------------------------------------------------------------------------------
     SimpleDynamics<NormalDirectionFromBodyShape> wall_boundary_normal_direction(wall_boundary);
     InteractionDynamics<fluid_dynamics::DistanceFromWall> distance_to_wall(water_wall_contact);
     /** For pressure outlet . */
@@ -244,7 +248,7 @@ int main(int ac, char *av[])
 
     /** Impose transport velocity, with or without limiter . */
     //InteractionWithUpdate<fluid_dynamics::TransportVelocityLimitedCorrectionComplex<BulkParticles>> transport_velocity_correction(water_block_inner, water_wall_contact);
-    //      InteractionWithUpdate<fluid_dynamics::TransportVelocityCorrectionComplex<BulkParticles>> transport_velocity_correction(water_block_inner, water_wall_contact);
+    //InteractionWithUpdate<fluid_dynamics::TransportVelocityCorrectionComplex<BulkParticles>> transport_velocity_correction(water_block_inner, water_wall_contact);
     //InteractionWithUpdate<fluid_dynamics::TVC_Limited_RKGC_OBC<BulkParticles>> transport_velocity_correction(water_block_inner, water_wall_contact);
     //InteractionWithUpdate<fluid_dynamics::TVC_RKGC_OBC<BulkParticles>> transport_velocity_correction(water_block_inner, water_wall_contact);
     InteractionWithUpdate<fluid_dynamics::TransportVelocityCorrectionCorrectedForOpenBoundaryFlowComplex<BulkParticles>> transport_velocity_correction(water_block_inner, water_wall_contact);
@@ -259,6 +263,7 @@ int main(int ac, char *av[])
     SimpleDynamics<InitialiseColorIndicator> initialise_color_indicator(water_block);
     getInitialBoundingBox();
     SimpleDynamics<InitialiseColorIndicator2> initialise_color_indicator2(water_block, box_initial_bounding);
+    
     //----------------------------------------------------------------------
     // Inlet buffers
     //----------------------------------------------------------------------
@@ -317,6 +322,7 @@ int main(int ac, char *av[])
     //SimpleDynamics<fluid_dynamics::PressureCondition<LeftInflowPressure>> buffer_8_inflow_pressure_condition(buffer_8);
     SimpleDynamics<fluid_dynamics::PressureConditionCorrection<LeftInflowPressure>> buffer_8_inflow_pressure_condition(buffer_8);
     SimpleDynamics<fluid_dynamics::InflowVelocityCondition<InflowVelocity>> buffer_8_inflow_velocity_condition(buffer_8);
+    
     //----------------------------------------------------------------------
     // Outlet buffer
     //----------------------------------------------------------------------
@@ -349,15 +355,15 @@ int main(int ac, char *av[])
 
     SimpleDynamics<UpdateVolumeAndAddIndicatorAsEvolving> update_volume(water_block);
 
-    //----------------------------------------------------------------------
+    //---------------------------------------------------------------------------------------------------
     //	Define the configuration related particles dynamics.
-    //----------------------------------------------------------------------
+    //---------------------------------------------------------------------------------------------------
     ParticleSorting particle_sorting(water_block);
     ParticleSorting particle_sorting_wall(wall_boundary);
-    //----------------------------------------------------------------------
-    //	File output and regression check.
-    //----------------------------------------------------------------------
 
+    //---------------------------------------------------------------------------------------------------
+    //	Output settings
+    //---------------------------------------------------------------------------------------------------
     /** Restart. */
     RestartIO restart_io(sph_system);
 
@@ -379,6 +385,14 @@ int main(int ac, char *av[])
 
     WriteToVtpIfVelocityOutOfBound abnormal_velocity_recording(sph_system, 1.0e6 * U_max);
 
+    BodyStatesRecordingToVtp write_observation_states(observer_body);     //% Average
+    write_observation_states.addToWrite<Real>(observer_body, "Pressure"); //% Average pressure
+    //write_observation_states.addToWrite<int>(observer_body, "BufferIndicator");  //% Average
+    // body_states_recording.addToWrite<int>(observer_body, "BufferIndicator"); //% Average
+    
+    //---------------------------------------------------------------------------------------------------
+    // Preparation
+    //---------------------------------------------------------------------------------------------------
     //% Temporary Treat Note that this should be in front of TAG particle include inlet outlet and buffer
     SimpleDynamics<DisposerForInitialParticleDeletion> delete_initial_particle(water_block);
     delete_initial_particle.exec();
@@ -388,14 +402,7 @@ int main(int ac, char *av[])
     initialise_color_indicator.exec();
     initialise_color_indicator2.exec();
 
-    BodyStatesRecordingToVtp write_observation_states(observer_body);     //% Average
-    write_observation_states.addToWrite<Real>(observer_body, "Pressure"); //% Average pressure
-    //write_observation_states.addToWrite<int>(observer_body, "BufferIndicator");  //% Average
-    // body_states_recording.addToWrite<int>(observer_body, "BufferIndicator"); //% Average
-
-    /**
-     * @brief Setup geometry and initial conditions.
-     */
+    //% Setup geometry and initial conditions.
     sph_system.initializeSystemCellLinkedLists();
     sph_system.initializeSystemConfigurations();
     wall_boundary_normal_direction.exec();
@@ -412,12 +419,11 @@ int main(int ac, char *av[])
     bidirection_buffer_6.tag_buffer_particles.exec();
     bidirection_buffer_7.tag_buffer_particles.exec();
     bidirection_buffer_8.tag_buffer_particles.exec();
-
     outlet_bidirection_buffer.tag_buffer_particles.exec();
 
-    //----------------------------------------------------------------------
+    //---------------------------------------------------------------------------------------------------
     //	Setup computing and initial conditions.
-    //----------------------------------------------------------------------
+    //---------------------------------------------------------------------------------------------------
     Real &physical_time = *sph_system.getSystemVariableDataByName<Real>("PhysicalTime");
 
     /** Restart. */
@@ -447,14 +453,14 @@ int main(int ac, char *av[])
 
     Real time_output_mixing_data = 400.0; //% Mixing
 
-    //----------------------------------------------------------------------
+    //---------------------------------------------------------------------------------------------------
     //	Statistics for CPU time
-    //----------------------------------------------------------------------
+    //---------------------------------------------------------------------------------------------------
     TickCount t1 = TickCount::now();
     TimeInterval interval;
-    //----------------------------------------------------------------------
+    //---------------------------------------------------------------------------------------------------
     //	First output before the main loop.
-    //----------------------------------------------------------------------
+    //---------------------------------------------------------------------------------------------------
     particle_sorting_wall.exec();
     body_states_recording.writeToFile();
     //----------------------------------------------------------------------------------------------------
