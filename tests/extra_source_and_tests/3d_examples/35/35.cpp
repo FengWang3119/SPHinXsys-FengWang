@@ -9,13 +9,13 @@ int main(int ac, char *av[])
     SPHSystem sph_system(system_domain_bounds, resolution_ref);
 
     /** Restart. */
-    bool is_write_restart_file = false;
-    int restart_output_interval = 500;
+    bool is_write_restart_file = true;
+    int restart_output_interval = 1000;
     sph_system.setRestartStep(35000);
 
     /** Average. */
     bool is_write_average_contour_file = true;
-    Real time_output_contour_average_data = 1170.0; //% Average
+    Real time_output_contour_average_data = 1200.0; //% Average
     int num_output_contour_average_file_limit = 1;
 
     /** Tag for run particle relaxation for the initial body fitted distribution. */

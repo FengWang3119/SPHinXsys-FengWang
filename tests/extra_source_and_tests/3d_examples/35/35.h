@@ -62,7 +62,7 @@ BoundingBoxd system_domain_bounds(point_O +
 Real U_inlet = 1.0; //%
 Real U_f = U_inlet; //*Characteristic velocity
 
-Real U_max = 8.0 * U_inlet; //** An estimated value, this case one outlet and 8 inlets *
+Real U_max = 8.0 * U_inlet * 2.0; //** An estimated value, this case one outlet and 8 inlets *
 
 Real c_f = 10.0 * U_max;
 Real rho0_f = 1.0; /**< Density. */
