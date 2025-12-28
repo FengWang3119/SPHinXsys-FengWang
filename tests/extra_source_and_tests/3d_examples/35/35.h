@@ -25,7 +25,7 @@ Real H_inlet = 4.0;
 Real L_inlet = 10.0;
 Real Radius_chamber = 83.0 / 2.0;
 Real H_outlet = H_inlet;
-Real L_outlet = L_inlet;
+Real L_outlet = 15;
 Real H_total = 100.0;
 
 Real D_hydraulic = 2.0 * L_inlet * H_inlet / (L_inlet + H_inlet);
@@ -447,10 +447,10 @@ struct LeftInflowPressure
  namespace observe_centerline
  {
  constexpr const char *namespace_prefix = "centerline";
- Vecd pos_observe_start = Vecd(0.0, 0.0, point_out[zAxis]);
- Real sparsity_ratio = 5.0;
+ Vecd pos_observe_start = point_out;
+ Real sparsity_ratio = 2.0;
  Real length_observing_line = Radius_chamber + L_outlet;
- Vecd unit_direction_observe = Vecd(1.0, 0.0, 0.0);
+ Vecd unit_direction_observe = Vecd(-1.0, 0.0, 0.0);
  Real observer_offset_distance = 0.0;
 
  int num_observer_points = std::round(length_observing_line / resolution_ref / sparsity_ratio); //**Every particle is regarded as a cell monitor*
@@ -484,7 +484,7 @@ struct LeftInflowPressure
      }
      for (int i = 0; i < num_observer_points; ++i)
      {
-         outfile << observation_location[i].dot(unit_direction_observe) << "\n";
+         outfile << std::abs(observation_location[i].dot(unit_direction_observe)) << "\n";  //% only for 35
      }
      outfile.close();
  }
