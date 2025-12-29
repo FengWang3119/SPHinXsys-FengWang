@@ -11,11 +11,11 @@ int main(int ac, char *av[])
     /** Restart. */
     bool is_write_restart_file = true;
     int restart_output_interval = 1000;
-    sph_system.setRestartStep(35000);
+    //sph_system.setRestartStep(35000);
 
     /** Average. */
     bool is_write_average_contour_file = true;
-    Real time_output_contour_average_data = 1200.0; //% Average
+    Real time_output_contour_average_data = 2000.0; //% Average
     int num_output_contour_average_file_limit = 1;
 
     /** Tag for run particle relaxation for the initial body fitted distribution. */
@@ -337,8 +337,8 @@ int main(int ac, char *av[])
 
     //SimpleDynamics<ClearBufferParticleIndicator> clear_buffer_particle_indicator(water_block, zAxis, H_inlet, H_inlet + BW); //% This is case-dependent
 
-    InteractionWithUpdate<fluid_dynamics::DensitySummationPressureComplex> update_fluid_density_pressure(water_block_inner, water_wall_contact);
-    //InteractionWithUpdate<fluid_dynamics::DensitySummationFreeStreamComplex> update_fluid_density_freestream(water_block_inner, water_wall_contact);
+    //InteractionWithUpdate<fluid_dynamics::DensitySummationPressureComplex> update_fluid_density_pressure(water_block_inner, water_wall_contact);
+    InteractionWithUpdate<fluid_dynamics::DensitySummationFreeStreamComplex> update_fluid_density_freestream(water_block_inner, water_wall_contact);
 
     /** Choose one, ordinary or turbulent. Time step size without considering sound wave speed. */
     ReduceDynamics<fluid_dynamics::AdvectionViscousTimeStep> get_fluid_advection_time_step_size(water_block, U_f);
@@ -442,17 +442,17 @@ int main(int ac, char *av[])
     //** output control *
     int screen_output_interval = 100;
     Real end_time = 6000.0;                     /**< End time. */
-    Real num_output_files = 600.0;
+    Real num_output_files = 60.0;
     Real Output_Time = end_time / num_output_files; /**< Time stamps for output of body states. */
 
     //** observe_centerline *
     //Real cutoff_ratio = 0.92;                   //** cutoff_time should be a integral and the same as the PY script */
     //Real cutoff_time = cutoff_ratio * end_time; //** cutoff_time should be a integral and the same as the PY script */
-    Real cutoff_time = 400.0;
+    Real cutoff_time = 2000.0;
     Real cutoff_ratio = cutoff_time / end_time;
     Real index_check_file_fully_developed = num_output_files * cutoff_ratio;
 
-    Real time_output_mixing_data = 400.0; //% Mixing
+    Real time_output_mixing_data = 2000.0; //% Mixing
 
     //---------------------------------------------------------------------------------------------------
     //	Statistics for CPU time
@@ -485,8 +485,8 @@ int main(int ac, char *av[])
             Real Dt = get_fluid_advection_time_step_size.exec();
 
             //update_density_by_summation.exec();
-            update_fluid_density_pressure.exec();
-            //update_fluid_density_freestream.exec();
+            //update_fluid_density_pressure.exec();
+            update_fluid_density_freestream.exec();
 
             //** This is to address the bug in density summation *
             update_volume.exec();

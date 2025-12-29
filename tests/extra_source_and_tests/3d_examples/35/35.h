@@ -62,7 +62,8 @@ BoundingBoxd system_domain_bounds(point_O +
 Real U_inlet = 1.0; //%
 Real U_f = U_inlet; //*Characteristic velocity
 
-Real U_max = 8.0 * U_inlet * 2.0; //** An estimated value, this case one outlet and 8 inlets *
+//Real U_max = 8.0 * U_inlet * 2.0; //** An estimated value, this case one outlet and 8 inlets *
+Real U_max = U_inlet * 2.0; //** An estimated value, this case one outlet and 8 inlets *
 
 Real c_f = 10.0 * U_max;
 Real rho0_f = 1.0; /**< Density. */
@@ -257,7 +258,7 @@ Vecd point_out = point_out_temp * scale_temp;
 //Vecd point_out(51.1977, 0.0, 98.0);
 //*/
 
-///*
+/*
 //% For G14
 Vecd point_1(36.5, -42.0185, 2.0);
 Vecd point_2(55.5210, -3.90218, 2.0);
@@ -268,7 +269,19 @@ Vecd point_6(-55.5210, 3.90218, 2.0);
 Vecd point_7(-42.0185, -36.5000, 2.0);
 Vecd point_8(-3.90218, -55.5210, 2.0);
 Vecd point_out(56.1977, 0.0, 23.0000);
+*/
 
+///*
+//% For G16
+Vecd point_1(36.5, -42.0185, 2.0);
+Vecd point_2(55.5210, -3.90218, 2.0);
+Vecd point_3(42.0185, 36.5000, 2.0);
+Vecd point_4(3.90218, 55.5210, 2.0);
+Vecd point_5(-36.5000, 42.0185, 2.0);
+Vecd point_6(-55.5210, 3.90218, 2.0);
+Vecd point_7(-42.0185, -36.5000, 2.0);
+Vecd point_8(-3.90218, -55.5210, 2.0);
+Vecd point_out(56.1977, 0.0, 98.0000);
 
 //% For G14 Initial color bounding point 
 StdVec<Vecd> box_initial_bounding;
@@ -369,7 +382,7 @@ Vecd outlet_sub_buffer_translation = outlet_buffer_translation + buffer_thicknes
 //----------------------------------------------------------------------
 //	Cases-dependent geometries
 //----------------------------------------------------------------------
-std::string stl_fluid_path = "./input/g14_0p19.stl";
+std::string stl_fluid_path = "./input/g16_0p199.stl";
 Real scale_factor_fluid = 1.0;
 Vecd translation_stl_fluid(0.0, 0.0, 0.0);
 class WaterBlock : public ComplexShape
@@ -382,7 +395,7 @@ class WaterBlock : public ComplexShape
 };
 
 /** Set the file path to the stl file. */
-std::string stl_structure_path = "./input/g14_0p19.stl"; //% This also denote which file we use
+std::string stl_structure_path = "./input/g16_0p199.stl"; //% This also denote which file we use
 Real scale_factor = 1.0;
 Vecd translation_stl(0.0, 0.0, 0.0);
 class WallBoundaryFromSTL : public ComplexShape
