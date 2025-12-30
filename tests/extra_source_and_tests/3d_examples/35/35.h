@@ -63,7 +63,8 @@ Real U_inlet = 1.0; //%
 Real U_f = U_inlet; //*Characteristic velocity
 
 //Real U_max = 8.0 * U_inlet * 2.0; //** An estimated value, this case one outlet and 8 inlets *
-Real U_max = U_inlet * 2.0; //** An estimated value, this case one outlet and 8 inlets *
+//Real U_max = U_inlet * 8.0; //** An estimated value, this case one outlet and 8 inlets *
+Real U_max = U_inlet * 2.0;
 
 Real c_f = 10.0 * U_max;
 Real rho0_f = 1.0; /**< Density. */
@@ -382,7 +383,7 @@ Vecd outlet_sub_buffer_translation = outlet_buffer_translation + buffer_thicknes
 //----------------------------------------------------------------------
 //	Cases-dependent geometries
 //----------------------------------------------------------------------
-std::string stl_fluid_path = "./input/g16_0p199.stl";
+std::string stl_fluid_path = "./input/g17_0p199.stl";
 Real scale_factor_fluid = 1.0;
 Vecd translation_stl_fluid(0.0, 0.0, 0.0);
 class WaterBlock : public ComplexShape
@@ -395,7 +396,7 @@ class WaterBlock : public ComplexShape
 };
 
 /** Set the file path to the stl file. */
-std::string stl_structure_path = "./input/g16_0p199.stl"; //% This also denote which file we use
+std::string stl_structure_path = "./input/g17_0p199.stl"; //% This also denote which file we use
 Real scale_factor = 1.0;
 Vecd translation_stl(0.0, 0.0, 0.0);
 class WallBoundaryFromSTL : public ComplexShape

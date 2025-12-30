@@ -10,8 +10,8 @@ int main(int ac, char *av[])
 
     /** Restart. */
     bool is_write_restart_file = true;
-    int restart_output_interval = 1000;
-    //sph_system.setRestartStep(35000);
+    int restart_output_interval = 500;
+    sph_system.setRestartStep(22500);
 
     /** Average. */
     bool is_write_average_contour_file = true;
@@ -52,10 +52,10 @@ int main(int ac, char *av[])
     ObserverBody observer_center_point(sph_system, "ObserverCenterPoint");
     observer_center_point.generateParticles<ObserverParticles>(observer_location_center_point);
 
-    ObserverBody observer_body(sph_system, makeShared<WaterBlock>("ObserverBody")); //% Average
-    (!sph_system.RunParticleRelaxation() && sph_system.ReloadParticles())
-        ? observer_body.generateParticles<BaseParticles, Reload>(water_block.getName())
-        : observer_body.generateParticles<BaseParticles, Lattice>();
+    //ObserverBody observer_body(sph_system, makeShared<WaterBlock>("ObserverBody")); //% Average
+    //(!sph_system.RunParticleRelaxation() && sph_system.ReloadParticles())
+    //    ? observer_body.generateParticles<BaseParticles, Reload>(water_block.getName())
+    //    : observer_body.generateParticles<BaseParticles, Lattice>();
 
      //** observe_centerline *
      observe_centerline::get_observation_locations();
@@ -79,7 +79,7 @@ int main(int ac, char *av[])
     ContactRelation fluid_observer_centerline_contact(fluid_observer_centerline, {&water_block}); //** observe_centerline *
     // ContactRelation fluid_observer_cross_section_contact(fluid_observer_cross_section, {&water_block});
     ContactRelation observer_centerpoint_contact(observer_center_point, {&water_block});
-    ContactRelation fluid_observer_contact2(observer_body, {&water_block}); //% Average
+    //ContactRelation fluid_observer_contact2(observer_body, {&water_block}); //% Average
 
     //---------------------------------------------------------------------------------------------------
     // Combined relations built from basic relations
@@ -236,12 +236,12 @@ int main(int ac, char *av[])
     InteractionWithUpdate<LinearGradientCorrectionMatrixComplex> corrected_configuration_fluid(DynamicsArgs(water_block_inner, 0.5), water_wall_contact);
 
     /** Pressure relaxation algorithm with Riemann solver for viscous flows. */
-    //Dynamics1Level<fluid_dynamics::Integration1stHalfWithWallRiemann> pressure_relaxation(water_block_inner, water_wall_contact);
-    Dynamics1Level<fluid_dynamics::Integration1stHalfWithWallRiemann_RKGC_OBC> pressure_relaxation(water_block_inner, water_wall_contact);
+    Dynamics1Level<fluid_dynamics::Integration1stHalfWithWallRiemann> pressure_relaxation(water_block_inner, water_wall_contact);
+    //Dynamics1Level<fluid_dynamics::Integration1stHalfWithWallRiemann_RKGC_OBC> pressure_relaxation(water_block_inner, water_wall_contact);
 
     /** Density relaxation algorithm by using position verlet time stepping. */
-    Dynamics1Level<fluid_dynamics::Integration2ndHalfWithWallNoRiemann> density_relaxation(water_block_inner, water_wall_contact);
-    //Dynamics1Level<fluid_dynamics::Integration2ndHalfWithWallRiemann> density_relaxation(water_block_inner, water_wall_contact);
+    //Dynamics1Level<fluid_dynamics::Integration2ndHalfWithWallNoRiemann> density_relaxation(water_block_inner, water_wall_contact);
+    Dynamics1Level<fluid_dynamics::Integration2ndHalfWithWallRiemann> density_relaxation(water_block_inner, water_wall_contact);
     //Dynamics1Level<fluid_dynamics::Integration2ndHalfWithWall<DissipativeRiemannSolver>> density_relaxation(water_block_inner, water_wall_contact);
 
     /** Choose one, ordinary or turbulent. Computing viscous force, */
@@ -249,10 +249,10 @@ int main(int ac, char *av[])
 
     /** Impose transport velocity, with or without limiter . */
     //InteractionWithUpdate<fluid_dynamics::TransportVelocityLimitedCorrectionComplex<BulkParticles>> transport_velocity_correction(water_block_inner, water_wall_contact);
-    //InteractionWithUpdate<fluid_dynamics::TransportVelocityCorrectionComplex<BulkParticles>> transport_velocity_correction(water_block_inner, water_wall_contact);
+    InteractionWithUpdate<fluid_dynamics::TransportVelocityCorrectionComplex<BulkParticles>> transport_velocity_correction(water_block_inner, water_wall_contact);
     //InteractionWithUpdate<fluid_dynamics::TVC_Limited_RKGC_OBC<BulkParticles>> transport_velocity_correction(water_block_inner, water_wall_contact);
     //InteractionWithUpdate<fluid_dynamics::TVC_RKGC_OBC<BulkParticles>> transport_velocity_correction(water_block_inner, water_wall_contact);
-    InteractionWithUpdate<fluid_dynamics::TransportVelocityCorrectionCorrectedForOpenBoundaryFlowComplex<BulkParticles>> transport_velocity_correction(water_block_inner, water_wall_contact);
+    //InteractionWithUpdate<fluid_dynamics::TransportVelocityCorrectionCorrectedForOpenBoundaryFlowComplex<BulkParticles>> transport_velocity_correction(water_block_inner, water_wall_contact);
     
     /** Evaluation of density by summation approach. */
     //InteractionWithUpdate<fluid_dynamics::DensitySummationFreeStreamComplex> update_density_by_summation(water_block_inner, water_wall_contact);
@@ -338,7 +338,8 @@ int main(int ac, char *av[])
     //SimpleDynamics<ClearBufferParticleIndicator> clear_buffer_particle_indicator(water_block, zAxis, H_inlet, H_inlet + BW); //% This is case-dependent
 
     //InteractionWithUpdate<fluid_dynamics::DensitySummationPressureComplex> update_fluid_density_pressure(water_block_inner, water_wall_contact);
-    InteractionWithUpdate<fluid_dynamics::DensitySummationFreeStreamComplex> update_fluid_density_freestream(water_block_inner, water_wall_contact);
+    //InteractionWithUpdate<fluid_dynamics::DensitySummationFreeStreamComplex> update_fluid_density_freestream(water_block_inner, water_wall_contact);
+    InteractionWithUpdate<fluid_dynamics::DensitySummationComplexFreeSurface> update_fluid_density_freesurface(water_block_inner, water_wall_contact);
 
     /** Choose one, ordinary or turbulent. Time step size without considering sound wave speed. */
     ReduceDynamics<fluid_dynamics::AdvectionViscousTimeStep> get_fluid_advection_time_step_size(water_block, U_f);
@@ -346,9 +347,8 @@ int main(int ac, char *av[])
     /** Time step size with considering sound wave speed. */
     ReduceDynamics<fluid_dynamics::AcousticTimeStep> get_fluid_time_step_size(water_block);
 
-    ObservingAQuantity<Real> observing_pressure(fluid_observer_contact2, "Pressure");          //% Average pressure
-    SimpleDynamics<ParticleSnapshotAverage<Real>> average_pressure(observer_body, "Pressure"); //% Average pressure
-    //ObservingAQuantity<int> observing_buffer_particle_indicator(fluid_observer_contact2, "BufferIndicator");          //% Average
+    //ObservingAQuantity<Real> observing_pressure(fluid_observer_contact2, "Pressure");          //% Average pressure
+    //SimpleDynamics<ParticleSnapshotAverage<Real>> average_pressure(observer_body, "Pressure"); //% Average pressure
 
     InteractionDynamics<TagMixedParticle> tag_mixed_particle(water_block_inner, mixing_rate_interactive_radius);
     ReduceDynamics<CalculateFluidParticleNumberInOutletChannel> calculate_fluid_particle_number_in_outlet_channel(water_block, Radius_chamber, H_inlet);
@@ -386,8 +386,8 @@ int main(int ac, char *av[])
 
     WriteToVtpIfVelocityOutOfBound abnormal_velocity_recording(sph_system, 1.0e6 * U_max);
 
-    BodyStatesRecordingToVtp write_observation_states(observer_body);     //% Average
-    write_observation_states.addToWrite<Real>(observer_body, "Pressure"); //% Average pressure
+    //BodyStatesRecordingToVtp write_observation_states(observer_body);     //% Average
+    //write_observation_states.addToWrite<Real>(observer_body, "Pressure"); //% Average pressure
     //write_observation_states.addToWrite<int>(observer_body, "BufferIndicator");  //% Average
     // body_states_recording.addToWrite<int>(observer_body, "BufferIndicator"); //% Average
     
@@ -434,7 +434,7 @@ int main(int ac, char *av[])
         water_block.updateCellLinkedList();
         water_block_complex.updateConfiguration();
         observer_centerpoint_contact.updateConfiguration();
-        fluid_observer_contact2.updateConfiguration(); //** Average *
+        //fluid_observer_contact2.updateConfiguration(); //** Average *
         fluid_observer_centerline_contact.updateConfiguration(); //** observe_centerline *
     }
     size_t number_of_iterations = sph_system.RestartStep();
@@ -442,7 +442,7 @@ int main(int ac, char *av[])
     //** output control *
     int screen_output_interval = 100;
     Real end_time = 6000.0;                     /**< End time. */
-    Real num_output_files = 60.0;
+    Real num_output_files = 600.0;
     Real Output_Time = end_time / num_output_files; /**< Time stamps for output of body states. */
 
     //** observe_centerline *
@@ -486,7 +486,8 @@ int main(int ac, char *av[])
 
             //update_density_by_summation.exec();
             //update_fluid_density_pressure.exec();
-            update_fluid_density_freestream.exec();
+            //update_fluid_density_freestream.exec();
+            update_fluid_density_freesurface.exec();
 
             //** This is to address the bug in density summation *
             update_volume.exec();
@@ -549,6 +550,12 @@ int main(int ac, char *av[])
                 logfile << std::fixed << std::setprecision(9) << "N=" << number_of_iterations << "	Time = "
                         << physical_time
                         << "	Dt = " << Dt << "	dt = " << dt << std::endl;
+                if (std::abs(Dt - dt) <= TinyReal)
+                {
+                    std::cout << "Dt=dt something wrong please check" << std::endl;
+                    system("pause");
+                }
+                   
             }
             /** Restart. */
             if(is_write_restart_file)
@@ -661,12 +668,12 @@ int main(int ac, char *av[])
             {
                 if (num_output_contour_average_file < num_output_contour_average_file_limit)
                 {
-                    fluid_observer_contact2.updateConfiguration(); //% Average
-                    //% Average pressure
-                    observing_pressure.exec();
-                    average_pressure.exec();
-                    // observing_buffer_particle_indicator.exec();
-                    write_observation_states.writeToFile(); //% Average
+                    //fluid_observer_contact2.updateConfiguration(); //% Average
+                    ////% Average pressure
+                    //observing_pressure.exec();
+                    //average_pressure.exec();
+                    //// observing_buffer_particle_indicator.exec();
+                    //write_observation_states.writeToFile(); //% Average
                     num_output_contour_average_file++;
                 }
             }
