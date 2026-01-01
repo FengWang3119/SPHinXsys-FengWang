@@ -11,7 +11,7 @@ int main(int ac, char *av[])
     /** Restart. */
     bool is_write_restart_file = true;
     int restart_output_interval = 500;
-    sph_system.setRestartStep(23000);
+    sph_system.setRestartStep(30000);
 
     /** Average. */
     bool is_write_average_contour_file = true;
@@ -442,7 +442,7 @@ int main(int ac, char *av[])
     //** output control *
     int screen_output_interval = 100;
     Real end_time = 6000.0;                     /**< End time. */
-    Real num_output_files = 600.0;
+    Real num_output_files = 2000.0;
     Real Output_Time = end_time / num_output_files; /**< Time stamps for output of body states. */
 
     //** observe_centerline *
