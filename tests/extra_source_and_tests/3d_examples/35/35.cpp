@@ -16,7 +16,7 @@ int main(int ac, char *av[])
     /** Average. */
     bool is_write_average_contour_file = true;
     Real time_output_contour_average_data = 2000.0; //% Average
-    int num_output_contour_average_file_limit = 1;
+    int num_output_contour_average_file_limit = 5;
 
     /** Tag for run particle relaxation for the initial body fitted distribution. */
     sph_system.setRunParticleRelaxation(false);
