@@ -20,7 +20,7 @@ Real LL = 2.0; /**< Liquid column length. */
 Real LH = 1.0; /**< Liquid column height. */
 //Real LH = 2.0;
 
-Real particle_spacing_ref = 0.01;   /**< Initial reference particle spacing. */
+Real particle_spacing_ref = 0.005;   /**< Initial reference particle spacing. */
 Real BW = particle_spacing_ref * 4; /**< Extending width for boundary conditions. */
 BoundingBox system_domain_bounds(Vec2d(-BW, -BW), Vec2d(DL + BW, DH + BW));
 //----------------------------------------------------------------------
@@ -63,7 +63,7 @@ std::vector<Vecd> createWaterBlockShape()
     std::vector<Vecd> pnts;
 
     //Real wave_amplitude = 0.1 * LH;
-    Real wave_amplitude = 0.3;
+    Real wave_amplitude = 0.1;
 
     for (int n = 0; n <= Nh; n++)
     {
@@ -159,8 +159,8 @@ int main(int ac, char *av[])
     SimpleDynamics<NormalDirectionFromBodyShape> wall_boundary_normal_direction(wall_boundary);
     InteractionWithUpdate<LinearGradientCorrectionMatrixComplex> corrected_configuration_fluid(InteractArgs(water_block_inner, 0.5), water_wall_contact);
 
-    Dynamics1Level<fluid_dynamics::Integration1stHalfCorrectionWithWallRiemann> fluid_pressure_relaxation_correct(water_block_inner, water_wall_contact);
-    //Dynamics1Level<fluid_dynamics::Integration1stHalfWithWallRiemann> fluid_pressure_relaxation_correct(water_block_inner, water_wall_contact);
+    //Dynamics1Level<fluid_dynamics::Integration1stHalfCorrectionWithWallRiemann> fluid_pressure_relaxation_correct(water_block_inner, water_wall_contact);
+    Dynamics1Level<fluid_dynamics::Integration1stHalfWithWallRiemann> fluid_pressure_relaxation_correct(water_block_inner, water_wall_contact);
 
     Dynamics1Level<fluid_dynamics::Integration2ndHalfWithWallRiemann> fluid_density_relaxation(water_block_inner, water_wall_contact);
     InteractionWithUpdate<fluid_dynamics::DensitySummationComplexFreeSurface> fluid_density_by_summation(water_block_inner, water_wall_contact);
