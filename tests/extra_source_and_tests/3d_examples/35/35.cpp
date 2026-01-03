@@ -14,9 +14,10 @@ int main(int ac, char *av[])
     sph_system.setRestartStep(46000);
 
     /** Average. */
-    bool is_write_average_contour_file = true;
+    bool is_write_average_contour_file = false;
     Real time_output_contour_average_data = 2000.0; //% Average
     int num_output_contour_average_file_limit = 5;
+    Real magnify_ratio_avergae_contour = 1.0;
 
     /** Tag for run particle relaxation for the initial body fitted distribution. */
     sph_system.setRunParticleRelaxation(false);
@@ -442,7 +443,7 @@ int main(int ac, char *av[])
     //** output control *
     int screen_output_interval = 100;
     Real end_time = 6000.0;                     /**< End time. */
-    Real num_output_files = 2000.0;
+    Real num_output_files = 2000.0 * magnify_ratio_avergae_contour;
     Real Output_Time = end_time / num_output_files; /**< Time stamps for output of body states. */
 
     //** observe_centerline *
@@ -655,7 +656,12 @@ int main(int ac, char *av[])
             //body_states_recording.writeToFile();
         }
         //TickCount t2 = TickCount::now();
-        body_states_recording.writeToFile();
+
+        if(!is_write_average_contour_file)
+        {
+            body_states_recording.writeToFile();
+        }
+
         observer_centerpoint_contact.updateConfiguration();
         num_output_file++;
         //if (num_output_file == 100)
@@ -675,6 +681,11 @@ int main(int ac, char *av[])
                     //// observing_buffer_particle_indicator.exec();
                     //write_observation_states.writeToFile(); //% Average
                     num_output_contour_average_file++;
+                    if(num_output_contour_average_file == num_output_contour_average_file_limit)
+                    {
+                        std::cout << "Finish outputing average contour files " << std::endl;
+                        system("pause");
+                    }
                 }
             }
         }
