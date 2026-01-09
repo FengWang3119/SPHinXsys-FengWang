@@ -11,7 +11,7 @@ int main(int ac, char *av[])
     /** Restart. */
     bool is_write_restart_file = true;
     int restart_output_interval = 500;
-    sph_system.setRestartStep(46000); //SPH35-50-46000
+    sph_system.setRestartStep(101000); //SPH35-51-101000
 
     /** Average. */
     bool is_write_average_contour_file = false;
@@ -237,7 +237,7 @@ int main(int ac, char *av[])
     InteractionWithUpdate<LinearGradientCorrectionMatrixComplex> corrected_configuration_fluid(DynamicsArgs(water_block_inner, 0.5), water_wall_contact);
 
     /** Pressure relaxation algorithm with Riemann solver for viscous flows. */
-    Dynamics1Level<fluid_dynamics::Integration1stHalfWithWallRiemann> pressure_relaxation(water_block_inner, water_wall_contact);
+    Dynamics1Level<fluid_dynamics::Integration1stHalfCorrectionWithWallRiemann> pressure_relaxation(water_block_inner, water_wall_contact);
     //Dynamics1Level<fluid_dynamics::Integration1stHalfWithWallRiemann_RKGC_OBC> pressure_relaxation(water_block_inner, water_wall_contact);
 
     /** Density relaxation algorithm by using position verlet time stepping. */
@@ -250,7 +250,7 @@ int main(int ac, char *av[])
 
     /** Impose transport velocity, with or without limiter . */
     //InteractionWithUpdate<fluid_dynamics::TransportVelocityLimitedCorrectionComplex<BulkParticles>> transport_velocity_correction(water_block_inner, water_wall_contact);
-    InteractionWithUpdate<fluid_dynamics::TransportVelocityCorrectionComplex<BulkParticles>> transport_velocity_correction(water_block_inner, water_wall_contact);
+    InteractionWithUpdate<fluid_dynamics::TransportVelocityCorrectionCorrectedComplex<BulkParticles>> transport_velocity_correction(water_block_inner, water_wall_contact);
     //InteractionWithUpdate<fluid_dynamics::TVC_Limited_RKGC_OBC<BulkParticles>> transport_velocity_correction(water_block_inner, water_wall_contact);
     //InteractionWithUpdate<fluid_dynamics::TVC_RKGC_OBC<BulkParticles>> transport_velocity_correction(water_block_inner, water_wall_contact);
     //nteractionWithUpdate<fluid_dynamics::TransportVelocityCorrectionCorrectedForOpenBoundaryFlowComplex<BulkParticles>> transport_velocity_correction(water_block_inner, water_wall_contact);
