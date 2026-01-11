@@ -237,7 +237,7 @@ int main(int ac, char *av[])
     InteractionWithUpdate<LinearGradientCorrectionMatrixComplex> corrected_configuration_fluid(DynamicsArgs(water_block_inner, 0.5), water_wall_contact);
 
     /** Pressure relaxation algorithm with Riemann solver for viscous flows. */
-    Dynamics1Level<fluid_dynamics::Integration1stHalfCorrectionWithWallRiemann> pressure_relaxation(water_block_inner, water_wall_contact);
+    Dynamics1Level<fluid_dynamics::Integration1stHalfWithWallRiemann> pressure_relaxation(water_block_inner, water_wall_contact);
     //Dynamics1Level<fluid_dynamics::Integration1stHalfWithWallRiemann_RKGC_OBC> pressure_relaxation(water_block_inner, water_wall_contact);
 
     /** Density relaxation algorithm by using position verlet time stepping. */
@@ -250,7 +250,7 @@ int main(int ac, char *av[])
 
     /** Impose transport velocity, with or without limiter . */
     //InteractionWithUpdate<fluid_dynamics::TransportVelocityLimitedCorrectionComplex<BulkParticles>> transport_velocity_correction(water_block_inner, water_wall_contact);
-    InteractionWithUpdate<fluid_dynamics::TransportVelocityCorrectionCorrectedComplex<BulkParticles>> transport_velocity_correction(water_block_inner, water_wall_contact);
+    InteractionWithUpdate<fluid_dynamics::TransportVelocityCorrectionComplex<BulkParticles>> transport_velocity_correction(water_block_inner, water_wall_contact);
     //InteractionWithUpdate<fluid_dynamics::TVC_Limited_RKGC_OBC<BulkParticles>> transport_velocity_correction(water_block_inner, water_wall_contact);
     //InteractionWithUpdate<fluid_dynamics::TVC_RKGC_OBC<BulkParticles>> transport_velocity_correction(water_block_inner, water_wall_contact);
     //nteractionWithUpdate<fluid_dynamics::TransportVelocityCorrectionCorrectedForOpenBoundaryFlowComplex<BulkParticles>> transport_velocity_correction(water_block_inner, water_wall_contact);
@@ -439,6 +439,9 @@ int main(int ac, char *av[])
         fluid_observer_centerline_contact.updateConfiguration(); //** observe_centerline *
     }
     size_t number_of_iterations = sph_system.RestartStep();
+
+    SimpleDynamics<ClearColorIndex> clear_color_index(water_block);
+    clear_color_index.exec();
     
     //** output control *
     int screen_output_interval = 100;

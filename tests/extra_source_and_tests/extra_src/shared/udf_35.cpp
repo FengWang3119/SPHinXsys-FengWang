@@ -256,8 +256,12 @@ void TagMixedParticle::interaction(size_t index_i, Real dt)
         {
             if (color_indicator_[index_i] != color_indicator_[index_j])
             {
-                is_mixed_[index_i] = 1;
-                return;
+                if (color_indicator_[index_j] != 0)
+                {
+                    is_mixed_[index_i] = 1;
+                    return;
+                }
+                
             }
         }
     }
@@ -313,6 +317,15 @@ UpdateVolumeAndAddIndicatorAsEvolving::UpdateVolumeAndAddIndicatorAsEvolving(SPH
 void UpdateVolumeAndAddIndicatorAsEvolving::update(size_t index_i, Real dt)
 {
     Vol_[index_i] = mass_[index_i] / rho_[index_i];
+}
+//=============================================================================================//
+ClearColorIndex::ClearColorIndex(SPHBody& sph_body)
+    : LocalDynamics(sph_body),
+    color_indicator_(particles_->getVariableDataByName<int>("ColorIndicator")) {}
+//=============================================================================================//
+void ClearColorIndex::update(size_t index_i, Real dt)
+{
+    color_indicator_[index_i] = 0;
 }
 //=================================================================================================//
 } // namespace SPH
