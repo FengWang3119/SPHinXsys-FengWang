@@ -464,7 +464,7 @@ class IndicatedParticlesExcludeInletBuffer : public WithinScope
     explicit IndicatedParticlesExcludeInletBuffer(BaseParticles *base_particles)
         : WithinScope(),
           indicator_(base_particles->getVariableDataByName<int>("Indicator")),
-          buffer_indicator_(base_particles->getVariableDataByName<int>("BufferParticleIndicator")),
+          buffer_indicator_(base_particles->getVariableDataByName<int>("Indicator")),
           pos_(base_particles->getVariableDataByName<Vecd>("Position")){};
     bool operator()(size_t index_i)
     {
