@@ -14,7 +14,7 @@ using namespace SPH;
 Real DH = 2.0; /**< Channel height. */
 Real half_channel_height = DH / 2.0;
 Real characteristic_length = DH;
-Real num_fluid_cross_section = 5.0;
+Real num_fluid_cross_section = 10.0;
 Real resolution_ref = DH / num_fluid_cross_section; /**< Initial reference particle spacing. */
 Real BW = resolution_ref * 4;                       /**< Extending width for BCs. */
 Real buffer_thickness = 5.0 * resolution_ref;
@@ -23,10 +23,12 @@ Real extend_in = 0.0;
 Real extend_out = 0.0;
 Real extend_compensate_relaxation = 0.0;
 
-// Real DH1 = 5.0 * DH;
-// Real DL2 = 10.0 * DH;
-Real DH1 = 20.0 * DH;
-Real DL2 = 50.0 * DH;
+//Real DH1 = 5.0 * DH;
+//Real DL2 = 10.0 * DH;
+//Real DH1 = 20.0 * DH;
+//Real DL2 = 50.0 * DH;
+Real DH1 = 2.5 * DH;
+Real DL2 = 10.0 * DH;
 
 Vec2d point_O(0.0, 0.0);
 Vec2d point_A = point_O + Vec2d(0.0, DH + 2.0 * DH1);
