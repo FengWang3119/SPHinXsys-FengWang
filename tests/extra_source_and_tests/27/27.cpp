@@ -121,9 +121,9 @@ int main(int ac, char *av[])
     InteractionWithUpdate<LinearGradientCorrectionMatrixInner> corrected_configuration_fluid(water_block_inner);
     InteractionWithUpdate<fluid_dynamics::TurbulentLinearGradientCorrectionMatrixInner> corrected_configuration_fluid_only_inner(water_block_inner);
 
-    // Dynamics1Level<fluid_dynamics::Integration1stHalfInnerRiemann> pressure_relaxation(water_block_inner);
+    Dynamics1Level<fluid_dynamics::Integration1stHalfInnerRiemann> pressure_relaxation(water_block_inner);
     //** Turbulence */
-    Dynamics1Level<fluid_dynamics::Integration1stHalfCorrectionForOpenBoundaryFlowInnerRiemann> pressure_relaxation(water_block_inner);
+    // Dynamics1Level<fluid_dynamics::Integration1stHalfCorrectionForOpenBoundaryFlowInnerRiemann> pressure_relaxation(water_block_inner);
 
     Dynamics1Level<fluid_dynamics::Integration2ndHalfInnerRiemann> density_relaxation(water_block_inner);
 
@@ -173,24 +173,24 @@ int main(int ac, char *av[])
     /** Turbulence InflowTurbulentCondition.It needs characteristic Length to calculate turbulent length  */
     SimpleDynamics<fluid_dynamics::InflowTurbulentCondition> impose_turbulent_inflow_condition(left_emitter, characteristic_length, relaxation_rate_turbulent_inlet, type_turbulent_inlet);
 
-    //SimpleDynamics<fluid_dynamics::PressureCondition<LeftInflowPressure>> left_inflow_pressure_condition(left_emitter);
-    //SimpleDynamics<fluid_dynamics::PressureCondition<RightInflowPressure>> right_inflow_pressure_condition(right_emitter);
-    //SimpleDynamics<fluid_dynamics::PressureCondition<LeftInflowPressure>> static_up_inflow_pressure_condition(static_emitter_up);
-    //SimpleDynamics<fluid_dynamics::PressureCondition<LeftInflowPressure>> static_down_inflow_pressure_condition(static_emitter_down);
-    //SimpleDynamics<fluid_dynamics::PressureCondition<FreestreamPressure>> up_pressure_condition(up_emitter);
-    //SimpleDynamics<fluid_dynamics::PressureCondition<FreestreamPressure>> down_pressure_condition(down_emitter);
+    SimpleDynamics<fluid_dynamics::PressureCondition<LeftInflowPressure>> left_inflow_pressure_condition(left_emitter);
+    SimpleDynamics<fluid_dynamics::PressureCondition<RightInflowPressure>> right_inflow_pressure_condition(right_emitter);
+    SimpleDynamics<fluid_dynamics::PressureCondition<LeftInflowPressure>> static_up_inflow_pressure_condition(static_emitter_up);
+    SimpleDynamics<fluid_dynamics::PressureCondition<LeftInflowPressure>> static_down_inflow_pressure_condition(static_emitter_down);
+    SimpleDynamics<fluid_dynamics::PressureCondition<FreestreamPressure>> up_pressure_condition(up_emitter);
+    SimpleDynamics<fluid_dynamics::PressureCondition<FreestreamPressure>> down_pressure_condition(down_emitter);
     //** Turbulence */
-     SimpleDynamics<fluid_dynamics::PressureConditionCorrection<LeftInflowPressure>> left_inflow_pressure_condition(left_emitter);
-     SimpleDynamics<fluid_dynamics::PressureConditionCorrection<RightInflowPressure>> right_inflow_pressure_condition(right_emitter);
-     SimpleDynamics<fluid_dynamics::PressureConditionCorrection<LeftInflowPressure>> static_up_inflow_pressure_condition(static_emitter_up);
-     SimpleDynamics<fluid_dynamics::PressureConditionCorrection<LeftInflowPressure>> static_down_inflow_pressure_condition(static_emitter_down);
-     SimpleDynamics<fluid_dynamics::PressureConditionCorrection<FreestreamPressure>> up_pressure_condition(up_emitter);
-     SimpleDynamics<fluid_dynamics::PressureConditionCorrection<FreestreamPressure>> down_pressure_condition(down_emitter);
+     //SimpleDynamics<fluid_dynamics::PressureConditionCorrection<LeftInflowPressure>> left_inflow_pressure_condition(left_emitter);
+     //SimpleDynamics<fluid_dynamics::PressureConditionCorrection<RightInflowPressure>> right_inflow_pressure_condition(right_emitter);
+     //SimpleDynamics<fluid_dynamics::PressureConditionCorrection<LeftInflowPressure>> static_up_inflow_pressure_condition(static_emitter_up);
+     //SimpleDynamics<fluid_dynamics::PressureConditionCorrection<LeftInflowPressure>> static_down_inflow_pressure_condition(static_emitter_down);
+     //SimpleDynamics<fluid_dynamics::PressureConditionCorrection<FreestreamPressure>> up_pressure_condition(up_emitter);
+     //SimpleDynamics<fluid_dynamics::PressureConditionCorrection<FreestreamPressure>> down_pressure_condition(down_emitter);
 
     //InteractionWithUpdate<fluid_dynamics::TransportVelocityCorrectionInner<NoLimiter, BulkParticlesWithoutInlet>> transport_velocity_correction(water_block_inner);
     //** Turbulence */
-    // InteractionWithUpdate<fluid_dynamics::TVC_ModifiedLimited_NoRKGC_Inner<BulkParticlesWithoutInlet>> transport_velocity_correction(water_block_inner);
-    InteractionWithUpdate<fluid_dynamics::TVC_ModifiedLimited_RKGC_OBC_Inner<BulkParticlesWithoutInlet>> transport_velocity_correction(water_block_inner);
+    InteractionWithUpdate<fluid_dynamics::TVC_ModifiedLimited_NoRKGC_Inner<BulkParticlesWithoutInlet>> transport_velocity_correction(water_block_inner);
+    // InteractionWithUpdate<fluid_dynamics::TVC_ModifiedLimited_RKGC_OBC_Inner<BulkParticlesWithoutInlet>> transport_velocity_correction(water_block_inner);
 
     /** Turbulence */
     SimpleDynamics<fluid_dynamics::TurbulentEddyViscosity> update_eddy_viscosity(water_block);
@@ -212,6 +212,7 @@ int main(int ac, char *av[])
     // body_states_recording.addToWrite<Vecd>(water_block, "KernelSummation");
     // body_states_recording.addToWrite<Real>(water_block, "VolumetricMeasure");
     ObservedQuantityRecording<Vecd> write_centerline_velocity("Velocity", velocity_observer_contact);
+    ObservedQuantityRecording<Real> write_centerline_tke("TurbulenceKineticEnergy", velocity_observer_contact);
     ObservedQuantityRecording<Vecd> write_recorded_water_velocity_cross_section("Velocity", fluid_observer_cross_section_contact);
     //----------------------------------------------------------------------
     //	Prepare the simulation with cell linked list, configuration
@@ -375,6 +376,7 @@ int main(int ac, char *av[])
             if (physical_time > cutoff_time)
             {
                 write_centerline_velocity.writeToFile(number_of_iterations);
+                write_centerline_tke.writeToFile(number_of_iterations);
                 write_recorded_water_velocity_cross_section.writeToFile(number_of_iterations);
             }
         }
