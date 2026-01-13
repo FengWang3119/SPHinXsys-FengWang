@@ -214,10 +214,10 @@ int main(int ac, char *av[])
     size_t number_of_iterations = 0;
     int screen_output_interval = 100;
     //int observation_sample_interval = screen_output_interval * 2;
-    Real end_time = 80.0;                      /**< End time. */
+    Real end_time = 800.0;                      /**< End time. */
     Real cutoff_ratio = 0.9;                    //** cutoff_time should be a integral and the same as the PY script */
     Real cutoff_time = cutoff_ratio * end_time; //** cutoff_time should be a integral and the same as the PY script */
-    Real num_output_files = 400.0;
+    Real num_output_files = 40.0;
     Real Output_Time = end_time / num_output_files; /**< Time stamps for output of body states. */
     Real index_check_file_fully_developed = num_output_files * cutoff_ratio;
     Real dt = 0.0; /**< Default acoustic time step sizes. */
