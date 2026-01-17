@@ -36,6 +36,11 @@ int main(int ac, char *av[])
         ? wall_boundary.generateParticles<BaseParticles, Reload>(wall_boundary.getName())
         : wall_boundary.generateParticles<BaseParticles, Lattice>();
 
+    ObserverBody observer_body(sph_system, makeShared<WaterBlock>("ObserverBody")); //% Average
+    (!sph_system.RunParticleRelaxation() && sph_system.ReloadParticles())
+        ? observer_body.generateParticles<BaseParticles, Reload>(water_block.getName())
+        : observer_body.generateParticles<BaseParticles, Lattice>();
+
     getPositionsOfMultipleObserveLines();
     output_observe_positions();
     ObserverBody fluid_observer(sph_system, "FluidObserver");
@@ -45,6 +50,8 @@ int main(int ac, char *av[])
     InnerRelation water_block_inner(water_block);
     ContactRelation water_wall_contact(water_block, {&wall_boundary});
     ContactRelation fluid_observer_contact(fluid_observer, {&water_block});
+    ContactRelation fluid_observer_contact2(observer_body, {&water_block}); //% Average
+    
     //----------------------------------------------------------------------
     // Combined relations built from basic relations
     // which is only used for update configuration.
@@ -198,6 +205,10 @@ int main(int ac, char *av[])
 
     /** Turbulent eddy viscosity calculation needs values of Wall Y start. */
     SimpleDynamics<fluid_dynamics::TurbulentEddyViscosity> update_eddy_viscosity(water_block);
+    
+    ObservingAQuantity<Real> observing_pressure(fluid_observer_contact2, "Pressure");          //% Average pressure
+    SimpleDynamics<ParticleSnapshotAverage<Real>> average_pressure(observer_body, "Pressure"); //% Average pressure
+    
     //----------------------------------------------------------------------
     //	Define the configuration related particles dynamics.
     //----------------------------------------------------------------------
@@ -216,6 +227,9 @@ int main(int ac, char *av[])
     ObservedQuantityRecording<Real> write_recorded_water_mut("TurbulentViscosity", fluid_observer_contact);
     ObservedQuantityRecording<Real> write_recorded_water_epsilon("TurbulentDissipation", fluid_observer_contact);
     body_states_recording.addToWrite<int>(water_block, "BufferParticleIndicator");
+
+    BodyStatesRecordingToVtp write_observation_states(observer_body);     //% Average
+    write_observation_states.addToWrite<Real>(observer_body, "Pressure"); //% Average pressure
 
     /**
      * @brief Setup geometry and initial conditions.
@@ -369,14 +383,23 @@ int main(int ac, char *av[])
                 write_recorded_water_k.writeToFile(number_of_iterations);
                 write_recorded_water_mut.writeToFile(number_of_iterations);
                 write_recorded_water_epsilon.writeToFile(number_of_iterations);
+
+                fluid_observer_contact2.updateConfiguration(); //% Average
+                observing_pressure.exec(); //% Average
+                average_pressure.exec(); //% Average
             }
             //if (physical_time_ > end_time * 0.5)
             //body_states_recording.writeToFile();
         }
         //TickCount t2 = TickCount::now();
-        body_states_recording.writeToFile();
+        //body_states_recording.writeToFile();
+
+        if (physical_time > cutoff_time)
+            write_observation_states.writeToFile(); //% Average
+        
         num_output_file++;
-        //if (num_output_file == 100)
+                     
+                //if (num_output_file == 100)
         //    system("pause");
         //TickCount t3 = TickCount::now();
     }

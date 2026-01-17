@@ -20,7 +20,7 @@ using namespace SPH;
 //----------------------------------------------------------------------
 Real scale = 0.0254;
 Real DH = 3.0 * scale; /**< Channel height. */
-Real num_fluid_cross_section = 40.0;
+Real num_fluid_cross_section = 20.0;
 Real central_angel = 180.0 * 2.0 * Pi / 360.0;
 Real extend_in = 0.0;
 Real extend_out = 0.0 * DH;
@@ -148,7 +148,7 @@ BoundingBox system_domain_bounds(left_bottom_point + Vec2d(-2.0 * BW, -2.0 * BW)
 // ** By kernel weight. *
 int screen_output_interval = 100;
 Real end_time = 10.0;              /**< End time. */
-Real Output_Time = end_time / 4.0; /**< Time stamps for output of body states. */
+Real Output_Time = end_time / 40.0; /**< Time stamps for output of body states. */
 
 Real cutoff_time = end_time * 0.6; //** cutoff_time should be a integral and the same as the PY script */
 int number_observe_line = 4;
