@@ -140,10 +140,10 @@ int main(int ac, char *av[])
     Dynamics1Level<fluid_dynamics::Integration1stHalfCorrectionForOpenBoundaryFlowWithWallRiemann> pressure_relaxation(water_block_inner, water_wall_contact);
 
     /** Density relaxation algorithm by using position verlet time stepping. */
-    //Dynamics1Level<fluid_dynamics::Integration2ndHalfWithWallNoRiemann> density_relaxation(water_block_inner, water_wall_contact);
-    Dynamics1Level<fluid_dynamics::Integration2ndHalfInnerNoRiemann> density_relaxation(water_block_inner);
-    InteractionDynamics<fluid_dynamics::Integration2ndHalfOnlyWallAcousticRiemannAdjusted> density_relaxation_wall(water_wall_contact);
-    density_relaxation.post_processes_.push_back(&density_relaxation_wall);
+    Dynamics1Level<fluid_dynamics::Integration2ndHalfWithWallNoRiemann> density_relaxation(water_block_inner, water_wall_contact);
+    //Dynamics1Level<fluid_dynamics::Integration2ndHalfInnerNoRiemann> density_relaxation(water_block_inner);
+    //InteractionDynamics<fluid_dynamics::Integration2ndHalfOnlyWallAcousticRiemannAdjusted> density_relaxation_wall(water_wall_contact);
+    //density_relaxation.post_processes_.push_back(&density_relaxation_wall);
 
     /** Turbulent.Note: When use wall function, K Epsilon calculation only consider inner */
     InteractionWithUpdate<fluid_dynamics::JudgeIsNearWall> update_near_wall_status(water_block_inner, water_wall_contact, y_p_constant);
@@ -206,6 +206,7 @@ int main(int ac, char *av[])
     SimpleDynamics<fluid_dynamics::PressureConditionCorrection<RightOutflowPressure>> right_outflow_pressure_condition(right_emitter);
 
     InteractionWithUpdate<fluid_dynamics::DensitySummationPressureComplex> update_fluid_density_pressure(water_block_inner, water_wall_contact);
+    SimpleDynamics<UpdateVolume> update_volume(water_block);
 
     /** Choose one, ordinary or turbulent. Time step size without considering sound wave speed. */
     ReduceDynamics<fluid_dynamics::TurbulentAdvectionTimeStepSize> get_turbulent_fluid_advection_time_step_size(water_block, U_f);
@@ -260,7 +261,7 @@ int main(int ac, char *av[])
     int screen_output_interval = 100;
     int observation_sample_interval = screen_output_interval * 2;
 
-    Real end_time = 200.0;                      /**< End time. */
+    Real end_time = 100.0;                      /**< End time. */
     Real cutoff_ratio = 0.9;                    //** cutoff_time should be a integral and the same as the PY script */
     Real cutoff_time = end_time * cutoff_ratio; //** cutoff_time should be a integral and the same as the PY script */
     Real num_output_files = 200.0;
@@ -298,6 +299,8 @@ int main(int ac, char *av[])
 
             //update_density_by_summation.exec();
             update_fluid_density_pressure.exec();
+            //** This is to address the bug in density summation *
+            update_volume.exec();
 
             corrected_configuration_fluid.exec();
             corrected_configuration_fluid_only_inner.exec();

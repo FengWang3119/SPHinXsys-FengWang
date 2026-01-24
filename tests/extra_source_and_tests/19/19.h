@@ -14,19 +14,22 @@ using namespace SPH;
 //----------------------------------------------------------------------
 Real DH = 2.0;  /**< Channel height. */
 Real DL = 30.0; /**< Channel length. */
-Real num_fluid_cross_section = 128.0;
+Real num_fluid_cross_section = 32.0;
 
 //----------------------------------------------------------------------
 //	Unique parameters for turbulence.
 //----------------------------------------------------------------------
 Real characteristic_length = DH; /**<It needs characteristic Length to calculate turbulent length and the inflow turbulent epsilon>*/
-//** For K and Epsilon, type of the turbulent inlet, 0 is freestream, 1 is from interpolation from PY21, 2 is from OF6-28 *
+//** For K and Epsilon/Omega, type of the turbulent inlet, 0 is freestream, 1 is from interpolation from PY21, 2 is from OF6-28(currently not OK) *
 int type_turbulent_inlet = 1;
+// ** 0 is freestream, 1 is from interpolation from PY21, 2 is from OF6-28 *
+int type_velocity_inlet = 2;
+
 Real relaxation_rate_turbulent_inlet = 0.8;
 //** Tag for wall treatment *
 int is_blended = 1;
 //** Tag for AMRD *
-int is_AMRD = 1;
+int is_AMRD = 0;
 bool is_constrain_normal_velocity_in_P_region = false;
 //** Weight for correcting the velocity  gradient in the sub near wall region  *
 //Real weight_vel_grad_sub_nearwall = 0.1;
@@ -304,7 +307,7 @@ struct InflowVelocity
         //target_velocity[0] = 1.5 * u_ave * SMAX(0.0, 1.0 - position[1] * position[1] / halfsize_[1] / halfsize_[1]);
         //target_velocity[0] = 1.5 * u_ave * (1.0 - position[1] * position[1] / half_channel_height / half_channel_height);
         target_velocity[0] = u_ave;
-        if (type_turbulent_inlet == 1)
+        if (type_velocity_inlet == 1)
         {
             //** Impose fully-developed velocity from PYTHON result */
             //** Calculate the distance to wall, Y. position[1] is the distance to the centerline */
@@ -343,7 +346,7 @@ struct InflowVelocity
             //target_velocity[0] = polynomial_value;
         }
 
-        if (type_turbulent_inlet == 2)
+        if (type_velocity_inlet == 2)
         {
             //** Impose fully-developed velocity from OF6-28 result */
             //** Calculate the distance to wall, Y. position[1] is the distance to the centerline */
@@ -411,3 +414,27 @@ struct LeftInflowPressure
         return p;
     }
 };
+
+namespace SPH 
+{
+//=================================================================================================//
+    class UpdateVolume : public LocalDynamics
+    {
+    public:
+        explicit UpdateVolume(SPHBody& sph_body) 
+            : LocalDynamics(sph_body),
+            rho_(particles_->getVariableDataByName<Real>("Density")),
+            mass_(particles_->getVariableDataByName<Real>("Mass")),
+            Vol_(particles_->getVariableDataByName<Real>("VolumetricMeasure")) {};
+        virtual ~UpdateVolume() {};
+
+        void update(size_t index_i, Real dt = 0.0) 
+        {
+            Vol_[index_i] = mass_[index_i] / rho_[index_i];
+        };
+
+    protected:
+        Real* rho_, * mass_, * Vol_;
+    };
+//=================================================================================================//
+}

@@ -633,7 +633,7 @@ void kOmega_InflowTurbulentCondition::update(size_t index_i, Real dt)
     Real target_inflow_turbu_k = getTurbulentInflowK(pos_[index_i], vel_[index_i], turbu_k_[index_i]);
     turbu_k_[index_i] += relaxation_rate_ * (target_inflow_turbu_k - turbu_k_[index_i]);
 
-    if (type_turbu_inlet_ == 1)
+    if (type_turbu_inlet_ == 1 || type_turbu_inlet_ == 0)
     {
         Real target_inflow_temp_turbu_E = getTurbulentInflowTemporaryEpsilon(pos_[index_i], turbu_k_[index_i], 0.0);
         //** Calculate inlet omega from k and epsilon */
