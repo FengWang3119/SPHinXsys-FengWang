@@ -14,13 +14,13 @@ using namespace SPH;
 //----------------------------------------------------------------------
 Real DH = 2.0;  /**< Channel height. */
 Real DL = 30.0; /**< Channel length. */
-Real num_fluid_cross_section = 40.0;
+Real num_fluid_cross_section = 128.0;
 
 //----------------------------------------------------------------------
 //	Unique parameters for turbulence.
 //----------------------------------------------------------------------
 Real characteristic_length = DH; /**<It needs characteristic Length to calculate turbulent length and the inflow turbulent epsilon>*/
-//** For K and Epsilon, type of the turbulent inlet, 0 is freestream, 1 is from interpolation from PY21 *
+//** For K and Epsilon, type of the turbulent inlet, 0 is freestream, 1 is from interpolation from PY21, 2 is from OF6-28 *
 int type_turbulent_inlet = 1;
 Real relaxation_rate_turbulent_inlet = 0.8;
 //** Tag for wall treatment *
@@ -33,7 +33,7 @@ bool is_constrain_normal_velocity_in_P_region = false;
 //** Tag for Source Term Linearisation *
 bool is_source_term_linearisation = false;
 //** Initial values for K, Omega and Mu_t *
-StdVec<Real> initial_turbu_values = {0.000180001, 2.056, 1.0e-9};
+StdVec<Real> initial_turbu_values = {0.01, 2.056, 0.02};
 
 //Real y_p_constant = 0.05;
 //Real y_p_constant = DH / 2.0 / num_fluid_cross_section; //** For the first try or Not use BOT *
@@ -61,7 +61,7 @@ Real U_f = U_inlet;         //*Characteristic velocity
 Real U_max = 1.5 * U_inlet; //** An estimated value, generally 1.5 U_inlet *
 Real c_f = 10.0 * U_max;
 Real rho0_f = 1.0; /**< Density. */
-Real Re = 20000.0;
+Real Re = 5714.0;
 
 Real Outlet_pressure = 0.0;
 
@@ -343,6 +343,41 @@ struct InflowVelocity
             //target_velocity[0] = polynomial_value;
         }
 
+        if (type_turbulent_inlet == 2)
+        {
+            //** Impose fully-developed velocity from OF6-28 result */
+            //** Calculate the distance to wall, Y. position[1] is the distance to the centerline */
+            Real Y = half_channel_height - std::abs(position[1]);
+            int polynomial_order = 12;
+            int num_coefficient = polynomial_order + 1;
+
+            Real coeff[] = {
+                -2.574640e-02, 1.461020e+01, -1.143869e+02,
+                5.623141e+02, -1.788371e+03, 3.832772e+03,
+                -5.683374e+03, 5.895324e+03, -4.261666e+03,
+                2.101707e+03, -6.736439e+02, 1.264273e+02,
+                -1.053944e+01,
+            };
+            Real polynomial_value = 0.0;
+            for (int i = 0; i < num_coefficient; ++i)
+            {
+                polynomial_value += coeff[i] * std::pow(Y, i);
+            }
+
+            if (Y > half_channel_height || Y < 0.0)
+            {
+                std::cout << "position[1]=" << position[1] << std::endl;
+                std::cout << "Y=" << Y << std::endl;
+                std::cout << "polynomial_value=" << polynomial_value << std::endl;
+                std::cout << "Stop" << std::endl;
+                std::cout << "=================" << std::endl;
+                std::cin.get();
+            }
+
+            //** Impose inlet velocity gradually */
+            target_velocity[0] = current_time < t_ref_ ? 0.5 * polynomial_value * (1.0 - cos(Pi * current_time / t_ref_)) : polynomial_value;
+            //target_velocity[0] = polynomial_value;
+        }
         if (position[1] > half_channel_height)
         {
             std::cout << "Particles out of domain, wrong inlet velocity." << std::endl;
