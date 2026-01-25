@@ -280,6 +280,8 @@ class kOmega_InflowTurbulentCondition : public BaseFlowBoundaryCondition,
     virtual Real getTurbulentInflowK(Vecd &position, Vecd &velocity, Real &turbu_k);
     virtual Real getTurbulentInflowTemporaryEpsilon(Vecd &position, Real &turbu_k, Real turbu_E);
     virtual Real getTurbulentInflowOmega(Vecd& position, Vecd& velocity, Real& turbu_omega);
+
+    Real polyEval(const std::vector<Real>& a, Real x);
 };
 //=================================================================================================//
 } // namespace fluid_dynamics
