@@ -690,26 +690,39 @@ Real kOmega_InflowTurbulentCondition::getTurbulentInflowK(Vecd &position, Vecd &
     }
     if (type_turbu_inlet_ == 2)// %From OF6-28
     {
-        Real channel_height = CharacteristicLength_; //** Temporarily treatment *
+        const Real channel_height = CharacteristicLength_; //** Temporarily treatment *
 
         //** Impose fully-developed K from PYTHON result */
         //** Calculate the distance to wall, Y. position here is the actual postion in x-y coordinate, no transformation*/
         Real Y = (position[1] < channel_height / 2.0) ? position[1] : channel_height - position[1];
 
-        int polynomial_order = 12;
-        int num_coefficient = polynomial_order + 1;
-        //** Coefficient of the polynomial, 8th-order, from py21 dp=0.1 */
-        Real coeff[] = {
-            -1.866097e-03, 1.514133e-01, -6.541620e-01,
-            -1.169060e-01, 9.754087e+00, -3.805778e+01,
-            7.772264e+01, -9.859566e+01, 8.148107e+01,
-            -4.396336e+01, 1.494422e+01, -2.905758e+00,
-            2.463927e-01,
-        };
+        //** 2 segments *
+        const Real y1 = 0.16;
+
         Real polynomial_value = 0.0;
-        for (int i = 0; i < num_coefficient; ++i)
+        if (Y > 0.0 && Y <= y1)
         {
-            polynomial_value += coeff[i] * std::pow(Y, i);
+            static const std::vector<Real> coeff1 = {
+                2.635746e-05, -5.806824e-03, 2.631359e+00,
+                -2.224117e+02, 1.220206e+04, -3.088909e+05,
+                4.268938e+06, -3.481744e+07, 1.682721e+08,
+                -4.473615e+08, 5.054524e+08, -8.600097e+02,
+                7.539292e+01,
+            };
+            polynomial_value = polyEval(coeff1, Y);
+            //std::cout << "polynomial_value=" << polynomial_value << " Y=" << Y << "========1=========\n";
+        }
+        else
+        {
+            static const std::vector<Real> coeff2 = {
+                3.681529e-04, 1.650545e-01, -1.387815e+00,
+                6.702511e+00, -2.129245e+01, 4.503753e+01,
+                -6.069806e+01, 4.192718e+01, 9.838463e+00,
+                -5.149433e+01, 4.939631e+01, -2.224766e+01,
+                4.057173e+00,
+            };
+            polynomial_value = polyEval(coeff2, Y);
+            //std::cout << "polynomial_value=" << polynomial_value << " Y=" << Y << "========3=========\n";
         }
 
         if (Y > channel_height / 2.0 || Y < 0.0)
@@ -767,44 +780,44 @@ Real kOmega_InflowTurbulentCondition::getTurbulentInflowOmega(Vecd& position, Ve
         const Real channel_height = CharacteristicLength_; //** Temporarily treatment *
 
         //** Calculate the distance to wall, Y. position here is the actual postion in x-y coordinate, no transformation*/
-        const Real Y = (position[1] <= channel_height * 0.5)
+        Real Y = (position[1] <= channel_height * 0.5)
             ? position[1]
             : channel_height - position[1];
 
+        //** 3 segments *
         const Real y1 = 0.03;
         const Real y2 = 0.2;
 
         Real polynomial_value = 0.0;
-
         if (Y > 0.0 && Y <= y1)
         {
-            static const std::vector<Real> coeff = {
+            static const std::vector<Real> coeff1 = {
                 4.363393e+02,
                -1.047956e+04,
                -4.364058e+04
             };
-
-            polynomial_value = polyEval(coeff, Y);
+            polynomial_value = polyEval(coeff1, Y);
+            //std::cout << "polynomial_value=" << polynomial_value << " Y=" << Y << "========1=========\n";
         }
         else if (Y > y1 && Y <= y2)
         {
-            static const std::vector<Real> coeff = {
-                1.635845e+01, -1.405561e+02, 6.298030e+02,
-               -1.634994e+03, 2.532157e+03, -2.318976e+03,
-                1.163535e+03, -2.470773e+02
-            };
-
-            polynomial_value = polyEval(coeff, Y);
-        }
-        else
-        {
-            static const std::vector<Real> coeff = {
+            static const std::vector<Real> coeff2 = {
                 2.715982e+02, -1.237141e+04, 2.548021e+05,
                -2.891082e+06, 1.910128e+07, -7.257068e+07,
                 1.449985e+08, -1.153286e+08
             };
-
-            polynomial_value = polyEval(coeff, Y);
+            polynomial_value = polyEval(coeff2, Y);
+            //std::cout << "polynomial_value=" << polynomial_value << " Y=" << Y << "========2=========\n";
+        }
+        else
+        {
+            static const std::vector<Real> coeff3 = {
+                1.635845e+01, -1.405561e+02, 6.298030e+02,
+               -1.634994e+03, 2.532157e+03, -2.318976e+03,
+                1.163535e+03, -2.470773e+02
+            };
+            polynomial_value = polyEval(coeff3, Y);
+            //std::cout << "polynomial_value=" << polynomial_value << " Y=" << Y << "========3=========\n";
         }
 
         if (Y < 0.0 || Y > channel_height * 0.5)
@@ -826,9 +839,10 @@ Real kOmega_InflowTurbulentCondition::polyEval(const std::vector<Real>& a, Real 
     const int n = static_cast<int>(a.size());
     if (n == 0)
     {
-        return Real(0);
+        std::cout << "size of coefficient = 0 " << '\n'
+            << "=================\n";
+        std::cin.get();
     }
-
     Real result = a[n - 1];
     for (int i = n - 2; i >= 0; --i)
     {

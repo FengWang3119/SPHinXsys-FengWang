@@ -14,14 +14,14 @@ using namespace SPH;
 //----------------------------------------------------------------------
 Real DH = 2.0;  /**< Channel height. */
 Real DL = 30.0; /**< Channel length. */
-Real num_fluid_cross_section = 128.0;
+Real num_fluid_cross_section = 32.0;
 
 //----------------------------------------------------------------------
 //	Unique parameters for turbulence.
 //----------------------------------------------------------------------
 Real characteristic_length = DH; /**<It needs characteristic Length to calculate turbulent length and the inflow turbulent epsilon>*/
 //** For K and Epsilon/Omega, type of the turbulent inlet, 0 is freestream, 1 is from interpolation from PY21, 2 is from OF6-28(currently not OK) *
-int type_turbulent_inlet = 1;
+int type_turbulent_inlet = 2;
 // ** 0 is freestream, 1 is from interpolation from PY21, 2 is from OF6-28 *
 int type_velocity_inlet = 2;
 
@@ -351,22 +351,35 @@ struct InflowVelocity
             //** Impose fully-developed velocity from OF6-28 result */
             //** Calculate the distance to wall, Y. position[1] is the distance to the centerline */
             Real Y = half_channel_height - std::abs(position[1]);
-            int polynomial_order = 12;
-            int num_coefficient = polynomial_order + 1;
 
-            Real coeff[] = {
-                -2.574640e-02, 1.461020e+01, -1.143869e+02,
-                5.623141e+02, -1.788371e+03, 3.832772e+03,
-                -5.683374e+03, 5.895324e+03, -4.261666e+03,
-                2.101707e+03, -6.736439e+02, 1.264273e+02,
-                -1.053944e+01,
-            };
+            //** 2 segments *
+            const Real y1 = 0.2;
+
             Real polynomial_value = 0.0;
-            for (int i = 0; i < num_coefficient; ++i)
+            if (Y > 0.0 && Y <= y1)
             {
-                polynomial_value += coeff[i] * std::pow(Y, i);
+                static const std::vector<Real> coeff1 = {
+                -1.658125e-04, 1.081005e+01, 3.522822e-01,
+                -1.026430e+03, 6.581696e+04, -2.817724e+06,
+                6.091954e+07, -7.664212e+08, 6.050634e+09,
+                -3.059173e+10, 9.656963e+10, -1.738073e+11,
+                1.364291e+11,
+                };
+                polynomial_value = polyEval(coeff1, Y);
+                //std::cout << "polynomial_value=" << polynomial_value << " Y=" << Y << "========1=========\n";
             }
-
+            else
+            {
+                static const std::vector<Real> coeff2 = {
+                2.900603e-01, 6.951898e+00, -3.804471e+01,
+                1.419110e+02, -3.399496e+02, 4.913445e+02,
+                -3.197135e+02, -1.928404e+02, 5.883885e+02,
+                -5.044169e+02, 1.846665e+02, -9.893014e+00,
+                -7.546598e+00,
+                };
+                polynomial_value = polyEval(coeff2, Y);
+                //std::cout << "polynomial_value=" << polynomial_value << " Y=" << Y << "========3=========\n";
+            }
             if (Y > half_channel_height || Y < 0.0)
             {
                 std::cout << "position[1]=" << position[1] << std::endl;
@@ -389,6 +402,22 @@ struct InflowVelocity
         }
         target_velocity[1] = 0.0;
         return target_velocity;
+    }
+    Real polyEval(const std::vector<Real>& a, Real x)
+    {
+        const int n = static_cast<int>(a.size());
+        if (n == 0)
+        {
+            std::cout << "size of coefficient = 0 " << '\n'
+                << "=================\n";
+            std::cin.get();
+        }
+        Real result = a[n - 1];
+        for (int i = n - 2; i >= 0; --i)
+        {
+            result = result * x + a[i];
+        }
+        return result;
     }
 };
 
