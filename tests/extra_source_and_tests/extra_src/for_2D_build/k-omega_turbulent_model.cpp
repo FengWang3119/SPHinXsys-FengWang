@@ -180,6 +180,8 @@ kOmega_WallFunctionCorrection::
 
     particles_->addVariableToSort<Vecd>("FrictionVelocity");
     particles_->addVariableToWrite<Vecd>("FrictionVelocity");
+    particles_->addVariableToSort<Real>("WallShearStress");
+    particles_->addVariableToWrite<Real>("WallShearStress");
 
     particles_->addVariableToSort<Real>("LaminarFractionForBlend");
     particles_->addVariableToWrite<Real>("LaminarFractionForBlend");
@@ -193,6 +195,8 @@ void kOmega_WallFunctionCorrection::interaction(size_t index_i, Real dt)
     wall_Y_plus_[index_i] = 0.0;
     wall_Y_star_[index_i] = 0.0;
     Real current_time = *physical_time_;
+
+    wall_shear_stress_[index_i] = 0.0;
 
     //** For test *
     laminar_fraction_for_blend_[index_i] = 0.0;
