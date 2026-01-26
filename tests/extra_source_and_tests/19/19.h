@@ -14,14 +14,14 @@ using namespace SPH;
 //----------------------------------------------------------------------
 Real DH = 2.0;  /**< Channel height. */
 Real DL = 30.0; /**< Channel length. */
-Real num_fluid_cross_section = 32.0;
+Real num_fluid_cross_section = 128.0;
 
 //----------------------------------------------------------------------
 //	Unique parameters for turbulence.
 //----------------------------------------------------------------------
 Real characteristic_length = DH; /**<It needs characteristic Length to calculate turbulent length and the inflow turbulent epsilon>*/
 //** For K and Epsilon/Omega, type of the turbulent inlet, 0 is freestream, 1 is from interpolation from PY21, 2 is from OF6-28(currently not OK) *
-int type_turbulent_inlet = 2;
+int type_turbulent_inlet = 1;
 // ** 0 is freestream, 1 is from interpolation from PY21, 2 is from OF6-28 *
 int type_velocity_inlet = 2;
 
