@@ -14,14 +14,15 @@ using namespace SPH;
 //----------------------------------------------------------------------
 Real DH = 2.0;  /**< Channel height. */
 Real DL = 30.0; /**< Channel length. */
-Real num_fluid_cross_section = 32.0;
+Real num_fluid_cross_section = 128.0;
 
+Real time_gradually_increase_vel = 2.0;
 //----------------------------------------------------------------------
 //	Unique parameters for turbulence.
 //----------------------------------------------------------------------
 Real characteristic_length = DH; /**<It needs characteristic Length to calculate turbulent length and the inflow turbulent epsilon>*/
 //** For K and Epsilon/Omega, type of the turbulent inlet, 0 is freestream, 1 is from interpolation from PY21, 2 is from OF6-28(currently not OK) *
-int type_turbulent_inlet = 2;
+int type_turbulent_inlet = 1;
 // ** 0 is freestream, 1 is from interpolation from PY21, 2 is from OF6-28 *
 int type_velocity_inlet = 2;
 
@@ -35,6 +36,8 @@ bool is_constrain_normal_velocity_in_P_region = false;
 //Real weight_vel_grad_sub_nearwall = 0.1;
 //** Tag for Source Term Linearisation *
 bool is_source_term_linearisation = false;
+//** Empirical parameter for initial stability*
+Real turbulent_module_activate_time = 0.0;
 //** Initial values for K, Omega and Mu_t *
 StdVec<Real> initial_turbu_values = {0.01, 2.056, 0.02};
 
@@ -139,7 +142,7 @@ constexpr const char *namespace_prefix = "nearwall";
 const int number_observe_line = 1;
 Real sparse_ratio = 4.0;
 Real observer_offset_distance = 0.0 * resolution_ref; //** Offset the first and last observing point *
-Real observer_offset_distance_whole_line = 2.0 * resolution_ref;
+Real observer_offset_distance_whole_line = 0.0 * resolution_ref;
 Vec2d unit_direction_observe(1.0, 0.0);
 // ** Determine the observing start point of the each line. *
 Real observe_start_x[number_observe_line] = {0.0};
@@ -296,7 +299,7 @@ struct InflowVelocity
 
     template <class BoundaryConditionType>
     InflowVelocity(BoundaryConditionType &boundary_condition)
-        : u_ref_(U_inlet), t_ref_(2.0),
+        : u_ref_(U_inlet), t_ref_(time_gradually_increase_vel),
           aligned_box_(boundary_condition.getAlignedBox()),
           halfsize_(aligned_box_.HalfSize()) {}
 
