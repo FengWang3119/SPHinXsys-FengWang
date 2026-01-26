@@ -51,7 +51,7 @@ int main(int ac, char *av[])
     observe_nearwall::output_observe_theoretical_x();
     observe_nearwall::output_number_observe_points_on_lines();
     ObserverBody friction_velocity_observer(sph_system, "NearwallFrictionVelocityObserver");
-    friction_velocity_observer.defineAdaptationRatios(0.275, 1.0);
+    friction_velocity_observer.defineAdaptationRatios(0.3, 1.0);
     friction_velocity_observer.generateParticles<ObserverParticles>(observe_nearwall::observation_locations);
 
     /** topology */
