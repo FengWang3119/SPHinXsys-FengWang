@@ -305,16 +305,22 @@ int main(int ac, char *av[])
             corrected_configuration_fluid.exec();
             corrected_configuration_fluid_only_inner.exec();
 
-            update_eddy_viscosity.exec();
+            if (physical_time > turbulent_module_activate_time) //** A temporary treatment *
+            {
+                update_eddy_viscosity.exec();
+            }
 
             //viscous_force.exec();
             turbulent_viscous_force.exec();
 
-            get_velocity_gradient.exec();
-            compute_TKE_diffusion.exec();
-            compute_TSDR_diffusion_and_gradient_k_omega.exec();
-            update_near_wall_status.exec();
-            standard_wall_function_correction.exec();
+            if (physical_time > turbulent_module_activate_time) //** A temporary treatment *
+            {
+                get_velocity_gradient.exec();
+                compute_TKE_diffusion.exec();
+                compute_TSDR_diffusion_and_gradient_k_omega.exec();
+                update_near_wall_status.exec();
+                standard_wall_function_correction.exec();
+            }
 
             transport_velocity_correction.exec();
 
@@ -329,7 +335,10 @@ int main(int ac, char *av[])
             {
                 dt = SMIN(get_fluid_time_step_size.exec(), Dt);
 
-                turbulent_kinetic_energy_force.exec();
+                if (physical_time > turbulent_module_activate_time) //** A temporary treatment *
+                {
+                    turbulent_kinetic_energy_force.exec();
+                }
 
                 pressure_relaxation.exec(dt);
 
@@ -340,12 +349,19 @@ int main(int ac, char *av[])
                     constrain_normal_velocity_in_P_region.exec();
 
                 inflow_velocity_condition.exec();
-                impose_turbulent_inflow_condition.exec();
+
+                if (physical_time > turbulent_module_activate_time) //** A temporary treatment *
+                {
+                    impose_turbulent_inflow_condition.exec();
+                }
 
                 density_relaxation.exec(dt);
 
-                k_equation_relaxation.exec(dt);
-                epsilon_equation_relaxation.exec(dt);
+                if (physical_time > turbulent_module_activate_time) //** A temporary treatment *
+                {
+                    k_equation_relaxation.exec(dt);
+                    epsilon_equation_relaxation.exec(dt);
+                }
 
                 relaxation_time += dt;
                 integration_time += dt;

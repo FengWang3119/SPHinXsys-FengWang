@@ -16,6 +16,7 @@ Real DH = 2.0;  /**< Channel height. */
 Real DL = 30.0; /**< Channel length. */
 Real num_fluid_cross_section = 128.0;
 
+Real time_gradually_increase_vel = 2.0;
 //----------------------------------------------------------------------
 //	Unique parameters for turbulence.
 //----------------------------------------------------------------------
@@ -35,6 +36,8 @@ bool is_constrain_normal_velocity_in_P_region = false;
 //Real weight_vel_grad_sub_nearwall = 0.1;
 //** Tag for Source Term Linearisation *
 bool is_source_term_linearisation = false;
+//** Empirical parameter for initial stability*
+Real turbulent_module_activate_time = 0.0;
 //** Initial values for K, Omega and Mu_t *
 StdVec<Real> initial_turbu_values = {0.01, 2.056, 0.02};
 
@@ -296,7 +299,7 @@ struct InflowVelocity
 
     template <class BoundaryConditionType>
     InflowVelocity(BoundaryConditionType &boundary_condition)
-        : u_ref_(U_inlet), t_ref_(2.0),
+        : u_ref_(U_inlet), t_ref_(time_gradually_increase_vel),
           aligned_box_(boundary_condition.getAlignedBox()),
           halfsize_(aligned_box_.HalfSize()) {}
 
