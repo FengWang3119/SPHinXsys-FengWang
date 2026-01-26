@@ -277,15 +277,15 @@ void kOmega_WallFunctionCorrection::interaction(size_t index_i, Real dt)
         if (vel_i.dot(velo_friction_[index_i]) < 0.0)
             velo_friction_[index_i] = -1.0 * velo_friction_[index_i];
 
+        //** Calculate wall shear stress*
+        wall_shear_stress_[index_i] = rho_i * velo_fric_mag * velo_fric_mag;
+
         //** Calculate Y_plus  *
         wall_Y_plus_[index_i] = y_p_constant_i * velo_fric_mag / nu_i;
 
         // ** Correct the near wall values, only for P1 region *
         if (is_near_wall_P1_[index_i] == 1)
         {
-            //** Calculate wall shear stress*
-            wall_shear_stress_[index_i] = rho_i * velo_fric_mag * velo_fric_mag;
-
             Matd vel_grad_i_tn = Matd::Zero(); //** velocity gradient of wall-nearest fluid particle i on t-n plane *
             Matd Q = Matd::Zero();
             Real total_weight = 0.0;
