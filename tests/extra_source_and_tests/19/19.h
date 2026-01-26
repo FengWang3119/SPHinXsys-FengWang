@@ -140,7 +140,7 @@ namespace observe_nearwall
 {
 constexpr const char *namespace_prefix = "nearwall";
 const int number_observe_line = 1;
-Real sparse_ratio = 4.0;
+Real sparse_ratio = 2.0;
 Real observer_offset_distance = 0.0 * resolution_ref; //** Offset the first and last observing point *
 Real observer_offset_distance_whole_line = 0.0 * resolution_ref;
 Vec2d unit_direction_observe(1.0, 0.0);
