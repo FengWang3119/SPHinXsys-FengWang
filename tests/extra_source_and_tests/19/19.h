@@ -146,7 +146,7 @@ Real observer_offset_distance_whole_line = 0.0 * resolution_ref;
 Vec2d unit_direction_observe(1.0, 0.0);
 // ** Determine the observing start point of the each line. *
 Real observe_start_x[number_observe_line] = {0.0};
-Real observe_start_y[number_observe_line] = {0.0 * resolution_ref - observer_offset_distance_whole_line};
+Real observe_start_y[number_observe_line] = {0.5 * resolution_ref - observer_offset_distance_whole_line};
 // ** Determine the length of the observing line and other information. *
 Real observe_line_length[number_observe_line] = {0.0};
 int num_observer_points[number_observe_line] = {0};
