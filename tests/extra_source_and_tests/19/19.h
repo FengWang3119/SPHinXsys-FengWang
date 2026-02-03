@@ -1,8 +1,8 @@
 #include "bidirectional_buffer.h"
-#include "common_turbulence_model.cpp"
+#include "udf_common_turbulence_model.cpp"
 #include "density_correciton.h"
 #include "density_correciton.hpp"
-#include "k-omega_turbulent_model.cpp"
+#include "udf_k-omega_turbulent_model.cpp"
 #include "kernel_summation.h"
 #include "kernel_summation.hpp"
 #include "pressure_boundary.h"
@@ -14,7 +14,7 @@ using namespace SPH;
 //----------------------------------------------------------------------
 Real DH = 2.0;  /**< Channel height. */
 Real DL = 30.0; /**< Channel length. */
-Real num_fluid_cross_section = 160.0;
+Real num_fluid_cross_section = 40.0;
 
 Real time_gradually_increase_vel = 2.0;
 //----------------------------------------------------------------------
@@ -142,11 +142,11 @@ constexpr const char *namespace_prefix = "nearwall";
 const int number_observe_line = 1;
 Real sparse_ratio = 2.0;
 Real observer_offset_distance = 0.0 * resolution_ref; //** Offset the first and last observing point *
-Real observer_offset_distance_whole_line = 0.0 * resolution_ref;
+Real observer_offset_distance_whole_line = 2.0 * resolution_ref;
 Vec2d unit_direction_observe(1.0, 0.0);
 // ** Determine the observing start point of the each line. *
 Real observe_start_x[number_observe_line] = {0.0};
-Real observe_start_y[number_observe_line] = {0.0 * resolution_ref - observer_offset_distance_whole_line};
+Real observe_start_y[number_observe_line] = {0.5 * resolution_ref - observer_offset_distance_whole_line};
 // ** Determine the length of the observing line and other information. *
 Real observe_line_length[number_observe_line] = {0.0};
 int num_observer_points[number_observe_line] = {0};
