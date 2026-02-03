@@ -30,7 +30,7 @@
 #ifndef K_EPSILON_TURBULENT_MODEL_H
 #define K_EPSILON_TURBULENT_MODEL_H
 
-#include "common_turbulence_model.h"
+#include "udf_common_turbulence_model.h"
 #include "sphinxsys.h"
 #include <mutex>
 

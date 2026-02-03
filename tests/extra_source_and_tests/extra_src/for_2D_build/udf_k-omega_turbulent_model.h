@@ -1,7 +1,7 @@
 #ifndef K_OMEGA_TURBULENT_MODEL_H
 #define K_OMEGA_TURBULENT_MODEL_H
 
-#include "common_turbulence_model.h"
+#include "udf_common_turbulence_model.h"
 #include <mutex>
 
 namespace SPH
