@@ -11,9 +11,9 @@ using namespace SPH;
 //----------------------------------------------------------------------
 Real L = 1.0;
 Real H = 1.0;
-Real resolution_ref = H / 50.0;
-Real BW = resolution_ref * 4.0;
-BoundingBox system_domain_bounds(Vec2d(-BW, -BW), Vec2d(L + BW, H + BW));
+Real global_resolution = H / 50.0;
+Real BW = global_resolution * 4.0;
+BoundingBoxd system_domain_bounds(Vec2d(-BW, -BW), Vec2d(L + BW, H + BW));
 //----------------------------------------------------------------------
 //	Basic parameters for material properties.
 //----------------------------------------------------------------------
@@ -54,8 +54,8 @@ std::vector<Vecd> createBoundaryDomain()
 }
 
 std::vector<Vecd> heat_flux_boundary{
-    Vecd(0.45 * L, H - resolution_ref), Vecd(0.45 * L, H), Vecd(0.55 * L, H),
-    Vecd(0.55 * L, H - resolution_ref), Vecd(0.45 * L, H - resolution_ref)};
+    Vecd(0.45 * L, H - global_resolution), Vecd(0.45 * L, H), Vecd(0.55 * L, H),
+    Vecd(0.55 * L, H - global_resolution), Vecd(0.45 * L, H - global_resolution)};
 
 namespace SPH
 {
@@ -96,7 +96,7 @@ class DiffusionBodyInitialCondition : public LocalDynamics
     explicit DiffusionBodyInitialCondition(SPHBody &sph_body)
         : LocalDynamics(sph_body),
           pos_(particles_->getVariableDataByName<Vecd>("Position")),
-          phi_(particles_->registerStateVariable<Real>(diffusion_species_name)){};
+          phi_(particles_->registerStateVariableData<Real>(diffusion_species_name)) {};
 
     void update(size_t index_i, Real dt)
     {
@@ -113,7 +113,7 @@ class ThermalConductivityRandomInitialization : public LocalDynamics
   public:
     explicit ThermalConductivityRandomInitialization(SPHBody &sph_body)
         : LocalDynamics(sph_body),
-          thermal_conductivity(particles_->getVariableDataByName<Real>("ThermalConductivity")){};
+          thermal_conductivity(particles_->getVariableDataByName<Real>("ThermalConductivity")) {};
     void update(size_t index_i, Real dt)
     {
         thermal_conductivity[index_i] = 0.5 + rand_uniform(0.0, 1.0);
@@ -129,8 +129,8 @@ class WallBoundaryInitialCondition : public LocalDynamics
     explicit WallBoundaryInitialCondition(SPHBody &sph_body)
         : LocalDynamics(sph_body),
           pos_(particles_->getVariableDataByName<Vecd>("Position")),
-          phi_(particles_->registerStateVariable<Real>(diffusion_species_name)),
-          heat_flux_(particles_->getVariableDataByName<Real>("HeatFlux")){};
+          phi_(particles_->registerStateVariableData<Real>(diffusion_species_name)),
+          heat_flux_(particles_->getVariableDataByName<Real>("HeatFlux")) {};
 
     void update(size_t index_i, Real dt)
     {
@@ -162,9 +162,9 @@ class ImposeObjectiveFunction : public LocalDynamics
   public:
     explicit ImposeObjectiveFunction(SPHBody &sph_body)
         : LocalDynamics(sph_body),
-          phi_(particles_->registerStateVariable<Real>(diffusion_species_name)),
+          phi_(particles_->registerStateVariableData<Real>(diffusion_species_name)),
           species_modified_(particles_->getVariableDataByName<Real>("SpeciesModified")),
-          species_recovery_(particles_->getVariableDataByName<Real>("SpeciesRecovery")){};
+          species_recovery_(particles_->getVariableDataByName<Real>("SpeciesRecovery")) {};
 
     void update(size_t index_i, Real learning_rate)
     {
@@ -182,7 +182,7 @@ class StoreGlobalPDEResidual : public LocalDynamics
     explicit StoreGlobalPDEResidual(SPHBody &sph_body)
         : LocalDynamics(sph_body),
           residual_T_local_(particles_->getVariableDataByName<Real>("ResidualTLocal")),
-          residual_T_global_(particles_->getVariableDataByName<Real>("ResidualTGlobal")){};
+          residual_T_global_(particles_->getVariableDataByName<Real>("ResidualTGlobal")) {};
 
     void update(size_t index_i, Real learning_rate)
     {
@@ -204,8 +204,7 @@ TEST(test_optimization, test_problem4_optimized)
     //----------------------------------------------------------------------
     //	Build up the environment of a SPHSystem.
     //----------------------------------------------------------------------
-    SPHSystem sph_system(system_domain_bounds, resolution_ref);
-    sph_system.setIOEnvironment();
+    SPHSystem sph_system(system_domain_bounds, global_resolution);
     //----------------------------------------------------------------------
     //	Creating body, materials and particles.
     //----------------------------------------------------------------------
@@ -345,11 +344,11 @@ TEST(test_optimization, test_problem4_optimized)
     //	Main loop starts here.
     //----------------------------------------------------------------------
     std::string filefullpath_opt_temperature =
-        sph_system.getIOEnvironment().output_folder_ + "/" + "opt_temperature.dat";
+        sph_system.getIOEnvironment().OutputFolder() + "/" + "opt_temperature.dat";
     std::ofstream out_file_opt_temperature(filefullpath_opt_temperature.c_str(), std::ios::app); // record the temperature with modifing parameter.
 
     std::string filefullpath_nonopt_temperature =
-        sph_system.getIOEnvironment().output_folder_ + "/" + "nonopt_temperature.dat";
+        sph_system.getIOEnvironment().OutputFolder() + "/" + "nonopt_temperature.dat";
     std::ofstream out_file_nonopt_temperature(filefullpath_nonopt_temperature.c_str(), std::ios::app); // record the temperature without modifing parameter.
     //----------------------------------------------------------------------
     //	Initial States update.

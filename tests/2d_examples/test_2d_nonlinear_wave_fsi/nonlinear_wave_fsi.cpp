@@ -13,7 +13,7 @@ int main(int ac, char *av[])
     //	Build up the environment of a SPHSystem with global controls.
     //----------------------------------------------------------------------
     SPHSystem sph_system(system_domain_bounds, particle_spacing_ref);
-    sph_system.handleCommandlineOptions(ac, av)->setIOEnvironment();
+    sph_system.handleCommandlineOptions(ac, av);
     //----------------------------------------------------------------------
     //	Creating body, materials and particles.
     //----------------------------------------------------------------------
@@ -82,7 +82,7 @@ int main(int ac, char *av[])
     Gravity gravity(Vecd(0.0, -gravity_g));
     SimpleDynamics<GravityForce<Gravity>> constant_gravity(water_block, gravity);
 
-    InteractionWithUpdate<LinearGradientCorrectionMatrixComplex> corrected_configuration_fluid(InteractArgs(water_block_inner, 0.1), water_block_contact);
+    InteractionWithUpdate<LinearGradientCorrectionMatrixComplex> corrected_configuration_fluid(DynamicsArgs(water_block_inner, 0.1), water_block_contact);
 
     Dynamics1Level<fluid_dynamics::Integration1stHalfCorrectionWithWallRiemann> pressure_relaxation(water_block_inner, water_block_contact);
     Dynamics1Level<fluid_dynamics::Integration2ndHalfWithWallRiemann> density_relaxation(water_block_inner, water_block_contact);
@@ -180,7 +180,7 @@ int main(int ac, char *av[])
     BodyStatesRecordingToVtp write_real_body_states(sph_system);
     /** WaveProbe. */
     BodyRegionByCell wave_probe_buffer(water_block, makeShared<MultiPolygonShape>(createWaveGauge(), "WaveGauge"));
-    RegressionTestDynamicTimeWarping<ReducedQuantityRecording<UpperFrontInAxisDirection<BodyPartByCell>>>
+    ReducedQuantityRecording<UpperFrontInAxisDirection<BodyPartByCell>>
         wave_gauge(wave_probe_buffer, "FreeSurfaceHeight");
     /** StructureMovement. */
     InteractionDynamics<InterpolatingAQuantity<Vecd>>
@@ -194,7 +194,7 @@ int main(int ac, char *av[])
         interpolation_fp3_position(fp3_contact_s, "Position", "Position");
     RegressionTestDynamicTimeWarping<ObservedQuantityRecording<Real>>
         write_recorded_pressure_fp2("Pressure", fp2_contact_w);
-    RegressionTestDynamicTimeWarping<ObservedQuantityRecording<Real>>
+    ObservedQuantityRecording<Real>
         write_recorded_pressure_fp3("Pressure", fp3_contact_w);
     RestartIO restart_io(sph_system);
     //----------------------------------------------------------------------

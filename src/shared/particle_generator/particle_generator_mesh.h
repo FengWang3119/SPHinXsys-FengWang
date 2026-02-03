@@ -12,7 +12,7 @@
  * (Deutsche Forschungsgemeinschaft) DFG HU1527/6-1, HU1527/10-1,            *
  *  HU1527/12-1 and HU1527/12-4.                                             *
  *                                                                           *
- * Portions copyright (c) 2017-2023 Technical University of Munich and       *
+ * Portions copyright (c) 2017-2025 Technical University of Munich and       *
  * the authors' affiliations.                                                *
  *                                                                           *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may   *
@@ -40,11 +40,11 @@ class GeneratingMethod<UnstructuredMesh>
 {
   public:
     explicit GeneratingMethod(ANSYSMesh &ansys_mesh);
-    virtual ~GeneratingMethod(){};
+    virtual ~GeneratingMethod() {};
 
   protected:
-    StdLargeVec<Vecd> &elements_centroids_;
-    StdLargeVec<Real> &elements_volumes_;
+    StdVec<Vecd> &elements_centroids_;
+    StdVec<Real> &elements_volumes_;
 };
 
 template <>
@@ -53,9 +53,8 @@ class ParticleGenerator<BaseParticles, UnstructuredMesh>
 {
   public:
     explicit ParticleGenerator(SPHBody &sph_body, BaseParticles &base_particles, ANSYSMesh &ansys_mesh);
-    virtual ~ParticleGenerator(){};
+    virtual ~ParticleGenerator() {};
     virtual void prepareGeometricData() override;
 };
-
 } // namespace SPH
 #endif // PARTICLE_GENERATOR_MESH_H

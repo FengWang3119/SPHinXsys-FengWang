@@ -1,34 +1,31 @@
 # ![SPHinXsys Logo](assets/logo.png) SPHinXsys
 
-## Welcome to test and comment the heterogeneous parallelism in SPHinXsys
-
-SPHinXsys is undergoing a major transformation,
-moving from traditional CPU parallelism to a new era of heterogeneous parallelism,
-where compute-intensive tasks can harness the power of both CPUs and GPUs.
-This evolution will be driven by SYCL (via Intel's DPC++), enabling us to leverage heterogeneous architectures with standard C++.
-What's unique about this framework is that it allows for the development
-and testing of numerical methods even in environments without GPUs or DPC++ installed.
-If these methods are crafted following our specified guidelines and prove functional,
-they will seamlessly operate in environments equipped with DPC++ and GPU support.
-
-The groundwork for this shift is already laid out.
-Test cases following heterogeneous parallelism have been added to the `test/test_sycl` folder,
-showcasing the capabilities of our specially designed framework.
-
-Your tests, comments and modification of these test cases would be very welcomed!
-
-**Project status**
+**Project status**  
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Linux](https://img.shields.io/badge/os-Linux-green.svg)](https://shields.io/)
 [![Windows](https://img.shields.io/badge/os-Windows-green.svg)](https://shields.io/)
 [![macOS](https://img.shields.io/badge/os-macOs-green.svg)](https://shields.io/)
 ![ci workflow](https://github.com/Xiangyu-Hu/SPHinXsys/actions/workflows/ci.yml/badge.svg?event=push)
+[![Heterogeneous Computing](https://img.shields.io/badge/Heterogeneous-Computing-orange)](https://shields.io/)
+[![Unified SYCL Kernel](https://img.shields.io/badge/Unified-SYCL_Kernel-orange)](https://shields.io/)
 
 **Project communication**  
+[![LinkedIn](https://custom-icon-badges.demolab.com/badge/LinkedIn-0A66C2?logo=linkedin-white&logoColor=fff)](https://www.linkedin.com/in/xiangyu-hu-tum)
 [![Twitter](https://img.shields.io/twitter/url/https/twitter.com/sphinxsys.svg?style=social&label=Follow%20%40sphinxsys)](https://twitter.com/sphinxsys)
 [![YouTube](https://img.shields.io/badge/YouTube-FF0000.svg?style=flat&logo=YouTube&logoColor=white)](https://www.youtube.com/channel/UCexdJbxOn9dvim6Jg1dnCFQ)
 [![Bilibili](https://img.shields.io/badge/bilibili-%E5%93%94%E5%93%A9%E5%93%94%E5%93%A9-critical)](https://space.bilibili.com/1761273682/video)
 [![QQ](https://img.shields.io/badge/QQ_Group-blue?logo=tencentqq&logoColor=white)](https://qm.qq.com/q/BZDAqz70Iw)
+
+## Newest update: Heterogeneous parallel computing for update Lagrangian Solid Dynamics
+
+With our recent progress on numerical method for the Update Lagrangian SPH, 
+published on Journal of Computational Physics [(Zhang et al. 2026)](https://doi.org/10.1016/j.jcp.2025.114646),
+we are able to simulate large deformation and damage.
+Now, the SYCL kernel is implemented for this feature so that heterogeneous parallel computing can be achieved too.
+
+The following example gives a metal bar impacting at high speed and the corresponding deformation and damage processes.
+
+![Bar impact and damage](https://github.com/Xiangyu-Hu/SPHinXsys-public-files/blob/master/img/impact-24.png)
 
 ## Repository Description
 
@@ -93,7 +90,7 @@ While SPHinXsys is written in C++, it provides a python interface for users to w
 including carry out regression tests for continuous integration (CI) and other tasks.
 One example is given below for the dambreak case.
 Please check the source code of
-[2D Dambreak case with python interface](https://github.com/Xiangyu-Hu/SPHinXsys/tree/master/tests/2d_examples/test_2d_dambreak_python)
+[2D Dambreak case with python interface](https://github.com/Xiangyu-Hu/SPHinXsys/blob/master/tests/test_python_interface/test_2d_dambreak_python/dambreak_python.cpp)
 for the usage.
 
 ## Publications

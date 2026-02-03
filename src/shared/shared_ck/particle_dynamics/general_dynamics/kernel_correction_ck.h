@@ -32,6 +32,7 @@
 #define KERNEL_CORRECTION_CK_H
 
 #include "base_general_dynamics.h"
+#include "interaction_ck.h"
 
 namespace SPH
 {
@@ -46,7 +47,7 @@ class LinearCorrectionMatrix<Base, RelationType<Parameters...>>
   public:
     template <class DynamicsIdentifier>
     explicit LinearCorrectionMatrix(DynamicsIdentifier &identifier);
-    virtual ~LinearCorrectionMatrix(){};
+    virtual ~LinearCorrectionMatrix() {};
 
     class InteractKernel
         : public Interaction<RelationType<Parameters...>>::InteractKernel
@@ -63,7 +64,6 @@ class LinearCorrectionMatrix<Base, RelationType<Parameters...>>
     };
 
   protected:
-    DiscreteVariable<Real> *dv_Vol_;
     DiscreteVariable<Matd> *dv_B_;
 };
 
@@ -73,12 +73,12 @@ class LinearCorrectionMatrix<Inner<WithUpdate, Parameters...>>
 {
 
   public:
-    explicit LinearCorrectionMatrix(Relation<Inner<Parameters...>> &inner_relation, Real alpha = Real(0))
-        : LinearCorrectionMatrix<Base, Inner<Parameters...>>(inner_relation), alpha_(alpha){};
+    explicit LinearCorrectionMatrix(Inner<Parameters...> &inner_relation, Real alpha = Real(0))
+        : LinearCorrectionMatrix<Base, Inner<Parameters...>>(inner_relation), alpha_(alpha) {};
     template <typename BodyRelationType, typename FirstArg>
-    explicit LinearCorrectionMatrix(InteractArgs<BodyRelationType, FirstArg> parameters)
-        : LinearCorrectionMatrix(parameters.body_relation_, std::get<0>(parameters.others_)){};
-    virtual ~LinearCorrectionMatrix(){};
+    explicit LinearCorrectionMatrix(DynamicsArgs<BodyRelationType, FirstArg> parameters)
+        : LinearCorrectionMatrix(parameters.identifier_, std::get<0>(parameters.others_)){};
+    virtual ~LinearCorrectionMatrix() {};
 
     class InteractKernel
         : public LinearCorrectionMatrix<Base, Inner<Parameters...>>::InteractKernel
@@ -113,8 +113,8 @@ class LinearCorrectionMatrix<Contact<Parameters...>>
     : public LinearCorrectionMatrix<Base, Contact<Parameters...>>
 {
   public:
-    explicit LinearCorrectionMatrix(Relation<Contact<Parameters...>> &contact_relation);
-    virtual ~LinearCorrectionMatrix(){};
+    explicit LinearCorrectionMatrix(Contact<Parameters...> &contact_relation);
+    virtual ~LinearCorrectionMatrix() {};
 
     class InteractKernel
         : public LinearCorrectionMatrix<Base, Contact<Parameters...>>::InteractKernel
@@ -129,9 +129,6 @@ class LinearCorrectionMatrix<Contact<Parameters...>>
       protected:
         Real *contact_Vol_k_;
     };
-
-  protected:
-    StdVec<DiscreteVariable<Real> *> dv_contact_Vol_;
 };
 
 using LinearCorrectionMatrixComplex = LinearCorrectionMatrix<Inner<WithUpdate>, Contact<>>;
@@ -139,7 +136,8 @@ using LinearCorrectionMatrixComplex = LinearCorrectionMatrix<Inner<WithUpdate>, 
 class NoKernelCorrectionCK : public KernelCorrection
 {
   public:
-    NoKernelCorrectionCK(BaseParticles *particles) : KernelCorrection(){};
+    typedef Real CorrectionDataType;
+    NoKernelCorrectionCK(BaseParticles *particles) : KernelCorrection() {};
 
     class ComputingKernel : public ParameterFixed<Real>
     {
@@ -154,9 +152,10 @@ class NoKernelCorrectionCK : public KernelCorrection
 class LinearCorrectionCK : public KernelCorrection
 {
   public:
+    typedef Matd CorrectionDataType;
     LinearCorrectionCK(BaseParticles *particles)
         : KernelCorrection(),
-          dv_B_(particles->getVariableByName<Matd>("LinearCorrectionMatrix")){};
+          dv_B_(particles->getVariableByName<Matd>("LinearCorrectionMatrix")) {};
 
     class ComputingKernel : public ParameterVariable<Matd>
     {

@@ -20,7 +20,7 @@ struct return_data
     Real damping_time = std::numeric_limits<Real>::max(); // time spent on damping
 };
 
-return_data beam_multi_resolution(double dp_factor, bool damping_on, int refinement_level = 1);
+return_data beam_multi_resolution(Real dp_factor, bool damping_on, int refinement_level = 1);
 
 TEST(mr_solid, dp_4)
 {
@@ -96,7 +96,7 @@ struct solid_algs
         : corrected_configuration(inner_relation),
           stress_relaxation_first_half(inner_relation),
           stress_relaxation_second_half(inner_relation),
-          normal_direction(inner_relation.getSPHBody()){};
+          normal_direction(inner_relation.getSPHBody()) {};
 
     void corrected_config() { corrected_configuration.exec(); }
     void stress_relaxation_first(Real dt) { stress_relaxation_first_half.exec(dt); }
@@ -116,18 +116,16 @@ class Beam : public MultiPolygonShape
 class FixPart : public BodyPartByParticle
 {
   public:
-    FixPart(SPHBody &body, const std::string &body_part_name)
-        : BodyPartByParticle(body, body_part_name)
+    FixPart(SPHBody &body) : BodyPartByParticle(body)
     {
         TaggingParticleMethod tagging_particle_method = std::bind(&FixPart::tagManually, this, _1);
         tagParticles(tagging_particle_method);
     };
 
   private:
-    void tagManually(size_t index_i)
+    bool tagManually(size_t index_i)
     {
-        if (pos_[index_i].x() < 0)
-            body_part_particles_.push_back(index_i);
+        return pos_[index_i].x() < 0;
     };
 };
 
@@ -153,7 +151,7 @@ struct beam_parameters
     const Real gravity = 9.8;
 };
 //------------------------------------------------------------------------------
-return_data beam_multi_resolution(double dp_factor, bool damping_on, int refinement_level)
+return_data beam_multi_resolution(Real dp_factor, bool damping_on, int refinement_level)
 {
     const beam_parameters params;
     return_data data;
@@ -187,26 +185,25 @@ return_data beam_multi_resolution(double dp_factor, bool damping_on, int refinem
     }();
 
     // System bounding box
-    BoundingBox bb_system = mesh->getBounds();
+    BoundingBoxd bb_system = mesh->getBounds();
 
     // System
     SPHSystem system(bb_system, dp);
-    IOEnvironment io_environment(system);
 
     // Create objects
     SolidBody beam_body(system, mesh);
     if (refinement_level > 0)
-        beam_body.defineAdaptation<ParticleRefinementWithinShape>(1.15, 1.0, refinement_level);
-    beam_body.defineBodyLevelSetShape()->cleanLevelSet(0);
+        beam_body.defineAdaptation<AdaptiveWithinShape>(1.15, 1.0, refinement_level);
+    beam_body.defineBodyLevelSetShape();
     beam_body.defineMaterial<NeoHookeanSolid>(*material.get());
     if (refinement_level > 0)
-        beam_body.generateParticles<BaseParticles, Lattice, Adaptive>(refinement_region);
+        beam_body.generateParticles<BaseParticles, Lattice>(refinement_region);
     else
         beam_body.generateParticles<BaseParticles, Lattice>();
 
     data.number_of_particles = beam_body.getBaseParticles().TotalRealParticles();
     data.dp_max = beam_body.getSPHBodyResolutionRef();
-    data.dp_min = beam_body.sph_adaptation_->MinimumSpacing();
+    data.dp_min = beam_body.getSPHAdaptation().MinimumSpacing();
 
     // Inner relation
     std::unique_ptr<BaseInnerRelation> inner;
@@ -239,7 +236,7 @@ return_data beam_multi_resolution(double dp_factor, bool damping_on, int refinem
     };
 
     // Boundary conditions
-    FixPart fix_bc_part(beam_body, "ClampingPart");
+    FixPart fix_bc_part(beam_body);
     SimpleDynamics<FixBodyPartConstraint> fix_bc(fix_bc_part);
 
     // gravity
@@ -250,7 +247,7 @@ return_data beam_multi_resolution(double dp_factor, bool damping_on, int refinem
     if (refinement_level > 0)
     {
         beam_body.getBaseParticles().addVariableToWrite<Real>("SmoothingLengthRatio");
-        beam_body.getBaseParticles().addVariableToWrite<int>("ParticleMeshLevel");
+        beam_body.getBaseParticles().addVariableToWrite<int>("SmoothingLengthLevel");
     }
     beam_body.getBaseParticles().addVariableToWrite<Vec2d>("Velocity");
     BodyStatesRecordingToVtp vtp_output(system);

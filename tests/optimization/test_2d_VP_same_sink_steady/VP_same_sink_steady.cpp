@@ -11,9 +11,9 @@ using namespace SPH; // Namespace cite here
 //----------------------------------------------------------------------
 Real L = 1.0;
 Real H = 1.0;
-Real resolution_ref = H / 50.0;
-Real BW = resolution_ref * 4.0;
-BoundingBox system_domain_bounds(Vec2d(-BW, -BW), Vec2d(L + BW, H + BW));
+Real global_resolution = H / 50.0;
+Real BW = global_resolution * 4.0;
+BoundingBoxd system_domain_bounds(Vec2d(-BW, -BW), Vec2d(L + BW, H + BW));
 //----------------------------------------------------------------------
 //	Basic parameters for material properties.
 //----------------------------------------------------------------------
@@ -86,8 +86,8 @@ class DiffusionBodyInitialCondition : public LocalDynamics
     explicit DiffusionBodyInitialCondition(SPHBody &sph_body)
         : LocalDynamics(sph_body),
           pos_(particles_->getVariableDataByName<Vecd>("Position")),
-          phi_(particles_->registerStateVariable<Real>(diffusion_species_name)),
-          heat_source_(particles_->registerStateVariable<Real>("HeatSource")){};
+          phi_(particles_->registerStateVariableData<Real>(diffusion_species_name)),
+          heat_source_(particles_->registerStateVariableData<Real>("HeatSource")) {};
 
     void update(size_t index_i, Real dt)
     {
@@ -106,7 +106,7 @@ class WallBoundaryInitialCondition : public LocalDynamics
     explicit WallBoundaryInitialCondition(SPHBody &sph_body)
         : LocalDynamics(sph_body),
           pos_(particles_->getVariableDataByName<Vecd>("Position")),
-          phi_(particles_->registerStateVariable<Real>(diffusion_species_name)){};
+          phi_(particles_->registerStateVariableData<Real>(diffusion_species_name)) {};
 
     void update(size_t index_i, Real dt)
     {
@@ -152,8 +152,7 @@ TEST(test_optimization, test_problem1_non_optimized)
     //----------------------------------------------------------------------
     //	Build up the environment of a SPHSystem.
     //----------------------------------------------------------------------
-    SPHSystem sph_system(system_domain_bounds, resolution_ref);
-    sph_system.setIOEnvironment();
+    SPHSystem sph_system(system_domain_bounds, global_resolution);
     //----------------------------------------------------------------------
     //	Creating body, materials and particles.
     //----------------------------------------------------------------------
@@ -229,7 +228,7 @@ TEST(test_optimization, test_problem1_non_optimized)
     //	Main loop starts here.
     //----------------------------------------------------------------------
     std::string filefullpath_nonopt_temperature =
-        sph_system.getIOEnvironment().output_folder_ + "/" + "nonopt_temperature.dat";
+        sph_system.getIOEnvironment().OutputFolder() + "/" + "nonopt_temperature.dat";
     std::ofstream out_file_nonopt_temperature(filefullpath_nonopt_temperature.c_str(), std::ios::app);
 
     while (physical_time < End_Time)

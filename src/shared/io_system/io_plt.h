@@ -12,7 +12,7 @@
  * (Deutsche Forschungsgemeinschaft) DFG HU1527/6-1, HU1527/10-1,            *
  *  HU1527/12-1 and HU1527/12-4.                                             *
  *                                                                           *
- * Portions copyright (c) 2017-2023 Technical University of Munich and       *
+ * Portions copyright (c) 2017-2025 Technical University of Munich and       *
  * the authors' affiliations.                                                *
  *                                                                           *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may   *
@@ -44,10 +44,16 @@ class PltEngine
     virtual ~PltEngine() {};
 
     void writeAQuantityHeader(std::ofstream &out_file, const Real &quantity, const std::string &quantity_name);
-    void writeAQuantityHeader(std::ofstream &out_file, const Vecd &quantity, const std::string &quantity_name);
+    template <int N>
+    void writeAQuantityHeader(std::ofstream &out_file, const Eigen::Matrix<Real, N, 1> &quantity, const std::string &quantity_name);
+    template <int N, int M>
+    void writeAQuantityHeader(std::ofstream &out_file, const Eigen::Matrix<Real, N, M> &quantity, const std::string &quantity_name);
     void writeAQuantityHeader(std::ofstream &out_file, const SimTK::SpatialVec &quantity, const std::string &quantity_name);
     void writeAQuantity(std::ofstream &out_file, const Real &quantity);
-    void writeAQuantity(std::ofstream &out_file, const Vecd &quantity);
+    template <int N>
+    void writeAQuantity(std::ofstream &out_file, const Eigen::Matrix<Real, N, 1> &quantity);
+    template <int N, int M>
+    void writeAQuantity(std::ofstream &out_file, const Eigen::Matrix<Real, N, M> &quantity);
     void writeAQuantity(std::ofstream &out_file, const SimTK::SpatialVec &quantity);
 };
 
@@ -77,7 +83,7 @@ class MeshRecordingToPlt : public BaseIO
 {
   protected:
     BaseMeshField &mesh_field_;
-    std::string filefullpath_;
+    std::string partial_file_name_;
 
   public:
     MeshRecordingToPlt(SPHSystem &sph_system, BaseMeshField &mesh_field);

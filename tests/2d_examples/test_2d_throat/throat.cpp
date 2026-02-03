@@ -20,8 +20,8 @@ using namespace SPH;
 Real DH = 4.0;                  // channel height
 Real DT = 1.0;                  // throat height
 Real DL = 24.0;                 // channel length
-Real resolution_ref = 0.1;      // particle spacing
-Real BW = resolution_ref * 4.0; // boundary width
+Real global_resolution = 0.1;      // particle spacing
+Real BW = global_resolution * 4.0; // boundary width
 //----------------------------------------------------------------------
 //	Material properties of the fluid.
 //----------------------------------------------------------------------
@@ -123,10 +123,10 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     //	Build up the environment of a SPHSystem.
     //----------------------------------------------------------------------
-    BoundingBox system_domain_bounds(Vec2d(-0.5 * DL - BW, -0.5 * DH - BW),
+    BoundingBoxd system_domain_bounds(Vec2d(-0.5 * DL - BW, -0.5 * DH - BW),
                                      Vec2d(0.5 * DL + BW, 0.5 * DH + BW));
-    SPHSystem sph_system(system_domain_bounds, resolution_ref);
-    sph_system.handleCommandlineOptions(ac, av)->setIOEnvironment();
+    SPHSystem sph_system(system_domain_bounds, global_resolution);
+    sph_system.handleCommandlineOptions(ac, av);
     //----------------------------------------------------------------------
     //	Creating body, materials and particles.
     //----------------------------------------------------------------------
@@ -173,7 +173,7 @@ int main(int ac, char *av[])
     Dynamics1Level<fluid_dynamics::Oldroyd_BIntegration2ndHalfWithWall> density_relaxation(fluid_block_inner, fluid_block_contact);
     InteractionWithUpdate<fluid_dynamics::DensitySummationComplex> update_density_by_summation(fluid_block_inner, fluid_block_contact);
     InteractionSplit<DampingPairwiseWithWall<Vec2d, FixedDampingRate>> implicit_viscous_damping(
-        InteractArgs(fluid_block_inner, "Velocity", mu_f), InteractArgs(fluid_block_contact, "Velocity", mu_f));
+        DynamicsArgs(fluid_block_inner, "Velocity", mu_f), DynamicsArgs(fluid_block_contact, "Velocity", mu_f));
     InteractionWithUpdate<fluid_dynamics::TransportVelocityLimitedCorrectionComplex<AllParticles>> transport_velocity_correction(fluid_block_inner, fluid_block_contact);
 
     ReduceDynamics<fluid_dynamics::AdvectionTimeStep> get_fluid_advection_time_step_size(fluid_block, U_f);

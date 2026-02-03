@@ -11,8 +11,7 @@ template <class DynamicsIdentifier>
 LinearCorrectionMatrix<Base, RelationType<Parameters...>>::
     LinearCorrectionMatrix(DynamicsIdentifier &identifier)
     : Interaction<RelationType<Parameters...>>(identifier),
-      dv_Vol_(this->particles_->template getVariableByName<Real>("VolumetricMeasure")),
-      dv_B_(this->particles_->template registerStateVariableOnly<Matd>(
+      dv_B_(this->particles_->template registerStateVariable<Matd>(
           "LinearCorrectionMatrix", IdentityMatrix<Matd>::value)) {}
 //=================================================================================================//
 template <template <typename...> class RelationType, typename... Parameters>
@@ -61,22 +60,15 @@ void LinearCorrectionMatrix<Inner<WithUpdate, Parameters...>>::
 {
     Real determinant = this->B_[index_i].determinant();
     Real det_sqr = SMAX(alpha_ - determinant, Real(0));
-    Matd B_T = this->B_[index_i].transpose(); // for Tikhonov regularization
-    Matd inverse = (B_T * this->B_[index_i] + SqrtEps * Matd::Identity()).inverse() * B_T;
+    Matd inverse = inverseTikhonov(this->B_[index_i], SqrtEps);
     Real weight = determinant / (determinant + det_sqr);
     this->B_[index_i] = weight * inverse + (1.0 - weight) * Matd::Identity();
 }
 //=================================================================================================//
 template <typename... Parameters>
 LinearCorrectionMatrix<Contact<Parameters...>>::
-    LinearCorrectionMatrix(Relation<Contact<Parameters...>> &contact_relation)
-    : LinearCorrectionMatrix<Base, Contact<Parameters...>>(contact_relation)
-{
-    for (size_t k = 0; k != this->contact_particles_.size(); ++k)
-    {
-        dv_contact_Vol_.push_back(this->contact_particles_[k]->template getVariableByName<Real>("VolumetricMeasure"));
-    }
-}
+    LinearCorrectionMatrix(Contact<Parameters...> &contact_relation)
+    : LinearCorrectionMatrix<Base, Contact<Parameters...>>(contact_relation){}
 //=================================================================================================//
 template <typename... Parameters>
 template <class ExecutionPolicy>

@@ -18,13 +18,11 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     //	Build up SPHSystem and IO environment.
     //----------------------------------------------------------------------
-    BoundingBox system_domain_bounds(Vec2d(-DL_sponge - BW, -BW), Vec2d(DL + BW, DH + BW));
-    SPHSystem sph_system(system_domain_bounds, resolution_ref);
+    BoundingBoxd system_domain_bounds(Vec2d(-DL_sponge - BW, -BW), Vec2d(DL + BW, DH + BW));
+    SPHSystem sph_system(system_domain_bounds, global_resolution);
     sph_system.setRunParticleRelaxation(false);  // Tag for run particle relaxation for body-fitted distribution
     sph_system.setReloadParticles(true);         // Tag for computation with save particles distribution
     sph_system.handleCommandlineOptions(ac, av); // handle command line arguments
-
-    IOEnvironment io_environment(sph_system);
     //----------------------------------------------------------------------
     //	Creating body, materials and particles.
     //----------------------------------------------------------------------
@@ -38,7 +36,7 @@ int main(int ac, char *av[])
 
     SolidBody insert_body(sph_system, makeShared<Insert>("InsertedBody"));
     insert_body.defineAdaptationRatios(1.15, 2.0);
-    insert_body.defineBodyLevelSetShape()->writeLevelSet(sph_system);
+    insert_body.defineBodyLevelSetShape()->writeLevelSet();
     insert_body.defineMaterial<SaintVenantKirchhoffSolid>(rho0_s, Youngs_modulus, poisson);
     (!sph_system.RunParticleRelaxation() && sph_system.ReloadParticles())
         ? insert_body.generateParticles<BaseParticles, Reload>(insert_body.getName())
@@ -136,13 +134,13 @@ int main(int ac, char *av[])
     Dynamics1Level<fluid_dynamics::Integration1stHalfWithWallRiemann> pressure_relaxation(water_block_inner, water_block_contact);
     Dynamics1Level<fluid_dynamics::Integration2ndHalfWithWallNoRiemann> density_relaxation(water_block_inner, water_block_contact);
     InteractionWithUpdate<fluid_dynamics::DensitySummationComplex> update_density_by_summation(water_block_inner, water_block_contact);
-    InteractionWithUpdate<fluid_dynamics::TransportVelocityCorrectionComplex<AllParticles>> transport_correction(water_block_inner, water_block_contact);
+    InteractionWithUpdate<fluid_dynamics::TransportVelocityCorrectionComplex<AllParticles>> transport_correction(DynamicsArgs(water_block_inner, 0.25), water_block_contact);
     InteractionWithUpdate<fluid_dynamics::ViscousForceWithWall> viscous_force(water_block_inner, water_block_contact);
 
     ReduceDynamics<fluid_dynamics::AdvectionViscousTimeStep> get_fluid_advection_time_step_size(water_block, U_f);
     ReduceDynamics<fluid_dynamics::AcousticTimeStep> get_fluid_time_step_size(water_block);
 
-    AlignedBoxPartByCell inflow_buffer(water_block, AlignedBox(xAxis, Transform(Vec2d(buffer_translation)), buffer_halfsize));
+    AlignedBoxByCell inflow_buffer(water_block, AlignedBox(xAxis, Transform(Vec2d(buffer_translation)), buffer_halfsize));
     SimpleDynamics<fluid_dynamics::InflowVelocityCondition<InflowVelocity>> parabolic_inflow(inflow_buffer);
     PeriodicAlongAxis periodic_along_x(water_block.getSPHBodyBounds(), xAxis);
     PeriodicConditionUsingCellLinkedList periodic_condition(water_block, periodic_along_x);
@@ -200,7 +198,6 @@ int main(int ac, char *av[])
     //	First output before the main loop.
     //----------------------------------------------------------------------
     write_real_body_states.writeToFile();
-    write_beam_tip_displacement.writeToFile(number_of_iterations);
     //----------------------------------------------------------------------
     //	Main loop starts here.
     //----------------------------------------------------------------------
@@ -259,6 +256,7 @@ int main(int ac, char *av[])
                 std::cout << std::fixed << std::setprecision(9) << "N=" << number_of_iterations << "	Time = "
                           << physical_time
                           << "	Dt = " << Dt << "	Dt / dt = " << inner_ite_dt << "	dt / dt_s = " << inner_ite_dt_s << "\n";
+                write_beam_tip_displacement.writeToFile(number_of_iterations);
             }
             number_of_iterations++;
 
@@ -274,8 +272,6 @@ int main(int ac, char *av[])
             /** one need update configuration after periodic condition. */
             insert_body.updateCellLinkedList();
             insert_body_contact.updateConfiguration();
-            /** write run-time observation into file */
-            write_beam_tip_displacement.writeToFile(number_of_iterations);
         }
 
         TickCount t2 = TickCount::now();
@@ -297,7 +293,7 @@ int main(int ac, char *av[])
     if (sph_system.GenerateRegressionData())
     {
         // The lift force at the cylinder is very small and not important in this case.
-        write_total_viscous_force_from_fluid.generateDataBase({1.0e-2, 1.0e-2}, {1.0e-2, 1.0e-2});
+        write_total_viscous_force_from_fluid.generateDataBase({5.0e-3, 5.0e-3}, {5.0e-3, 5.0e-3});
         write_beam_tip_displacement.generateDataBase(1.0e-2);
     }
     else

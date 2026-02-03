@@ -23,7 +23,7 @@ int particle_number_mid_surface = int(2.0 * radius_mid_surface * Pi * 215.0 / 36
 int BWD = 1;                                /** Width of the boundary layer measured by number of particles. */
 Real BW = particle_spacing_ref * (Real)BWD; /** Boundary width, determined by specific layer of boundary particles. */
 /** Domain bounds of the system. */
-BoundingBox system_domain_bounds(Vec3d(-radius - thickness, 0.0, -radius - thickness),
+BoundingBoxd system_domain_bounds(Vec3d(-radius - thickness, 0.0, -radius - thickness),
                                  Vec3d(radius + thickness, height, radius + thickness));
 // rotation matrix
 Real rot_cos = cos(rotation);
@@ -51,7 +51,8 @@ template <>
 class ParticleGenerator<SurfaceParticles, Cylinder> : public ParticleGenerator<SurfaceParticles>
 {
   public:
-    explicit ParticleGenerator(SPHBody &sph_body, SurfaceParticles &surface_particles) : ParticleGenerator<SurfaceParticles>(sph_body, surface_particles){};
+    explicit ParticleGenerator(SPHBody &sph_body, SurfaceParticles &surface_particles)
+        : ParticleGenerator<SurfaceParticles>(sph_body, surface_particles) {};
     virtual void prepareGeometricData() override
     {
         // the cylinder and boundary
@@ -76,22 +77,19 @@ class ParticleGenerator<SurfaceParticles, Cylinder> : public ParticleGenerator<S
 class DisControlGeometry : public BodyPartByParticle
 {
   public:
-    DisControlGeometry(SPHBody &body, const std::string &body_part_name)
-        : BodyPartByParticle(body, body_part_name)
+    DisControlGeometry(SPHBody &body) : BodyPartByParticle(body)
     {
         TaggingParticleMethod tagging_particle_method = std::bind(&DisControlGeometry::tagManually, this, _1);
         tagParticles(tagging_particle_method);
     };
-    virtual ~DisControlGeometry(){};
+    virtual ~DisControlGeometry() {};
 
   private:
-    void tagManually(size_t index_i)
+    bool tagManually(size_t index_i)
     {
         Vecd pos_before_rotation = rotation_matrix.transpose() * base_particles_.ParticlePositions()[index_i];
-        if (pos_before_rotation[0] < 0.5 * particle_spacing_ref && pos_before_rotation[0] > -0.5 * particle_spacing_ref)
-        {
-            body_part_particles_.push_back(index_i);
-        }
+        return pos_before_rotation[0] < 0.5 * particle_spacing_ref &&
+               pos_before_rotation[0] > -0.5 * particle_spacing_ref;
     };
 };
 
@@ -101,8 +99,8 @@ class ControlDisplacement : public thin_structure_dynamics::ConstrainShellBodyRe
   public:
     ControlDisplacement(BodyPartByParticle &body_part)
         : ConstrainShellBodyRegion(body_part),
-          vel_(particles_->getVariableDataByName<Vecd>("Velocity")){};
-    virtual ~ControlDisplacement(){};
+          vel_(particles_->getVariableDataByName<Vecd>("Velocity")) {};
+    virtual ~ControlDisplacement() {};
 
   protected:
     Vecd *vel_;
@@ -117,21 +115,17 @@ class ControlDisplacement : public thin_structure_dynamics::ConstrainShellBodyRe
 class BoundaryGeometry : public BodyPartByParticle
 {
   public:
-    BoundaryGeometry(SPHBody &body, const std::string &body_part_name)
-        : BodyPartByParticle(body, body_part_name)
+    BoundaryGeometry(SPHBody &body) : BodyPartByParticle(body)
     {
         TaggingParticleMethod tagging_particle_method = std::bind(&BoundaryGeometry::tagManually, this, _1);
         tagParticles(tagging_particle_method);
     };
-    virtual ~BoundaryGeometry(){};
+    virtual ~BoundaryGeometry() {};
 
   private:
-    void tagManually(size_t index_i)
+    bool tagManually(size_t index_i)
     {
-        if (base_particles_.ParticlePositions()[index_i][2] < radius_mid_surface * (Real)sin(-17.5 / 180.0 * Pi))
-        {
-            body_part_particles_.push_back(index_i);
-        }
+        return base_particles_.ParticlePositions()[index_i][2] < radius_mid_surface * (Real)sin(-17.5 / 180.0 * Pi);
     };
 };
 } // namespace SPH
@@ -146,7 +140,6 @@ int main(int ac, char *av[])
 #ifdef BOOST_AVAILABLE
     sph_system.handleCommandlineOptions(ac, av);
 #endif
-    IOEnvironment io_environment(sph_system);
     /** create a cylinder body with shell particles and linear elasticity. */
     SolidBody cylinder_body(sph_system, makeShared<DefaultShape>("CylinderBody"));
     cylinder_body.defineMaterial<SaintVenantKirchhoffSolid>(rho0_s, Youngs_modulus, poisson);
@@ -173,9 +166,9 @@ int main(int ac, char *av[])
     Dynamics1Level<thin_structure_dynamics::ShellStressRelaxationSecondHalf> stress_relaxation_second_half(cylinder_body_inner);
 
     ReduceDynamics<thin_structure_dynamics::ShellAcousticTimeStepSize> computing_time_step_size(cylinder_body);
-    DisControlGeometry dis_control_geometry(cylinder_body, "DisControlGeometry");
+    DisControlGeometry dis_control_geometry(cylinder_body);
     SimpleDynamics<ControlDisplacement> dis_control(dis_control_geometry);
-    BoundaryGeometry boundary_geometry(cylinder_body, "BoundaryGeometry");
+    BoundaryGeometry boundary_geometry(cylinder_body);
     SimpleDynamics<thin_structure_dynamics::ConstrainShellBodyRegion> constrain_holder(boundary_geometry);
     DampingWithRandomChoice<InteractionSplit<DampingPairwiseInner<Vecd, FixedDampingRate>>>
         cylinder_position_damping(0.2, cylinder_body_inner, "Velocity", physical_viscosity);

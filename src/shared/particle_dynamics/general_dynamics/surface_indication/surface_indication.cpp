@@ -6,7 +6,7 @@ namespace SPH
 FreeSurfaceIndication<Inner<>>::
     FreeSurfaceIndication(BaseInnerRelation &inner_relation)
     : FreeSurfaceIndication<DataDelegateInner>(inner_relation),
-      smoothing_length_(inner_relation.getSPHBody().sph_adaptation_->ReferenceSmoothingLength()) {}
+      smoothing_length_(inner_relation.getSPHBody().getSPHAdaptation().ReferenceSmoothingLength()) {}
 //=================================================================================================//
 void FreeSurfaceIndication<Inner<>>::interaction(size_t index_i, Real dt)
 {
@@ -47,9 +47,9 @@ bool FreeSurfaceIndication<Inner<>>::isVeryNearFreeSurface(size_t index_i)
 FreeSurfaceIndication<Inner<SpatialTemporal>>::
     FreeSurfaceIndication(BaseInnerRelation &inner_relation)
     : FreeSurfaceIndication<Inner<>>(inner_relation),
-      previous_surface_indicator_(particles_->registerStateVariable<int>("PreviousSurfaceIndicator", 1))
+      previous_surface_indicator_(particles_->registerStateVariableData<int>("PreviousSurfaceIndicator", 1))
 {
-    particles_->addVariableToSort<int>("PreviousSurfaceIndicator");
+    particles_->addEvolvingVariable<int>("PreviousSurfaceIndicator");
 }
 //=================================================================================================//
 void FreeSurfaceIndication<Inner<SpatialTemporal>>::interaction(size_t index_i, Real dt)

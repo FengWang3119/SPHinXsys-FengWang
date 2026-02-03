@@ -12,7 +12,7 @@
  * (Deutsche Forschungsgemeinschaft) DFG HU1527/6-1, HU1527/10-1,            *
  *  HU1527/12-1 and HU1527/12-4.                                             *
  *                                                                           *
- * Portions copyright (c) 2017-2023 Technical University of Munich and       *
+ * Portions copyright (c) 2017-2025 Technical University of Munich and       *
  * the authors' affiliations.                                                *
  *                                                                           *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may   *
@@ -34,7 +34,6 @@
 #include "all_particle_dynamics.h"
 #include "base_kernel.h"
 #include "elastic_solid.h"
-#include "solid_body.h"
 #include "thin_structure_math.h"
 
 namespace SPH
@@ -54,7 +53,7 @@ class UpdateShellNormalDirection : public LocalDynamics
 
   public:
     explicit UpdateShellNormalDirection(SPHBody &sph_body);
-    virtual ~UpdateShellNormalDirection(){};
+    virtual ~UpdateShellNormalDirection() {};
 
     void update(size_t index_i, Real dt = 0.0);
 };
@@ -75,7 +74,7 @@ class ShellAcousticTimeStepSize : public LocalDynamicsReduce<ReduceMin>
 
   public:
     explicit ShellAcousticTimeStepSize(SPHBody &sph_body, Real CFL = 0.6);
-    virtual ~ShellAcousticTimeStepSize(){};
+    virtual ~ShellAcousticTimeStepSize() {};
 
     Real reduce(size_t index_i, Real dt = 0.0);
 };
@@ -88,7 +87,7 @@ class ShellCorrectConfiguration : public LocalDynamics, public DataDelegateInner
 {
   public:
     explicit ShellCorrectConfiguration(BaseInnerRelation &inner_relation);
-    virtual ~ShellCorrectConfiguration(){};
+    virtual ~ShellCorrectConfiguration() {};
 
     inline void interaction(size_t index_i, Real dt = 0.0)
     {
@@ -124,7 +123,7 @@ class ShellDeformationGradientTensor : public LocalDynamics, public DataDelegate
 {
   public:
     explicit ShellDeformationGradientTensor(BaseInnerRelation &inner_relation);
-    virtual ~ShellDeformationGradientTensor(){};
+    virtual ~ShellDeformationGradientTensor() {};
 
     inline void interaction(size_t index_i, Real dt = 0.0)
     {
@@ -162,7 +161,7 @@ class BaseShellRelaxation : public LocalDynamics, public DataDelegateInner
 {
   public:
     explicit BaseShellRelaxation(BaseInnerRelation &inner_relation);
-    virtual ~BaseShellRelaxation(){};
+    virtual ~BaseShellRelaxation() {};
 
   protected:
     Real *thickness_, *Vol_;
@@ -183,7 +182,7 @@ class ShellStressRelaxationFirstHalf : public BaseShellRelaxation
   public:
     explicit ShellStressRelaxationFirstHalf(BaseInnerRelation &inner_relation,
                                             int number_of_gaussian_points = 3, bool hourglass_control = false, Real hourglass_control_factor = 0.002);
-    virtual ~ShellStressRelaxationFirstHalf(){};
+    virtual ~ShellStressRelaxationFirstHalf() {};
     void initialization(size_t index_i, Real dt = 0.0);
 
     inline void interaction(size_t index_i, Real dt = 0.0)
@@ -243,7 +242,7 @@ class ShellStressRelaxationFirstHalf : public BaseShellRelaxation
     Matd *global_F_, *global_F_bending_;
     Real E0_, G0_, nu_, hourglass_control_factor_;
     bool hourglass_control_;
-    const Real inv_W0_ = 1.0 / sph_body_.sph_adaptation_->getKernel()->W0(ZeroVecd);
+    const Real inv_W0_ = 1.0 / getSPHAdaptation().getKernel()->W0(ZeroVecd);
     const Real shear_correction_factor_ = 5.0 / 6.0;
 
     const StdVec<Real> one_gaussian_point_ = {0.0};
@@ -266,8 +265,8 @@ class ShellStressRelaxationSecondHalf : public BaseShellRelaxation
 {
   public:
     explicit ShellStressRelaxationSecondHalf(BaseInnerRelation &inner_relation)
-        : BaseShellRelaxation(inner_relation){};
-    virtual ~ShellStressRelaxationSecondHalf(){};
+        : BaseShellRelaxation(inner_relation) {};
+    virtual ~ShellStressRelaxationSecondHalf() {};
     void initialization(size_t index_i, Real dt = 0.0);
 
     inline void interaction(size_t index_i, Real dt = 0.0)
@@ -302,7 +301,7 @@ class ConstrainShellBodyRegion : public BaseLocalDynamics<BodyPartByParticle>
 {
   public:
     ConstrainShellBodyRegion(BodyPartByParticle &body_part);
-    virtual ~ConstrainShellBodyRegion(){};
+    virtual ~ConstrainShellBodyRegion() {};
     void update(size_t index_i, Real dt = 0.0);
 
   protected:
@@ -318,7 +317,7 @@ class ConstrainShellBodyRegionAlongAxis : public BaseLocalDynamics<BodyPartByPar
 {
   public:
     ConstrainShellBodyRegionAlongAxis(BodyPartByParticle &body_part, int axis);
-    virtual ~ConstrainShellBodyRegionAlongAxis(){};
+    virtual ~ConstrainShellBodyRegionAlongAxis() {};
     void update(size_t index_i, Real dt = 0.0);
 
   protected:

@@ -11,9 +11,9 @@ using namespace SPH;
 //----------------------------------------------------------------------
 Real DL = 15.0;                        /**< Channel length. */
 Real DH = 10.0;                        /**< Channel height. */
-Real resolution_ref = 1.0 / 4.0;       /**< Initial reference particle spacing. */
-Real DL_sponge = resolution_ref * 2.0; /**< Sponge region to impose inflow condition. */
-Real DH_sponge = resolution_ref * 2.0; /**< Sponge region to impose inflow condition. */
+Real global_resolution = 1.0 / 4.0;       /**< Initial reference particle spacing. */
+Real DL_sponge = global_resolution * 2.0; /**< Sponge region to impose inflow condition. */
+Real DH_sponge = global_resolution * 2.0; /**< Sponge region to impose inflow condition. */
 Vec2d cylinder_center(4.0, DH / 2.0);  /**< Location of the cylinder center. */
 Real cylinder_radius = 1.0;            /**< Radius of the cylinder. */
 //----------------------------------------------------------------------
@@ -69,7 +69,7 @@ class FarFieldBoundary : public fluid_dynamics::NonReflectiveBoundaryCorrection
         sound_speed_ = c_f;
         vel_farfield_ = Vecd(U_f, 0.0);
     };
-    virtual ~FarFieldBoundary(){};
+    virtual ~FarFieldBoundary() {};
 };
 //----------------------------------------------------------------------
 //	Main program starts here.
@@ -79,19 +79,19 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     //	Build up the environment of a SPHSystem.
     //----------------------------------------------------------------------
-    BoundingBox system_domain_bounds(Vec2d(-DL_sponge, -DH_sponge), Vec2d(DL, DH + DH_sponge));
-    SPHSystem sph_system(system_domain_bounds, resolution_ref);
+    BoundingBoxd system_domain_bounds(Vec2d(-DL_sponge, -DH_sponge), Vec2d(DL, DH + DH_sponge));
+    SPHSystem sph_system(system_domain_bounds, global_resolution);
     // Tag for run particle relaxation for the initial body fitted distribution.
     sph_system.setRunParticleRelaxation(false);
     // Tag for computation start with relaxed body fitted particles distribution.
     sph_system.setReloadParticles(false);
     // Handle command line arguments and override the tags for particle relaxation and reload.
-    sph_system.handleCommandlineOptions(ac, av)->setIOEnvironment();
+    sph_system.handleCommandlineOptions(ac, av);
     //----------------------------------------------------------------------
     //	Creating body, materials and particles.
     //----------------------------------------------------------------------
     FluidBody water_block(sph_system, makeShared<WaterBlock>("WaterBlock"));
-    water_block.sph_adaptation_->resetKernel<KernelTabulated<KernelLaguerreGauss>>(20);
+    water_block.getSPHAdaptation().resetKernel<KernelTabulated<KernelLaguerreGauss>>(20);
     water_block.defineComponentLevelSetShape("OuterBoundary");
     water_block.defineClosure<WeaklyCompressibleFluid, Viscosity>(ConstructArgs(rho0_f, c_f), mu_f);
     (!sph_system.RunParticleRelaxation() && sph_system.ReloadParticles())
@@ -100,7 +100,7 @@ int main(int ac, char *av[])
 
     SolidBody cylinder(sph_system, makeShared<Cylinder>("Cylinder"));
     cylinder.defineAdaptationRatios(1.3, 2.0);
-    cylinder.sph_adaptation_->resetKernel<KernelTabulated<KernelLaguerreGauss>>(20);
+    cylinder.getSPHAdaptation().resetKernel<KernelTabulated<KernelLaguerreGauss>>(20);
     cylinder.defineBodyLevelSetShape();
     cylinder.defineMaterial<Solid>();
     (!sph_system.RunParticleRelaxation() && sph_system.ReloadParticles())
@@ -137,7 +137,7 @@ int main(int ac, char *av[])
         ReloadParticleIO write_real_body_particle_reload_files({&cylinder, &water_block});
         RelaxationStepLevelSetCorrectionInner relaxation_step_inner(cylinder_inner);
         RelaxationStepLevelSetCorrectionComplex relaxation_step_complex(
-            InteractArgs(water_block_inner, std::string("OuterBoundary")), water_block_contact);
+            DynamicsArgs(water_block_inner, std::string("OuterBoundary")), water_block_contact);
         //----------------------------------------------------------------------
         //	Particle relaxation starts here.
         //----------------------------------------------------------------------

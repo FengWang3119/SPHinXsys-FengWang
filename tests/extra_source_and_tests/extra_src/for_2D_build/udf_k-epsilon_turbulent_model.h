@@ -38,6 +38,8 @@ namespace SPH
 {
 namespace fluid_dynamics
 {
+namespace udf
+{
 class kEpsilon_TurbulentClosureCoefficient
 {
   public:
@@ -239,6 +241,7 @@ class kEpsilon_StandardWallFunctionCorrection : public LocalDynamics, public Dat
     Real *physical_time_;
 };
 //=================================================================================================//
+}
 } // namespace fluid_dynamics
 } // namespace SPH
 #endif // K_EPSILON_TURBULENT_MODEL_H

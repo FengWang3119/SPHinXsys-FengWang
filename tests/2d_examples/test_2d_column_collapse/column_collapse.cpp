@@ -16,7 +16,7 @@ Real LL = 0.2;                       /**< Soil column length. */
 Real LH = 0.1;                       /**< Soil column height. */
 Real particle_spacing_ref = LH / 50; /**< Initial reference particle spacing. */
 Real BW = particle_spacing_ref * 4;  /**< Extending width for boundary conditions. */
-BoundingBox system_domain_bounds(Vec2d(-BW, -BW), Vec2d(DL + BW, DH + BW));
+BoundingBoxd system_domain_bounds(Vec2d(-BW, -BW), Vec2d(DL + BW, DH + BW));
 //----------------------------------------------------------------------
 //	Material properties of the soil.
 //----------------------------------------------------------------------
@@ -43,8 +43,8 @@ class WallBoundary : public ComplexShape
   public:
     explicit WallBoundary(const std::string &shape_name) : ComplexShape(shape_name)
     {
-        add<TransformShape<GeometricShapeBox>>(Transform(outer_wall_translation), outer_wall_halfsize);
-        subtract<TransformShape<GeometricShapeBox>>(Transform(inner_wall_translation), inner_wall_halfsize);
+        add<GeometricShapeBox>(Transform(outer_wall_translation), outer_wall_halfsize);
+        subtract<GeometricShapeBox>(Transform(inner_wall_translation), inner_wall_halfsize);
     }
 };
 std::vector<Vecd> soil_shape{
@@ -67,7 +67,7 @@ int main(int ac, char *av[])
     //	Build up the environment of a SPHSystem.
     //----------------------------------------------------------------------
     SPHSystem sph_system(system_domain_bounds, particle_spacing_ref);
-    sph_system.handleCommandlineOptions(ac, av)->setIOEnvironment();
+    sph_system.handleCommandlineOptions(ac, av);
     //----------------------------------------------------------------------
     //	Creating bodies with corresponding materials and particles.
     //----------------------------------------------------------------------
@@ -198,7 +198,7 @@ int main(int ac, char *av[])
                 soil_block.updateCellLinkedList();
                 soil_block_complex.updateConfiguration();
                 interval_updating_configuration += TickCount::now() - time_instance;
-            } 
+            }
         }
         TickCount t2 = TickCount::now();
         vertical_stress.exec();

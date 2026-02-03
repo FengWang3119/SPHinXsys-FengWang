@@ -5,6 +5,8 @@ namespace SPH
 //=================================================================================================//
 namespace fluid_dynamics
 {
+namespace udf
+{
 using TurbuIntegration2ndHalfWithWallDissipativeRiemann = ComplexInteraction<Integration2ndHalf<Inner<>, Contact<Wall>>, DissipativeRiemannSolver>;
 //=================================================================================================//
 kEpsilon_TurbulentClosureCoefficient::kEpsilon_TurbulentClosureCoefficient()
@@ -18,36 +20,36 @@ kEpsilon_TurbulentClosureCoefficient::kEpsilon_TurbulentClosureCoefficient()
 //=================================================================================================//
 kEpsilon_kTransportEquationInner::kEpsilon_kTransportEquationInner(BaseInnerRelation &inner_relation, const StdVec<Real> &initial_values, int is_extr_visc_dissipa, bool is_STL)
     : kEpsilon_BaseTurbulentModel<Base, DataDelegateInner>(inner_relation),
-      dk_dt_(particles_->registerStateVariable<Real>("ChangeRateOfTKE")),
-      dk_dt_without_dissipation_(particles_->registerStateVariable<Real>("ChangeRateOfTKEWithoutDissipation")),
-      k_production_(particles_->registerStateVariable<Real>("K_Production")),
+      dk_dt_(particles_->registerStateVariableData<Real>("ChangeRateOfTKE")),
+      dk_dt_without_dissipation_(particles_->registerStateVariableData<Real>("ChangeRateOfTKEWithoutDissipation")),
+      k_production_(particles_->registerStateVariableData<Real>("K_Production")),
       is_near_wall_P1_(particles_->getVariableDataByName<int>("IsNearWallP1")),
       velocity_gradient_(particles_->getVariableDataByName<Matd>("TurbulentVelocityGradient")),
-      turbu_k_(particles_->registerStateVariable<Real>("TurbulenceKineticEnergy", Real(initial_values[0]))),
-      turbu_epsilon_(particles_->registerStateVariable<Real>("TurbulentDissipation", Real(initial_values[1]))),
-      turbu_mu_(particles_->registerStateVariable<Real>("TurbulentViscosity", Real(initial_values[2]))),
+      turbu_k_(particles_->registerStateVariableData<Real>("TurbulenceKineticEnergy", Real(initial_values[0]))),
+      turbu_epsilon_(particles_->registerStateVariableData<Real>("TurbulentDissipation", Real(initial_values[1]))),
+      turbu_mu_(particles_->registerStateVariableData<Real>("TurbulentViscosity", Real(initial_values[2]))),
       turbu_strain_rate_(particles_->getVariableDataByName<Matd>("TurbulentStrainRate")),
-      is_extra_viscous_dissipation_(particles_->registerStateVariable<int>("TurbulentExtraViscousDissipation", is_extr_visc_dissipa)),
+      is_extra_viscous_dissipation_(particles_->registerStateVariableData<int>("TurbulentExtraViscousDissipation", is_extr_visc_dissipa)),
       is_STL_(is_STL),
-      turbu_indicator_(particles_->registerStateVariable<int>("TurbulentIndicator")),
-      k_diffusion_(particles_->registerStateVariable<Real>("K_Diffusion"))
+      turbu_indicator_(particles_->registerStateVariableData<int>("TurbulentIndicator")),
+      k_diffusion_(particles_->registerStateVariableData<Real>("K_Diffusion"))
 {
-    particles_->addVariableToSort<Real>("ChangeRateOfTKE");
-    particles_->addVariableToSort<Real>("ChangeRateOfTKEWithoutDissipation");
+    particles_->addEvolvingVariable<Real>("ChangeRateOfTKE");
+    particles_->addEvolvingVariable<Real>("ChangeRateOfTKEWithoutDissipation");
 
-    particles_->addVariableToSort<Real>("K_Production");
+    particles_->addEvolvingVariable<Real>("K_Production");
     particles_->addVariableToWrite<Real>("K_Production");
 
-    particles_->addVariableToSort<Real>("TurbulenceKineticEnergy");
+    particles_->addEvolvingVariable<Real>("TurbulenceKineticEnergy");
     particles_->addVariableToWrite<Real>("TurbulenceKineticEnergy");
 
-    particles_->addVariableToSort<Real>("TurbulentViscosity");
+    particles_->addEvolvingVariable<Real>("TurbulentViscosity");
     particles_->addVariableToWrite<Real>("TurbulentViscosity");
 
-    particles_->addVariableToSort<Real>("TurbulentDissipation");
+    particles_->addEvolvingVariable<Real>("TurbulentDissipation");
     particles_->addVariableToWrite<Real>("TurbulentDissipation");
 
-    particles_->addVariableToSort<Matd>("TurbulentStrainRate");
+    particles_->addEvolvingVariable<Matd>("TurbulentStrainRate");
     particles_->addVariableToWrite<Matd>("TurbulentStrainRate");
 
     //** Obtain Initial values for transport equations *
@@ -56,12 +58,12 @@ kEpsilon_kTransportEquationInner::kEpsilon_kTransportEquationInner(BaseInnerRela
     // std::fill(turbu_mu_.begin(), turbu_mu_.end(), initial_values[2]);
 
     //** for test */
-    particles_->addVariableToSort<Real>("K_Diffusion");
+    particles_->addEvolvingVariable<Real>("K_Diffusion");
     particles_->addVariableToWrite<Real>("K_Diffusion");
 
     particles_->addVariableToWrite<Real>("ChangeRateOfTKE");
 
-    particles_->addVariableToSort<int>("TurbulentIndicator");
+    particles_->addEvolvingVariable<int>("TurbulentIndicator");
     particles_->addVariableToWrite<int>("TurbulentIndicator");
 
     //std::fill(is_extra_viscous_dissipation_.begin(), is_extra_viscous_dissipation_.end(), is_extr_visc_dissipa);
@@ -143,11 +145,11 @@ void kEpsilon_TKE_Diffusion::interaction(size_t index_i, Real dt)
 //=================================================================================================//
 kEpsilon_epsilonTransportEquationInner::kEpsilon_epsilonTransportEquationInner(BaseInnerRelation &inner_relation, bool is_STL)
     : kEpsilon_BaseTurbulentModel<Base, DataDelegateInner>(inner_relation),
-      depsilon_dt_(particles_->registerStateVariable<Real>("ChangeRateOfTDR")),
-      depsilon_dt_without_dissipation_(particles_->registerStateVariable<Real>("ChangeRateOfTDRWithoutDissp")),
-      ep_production(particles_->registerStateVariable<Real>("Ep_Production")),
-      ep_dissipation_(particles_->registerStateVariable<Real>("Ep_Dissipation_")),
-      ep_diffusion_(particles_->registerStateVariable<Real>("Ep_Diffusion_")),
+      depsilon_dt_(particles_->registerStateVariableData<Real>("ChangeRateOfTDR")),
+      depsilon_dt_without_dissipation_(particles_->registerStateVariableData<Real>("ChangeRateOfTDRWithoutDissp")),
+      ep_production(particles_->registerStateVariableData<Real>("Ep_Production")),
+      ep_dissipation_(particles_->registerStateVariableData<Real>("Ep_Dissipation_")),
+      ep_diffusion_(particles_->registerStateVariableData<Real>("Ep_Diffusion_")),
       turbu_mu_(particles_->getVariableDataByName<Real>("TurbulentViscosity")),
       turbu_k_(particles_->getVariableDataByName<Real>("TurbulenceKineticEnergy")),
       turbu_epsilon_(particles_->getVariableDataByName<Real>("TurbulentDissipation")),
@@ -155,16 +157,16 @@ kEpsilon_epsilonTransportEquationInner::kEpsilon_epsilonTransportEquationInner(B
       is_near_wall_P1_(particles_->getVariableDataByName<int>("IsNearWallP1")),
       is_STL_(is_STL)
 {
-    particles_->addVariableToSort<Real>("ChangeRateOfTDR");
+    particles_->addEvolvingVariable<Real>("ChangeRateOfTDR");
     particles_->addVariableToWrite<Real>("ChangeRateOfTDR");
 
-    particles_->addVariableToSort<Real>("Ep_Production");
+    particles_->addEvolvingVariable<Real>("Ep_Production");
     particles_->addVariableToWrite<Real>("Ep_Production");
 
-    particles_->addVariableToSort<Real>("Ep_Dissipation_");
+    particles_->addEvolvingVariable<Real>("Ep_Dissipation_");
     particles_->addVariableToWrite<Real>("Ep_Dissipation_");
 
-    particles_->addVariableToSort<Real>("Ep_Diffusion_");
+    particles_->addEvolvingVariable<Real>("Ep_Diffusion_");
     particles_->addVariableToWrite<Real>("Ep_Diffusion_");
 }
 //=================================================================================================//
@@ -390,10 +392,10 @@ kEpsilon_StandardWallFunctionCorrection::
     kEpsilon_StandardWallFunctionCorrection(BaseInnerRelation &inner_relation,
                                             BaseContactRelation &contact_relation)
     : LocalDynamics(inner_relation.getSPHBody()), DataDelegateContact(contact_relation),
-      wall_Y_plus_(particles_->registerStateVariable<Real>("WallYplus")),
-      wall_Y_star_(particles_->registerStateVariable<Real>("WallYstar")),
-      velo_tan_(particles_->registerStateVariable<Real>("TangentialVelocity")),
-      velo_friction_(particles_->registerStateVariable<Vecd>("FrictionVelocity")),
+      wall_Y_plus_(particles_->registerStateVariableData<Real>("WallYplus")),
+      wall_Y_star_(particles_->registerStateVariableData<Real>("WallYstar")),
+      velo_tan_(particles_->registerStateVariableData<Real>("TangentialVelocity")),
+      velo_friction_(particles_->registerStateVariableData<Vecd>("FrictionVelocity")),
       y_p_(particles_->getVariableDataByName<Real>("Y_P")),
       vel_(particles_->getVariableDataByName<Vecd>("Velocity")), rho_(particles_->getVariableDataByName<Real>("Density")),
       viscosity_(DynamicCast<Viscosity>(this, particles_->getBaseMaterial())),
@@ -410,7 +412,7 @@ kEpsilon_StandardWallFunctionCorrection::
       index_nearest(particles_->getVariableDataByName<int>("NearestIndex")),
       e_nearest_tau_(particles_->getVariableDataByName<Vecd>("WallNearestTangentialUnitVector")),
       e_nearest_normal_(particles_->getVariableDataByName<Vecd>("WallNearestNormalUnitVector")),
-      physical_time_(sph_system_.getSystemVariableDataByName<Real>("PhysicalTime"))
+      physical_time_(sph_system_->getSystemVariableDataByName<Real>("PhysicalTime"))
 {
     for (size_t k = 0; k != contact_particles_.size(); ++k)
     {
@@ -418,23 +420,23 @@ kEpsilon_StandardWallFunctionCorrection::
         contact_Vol_.push_back(contact_particles_[k]->getVariableDataByName<Real>("VolumetricMeasure"));
     }
 
-    particles_->addVariableToSort<Real>("Y_P");
+    particles_->addEvolvingVariable<Real>("Y_P");
     particles_->addVariableToWrite<Real>("Y_P");
 
     //** Fixed y_p_ as a constant distance *
     // std::fill(y_p_.begin(), y_p_.end(), y_p_constant);
 
-    particles_->addVariableToSort<Real>("WallYplus");
+    particles_->addEvolvingVariable<Real>("WallYplus");
     particles_->addVariableToWrite<Real>("WallYplus");
 
     //** Initial value is important, especially when use log law *
-    particles_->addVariableToSort<Real>("WallYstar");
+    particles_->addEvolvingVariable<Real>("WallYstar");
     particles_->addVariableToWrite<Real>("WallYstar");
 
-    particles_->addVariableToSort<Real>("TangentialVelocity");
+    particles_->addEvolvingVariable<Real>("TangentialVelocity");
     particles_->addVariableToWrite<Real>("TangentialVelocity");
 
-    particles_->addVariableToSort<Vecd>("FrictionVelocity");
+    particles_->addEvolvingVariable<Vecd>("FrictionVelocity");
     particles_->addVariableToWrite<Vecd>("FrictionVelocity");
 };
 //=================================================================================================//
@@ -599,6 +601,8 @@ void kEpsilon_StandardWallFunctionCorrection::interaction(size_t index_i, Real d
         }
     }
 }
+//=================================================================================================//
+} // namespace udf
 //=================================================================================================//
 } // namespace fluid_dynamics
 //=================================================================================================//

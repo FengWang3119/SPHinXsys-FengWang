@@ -13,7 +13,7 @@ DeviceSharedSingularVariable<DataType>::
     : Entity(host_variable->Name()),
       device_shared_data_(allocateDeviceShared<DataType>(1))
 {
-    *device_shared_data_ = *host_variable->Data();
+    copyToDevice(host_variable->Data(), device_shared_data_, 1);
     host_variable->setDelegateData(device_shared_data_);
 }
 //=================================================================================================//
@@ -81,14 +81,10 @@ DataType *DiscreteVariable<DataType>::DelegatedOnDevice()
 }
 //=================================================================================================//
 template <typename DataType>
-void DiscreteVariable<DataType>::reallocateData(
-    const ParallelDevicePolicy &par_device, size_t tentative_size)
+void DiscreteVariable<DataType>::reallocateDataOnDevice(size_t tentative_size)
 {
-    if (data_size_ < tentative_size)
-    {
-        reallocateData(tentative_size);
-        device_only_variable_->reallocateData(this);
-    }
+    reallocateData(tentative_size);
+    device_only_variable_->reallocateData(this);
 }
 //=================================================================================================//
 } // namespace SPH

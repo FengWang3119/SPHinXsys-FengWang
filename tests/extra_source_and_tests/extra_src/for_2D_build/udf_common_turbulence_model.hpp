@@ -8,18 +8,21 @@ namespace SPH
 namespace fluid_dynamics
 {
 //=================================================================================================//
+namespace udf
+{
+//=================================================================================================//
 template <class DataDelegationType>
 template <class BaseRelationType>
 TKEnergyForce<Base, DataDelegationType>::
     TKEnergyForce(BaseRelationType &base_relation)
     : LocalDynamics(base_relation.getSPHBody()), DataDelegationType(base_relation),
-      force_(this->particles_->template registerStateVariable<Vecd>("Force")),
+      force_(this->particles_->template registerStateVariableData<Vecd>("Force")),
       mass_(this->particles_->template getVariableDataByName<Real>("Mass")),
       indicator_(this->particles_->template getVariableDataByName<int>("Indicator")),
       pos_(this->particles_->template getVariableDataByName<Vecd>("Position")),
       turbu_k_(this->particles_->template getVariableDataByName<Real>("TurbulenceKineticEnergy")),
       Vol_(this->particles_->template getVariableDataByName<Real>("VolumetricMeasure")),
-      test_k_grad_rslt_(this->particles_->template registerStateVariable<Vecd>("TkeGradResult")) {}
+      test_k_grad_rslt_(this->particles_->template registerStateVariableData<Vecd>("TkeGradResult")) {}
 //=================================================================================================//
 template <class DataDelegationType>
 template <class BaseRelationType>
@@ -31,8 +34,8 @@ kEpsilon_GetVelocityGradient<DataDelegationType>::
       pos_(this->particles_->template getVariableDataByName<Vecd>("Position")),
       is_near_wall_P1_(this->particles_->template getVariableDataByName<int>("IsNearWallP1")),
       is_near_wall_P2_(this->particles_->template getVariableDataByName<int>("IsNearWallP2")),
-      velocity_gradient_(this->particles_->template registerStateVariable<Matd>("TurbulentVelocityGradient")),
-      velocity_gradient_wall(this->particles_->template registerStateVariable<Matd>("Velocity_Gradient_Wall")) {}
+      velocity_gradient_(this->particles_->template registerStateVariableData<Matd>("TurbulentVelocityGradient")),
+      velocity_gradient_wall(this->particles_->template registerStateVariableData<Matd>("Velocity_Gradient_Wall")) {}
 //=================================================================================================//
 template <class DataDelegationType>
 template <class BaseRelationType>
@@ -56,14 +59,14 @@ TurbulentLinearGradientCorrectionMatrix<DataDelegationType>::
     TurbulentLinearGradientCorrectionMatrix(BaseRelationType &base_relation)
     : LocalDynamics(base_relation.getSPHBody()), DataDelegationType(base_relation),
       Vol_(this->particles_->template getVariableDataByName<Real>("VolumetricMeasure")),
-      turbu_B_(this->particles_->template registerStateVariable<Matd>(
+      turbu_B_(this->particles_->template registerStateVariableData<Matd>(
           "TurbulentLinearGradientCorrectionMatrix", IdentityMatrix<Matd>::value)),
       B_(this->particles_->template getVariableDataByName<Matd>("LinearGradientCorrectionMatrix"))
 {
     this->particles_->template addVariableToWrite<Matd>("TurbulentLinearGradientCorrectionMatrix");
-    this->particles_->template addVariableToSort<Matd>("TurbulentLinearGradientCorrectionMatrix");
+    this->particles_->template addEvolvingVariable<Matd>("TurbulentLinearGradientCorrectionMatrix");
     this->particles_->template addVariableToWrite<Matd>("LinearGradientCorrectionMatrix");
-    this->particles_->template addVariableToSort<Matd>("LinearGradientCorrectionMatrix");
+    this->particles_->template addEvolvingVariable<Matd>("LinearGradientCorrectionMatrix");
 }
 //=================================================================================================//
 template <class RiemannSolverType>
@@ -98,6 +101,8 @@ void TurbulentIntegration2ndHalf<Contact<Wall>, RiemannSolverType>::interaction(
     drho_dt_[index_i] += density_change_rate * this->rho_[index_i];
     force_[index_i] += p_dissipation * this->Vol_[index_i];
 }
+//=================================================================================================//
+} // namespace udf
 //=================================================================================================//
 } // namespace fluid_dynamics
 //=================================================================================================//

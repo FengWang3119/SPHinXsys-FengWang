@@ -8,6 +8,8 @@ namespace SPH
 {
 namespace fluid_dynamics
 {
+namespace udf
+{
 class kOmega_BaseTurbuClosureCoeff
 {
   public:
@@ -284,6 +286,7 @@ class kOmega_InflowTurbulentCondition : public BaseFlowBoundaryCondition,
     Real polyEval(const std::vector<Real>& a, Real x);
 };
 //=================================================================================================//
+} // udf
 } // namespace fluid_dynamics
 } // namespace SPH
 #endif // K_EPSILON_TURBULENT_MODEL_H

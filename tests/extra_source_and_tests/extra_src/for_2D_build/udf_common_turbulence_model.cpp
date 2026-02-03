@@ -6,6 +6,9 @@ namespace SPH
 namespace fluid_dynamics
 {
 //=================================================================================================//
+namespace udf
+{
+//=================================================================================================//
 WallFunctionCoefficient::WallFunctionCoefficient()
     : Karman_(0.41), turbu_const_E_(9.8), C_mu_wf_(0.09),
       start_time_laminar_(2.0), y_star_threshold_laminar_(11.225)
@@ -140,7 +143,7 @@ kEpsilon_GetVelocityGradient<Inner<>>::kEpsilon_GetVelocityGradient(BaseInnerRel
       turbu_B_(particles_->getVariableDataByName<Matd>("TurbulentLinearGradientCorrectionMatrix")),
       weight_sub_nearwall_(weight_sub)
 {
-    this->particles_->addVariableToSort<Matd>("TurbulentVelocityGradient");
+    this->particles_->addEvolvingVariable<Matd>("TurbulentVelocityGradient");
     this->particles_->addVariableToWrite<Matd>("TurbulentVelocityGradient");
 }
 //=================================================================================================//
@@ -293,9 +296,9 @@ void TurbuViscousForce<Inner<>>::interaction(size_t index_i, Real dt)
 //=================================================================================================//
 TurbuViscousForce<Contact<Wall>>::TurbuViscousForce(BaseContactRelation &wall_contact_relation)
     : BaseTurbuViscousForceWithWall(wall_contact_relation),
-      wall_particle_spacing_(wall_contact_relation.getSPHBody().sph_adaptation_->ReferenceSpacing()),
+      wall_particle_spacing_(wall_contact_relation.getSPHBody().getSPHAdaptation().ReferenceSpacing()),
       B_(particles_->getVariableDataByName<Matd>("LinearGradientCorrectionMatrix")),
-      physical_time_(sph_system_.getSystemVariableDataByName<Real>("PhysicalTime")),
+      physical_time_(sph_system_->getSystemVariableDataByName<Real>("PhysicalTime")),
       is_blended_(particles_->getVariableDataByName<int>("TurbulentWallTreatmentType")) {}
 //=================================================================================================//
 void TurbuViscousForce<Contact<Wall>>::interaction(size_t index_i, Real dt)
@@ -375,7 +378,7 @@ void TurbuViscousForce<Contact<Wall>>::interaction(size_t index_i, Real dt)
 TurbulentAdvectionTimeStepSize::TurbulentAdvectionTimeStepSize(SPHBody &sph_body, Real U_max, Real advectionCFL)
     : LocalDynamicsReduce<ReduceMax>(sph_body),
       vel_(particles_->getVariableDataByName<Vecd>("Velocity")),
-      smoothing_length_min_(sph_body.sph_adaptation_->MinimumSmoothingLength()),
+      smoothing_length_min_(sph_body.getSPHAdaptation().MinimumSmoothingLength()),
       speed_ref_turbu_(U_max), advectionCFL_(advectionCFL),
       turbu_mu_(particles_->getVariableDataByName<Real>("TurbulentViscosity")),
       fluid_(DynamicCast<Fluid>(this, particles_->getBaseMaterial())),
@@ -405,18 +408,18 @@ JudgeIsNearWall::
     JudgeIsNearWall(BaseInnerRelation &inner_relation,
                     BaseContactRelation &contact_relation, Real constant_y_p)
     : LocalDynamics(inner_relation.getSPHBody()), DataDelegateContact(contact_relation),
-      distance_to_dummy_interface_(particles_->registerStateVariable<Real>("DistanceToDummyInterface")),
-      distance_to_dummy_interface_up_average_(particles_->registerStateVariable<Real>("DistanceToDummyInterfaceUpAver")),
-      is_near_wall_P1_(particles_->registerStateVariable<int>("IsNearWallP1")),
-      is_near_wall_P2_(particles_->registerStateVariable<int>("IsNearWallP2")),
-      index_nearest_(particles_->registerStateVariable<int>("NearestIndex")),
-      e_nearest_tau_(particles_->registerStateVariable<Vecd>("WallNearestTangentialUnitVector")),
-      e_nearest_normal_(particles_->registerStateVariable<Vecd>("WallNearestNormalUnitVector")),
-      y_p_(particles_->registerStateVariable<Real>("Y_P")),
+      distance_to_dummy_interface_(particles_->registerStateVariableData<Real>("DistanceToDummyInterface")),
+      distance_to_dummy_interface_up_average_(particles_->registerStateVariableData<Real>("DistanceToDummyInterfaceUpAver")),
+      is_near_wall_P1_(particles_->registerStateVariableData<int>("IsNearWallP1")),
+      is_near_wall_P2_(particles_->registerStateVariableData<int>("IsNearWallP2")),
+      index_nearest_(particles_->registerStateVariableData<int>("NearestIndex")),
+      e_nearest_tau_(particles_->registerStateVariableData<Vecd>("WallNearestTangentialUnitVector")),
+      e_nearest_normal_(particles_->registerStateVariableData<Vecd>("WallNearestNormalUnitVector")),
+      y_p_(particles_->registerStateVariableData<Real>("Y_P")),
       constant_y_p_(constant_y_p),
       pos_(particles_->getVariableDataByName<Vecd>("Position")),
-      fluid_particle_spacing_(inner_relation.getSPHBody().sph_adaptation_->ReferenceSpacing()),
-      wall_particle_spacing_(contact_relation.getSPHBody().sph_adaptation_->ReferenceSpacing())
+      fluid_particle_spacing_(inner_relation.getSPHBody().getSPHAdaptation().ReferenceSpacing()),
+      wall_particle_spacing_(contact_relation.getSPHBody().getSPHAdaptation().ReferenceSpacing())
 {
     for (size_t k = 0; k != contact_particles_.size(); ++k)
     {
@@ -424,24 +427,24 @@ JudgeIsNearWall::
         contact_Vol_.push_back(contact_particles_[k]->getVariableDataByName<Real>("VolumetricMeasure"));
     }
 
-    particles_->addVariableToSort<Real>("DistanceToDummyInterfaceUpAver");
+    particles_->addEvolvingVariable<Real>("DistanceToDummyInterfaceUpAver");
     particles_->addVariableToWrite<Real>("DistanceToDummyInterfaceUpAver");
 
-    particles_->addVariableToSort<Real>("DistanceToDummyInterface");
+    particles_->addEvolvingVariable<Real>("DistanceToDummyInterface");
     particles_->addVariableToWrite<Real>("DistanceToDummyInterface");
 
-    particles_->addVariableToSort<int>("NearestIndex");
+    particles_->addEvolvingVariable<int>("NearestIndex");
     particles_->addVariableToWrite<int>("NearestIndex");
 
-    particles_->addVariableToSort<int>("IsNearWallP1");
+    particles_->addEvolvingVariable<int>("IsNearWallP1");
     particles_->addVariableToWrite<int>("IsNearWallP1");
 
-    particles_->addVariableToSort<int>("IsNearWallP2");
+    particles_->addEvolvingVariable<int>("IsNearWallP2");
     particles_->addVariableToWrite<int>("IsNearWallP2");
 
-    particles_->addVariableToSort<Vecd>("WallNearestTangentialUnitVector");
+    particles_->addEvolvingVariable<Vecd>("WallNearestTangentialUnitVector");
 
-    particles_->addVariableToSort<Vecd>("WallNearestNormalUnitVector");
+    particles_->addEvolvingVariable<Vecd>("WallNearestNormalUnitVector");
 };
 //=================================================================================================//
 void JudgeIsNearWall::interaction(size_t index_i, Real dt)
@@ -596,10 +599,10 @@ void TurbulentLinearGradientCorrectionMatrix<Inner<>>::update(size_t index_i, Re
 GetLimiterOfTransportVelocityCorrection::
     GetLimiterOfTransportVelocityCorrection(SPHBody &sph_body, Real slope)
     : LocalDynamics(sph_body),
-      h_ref_(sph_body_.sph_adaptation_->ReferenceSmoothingLength()),
-      zero_gradient_residue_(particles_->getVariableDataByName<Vecd>("ZeroGradientResidue")),
+      h_ref_(sph_body.getSPHAdaptation().ReferenceSmoothingLength()),
+      zero_gradient_residue_(particles_->getVariableDataByName<Vecd>("KernelGradientIntegral")),
       slope_(slope),
-      limiter_tvc_(particles_->registerStateVariable<Real>("LimiterOfTVC"))
+      limiter_tvc_(particles_->registerStateVariableData<Real>("LimiterOfTVC"))
 {
     particles_->addVariableToWrite<Real>("LimiterOfTVC");
 }
@@ -615,7 +618,7 @@ NonDimensionalisePressure::
     : LocalDynamics(sph_body),
       rho_(particles_->getVariableDataByName<Real>("Density")),
       p_(particles_->getVariableDataByName<Real>("Pressure")),
-      p_dimensionless_(particles_->registerStateVariable<Real>("PressureDimensionless"))
+      p_dimensionless_(particles_->registerStateVariableData<Real>("PressureDimensionless"))
 {
     particles_->addVariableToWrite<Real>("PressureDimensionless");
 }
@@ -626,6 +629,8 @@ void NonDimensionalisePressure::update(size_t index_i, Real dt)
     //p_dimensionless_[index_i] = p_[index_i] / (rho_[index_i] * 20.0);
     p_dimensionless_[index_i] = p_[index_i] / ((rho_[index_i] - 1.0));
 }
+//=================================================================================================//
+} // namespace udf
 //=================================================================================================//
 } // namespace fluid_dynamics
 //=================================================================================================//

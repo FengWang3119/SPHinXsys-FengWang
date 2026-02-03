@@ -8,6 +8,8 @@ namespace SPH
 {
 namespace fluid_dynamics
 {
+namespace udf
+{
 //=================================================================================================//
 class WallFunctionCoefficient
 {
@@ -284,7 +286,7 @@ class TurbulentLinearGradientCorrectionMatrix<Inner<>>
     explicit TurbulentLinearGradientCorrectionMatrix(BaseInnerRelation &inner_relation, Real alpha = Real(0))
         : TurbulentLinearGradientCorrectionMatrix<DataDelegateInner>(inner_relation), turbu_alpha_(alpha){};
     template <typename BodyRelationType, typename FirstArg>
-    explicit TurbulentLinearGradientCorrectionMatrix(InteractArgs<BodyRelationType, FirstArg> parameters)
+    explicit TurbulentLinearGradientCorrectionMatrix(DynamicsArgs<BodyRelationType, FirstArg> parameters)
         : TurbulentLinearGradientCorrectionMatrix(parameters.body_relation_, std::get<0>(parameters.others_)){};
     virtual ~TurbulentLinearGradientCorrectionMatrix(){};
     void interaction(size_t index_i, Real dt = 0.0);
@@ -310,10 +312,10 @@ class GetLimiterOfTransportVelocityCorrection : public LocalDynamics
 //=================================================================================================//
 template <class ParticleScope>
 using TVC_Limited_withLinearGradientCorrection =
-    BaseTransportVelocityCorrectionComplex<SingleResolution, TruncatedLinear, LinearGradientCorrection, ParticleScope>;
+    BaseTransportVelocityCorrectionComplex<SPHAdaptation, TruncatedLinear, LinearGradientCorrection, ParticleScope>;
 template <class ParticleScope>
 using TVC_NoLimiter_withLinearGradientCorrection =
-    BaseTransportVelocityCorrectionComplex<SingleResolution, NoLimiter, LinearGradientCorrection, ParticleScope>;
+    BaseTransportVelocityCorrectionComplex<SPHAdaptation, NoLimiter, LinearGradientCorrection, ParticleScope>;
 //=================================================================================================//
 class ModifiedTruncatedLinear : public Limiter
 {
@@ -330,23 +332,23 @@ class ModifiedTruncatedLinear : public Limiter
 };
 template <class ParticleScope>
 using TVC_ModifiedLimited_NoRKGC =
-    BaseTransportVelocityCorrectionComplex<SingleResolution, ModifiedTruncatedLinear, NoKernelCorrection, ParticleScope>;
+    BaseTransportVelocityCorrectionComplex<SPHAdaptation, ModifiedTruncatedLinear, NoKernelCorrection, ParticleScope>;
 
 template <class ParticleScope>
 using TVC_ModifiedLimited_withLinearGradientCorrection =
-    BaseTransportVelocityCorrectionComplex<SingleResolution, ModifiedTruncatedLinear, LinearGradientCorrection, ParticleScope>;
+    BaseTransportVelocityCorrectionComplex<SPHAdaptation, ModifiedTruncatedLinear, LinearGradientCorrection, ParticleScope>;
 
 template <class ParticleScope>
 using TVC_ModifiedLimited_RKGC_OBFCorrection =
-    BaseTransportVelocityCorrectionComplex<SingleResolution, ModifiedTruncatedLinear, LinearGradientCorrectionWithBulkScope, ParticleScope>;
+    BaseTransportVelocityCorrectionComplex<SPHAdaptation, ModifiedTruncatedLinear, LinearGradientCorrectionWithBulkScope, ParticleScope>;
 
 template <class ParticleScope>
 using TVC_NotLimited_RKGC_OBFCorrection =
-    BaseTransportVelocityCorrectionComplex<SingleResolution, NoLimiter, LinearGradientCorrectionWithBulkScope, ParticleScope>;
+    BaseTransportVelocityCorrectionComplex<SPHAdaptation, NoLimiter, LinearGradientCorrectionWithBulkScope, ParticleScope>;
 
 template <class ParticleScope>
 using TVC_ModifiedLimited_withoutLinearGradientCorrection =
-    BaseTransportVelocityCorrectionComplex<SingleResolution, ModifiedTruncatedLinear, NoKernelCorrection, ParticleScope>;
+    BaseTransportVelocityCorrectionComplex<SPHAdaptation, ModifiedTruncatedLinear, NoKernelCorrection, ParticleScope>;
 //=================================================================================================//
 class NonDimensionalisePressure : public LocalDynamics
 {
@@ -380,6 +382,7 @@ class TurbulentIntegration2ndHalf<Contact<Wall>, RiemannSolverType>
 using Integration2ndHalfOnlyWallAcousticRiemannAdjusted = TurbulentIntegration2ndHalf<Contact<Wall>, DissipativeRiemannSolver>;
 // using Integration2ndHalfOnlyWallAcousticRiemannAdjusted = TurbulentIntegration2ndHalf<Contact<Wall>, AcousticRiemannSolver>;
 //=================================================================================================//
+} // namespace udf
 } // namespace fluid_dynamics
 } // namespace SPH
-#endif // K_EPSILON_TURBULENT_MODEL_H
+#endif // UDF_COMMON_TURBULENCE_MODEL_H

@@ -18,7 +18,7 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     SPHSystem sph_system(system_domain_bounds, read_mesh_data.MinMeshEdge());
     // Handle command line arguments and override the tags for particle relaxation and reload.
-    sph_system.handleCommandlineOptions(ac, av)->setIOEnvironment();
+    sph_system.handleCommandlineOptions(ac, av);
     //----------------------------------------------------------------------
     //	Creating body, materials and particles.
     //----------------------------------------------------------------------
@@ -45,7 +45,7 @@ int main(int ac, char *av[])
     /** Boundary conditions set up */
     InvCFBoundaryConditionSetup boundary_condition_setup(air_block_inner, ghost_creation);
     //----------------------------------------------------------------------
-    BodyStatesRecordingInMeshToVtu write_real_body_states(air_block, read_mesh_data);
+    BodyStatesRecordingToMeshVtu write_real_body_states(air_block, read_mesh_data);
     write_real_body_states.addToWrite<Real>(air_block, "Density");
     write_real_body_states.addToWrite<Real>(air_block, "Pressure");
     ReducedQuantityRecording<MaximumSpeed> write_maximum_speed(air_block);

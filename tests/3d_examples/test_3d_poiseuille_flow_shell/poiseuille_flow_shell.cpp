@@ -28,13 +28,13 @@ const Real c_f = 10.0 * U_max; /**< Reference sound speed. */
 namespace SPH
 {
 StdVec<Vecd> createAxialObservationPoints(
-    double full_length, Vec3d translation = Vec3d(0.0, 0.0, 0.0))
+    Real full_length, Vec3d translation = Vec3d(0.0, 0.0, 0.0))
 {
     StdVec<Vecd> observation_points;
     int ny = 51;
     for (int i = 0; i < ny; i++)
     {
-        double y = full_length / (ny - 1) * i;
+        Real y = full_length / (ny - 1) * i;
         Vec3d point_coordinate(0.0, y, 0.0);
         observation_points.emplace_back(point_coordinate + translation);
     }
@@ -42,17 +42,17 @@ StdVec<Vecd> createAxialObservationPoints(
 };
 
 StdVec<Vecd> createRadialObservationPoints(
-    double full_length, double diameter, int number_of_particles,
+    Real full_length, Real diameter, int number_of_particles,
     Vec3d translation = Vec3d(0.0, 0.0, 0.0))
 {
     StdVec<Vecd> observation_points;
     int n = number_of_particles + 1;
-    double y = full_length / 2.0;
+    Real y = full_length / 2.0;
     for (int i = 0; i < n - 1; i++) // we leave out the point close to the boundary as the
                                     // interpolation there is incorrect
                                     // TODO: fix the interpolation
     {
-        double z = diameter / 2.0 * i / double(n);
+        Real z = diameter / 2.0 * i / Real(n);
         observation_points.emplace_back(Vec3d(0.0, y, z) + translation);
         observation_points.emplace_back(Vec3d(0.0, y, -z) + translation);
     }
@@ -72,7 +72,7 @@ class ParticleGenerator<SurfaceParticles, ShellBoundary> : public ParticleGenera
                                Real resolution_shell, Real wall_thickness, Real shell_thickness)
         : ParticleGenerator<SurfaceParticles>(sph_body, surface_particles),
           resolution_shell_(resolution_shell),
-          wall_thickness_(wall_thickness), shell_thickness_(shell_thickness){};
+          wall_thickness_(wall_thickness), shell_thickness_(shell_thickness) {};
     void prepareGeometricData() override
     {
         const Real radius_mid_surface = fluid_radius + resolution_shell_ * 0.5;
@@ -127,31 +127,31 @@ struct InflowVelocity
 //----------------------------------------------------------------------
 //	Test case function
 //----------------------------------------------------------------------
-void poiseuille_flow(const Real resolution_ref, const Real resolution_shell, const Real shell_thickness)
+void poiseuille_flow(const Real global_resolution, const Real resolution_shell, const Real shell_thickness)
 {
     //----------------------------------------------------------------------
     //	Geometry parameters for shell.
     //----------------------------------------------------------------------
     const int number_of_particles = 10;
-    const Real inflow_length = resolution_ref * 10.0; // Inflow region
-    const Real wall_thickness = resolution_ref * 4.0;
+    const Real inflow_length = global_resolution * 10.0; // Inflow region
+    const Real wall_thickness = global_resolution * 4.0;
     const int SimTK_resolution = 20;
     const Vec3d translation_fluid(0., full_length * 0.5, 0.);
 
     //----------------------------------------------------------------------
     //	Geometry parameters for boundary condition.
     //----------------------------------------------------------------------
-    const Vec3d emitter_halfsize(fluid_radius, resolution_ref * 2, fluid_radius);
-    const Vec3d emitter_translation(0., resolution_ref * 2, 0.);
+    const Vec3d emitter_halfsize(fluid_radius, global_resolution * 2, fluid_radius);
+    const Vec3d emitter_translation(0., global_resolution * 2, 0.);
     const Vec3d emitter_buffer_halfsize(fluid_radius, inflow_length * 0.5, fluid_radius);
-    const Vec3d emitter_buffer_translation(0., inflow_length * 0.5 - 2 * resolution_ref, 0.);
-    const Vec3d disposer_halfsize(fluid_radius * 1.1, resolution_ref * 2, fluid_radius * 1.1);
+    const Vec3d emitter_buffer_translation(0., inflow_length * 0.5 - 2 * global_resolution, 0.);
+    const Vec3d disposer_halfsize(fluid_radius * 1.1, global_resolution * 2, fluid_radius * 1.1);
     const Vec3d disposer_translation(0., full_length - disposer_halfsize[1], 0.);
 
     //----------------------------------------------------------------------
     //	Domain bounds of the system.
     //----------------------------------------------------------------------
-    const BoundingBox system_domain_bounds(Vec3d(-0.5 * diameter, 0, -0.5 * diameter) -
+    const BoundingBoxd system_domain_bounds(Vec3d(-0.5 * diameter, 0, -0.5 * diameter) -
                                                Vec3d(shell_thickness, wall_thickness,
                                                      shell_thickness),
                                            Vec3d(0.5 * diameter, full_length, 0.5 * diameter) +
@@ -161,16 +161,14 @@ void poiseuille_flow(const Real resolution_ref, const Real resolution_shell, con
     //  Define water shape
     //----------------------------------------------------------------------
     auto water_block_shape = makeShared<ComplexShape>("WaterBody");
-    water_block_shape->add<TriangleMeshShapeCylinder>(SimTK::UnitVec3(0., 1., 0.), fluid_radius,
+    water_block_shape->add<TriangleMeshShapeCylinder>(Vec3d(0., 1., 0.), fluid_radius,
                                                       full_length * 0.5, SimTK_resolution,
                                                       translation_fluid);
 
     //----------------------------------------------------------------------
     //  Build up -- a SPHSystem --
     //----------------------------------------------------------------------
-    SPHSystem system(system_domain_bounds, resolution_ref);
-    IOEnvironment io_environment(system);
-
+    SPHSystem system(system_domain_bounds, global_resolution);
     //----------------------------------------------------------------------
     //	Creating bodies with corresponding materials and particles.
     //----------------------------------------------------------------------
@@ -180,7 +178,7 @@ void poiseuille_flow(const Real resolution_ref, const Real resolution_shell, con
     water_block.generateParticlesWithReserve<BaseParticles, Lattice>(inlet_particle_buffer);
 
     SolidBody shell_boundary(system, makeShared<DefaultShape>("Shell"));
-    shell_boundary.defineAdaptation<SPH::SPHAdaptation>(1.15, resolution_ref / resolution_shell);
+    shell_boundary.defineAdaptation<SPH::SPHAdaptation>(1.15, global_resolution / resolution_shell);
     shell_boundary.defineMaterial<LinearElasticSolid>(1, 1e3, 0.45);
     shell_boundary.generateParticles<SurfaceParticles, ShellBoundary>(resolution_shell, wall_thickness, shell_thickness);
 
@@ -233,11 +231,11 @@ void poiseuille_flow(const Real resolution_ref, const Real resolution_shell, con
     //----------------------------------------------------------------------
     //	Boundary conditions. Inflow & Outflow in Y-direction
     //----------------------------------------------------------------------
-    AlignedBoxPartByParticle emitter(water_block, AlignedBox(yAxis, Transform(Vec3d(emitter_translation)), emitter_halfsize));
+    AlignedBoxByParticle emitter(water_block, AlignedBox(yAxis, Transform(Vec3d(emitter_translation)), emitter_halfsize));
     SimpleDynamics<fluid_dynamics::EmitterInflowInjection> emitter_inflow_injection(emitter, inlet_particle_buffer);
-    AlignedBoxPartByCell emitter_buffer(water_block, AlignedBox(yAxis, Transform(Vec3d(emitter_buffer_translation)), emitter_buffer_halfsize));
+    AlignedBoxByCell emitter_buffer(water_block, AlignedBox(yAxis, Transform(Vec3d(emitter_buffer_translation)), emitter_buffer_halfsize));
     SimpleDynamics<fluid_dynamics::InflowVelocityCondition<InflowVelocity>> emitter_buffer_inflow_condition(emitter_buffer);
-    AlignedBoxPartByCell disposer(water_block, AlignedBox(yAxis, Transform(Vec3d(disposer_translation)), disposer_halfsize));
+    AlignedBoxByCell disposer(water_block, AlignedBox(yAxis, Transform(Vec3d(disposer_translation)), disposer_halfsize));
     SimpleDynamics<fluid_dynamics::DisposerOutflowDeletion> disposer_outflow_deletion(disposer);
     //----------------------------------------------------------------------
     //	Define the configuration related particles dynamics.
@@ -402,19 +400,19 @@ void poiseuille_flow(const Real resolution_ref, const Real resolution_shell, con
 TEST(poiseuille_flow, 10_particles)
 { // for CI
     const int number_of_particles = 10;
-    const Real resolution_ref = diameter / number_of_particles;
-    const Real resolution_shell = 0.5 * resolution_ref;
+    const Real global_resolution = diameter / number_of_particles;
+    const Real resolution_shell = 0.5 * global_resolution;
     const Real shell_thickness = 0.5 * resolution_shell;
-    poiseuille_flow(resolution_ref, resolution_shell, shell_thickness);
+    poiseuille_flow(global_resolution, resolution_shell, shell_thickness);
 }
 
 TEST(DISABLED_poiseuille_flow, 20_particles)
 { // for CI
     const int number_of_particles = 20;
-    const Real resolution_ref = diameter / number_of_particles;
-    const Real resolution_shell = 0.5 * resolution_ref;
+    const Real global_resolution = diameter / number_of_particles;
+    const Real resolution_shell = 0.5 * global_resolution;
     const Real shell_thickness = 0.5 * resolution_shell;
-    poiseuille_flow(resolution_ref, resolution_shell, shell_thickness);
+    poiseuille_flow(global_resolution, resolution_shell, shell_thickness);
 }
 //----------------------------------------------------------------------
 //	Main program starts here.

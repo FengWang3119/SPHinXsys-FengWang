@@ -104,8 +104,8 @@ void MyocardiumSurfaces::init_surfaces(
     // mesh_offset accounts for potential surface mismatch between ventricle and myocardium mesh
     lv_ids_ = lv_mesh.get_ids_close_to_surface(pos0_, myo_surface_ids_, lv_mesh_offset + smoothing_length * 0.5);
     rv_ids_ = rv_mesh.get_ids_close_to_surface(pos0_, myo_surface_ids_, rv_mesh_offset + smoothing_length * 0.5);
-    StdLargeVec<Vec3d> lv_pos; // lv particles positions
-    StdLargeVec<Vec3d> rv_pos; // rv particles positions
+    StdVec<Vec3d> lv_pos; // lv particles positions
+    StdVec<Vec3d> rv_pos; // rv particles positions
     lv_pos.reserve(lv_ids_.size());
     rv_pos.reserve(rv_ids_.size());
     for (auto index : lv_ids_)
@@ -141,10 +141,10 @@ void MyocardiumSurfaces::write_all_surfaces_as_obj(const std::string &output_pat
 void SurfaceOperationsVentricle::init_srf_area(InnerRelation &inner_relation)
 {
     // kernel_ptr
-    Kernel *kernel_ptr = particles_.getSPHBody().sph_adaptation_->getKernel();
+    Kernel *kernel_ptr = particles_.getSPHBody().getSPHAdaptation().getKernel();
     // assuming uniform surface particles here
     // calculation based on integrating the area over the kernel
-    Real smoothing_length = particles_.getSPHBody().sph_adaptation_->ReferenceSmoothingLength();
+    Real smoothing_length = particles_.getSPHBody().getSPHAdaptation().ReferenceSmoothingLength();
     std::cout << "smoothing_length: " << smoothing_length << std::endl;
 
     Real area_integral = 0.0;

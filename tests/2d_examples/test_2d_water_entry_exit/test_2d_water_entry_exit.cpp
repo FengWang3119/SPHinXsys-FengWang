@@ -69,7 +69,7 @@ class WettingFluidBodyInitialCondition : public LocalDynamics
     explicit WettingFluidBodyInitialCondition(SPHBody &sph_body)
         : LocalDynamics(sph_body),
           pos_(particles_->getVariableDataByName<Vecd>("Position")),
-          phi_(particles_->registerStateVariable<Real>(diffusion_species_name)){};
+          phi_(particles_->registerStateVariableData<Real>(diffusion_species_name)) {};
 
     void update(size_t index_i, Real dt)
     {
@@ -120,7 +120,7 @@ class WettingWallBodyInitialCondition : public LocalDynamics
     explicit WettingWallBodyInitialCondition(SPHBody &sph_body)
         : LocalDynamics(sph_body),
           pos_(particles_->getVariableDataByName<Vecd>("Position")),
-          phi_(particles_->registerStateVariable<Real>(diffusion_species_name)){};
+          phi_(particles_->registerStateVariableData<Real>(diffusion_species_name)) {};
 
     void update(size_t index_i, Real dt)
     {
@@ -148,7 +148,7 @@ class WettingCylinderBodyInitialCondition : public LocalDynamics
     explicit WettingCylinderBodyInitialCondition(SPHBody &sph_body)
         : LocalDynamics(sph_body),
           pos_(particles_->getVariableDataByName<Vecd>("Position")),
-          phi_(particles_->registerStateVariable<Real>(diffusion_species_name)){};
+          phi_(particles_->registerStateVariableData<Real>(diffusion_species_name)) {};
 
     void update(size_t index_i, Real dt)
     {
@@ -182,11 +182,11 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     //	Build up an SPHSystem.
     //----------------------------------------------------------------------
-    BoundingBox system_domain_bounds(Vec2d(-BW, -BW), Vec2d(DL + BW, DH + BW));
+    BoundingBoxd system_domain_bounds(Vec2d(-BW, -BW), Vec2d(DL + BW, DH + BW));
     SPHSystem sph_system(system_domain_bounds, particle_spacing_ref);
     sph_system.setRunParticleRelaxation(false);
     sph_system.setReloadParticles(true);
-    sph_system.handleCommandlineOptions(ac, av)->setIOEnvironment();
+    sph_system.handleCommandlineOptions(ac, av);
     //----------------------------------------------------------------------
     //	Creating bodies with corresponding materials and particles.
     //----------------------------------------------------------------------

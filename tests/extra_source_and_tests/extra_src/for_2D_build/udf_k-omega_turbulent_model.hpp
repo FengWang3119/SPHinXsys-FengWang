@@ -7,6 +7,9 @@ namespace SPH
 //=====================================================================================================//
 namespace fluid_dynamics
 {
+//=====================================================================================================//
+namespace udf
+{
 //=================================================================================================//
 template <class DataDelegationType>
 template <class BaseRelationType>
@@ -14,8 +17,8 @@ kOmega_BaseTurbulentModel<Base, DataDelegationType>::kOmega_BaseTurbulentModel(B
     : LocalDynamics(base_relation.getSPHBody()), DataDelegationType(base_relation),
       viscosity_(DynamicCast<Viscosity>(this, this->particles_->getBaseMaterial())),
       mu_(viscosity_.ReferenceViscosity()),
-      smoothing_length_(this->sph_body_.sph_adaptation_->ReferenceSmoothingLength()),
-      particle_spacing_min_(base_relation.getSPHBody().sph_adaptation_->MinimumSpacing()),
+      smoothing_length_(this->getSPHAdaptation().ReferenceSmoothingLength()),
+      particle_spacing_min_(base_relation.getSPHBody().getSPHAdaptation().MinimumSpacing()),
       rho_(this->particles_->template getVariableDataByName<Real>("Density")),
       Vol_(this->particles_->template getVariableDataByName<Real>("VolumetricMeasure")),
       vel_(this->particles_->template getVariableDataByName<Vecd>("Velocity")),
@@ -32,8 +35,10 @@ kOmega_GetVelocityGradient<DataDelegationType>::
       pos_(this->particles_->template getVariableDataByName<Vecd>("Position")),
       is_near_wall_P1_(this->particles_->template getVariableDataByName<int>("IsNearWallP1")),
       is_near_wall_P2_(this->particles_->template getVariableDataByName<int>("IsNearWallP2")),
-      velocity_gradient_(this->particles_->template registerStateVariable<Matd>("TurbulentVelocityGradient")),
-      velocity_gradient_wall(this->particles_->template registerStateVariable<Matd>("Velocity_Gradient_Wall")) {} 
+      velocity_gradient_(this->particles_->template registerStateVariableData<Matd>("TurbulentVelocityGradient")),
+      velocity_gradient_wall(this->particles_->template registerStateVariableData<Matd>("Velocity_Gradient_Wall")) {} 
+//=================================================================================================//
+} // udf
 //=================================================================================================//
 } // namespace fluid_dynamics
 //=================================================================================================//

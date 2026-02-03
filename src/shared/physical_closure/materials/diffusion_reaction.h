@@ -12,7 +12,7 @@
  * (Deutsche Forschungsgemeinschaft) DFG HU1527/6-1, HU1527/10-1,            *
  *  HU1527/12-1 and HU1527/12-4.                                             *
  *                                                                           *
- * Portions copyright (c) 2017-2023 Technical University of Munich and       *
+ * Portions copyright (c) 2017-2025 Technical University of Munich and       *
  * the authors' affiliations.                                                *
  *                                                                           *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may   *
@@ -31,7 +31,7 @@
 #ifndef DIFFUSION_REACTION_H
 #define DIFFUSION_REACTION_H
 
-#include "base_data_package.h"
+#include "base_data_type_package.h"
 #include "particle_functors.h"
 
 #include <functional>
@@ -45,6 +45,7 @@ class BaseParticles;
 class AbstractDiffusion
 {
   public:
+    typedef Real DataType;
     AbstractDiffusion() {};
     virtual ~AbstractDiffusion() {};
     virtual StdVec<AbstractDiffusion *> AllDiffusions() = 0;
@@ -58,21 +59,36 @@ class BaseDiffusion : public AbstractDiffusion
 {
   public:
     BaseDiffusion(const std::string &diffusion_species_name,
-                  const std::string &gradient_species_name);
-    BaseDiffusion(const std::string &species_name);
+                  const std::string &gradient_species_name, Real cv);
+    BaseDiffusion(const std::string &species_name, Real cv);
     virtual ~BaseDiffusion() {};
 
     std::string DiffusionSpeciesName() { return diffusion_species_name_; };
     std::string GradientSpeciesName() { return gradient_species_name_; };
+    Real getVolumeCapacity() { return cv_; };
     virtual Real getDiffusionTimeStepSize(Real smoothing_length) override;
     virtual Real getReferenceDiffusivity() = 0;
     virtual Real getDiffusionCoeffWithBoundary(size_t index_i) = 0;
     virtual Real getInterParticleDiffusionCoeff(size_t index_i, size_t index_j, const Vecd &e_ij) = 0;
     virtual StdVec<AbstractDiffusion *> AllDiffusions() override { return {this}; };
 
+    class InverseVolumetricCapacity
+    {
+        Real cv1_;
+
+      public:
+        InverseVolumetricCapacity() : cv1_(0) {};
+        InverseVolumetricCapacity(BaseDiffusion &encloser) : cv1_(1.0 / encloser.cv_) {};
+        template <class ExecutionPolicy>
+        InverseVolumetricCapacity(const ExecutionPolicy &ex_policy, BaseDiffusion &encloser)
+            : InverseVolumetricCapacity(encloser){};
+        Real operator()(size_t index_i) { return cv1_; };
+    };
+
   protected:
     std::string diffusion_species_name_;
     std::string gradient_species_name_;
+    Real cv_; // volumetric capacity
 };
 
 /**
@@ -82,21 +98,36 @@ class BaseDiffusion : public AbstractDiffusion
 class IsotropicDiffusion : public BaseDiffusion
 {
   protected:
-    Real diff_cf_; /**< diffusion coefficient. */
+    Real d_coeff_; /**< diffusion coefficient. */
 
   public:
     IsotropicDiffusion(const std::string &diffusion_species_name,
                        const std::string &gradient_species_name,
-                       Real diff_cf = 1.0);
-    IsotropicDiffusion(const std::string &species_name, Real diff_cf = 1.0);
+                       Real d_coeff = 1.0, Real cv = 1.0);
+    IsotropicDiffusion(const std::string &species_name, Real d_coeff = 1.0, Real cv = 1.0);
     explicit IsotropicDiffusion(ConstructArgs<std::string, Real> args);
     virtual ~IsotropicDiffusion() {};
 
-    virtual Real getReferenceDiffusivity() override { return diff_cf_; };
-    virtual Real getDiffusionCoeffWithBoundary(size_t index_i) override { return diff_cf_; }
+    virtual Real getReferenceDiffusivity() override { return d_coeff_; };
+    virtual Real getDiffusionCoeffWithBoundary(size_t index_i) override { return d_coeff_; }
     virtual Real getInterParticleDiffusionCoeff(size_t index_i, size_t index_j, const Vecd &e_ij) override
     {
-        return diff_cf_;
+        return d_coeff_;
+    };
+
+    class InterParticleDiffusionCoeff
+    {
+        Real d_coeff_;
+
+      public:
+        InterParticleDiffusionCoeff() : d_coeff_(0) {};
+        InterParticleDiffusionCoeff(IsotropicDiffusion &encloser)
+            : d_coeff_(encloser.d_coeff_) {};
+        template <class ExecutionPolicy>
+        InterParticleDiffusionCoeff(const ExecutionPolicy &ex_policy, IsotropicDiffusion &encloser)
+            : InterParticleDiffusionCoeff(encloser){};
+        Real operator()(size_t index_i, size_t index_j, const Vecd &e_ij) { return d_coeff_; };
+        Real operator()(size_t index_i, size_t index_j) { return d_coeff_; };
     };
 };
 
@@ -114,8 +145,8 @@ class LocalIsotropicDiffusion : public IsotropicDiffusion
   public:
     LocalIsotropicDiffusion(const std::string &diffusion_species_name,
                             const std::string &gradient_species_name,
-                            Real diff_background, Real diff_max);
-    LocalIsotropicDiffusion(const std::string &species_name, Real diff_background, Real diff_max);
+                            Real diff_background, Real diff_max, Real cv = 1.0);
+    LocalIsotropicDiffusion(const std::string &species_name, Real diff_background, Real diff_max, Real cv = 1.0);
     explicit LocalIsotropicDiffusion(ConstructArgs<std::string, Real, Real> args);
     virtual ~LocalIsotropicDiffusion() {};
 
@@ -137,23 +168,25 @@ class DirectionalDiffusion : public IsotropicDiffusion
 {
   protected:
     Vecd bias_direction_;          /**< Reference bias direction. */
-    Real bias_diff_cf_;            /**< The bias diffusion coefficient along the fiber direction. */
+    Real bias_d_coeff_;            /**< The bias diffusion coefficient along the fiber direction. */
     Matd transformed_diffusivity_; /**< The transformed diffusivity with inverse Cholesky decomposition. */
 
-    void initializeDirectionalDiffusivity(Real diff_cf, Real bias_diff_cf, Vecd bias_direction);
+    void initializeDirectionalDiffusivity(Real d_coeff, Real bias_d_coeff_, Vecd bias_direction);
 
   public:
     DirectionalDiffusion(const std::string &diffusion_species_name,
                          const std::string &gradient_species_name,
-                         Real diff_cf, Real bias_diff_cf, Vecd bias_direction);
+                         Real d_coeff, Real bias_d_coeff_,
+                         Vecd bias_direction, Real cv = 1.0);
     DirectionalDiffusion(const std::string &species_name,
-                         Real diff_cf, Real bias_diff_cf, Vecd bias_direction);
+                         Real d_coeff, Real bias_d_coeff_,
+                         Vecd bias_direction, Real cv = 1.0);
     explicit DirectionalDiffusion(ConstructArgs<std::string, Real, Real, Vecd> args);
     virtual ~DirectionalDiffusion() {};
 
     virtual Real getReferenceDiffusivity() override
     {
-        return SMAX(diff_cf_, diff_cf_ + bias_diff_cf_);
+        return SMAX(d_coeff_, d_coeff_ + bias_d_coeff_);
     };
 
     virtual Real getInterParticleDiffusionCoeff(size_t index_i, size_t index_j, const Vecd &e_ij) override
@@ -194,9 +227,11 @@ class LocalDirectionalDiffusion : public DirectionalDiffusion
   public:
     LocalDirectionalDiffusion(const std::string &diffusion_species_name,
                               const std::string &gradient_species_name,
-                              Real diff_cf, Real bias_diff_cf, Vecd bias_direction);
+                              Real d_coeff, Real bias_d_coeff_,
+                              Vecd bias_direction, Real cv = 1.0);
     LocalDirectionalDiffusion(const std::string &species_name,
-                              Real diff_cf, Real bias_diff_cf, Vecd bias_direction);
+                              Real d_coeff, Real bias_d_coeff_,
+                              Vecd bias_direction, Real cv = 1.0);
     virtual ~LocalDirectionalDiffusion() {};
 
     virtual void registerLocalParameters(BaseParticles *base_particles) override;
@@ -205,7 +240,8 @@ class LocalDirectionalDiffusion : public DirectionalDiffusion
 
     virtual Real getInterParticleDiffusionCoeff(size_t index_i, size_t index_j, const Vecd &e_ij) override
     {
-        Matd trans_diffusivity = getAverageValue(local_transformed_diffusivity_[index_i], local_transformed_diffusivity_[index_j]);
+        Matd trans_diffusivity = getAverageValue(local_transformed_diffusivity_[index_i],
+                                                 local_transformed_diffusivity_[index_j]);
         Vecd grad_ij = trans_diffusivity * e_ij;
         return 1.0 / grad_ij.squaredNorm();
     };
@@ -269,7 +305,7 @@ class ReactionDiffusion : public AbstractDiffusion
     static constexpr int NumReactiveSpecies = ReactionType::NumSpecies;
 
   private:
-    UniquePtrsKeeper<DiffusionType> diffusion_ptrs_keeper_;
+    UniquePtrsKeeper<DiffusionType> diffusions_keeper_;
 
   protected:
     ReactionType *reaction_model_;
@@ -323,7 +359,7 @@ class ReactionDiffusion : public AbstractDiffusion
             std::find(species_names.begin(), species_names.end(), gradient_species_name) != std::end(species_names))
         {
             all_diffusions_.push_back(
-                diffusion_ptrs_keeper_.template createPtr<DiffusionType>(
+                diffusions_keeper_.template createPtr<DiffusionType>(
                     diffusion_species_name, gradient_species_name, std::forward<Args>(args)...));
         }
         else

@@ -16,13 +16,13 @@ Real SL = particle_spacing_ref * 4.0;
 Real inner_circle_radius = PL;
 Vec3d domain_lower_bound(-4.0 * PL, -4.0 * PL, -SL);
 Vec3d domain_upper_bound(4.0 * PL, 4.0 * PL, 2.0 * PW);
-BoundingBox system_domain_bounds(domain_lower_bound, domain_upper_bound);
+BoundingBoxd system_domain_bounds(domain_lower_bound, domain_upper_bound);
 int resolution(20);
 //----------------------------------------------------------------------
 //	Material properties and global parameters
 //----------------------------------------------------------------------
 Real rho0_s = 2700.0; /**< Reference density. */
-Real poisson = 0.3;  /**< Poisson ratio. */
+Real poisson = 0.3;   /**< Poisson ratio. */
 Real Youngs_modulus = 78.2e9;
 Real yield_stress = 0.29e9;
 Real vel_0 = 373.0;
@@ -42,12 +42,12 @@ class WallBoundary : public ComplexShape
 /** Define the body. */
 class Column : public ComplexShape
 {
-public:
-    explicit Column(const std::string& shape_name) : ComplexShape(shape_name)
+  public:
+    explicit Column(const std::string &shape_name) : ComplexShape(shape_name)
     {
         Vecd translation_column(0.0, 0.0, 0.5 * PW + particle_spacing_ref);
-        add<TriangleMeshShapeCylinder>(SimTK::UnitVec3(0, 0, 1.0), inner_circle_radius,
-            0.5 * PW, resolution, translation_column);
+        add<TriangleMeshShapeCylinder>(Vec3d(0, 0, 1.0), inner_circle_radius,
+                                       0.5 * PW, resolution, translation_column);
     }
 };
 /**
@@ -58,7 +58,7 @@ class InitialCondition
 {
   public:
     explicit InitialCondition(SPHBody &sph_body)
-        : fluid_dynamics::FluidInitialCondition(sph_body){};
+        : fluid_dynamics::FluidInitialCondition(sph_body) {};
 
     void update(size_t index_i, Real dt)
     {
@@ -73,7 +73,7 @@ class DynamicContactForceWithWall : public LocalDynamics,
     explicit DynamicContactForceWithWall(SurfaceContactRelation &solid_body_contact_relation, Real penalty_strength = 1.0)
         : LocalDynamics(solid_body_contact_relation.getSPHBody()),
           DataDelegateContact(solid_body_contact_relation),
-          continuum_(DynamicCast<GeneralContinuum>(this, sph_body_.getBaseMaterial())),
+          continuum_(DynamicCast<GeneralContinuum>(this, sph_body_->getBaseMaterial())),
           Vol_(particles_->getVariableDataByName<Real>("VolumetricMeasure")),
           vel_(particles_->getVariableDataByName<Vecd>("Velocity")),
           force_prior_(particles_->getVariableDataByName<Vecd>("ForcePrior")),
@@ -84,19 +84,19 @@ class DynamicContactForceWithWall : public LocalDynamics,
         for (size_t k = 0; k != contact_particles_.size(); ++k)
         {
             contact_Vol_.push_back(contact_particles_[k]->getVariableDataByName<Real>("VolumetricMeasure"));
-            contact_vel_.push_back(contact_particles_[k]->registerStateVariable<Vecd>("Velocity"));
+            contact_vel_.push_back(contact_particles_[k]->registerStateVariableData<Vecd>("Velocity"));
             contact_n_.push_back(contact_particles_[k]->template getVariableDataByName<Vecd>("NormalDirection"));
         }
     };
-    virtual ~DynamicContactForceWithWall(){};
+    virtual ~DynamicContactForceWithWall() {};
     void interaction(size_t index_i, Real dt = 0.0)
     {
         Vecd force = Vecd::Zero();
         for (size_t k = 0; k < contact_configuration_.size(); ++k)
         {
-            Real particle_spacing_j1 = 1.0 / contact_bodies_[k]->sph_adaptation_->ReferenceSpacing();
+            Real particle_spacing_j1 = 1.0 / contact_bodies_[k]->getSPHAdaptation().ReferenceSpacing();
             Real particle_spacing_ratio2 =
-                1.0 / (sph_body_.sph_adaptation_->ReferenceSpacing() * particle_spacing_j1);
+                1.0 / (getSPHAdaptation().ReferenceSpacing() * particle_spacing_j1);
             particle_spacing_ratio2 *= 0.1 * particle_spacing_ratio2;
 
             Vecd *n_k = contact_n_[k];

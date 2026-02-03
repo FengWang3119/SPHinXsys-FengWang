@@ -41,7 +41,7 @@ void MeshFileHelpers::numberOfNodes(std::ifstream &mesh_file, size_t &number_of_
     }
 }
 
-void MeshFileHelpers::nodeCoordinates(std::ifstream &mesh_file, StdLargeVec<Vecd> &node_coordinates_, std::string &text_line, size_t &dimension)
+void MeshFileHelpers::nodeCoordinates(std::ifstream &mesh_file, StdVec<Vecd> &node_coordinates_, std::string &text_line, size_t &dimension)
 {
     while (getline(mesh_file, text_line))
     {
@@ -101,7 +101,7 @@ void MeshFileHelpers::numberOfElements(std::ifstream &mesh_file, size_t &number_
     }
 }
 
-void MeshFileHelpers::dataStruct(StdVec<StdVec<StdVec<size_t>>> &mesh_topology_, StdLargeVec<StdVec<size_t>> &elements_nodes_connection_,
+void MeshFileHelpers::dataStruct(StdVec<StdVec<StdVec<size_t>>> &mesh_topology_, StdVec<StdVec<size_t>> &elements_nodes_connection_,
                                  size_t number_of_elements, size_t mesh_type, size_t dimension)
 {
 
@@ -216,7 +216,7 @@ Vec2d MeshFileHelpers::cellIndex(std::string &text_line)
     return cells;
 }
 
-void MeshFileHelpers::updateElementsNodesConnection(StdLargeVec<StdVec<size_t>> &elements_nodes_connection_, Vecd nodes, Vec2d cells,
+void MeshFileHelpers::updateElementsNodesConnection(StdVec<StdVec<size_t>> &elements_nodes_connection_, Vecd nodes, Vec2d cells,
                                                     bool &check_neighbor_cell1, bool &check_neighbor_cell2)
 {
 
@@ -247,7 +247,7 @@ void MeshFileHelpers::updateElementsNodesConnection(StdLargeVec<StdVec<size_t>> 
     }
 }
 
-void MeshFileHelpers::updateCellLists(StdVec<StdVec<StdVec<size_t>>> &mesh_topology_, StdLargeVec<StdVec<size_t>> &elements_nodes_connection_, Vecd nodes,
+void MeshFileHelpers::updateCellLists(StdVec<StdVec<StdVec<size_t>>> &mesh_topology_, StdVec<StdVec<size_t>> &elements_nodes_connection_, Vecd nodes,
                                       Vec2d cells, bool &check_neighbor_cell1, bool &check_neighbor_cell2, size_t boundary_type)
 {
     if (mesh_topology_[cells[check_neighbor_cell2]][0][0] != cells[check_neighbor_cell1] && mesh_topology_[cells[check_neighbor_cell2]][1][0] != cells[check_neighbor_cell1] && mesh_topology_[cells[check_neighbor_cell2]][2][0] != cells[check_neighbor_cell1] && mesh_topology_[cells[check_neighbor_cell2]][3][0] != cells[check_neighbor_cell1])
@@ -303,7 +303,7 @@ void MeshFileHelpers::updateCellLists(StdVec<StdVec<StdVec<size_t>>> &mesh_topol
     }
 }
 
-void MeshFileHelpers::updateBoundaryCellLists(StdVec<StdVec<StdVec<size_t>>> &mesh_topology_, StdLargeVec<StdVec<size_t>> &elements_nodes_connection_,
+void MeshFileHelpers::updateBoundaryCellLists(StdVec<StdVec<StdVec<size_t>>> &mesh_topology_, StdVec<StdVec<size_t>> &elements_nodes_connection_,
                                               Vecd nodes, Vec2d cells, bool &check_neighbor_cell1, bool &check_neighbor_cell2, size_t boundary_type)
 {
     if (mesh_topology_[cells[check_neighbor_cell2]][0][0] != static_cast<std::decay_t<decltype(elements_nodes_connection_[0][0])>>(-1) && mesh_topology_[cells[check_neighbor_cell2]][1][0] == static_cast<std::decay_t<decltype(elements_nodes_connection_[0][0])>>(0) && mesh_topology_[cells[check_neighbor_cell2]][2][0] == static_cast<std::decay_t<decltype(elements_nodes_connection_[0][0])>>(-1) && mesh_topology_[cells[check_neighbor_cell2]][3][0] == static_cast<std::decay_t<decltype(elements_nodes_connection_[0][0])>>(-1))
@@ -347,8 +347,8 @@ void MeshFileHelpers::updateBoundaryCellLists(StdVec<StdVec<StdVec<size_t>>> &me
     }
 }
 
-void MeshFileHelpers::cellCenterCoordinates(StdLargeVec<StdVec<size_t>> &elements_nodes_connection_, std::size_t &element,
-                                            StdLargeVec<Vecd> &node_coordinates_, StdLargeVec<Vecd> &elements_centroids_, Vecd &center_coordinate)
+void MeshFileHelpers::cellCenterCoordinates(StdVec<StdVec<size_t>> &elements_nodes_connection_, std::size_t &element,
+                                            StdVec<Vecd> &node_coordinates_, StdVec<Vecd> &elements_centroids_, Vecd &center_coordinate)
 {
 
     for (std::size_t node = 0; node != elements_nodes_connection_[element].size(); ++node)
@@ -358,8 +358,8 @@ void MeshFileHelpers::cellCenterCoordinates(StdLargeVec<StdVec<size_t>> &element
     elements_centroids_[element] = center_coordinate;
 }
 
-void MeshFileHelpers::elementVolume(StdLargeVec<StdVec<size_t>> &elements_nodes_connection_, std::size_t &element,
-                                    StdLargeVec<Vecd> &node_coordinates_, StdLargeVec<Real> &elements_volumes_)
+void MeshFileHelpers::elementVolume(StdVec<StdVec<size_t>> &elements_nodes_connection_, std::size_t &element,
+                                    StdVec<Vecd> &node_coordinates_, StdVec<Real> &elements_volumes_)
 {
     // get nodes position
     Real Total_volume = 0;
@@ -372,13 +372,13 @@ void MeshFileHelpers::elementVolume(StdLargeVec<StdVec<size_t>> &elements_nodes_
     Matd M;
     M << node2_coordinate - node1_coordinate, node3_coordinate - node1_coordinate, node4_coordinate - node1_coordinate;
     Real determinant = abs(M.determinant());
-    Real element_volume = (static_cast<double>(1) / 6) * determinant;
+    Real element_volume = determinant / 6.0;
     Total_volume += element_volume;
     elements_volumes_[element] = element_volume;
 }
 
-void MeshFileHelpers::minimumDistance(StdVec<Real> &all_data_of_distance_between_nodes, StdLargeVec<Real> &elements_volumes_, StdVec<StdVec<StdVec<size_t>>> &mesh_topology_,
-                                      StdLargeVec<Vecd> &node_coordinates_)
+void MeshFileHelpers::minimumDistance(StdVec<Real> &all_data_of_distance_between_nodes, StdVec<Real> &elements_volumes_, StdVec<StdVec<StdVec<size_t>>> &mesh_topology_,
+                                      StdVec<Vecd> &node_coordinates_)
 {
 
     for (size_t element_index = 0; element_index != elements_volumes_.size(); ++element_index)
@@ -401,111 +401,6 @@ void MeshFileHelpers::minimumDistance(StdVec<Real> &all_data_of_distance_between
             all_data_of_distance_between_nodes.push_back(distance);
         }
     }
-}
-
-void MeshFileHelpers::vtuFileHeader(std::ofstream &out_file)
-{
-    out_file << "<VTKFile type=\"UnstructuredGrid\" version=\"1.0\" byte_order=\"LittleEndian\" header_type=\"UInt64\">\n";
-    out_file << "<UnstructuredGrid>\n";
-    out_file << "<FieldData>\n";
-    out_file << "<DataArray type=\"Int32\" Name=\"ispatch\" NumberOfTuples=\"1\" format=\"ascii\" RangeMin=\"0\" RangeMax=\"0\">\n";
-    out_file << "0\n";
-    out_file << "</DataArray>\n";
-    out_file << "</FieldData>\n";
-}
-
-void MeshFileHelpers::vtuFileNodeCoordinates(std::ofstream &out_file, StdLargeVec<Vecd> &node_coordinates_,
-                                             StdLargeVec<StdVec<size_t>> &elements_nodes_connection_, SPHBody &bounds_, Real &rangemax)
-{
-    // Write point data
-    out_file << "<Piece NumberOfPoints=\"" << node_coordinates_.size() << "\" NumberOfCells=\"" << elements_nodes_connection_.size() << "\">\n";
-    out_file << "<PointData>\n";
-    out_file << "</PointData>\n";
-    out_file << "<CellData>\n";
-    out_file << "</CellData>\n";
-    out_file << "<Points>\n";
-    BoundingBox bounds = bounds_.getSPHSystemBounds();
-    Real first_max = bounds.first_.cwiseAbs().maxCoeff();
-    Real second_max = bounds.second_.cwiseAbs().maxCoeff();
-    rangemax = 1.03075 * (std::max(first_max, second_max));
-    out_file << "<DataArray type=\"Float64\" Name=\"Points\" NumberOfComponents=\"3\" format=\"ascii\" RangeMin=\"0\" RangeMax=\"" << rangemax << "\">\n";
-
-    size_t total_nodes = node_coordinates_.size();
-    for (size_t node = 0; node != total_nodes; ++node)
-    {
-        out_file << node_coordinates_[node][0] << " " << node_coordinates_[node][1] << " " << node_coordinates_[node][2] << " \n";
-    }
-}
-
-void MeshFileHelpers::vtuFileInformationKey(std::ofstream &out_file, Real &rangemax)
-{
-    out_file << "<InformationKey name=\"L2_NORM_RANGE\" location=\"vtkDataArray\" length=\"2\">\n";
-    out_file << "<Value index=\"0\">\n";
-    out_file << "0\n";
-    out_file << "</Value>\n";
-    out_file << "<Value index=\"1\">\n";
-    out_file << rangemax << " \n";
-    out_file << "</Value>\n";
-    out_file << "</InformationKey>\n";
-    out_file << "<InformationKey name=\"L2_NORM_FINITE_RANGE\" location=\"vtkDataArray\" length=\"2\">\n";
-    out_file << "<Value index=\"0\">\n";
-    out_file << "0\n";
-    out_file << "</Value>\n";
-    out_file << "<Value index=\"1\">\n";
-    out_file << rangemax << " \n";
-    out_file << "</Value>\n";
-    out_file << "</InformationKey>\n";
-    out_file << "</DataArray>\n";
-    out_file << "</Points>\n";
-}
-
-void MeshFileHelpers::vtuFileCellConnectivity(std::ofstream &out_file, StdLargeVec<StdVec<size_t>> &elements_nodes_connection_, StdLargeVec<Vecd> &node_coordinates_)
-{
-    out_file << "<Cells>\n";
-    // Write Cell data
-    out_file << "<DataArray type=\"Int64\" Name=\"connectivity\" format=\"ascii\" RangeMin=\"0\" RangeMax=\"" << node_coordinates_.size() - 1 << "\">\n";
-
-    for (const auto &cell : elements_nodes_connection_)
-    {
-        for (const auto &vertex : cell)
-        {
-            out_file << vertex << " ";
-        }
-        out_file << "\n";
-    }
-
-    out_file << "</DataArray>\n";
-}
-
-void MeshFileHelpers::vtuFileOffsets(std::ofstream &out_file, StdLargeVec<StdVec<size_t>> &elements_nodes_connection_)
-{
-    out_file << "<DataArray type=\"Int64\" Name=\"offsets\" format=\"ascii\" RangeMin=\"4\" RangeMax=\"" << 4 * elements_nodes_connection_.size() << "\">\n";
-
-    size_t offset = 0;
-    for (const auto &face : elements_nodes_connection_)
-    {
-        offset += face.size();
-        out_file << offset << " ";
-    }
-    out_file << "\n</DataArray>\n";
-}
-
-void MeshFileHelpers::vtuFileTypeOfCell(std::ofstream &out_file, StdLargeVec<StdVec<size_t>> &elements_nodes_connection_)
-{
-    size_t type = 10;
-    // Specifies type of cell 10 = tetrahedral
-    out_file << "<DataArray type=\"UInt8\" Name=\"types\" format=\"ascii\" RangeMin=\"10\" RangeMax=\"10\">\n";
-    for (const auto &types : elements_nodes_connection_)
-    {
-        for (size_t i = 0; i < types.size(); ++i)
-        {
-            out_file << type << " ";
-        }
-        out_file << "\n";
-    }
-    // Write face attribute data
-    out_file << "</DataArray>\n";
-    out_file << "</Cells>\n";
 }
 
 void MeshFileHelpers::numberOfNodesFluent(std::ifstream &mesh_file, size_t &number_of_points, std::string &text_line)
@@ -548,7 +443,7 @@ void MeshFileHelpers::numberOfElementsFluent(std::ifstream &mesh_file, size_t &n
     }
 }
 
-void MeshFileHelpers::nodeCoordinatesFluent(std::ifstream &mesh_file, StdLargeVec<Vecd> &node_coordinates_, std::string &text_line,
+void MeshFileHelpers::nodeCoordinatesFluent(std::ifstream &mesh_file, StdVec<Vecd> &node_coordinates_, std::string &text_line,
                                             size_t &dimension)
 {
     while (getline(mesh_file, text_line))
@@ -595,7 +490,7 @@ void MeshFileHelpers::nodeCoordinatesFluent(std::ifstream &mesh_file, StdLargeVe
     }
 }
 
-void MeshFileHelpers::updateBoundaryCellListsFluent(StdVec<StdVec<StdVec<size_t>>> &mesh_topology_, StdLargeVec<StdVec<size_t>> &elements_nodes_connection_,
+void MeshFileHelpers::updateBoundaryCellListsFluent(StdVec<StdVec<StdVec<size_t>>> &mesh_topology_, StdVec<StdVec<size_t>> &elements_nodes_connection_,
                                                     Vecd nodes, Vec2d cells, bool &check_neighbor_cell1, bool &check_neighbor_cell2, size_t boundary_type)
 {
 
