@@ -8,6 +8,11 @@ int main(int ac, char *av[])
      */
     SPHSystem sph_system(system_domain_bounds, resolution_ref);
 
+    /** Restart. */
+    bool is_write_restart_file = false;
+    int restart_output_interval = 500;
+    sph_system.setRestartStep(6000); //% deactivate
+
     /** Tag for run particle relaxation for the initial body fitted distribution. */
     sph_system.setRunParticleRelaxation(false);
     /** Tag for computation start with relaxed body fitted particles distribution. */
@@ -206,7 +211,7 @@ int main(int ac, char *av[])
     SimpleDynamics<fluid_dynamics::PressureConditionCorrection<RightOutflowPressure>> right_outflow_pressure_condition(right_emitter);
 
     InteractionWithUpdate<fluid_dynamics::DensitySummationPressureComplex> update_fluid_density_pressure(water_block_inner, water_wall_contact);
-    SimpleDynamics<UpdateVolume> update_volume(water_block);
+    SimpleDynamics<UpdateVolumeAndAddIndicatorAsEvolving> update_volume(water_block);
 
     /** Choose one, ordinary or turbulent. Time step size without considering sound wave speed. */
     ReduceDynamics<fluid_dynamics::udf::TurbulentAdvectionTimeStepSize> get_turbulent_fluid_advection_time_step_size(water_block, U_f);
@@ -221,6 +226,9 @@ int main(int ac, char *av[])
     //	Define the configuration related particles dynamics.
     //----------------------------------------------------------------------
     ParticleSorting particle_sorting(water_block);
+    
+    /** Restart. */
+    RestartIO restart_io(sph_system);
     //----------------------------------------------------------------------
     //	File output and regression check.
     //----------------------------------------------------------------------
@@ -257,7 +265,20 @@ int main(int ac, char *av[])
     //	Setup computing and initial conditions.
     //----------------------------------------------------------------------
     Real &physical_time = *sph_system.getSystemVariableDataByName<Real>("PhysicalTime");
+
+    /** Restart. */
+    if (sph_system.RestartStep() != 0)
+    {
+        physical_time = restart_io.readRestartFiles(sph_system.RestartStep());
+        water_block.updateCellLinkedList();
+        water_block_complex.updateConfiguration();
+        observer_centerpoint_contact.updateConfiguration();
+        fluid_observer_contact.updateConfiguration();
+        friction_velocity_observer_contact.updateConfiguration();
+
+    }
     size_t number_of_iterations = sph_system.RestartStep();
+
     int screen_output_interval = 100;
     int observation_sample_interval = screen_output_interval * 2;
 
@@ -385,6 +406,14 @@ int main(int ac, char *av[])
                 logfile << std::fixed << std::setprecision(9) << "N=" << number_of_iterations << "	Time = "
                         << physical_time
                         << "	Dt = " << Dt << "	dt = " << dt << std::endl;
+            }
+            /** Restart. */
+            if (is_write_restart_file)
+            {
+                if (number_of_iterations % restart_output_interval == 0)
+                {
+                    restart_io.writeToFile(number_of_iterations);
+                }
             }
             number_of_iterations++;
 

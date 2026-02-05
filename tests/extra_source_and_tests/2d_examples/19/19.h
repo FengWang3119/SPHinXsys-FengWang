@@ -450,15 +450,19 @@ struct LeftInflowPressure
 namespace SPH 
 {
 //=================================================================================================//
-    class UpdateVolume : public LocalDynamics
+    class UpdateVolumeAndAddIndicatorAsEvolving : public LocalDynamics
     {
     public:
-        explicit UpdateVolume(SPHBody& sph_body) 
+        explicit UpdateVolumeAndAddIndicatorAsEvolving(SPHBody& sph_body)
             : LocalDynamics(sph_body),
             rho_(particles_->getVariableDataByName<Real>("Density")),
             mass_(particles_->getVariableDataByName<Real>("Mass")),
-            Vol_(particles_->getVariableDataByName<Real>("VolumetricMeasure")) {};
-        virtual ~UpdateVolume() {};
+            Vol_(particles_->getVariableDataByName<Real>("VolumetricMeasure")),
+            indicator_(particles_->getVariableDataByName<int>("Indicator")) 
+        {
+            particles_->addEvolvingVariable<int>("Indicator");
+        }
+        virtual ~UpdateVolumeAndAddIndicatorAsEvolving() {};
 
         void update(size_t index_i, Real dt = 0.0) 
         {
@@ -467,6 +471,7 @@ namespace SPH
 
     protected:
         Real* rho_, * mass_, * Vol_;
+        int* indicator_;
     };
 //=================================================================================================//
 }
