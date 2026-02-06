@@ -11,7 +11,7 @@ int main(int ac, char *av[])
     /** Restart. */
     bool is_write_restart_file = false;
     int restart_output_interval = 500;
-    sph_system.setRestartStep(6000); //% deactivate
+    sph_system.setRestartStep(500); //% deactivate
 
     /** Tag for run particle relaxation for the initial body fitted distribution. */
     sph_system.setRunParticleRelaxation(false);
@@ -211,7 +211,7 @@ int main(int ac, char *av[])
     SimpleDynamics<fluid_dynamics::PressureConditionCorrection<RightOutflowPressure>> right_outflow_pressure_condition(right_emitter);
 
     InteractionWithUpdate<fluid_dynamics::DensitySummationPressureComplex> update_fluid_density_pressure(water_block_inner, water_wall_contact);
-    SimpleDynamics<UpdateVolumeAndAddIndicatorAsEvolving> update_volume(water_block);
+    SimpleDynamics<UpdateVolume> update_volume(water_block);
 
     /** Choose one, ordinary or turbulent. Time step size without considering sound wave speed. */
     ReduceDynamics<fluid_dynamics::udf::TurbulentAdvectionTimeStepSize> get_turbulent_fluid_advection_time_step_size(water_block, U_f);
@@ -244,22 +244,14 @@ int main(int ac, char *av[])
     ObservedQuantityRecording<Real> write_recorded_water_omega("TurbulentSpecificDissipation", fluid_observer_contact);
     body_states_recording.addToWrite<int>(water_block, "BufferIndicator");
     //RegressionTestDynamicTimeWarping<ObservedQuantityRecording<Real>> write_centerpoint_quantity("TurbulentViscosity", observer_centerpoint_contact);
-    
     ObservedQuantityRecording<Real> write_nearwall_friction_velocity("WallShearStress", friction_velocity_observer_contact);
-    
+    body_states_recording.addToWrite<Vecd>(wall_boundary, "NormalDirection");
+
     /**
      * @brief Setup geometry and initial conditions.
      */
     sph_system.initializeSystemCellLinkedLists();
     sph_system.initializeSystemConfigurations();
-    wall_boundary_normal_direction.exec();
-    body_states_recording.addToWrite<Vecd>(wall_boundary, "NormalDirection");
-
-    /** Tag inlet/outlet truncated particles */
-    inlet_outlet_surface_particle_indicator.exec();
-    /** Tag in/outlet buffer particles */
-    left_bidirection_buffer.tag_buffer_particles.exec();
-    right_bidirection_buffer.tag_buffer_particles.exec();
 
     //----------------------------------------------------------------------
     //	Setup computing and initial conditions.
@@ -295,6 +287,18 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     TickCount t1 = TickCount::now();
     TimeInterval interval;
+
+    //----------------------------------------------------------------------
+    //	Preparation
+    //----------------------------------------------------------------------
+    wall_boundary_normal_direction.exec();
+    /** Tag inlet/outlet truncated particles */
+    inlet_outlet_surface_particle_indicator.exec();
+    /** Tag in/outlet buffer particles */
+    left_bidirection_buffer.tag_buffer_particles.exec();
+    right_bidirection_buffer.tag_buffer_particles.exec();
+    update_eddy_viscosity.exec();
+    
     //----------------------------------------------------------------------
     //	First output before the main loop.
     //----------------------------------------------------------------------
