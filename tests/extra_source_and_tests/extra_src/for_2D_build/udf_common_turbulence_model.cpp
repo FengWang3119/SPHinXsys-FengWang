@@ -143,7 +143,7 @@ kEpsilon_GetVelocityGradient<Inner<>>::kEpsilon_GetVelocityGradient(BaseInnerRel
       turbu_B_(particles_->getVariableDataByName<Matd>("TurbulentLinearGradientCorrectionMatrix")),
       weight_sub_nearwall_(weight_sub)
 {
-    this->particles_->addEvolvingVariable<Matd>("TurbulentVelocityGradient");
+    //this->particles_->addEvolvingVariable<Matd>("TurbulentVelocityGradient");
     this->particles_->addVariableToWrite<Matd>("TurbulentVelocityGradient");
 }
 //=================================================================================================//
@@ -427,24 +427,24 @@ JudgeIsNearWall::
         contact_Vol_.push_back(contact_particles_[k]->getVariableDataByName<Real>("VolumetricMeasure"));
     }
 
-    particles_->addEvolvingVariable<Real>("DistanceToDummyInterfaceUpAver");
-    particles_->addVariableToWrite<Real>("DistanceToDummyInterfaceUpAver");
+    //particles_->addEvolvingVariable<Real>("DistanceToDummyInterfaceUpAver");
+    //particles_->addVariableToWrite<Real>("DistanceToDummyInterfaceUpAver");
 
-    particles_->addEvolvingVariable<Real>("DistanceToDummyInterface");
-    particles_->addVariableToWrite<Real>("DistanceToDummyInterface");
+    //particles_->addEvolvingVariable<Real>("DistanceToDummyInterface");
+    //particles_->addVariableToWrite<Real>("DistanceToDummyInterface");
 
-    particles_->addEvolvingVariable<int>("NearestIndex");
-    particles_->addVariableToWrite<int>("NearestIndex");
+    //particles_->addEvolvingVariable<int>("NearestIndex");
+    //particles_->addVariableToWrite<int>("NearestIndex");
 
-    particles_->addEvolvingVariable<int>("IsNearWallP1");
+    //particles_->addEvolvingVariable<int>("IsNearWallP1");
     particles_->addVariableToWrite<int>("IsNearWallP1");
 
-    particles_->addEvolvingVariable<int>("IsNearWallP2");
+    //particles_->addEvolvingVariable<int>("IsNearWallP2");
     particles_->addVariableToWrite<int>("IsNearWallP2");
 
-    particles_->addEvolvingVariable<Vecd>("WallNearestTangentialUnitVector");
+    //particles_->addEvolvingVariable<Vecd>("WallNearestTangentialUnitVector");
 
-    particles_->addEvolvingVariable<Vecd>("WallNearestNormalUnitVector");
+    //particles_->addEvolvingVariable<Vecd>("WallNearestNormalUnitVector");
 };
 //=================================================================================================//
 void JudgeIsNearWall::interaction(size_t index_i, Real dt)

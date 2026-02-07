@@ -11,7 +11,7 @@ int main(int ac, char *av[])
     /** Restart. */
     bool is_write_restart_file = false;
     int restart_output_interval = 500;
-    sph_system.setRestartStep(500); //% deactivate
+    sph_system.setRestartStep(6000); //% SPH19-87-500
 
     /** Tag for run particle relaxation for the initial body fitted distribution. */
     sph_system.setRunParticleRelaxation(false);
@@ -289,7 +289,7 @@ int main(int ac, char *av[])
     TimeInterval interval;
 
     //----------------------------------------------------------------------
-    //	Preparation
+    //	Preparation, if use restart, better to fullfill
     //----------------------------------------------------------------------
     wall_boundary_normal_direction.exec();
     /** Tag inlet/outlet truncated particles */
@@ -297,8 +297,11 @@ int main(int ac, char *av[])
     /** Tag in/outlet buffer particles */
     left_bidirection_buffer.tag_buffer_particles.exec();
     right_bidirection_buffer.tag_buffer_particles.exec();
+    update_near_wall_status.exec();
+    corrected_configuration_fluid.exec();
+    corrected_configuration_fluid_only_inner.exec();
+    get_velocity_gradient.exec();
     update_eddy_viscosity.exec();
-    
     //----------------------------------------------------------------------
     //	First output before the main loop.
     //----------------------------------------------------------------------
