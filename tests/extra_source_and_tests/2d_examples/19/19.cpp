@@ -11,7 +11,14 @@ int main(int ac, char *av[])
     /** Restart. */
     bool is_write_restart_file = false;
     int restart_output_interval = 500;
-    sph_system.setRestartStep(6000); //% SPH19-87-500
+    sph_system.setRestartStep(3000); //% SPH19-88-3000
+
+    /** Average. */
+    bool is_write_average_contour_file = true;
+    Real time_start_average_data = 50.0; //% Average, make sure time span is large engouth to achieve steady 
+    Real time_output_contour_average_data = 90.0; //% Average
+    int num_output_contour_average_file_limit = 40;
+    Real magnify_ratio_avergae_contour = 10.0;
 
     /** Tag for run particle relaxation for the initial body fitted distribution. */
     sph_system.setRunParticleRelaxation(false);
@@ -58,12 +65,18 @@ int main(int ac, char *av[])
     ObserverBody friction_velocity_observer(sph_system, "NearwallFrictionVelocityObserver");
     friction_velocity_observer.generateParticles<ObserverParticles>(observe_nearwall::observation_locations);
 
+    ObserverBody observer_body(sph_system, makeShared<WaterBlock>("ObserverBody")); //% Average
+    (!sph_system.RunParticleRelaxation() && sph_system.ReloadParticles())
+        ? observer_body.generateParticles<BaseParticles, Reload>(water_block.getName())
+        : observer_body.generateParticles<BaseParticles, Lattice>();
+
     /** topology */
     InnerRelation water_block_inner(water_block);
     ContactRelation water_wall_contact(water_block, {&wall_boundary});
     ContactRelation fluid_observer_contact(fluid_observer, {&water_block});
     ContactRelation observer_centerpoint_contact(observer_center_point, {&water_block});
     ContactRelation friction_velocity_observer_contact(friction_velocity_observer, {&water_block});
+    ContactRelation fluid_observer_contact2(observer_body, {&water_block}); //% Average
     //----------------------------------------------------------------------
     // Combined relations built from basic relations
     // which is only used for update configuration.
@@ -222,6 +235,10 @@ int main(int ac, char *av[])
 
     /** Turbulent eddy viscosity calculation needs values of Wall Y start. */
     SimpleDynamics<fluid_dynamics::udf::kOmegaTurbulentEddyViscosity> update_eddy_viscosity(water_block);
+    
+    ObservingAQuantity<Real> observing_pressure(fluid_observer_contact2, "Pressure");          //% Average pressure
+    SimpleDynamics<ParticleSnapshotAverage<Real>> average_pressure(observer_body, "Pressure"); //% Average pressure
+    
     //----------------------------------------------------------------------
     //	Define the configuration related particles dynamics.
     //----------------------------------------------------------------------
@@ -247,6 +264,9 @@ int main(int ac, char *av[])
     ObservedQuantityRecording<Real> write_nearwall_friction_velocity("WallShearStress", friction_velocity_observer_contact);
     body_states_recording.addToWrite<Vecd>(wall_boundary, "NormalDirection");
 
+    BodyStatesRecordingToVtp write_observation_states(observer_body);     //% Average
+    write_observation_states.addToWrite<Real>(observer_body, "Pressure"); //% Average pressure
+
     /**
      * @brief Setup geometry and initial conditions.
      */
@@ -267,17 +287,21 @@ int main(int ac, char *av[])
         observer_centerpoint_contact.updateConfiguration();
         fluid_observer_contact.updateConfiguration();
         friction_velocity_observer_contact.updateConfiguration();
-
+        fluid_observer_contact2.updateConfiguration(); //** Average *
     }
     size_t number_of_iterations = sph_system.RestartStep();
 
     int screen_output_interval = 100;
     int observation_sample_interval = screen_output_interval * 2;
 
+    int num_output_contour_average_file = 0;  //** Average *
+
     Real end_time = 100.0;                      /**< End time. */
     Real cutoff_ratio = 0.9;                    //** cutoff_time should be a integral and the same as the PY script */
     Real cutoff_time = end_time * cutoff_ratio; //** cutoff_time should be a integral and the same as the PY script */
-    Real num_output_files = 40.0;
+    
+    Real num_output_files = 40.0 * (is_write_average_contour_file ? magnify_ratio_avergae_contour : 1.0);  //** Average *
+    
     Real Output_Time = end_time / num_output_files; /**< Time stamps for output of body states. */
     Real index_check_file_fully_developed = num_output_files * cutoff_ratio;
 
@@ -457,14 +481,46 @@ int main(int ac, char *av[])
             }
             //if (GlobalStaticVariables::physical_time_ > end_time * 0.5)
             //body_states_recording.writeToFile();
+            if (is_write_average_contour_file) //** Average *
+            {
+                if (physical_time > time_start_average_data)
+                {
+                    //% Average pressure
+                    observing_pressure.exec();
+                    average_pressure.exec();
+                }
+            }
         }
         //TickCount t2 = TickCount::now();
-        body_states_recording.writeToFile();
+        if (!is_write_average_contour_file)  //** Average *
+        {
+            body_states_recording.writeToFile();
+        }
         observer_centerpoint_contact.updateConfiguration();
         num_output_file++;
         //if (num_output_file == 100)
         //    system("pause");
         //TickCount t3 = TickCount::now();
+        if (is_write_average_contour_file) //** Average *
+        {
+            if (physical_time > time_output_contour_average_data)
+            {
+                if (num_output_contour_average_file < num_output_contour_average_file_limit)
+                {
+                    fluid_observer_contact2.updateConfiguration(); //% Average
+                    //% Average pressure
+                    observing_pressure.exec();
+                    average_pressure.exec();
+                    write_observation_states.writeToFile(); //% Average
+                    num_output_contour_average_file++;
+                    if (num_output_contour_average_file == num_output_contour_average_file_limit)
+                    {
+                        std::cout << "Finish outputing average contour files " << std::endl;
+                        system("pause");
+                    }
+                }
+            }
+        }
     }
     TickCount t4 = TickCount::now();
 
