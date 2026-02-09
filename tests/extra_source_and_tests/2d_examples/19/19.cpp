@@ -11,7 +11,7 @@ int main(int ac, char *av[])
     /** Restart. */
     bool is_write_restart_file = false;
     int restart_output_interval = 500;
-    sph_system.setRestartStep(0); //% SPH
+    sph_system.setRestartStep(3000); //% SPH19-88-3000
 
     /** Average. */
     bool is_write_average_contour_file = true;
