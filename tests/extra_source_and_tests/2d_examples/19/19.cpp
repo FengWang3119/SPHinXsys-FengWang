@@ -9,13 +9,13 @@ int main(int ac, char *av[])
     SPHSystem sph_system(system_domain_bounds, resolution_ref);
 
     /** Restart. */
-    bool is_write_restart_file = false;
+    bool is_write_restart_file = true;
     int restart_output_interval = 500;
-    sph_system.setRestartStep(3000); //% SPH19-88-3000
+    sph_system.setRestartStep(0); //% SPH
 
     /** Average. */
     bool is_write_average_contour_file = true;
-    Real time_start_average_data = 50.0; //% Average, make sure time span is large engouth to achieve steady 
+    Real time_start_average_data = 90.0; //% Average, make sure time span is large engouth to achieve steady 
     Real time_output_contour_average_data = 90.0; //% Average
     int num_output_contour_average_file_limit = 40;
     Real magnify_ratio_avergae_contour = 10.0;
