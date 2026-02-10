@@ -9,9 +9,9 @@ int main(int ac, char *av[])
     SPHSystem sph_system(system_domain_bounds, resolution_ref);
 
     /** Restart. */
-    bool is_write_restart_file = false;
+    bool is_write_restart_file = true;
     int restart_output_interval = 500;
-    sph_system.setRestartStep(8500); //% SPH19-91-8500
+    sph_system.setRestartStep(0); //% SPH
 
     /** Average. */
     bool is_write_average_contour_file = true;
