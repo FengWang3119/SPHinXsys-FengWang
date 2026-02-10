@@ -10,7 +10,7 @@ int main(int ac, char *av[])
 
     /** Restart. */
     bool is_write_restart_file = true;
-    int restart_output_interval = 500;
+    int restart_output_interval = 1000;
     sph_system.setRestartStep(0); //% SPH
 
     /** Average. */
@@ -302,7 +302,7 @@ int main(int ac, char *av[])
     Real cutoff_ratio = 0.9;                    //** cutoff_time should be a integral and the same as the PY script */
     Real cutoff_time = end_time * cutoff_ratio; //** cutoff_time should be a integral and the same as the PY script */
     
-    Real num_output_files = 40.0 * (is_write_average_contour_file ? magnify_ratio_avergae_contour : 1.0);  //** Average but no need to comment*
+    Real num_output_files = 4.0 * (is_write_average_contour_file ? magnify_ratio_avergae_contour : 1.0);  //** Average but no need to comment*
     
     Real Output_Time = end_time / num_output_files; /**< Time stamps for output of body states. */
     Real index_check_file_fully_developed = num_output_files * cutoff_ratio;
