@@ -292,7 +292,7 @@ int main(int ac, char *av[])
     size_t number_of_iterations = sph_system.RestartStep();
 
     int screen_output_interval = 100;
-    int observation_sample_interval = screen_output_interval * 2;
+    //int observation_sample_interval = screen_output_interval * 2;
 
     int num_output_contour_average_file = 0;  //** Average *
 
