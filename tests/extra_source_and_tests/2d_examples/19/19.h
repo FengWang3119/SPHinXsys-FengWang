@@ -14,7 +14,7 @@ using namespace SPH;
 //----------------------------------------------------------------------
 Real DH = 2.0;  /**< Channel height. */
 Real DL = 30.0; /**< Channel length. */
-Real num_fluid_cross_section = 128.0;
+Real num_fluid_cross_section = 32.0;
 
 Real time_gradually_increase_vel = 2.0;
 //----------------------------------------------------------------------
@@ -30,7 +30,7 @@ Real relaxation_rate_turbulent_inlet = 0.8;
 //** Tag for wall treatment *
 int is_blended = 1;
 //** Tag for AMRD *
-int is_AMRD = 0;
+int is_AMRD = 1;
 bool is_constrain_normal_velocity_in_P_region = false;
 //** Weight for correcting the velocity  gradient in the sub near wall region  *
 //Real weight_vel_grad_sub_nearwall = 0.1;
