@@ -367,20 +367,20 @@ int main(int ac, char *av[])
             //viscous_force.exec();
             turbulent_viscous_force.exec();
 
-            if (physical_time > turbulent_module_activate_time) //** A temporary treatment *
-            {
-                get_velocity_gradient.exec();
-                compute_TKE_diffusion.exec();
-                compute_TSDR_diffusion_and_gradient_k_omega.exec();
-                update_near_wall_status.exec();
-                standard_wall_function_correction.exec();
-            }
+            //if (physical_time > turbulent_module_activate_time) //** A temporary treatment *
+            //{
+            //    get_velocity_gradient.exec();
+            //    compute_TKE_diffusion.exec();
+            //    compute_TSDR_diffusion_and_gradient_k_omega.exec();
+            //    update_near_wall_status.exec();
+            //    standard_wall_function_correction.exec();
+            //}
 
             transport_velocity_correction.exec();
 
-            kernel_summation.exec();
+            //kernel_summation.exec();
 
-            //get_limiter_of_transport_velocity_correction.exec();
+            get_limiter_of_transport_velocity_correction.exec();
 
             /** Dynamics including pressure relaxation. */
             Real relaxation_time = 0.0;
@@ -394,7 +394,7 @@ int main(int ac, char *av[])
                     turbulent_kinetic_energy_force.exec();
                 }
 
-                //kernel_summation.exec();
+                kernel_summation.exec();
 
                 pressure_relaxation.exec(dt);
 
@@ -413,14 +413,14 @@ int main(int ac, char *av[])
 
                 density_relaxation.exec(dt);
 
-                //if (physical_time > turbulent_module_activate_time) //** A temporary treatment *
-                //{
-                //    get_velocity_gradient.exec();
-                //    compute_TKE_diffusion.exec();
-                //    compute_TSDR_diffusion_and_gradient_k_omega.exec();
-                //    update_near_wall_status.exec();
-                //    standard_wall_function_correction.exec();
-                //}
+                if (physical_time > turbulent_module_activate_time) //** A temporary treatment *
+                {
+                    get_velocity_gradient.exec();
+                    compute_TKE_diffusion.exec();
+                    compute_TSDR_diffusion_and_gradient_k_omega.exec();
+                    update_near_wall_status.exec();
+                    standard_wall_function_correction.exec();
+                }
 
                 if (physical_time > turbulent_module_activate_time) //** A temporary treatment *
                 {
