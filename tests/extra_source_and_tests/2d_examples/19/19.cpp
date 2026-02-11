@@ -9,7 +9,7 @@ int main(int ac, char *av[])
     SPHSystem sph_system(system_domain_bounds, resolution_ref);
 
     /** Restart. */
-    bool is_write_restart_file = true;
+    bool is_write_restart_file = false;
     int restart_output_interval = 1000;
     sph_system.setRestartStep(0); //% SPH
 
@@ -159,11 +159,11 @@ int main(int ac, char *av[])
 
     /** Density relaxation algorithm by using position verlet time stepping. */
     // ** If not use ARD+ *
-    //Dynamics1Level<fluid_dynamics::Integration2ndHalfWithWallNoRiemann> density_relaxation(water_block_inner, water_wall_contact);
+    Dynamics1Level<fluid_dynamics::Integration2ndHalfWithWallNoRiemann> density_relaxation(water_block_inner, water_wall_contact);
     // ** If use ARD+ *
-    Dynamics1Level<fluid_dynamics::Integration2ndHalfInnerNoRiemann> density_relaxation(water_block_inner);
-    InteractionDynamics<fluid_dynamics::udf::Integration2ndHalfOnlyWallAcousticRiemannAdjusted> density_relaxation_wall(water_wall_contact);
-    density_relaxation.post_processes_.push_back(&density_relaxation_wall);
+    //Dynamics1Level<fluid_dynamics::Integration2ndHalfInnerNoRiemann> density_relaxation(water_block_inner);
+    //InteractionDynamics<fluid_dynamics::udf::Integration2ndHalfOnlyWallAcousticRiemannAdjusted> density_relaxation_wall(water_wall_contact);
+    //density_relaxation.post_processes_.push_back(&density_relaxation_wall);
 
     /** Turbulent.Note: When use wall function, K Epsilon calculation only consider inner */
     InteractionWithUpdate<fluid_dynamics::udf::JudgeIsNearWall> update_near_wall_status(water_block_inner, water_wall_contact, y_p_constant);
@@ -473,14 +473,14 @@ int main(int ac, char *av[])
             left_bidirection_buffer.tag_buffer_particles.exec();
             right_bidirection_buffer.tag_buffer_particles.exec();
 
-            if (physical_time > cutoff_time)
-            {
-                write_recorded_water_velocity.writeToFile(number_of_iterations);
-                write_recorded_water_k.writeToFile(number_of_iterations);
-                write_recorded_water_mut.writeToFile(number_of_iterations);
-                write_recorded_water_omega.writeToFile(number_of_iterations);
-                write_nearwall_friction_velocity.writeToFile(number_of_iterations);
-            }
+            //if (physical_time > cutoff_time)
+            //{
+            //    write_recorded_water_velocity.writeToFile(number_of_iterations);
+            //    write_recorded_water_k.writeToFile(number_of_iterations);
+            //    write_recorded_water_mut.writeToFile(number_of_iterations);
+            //    write_recorded_water_omega.writeToFile(number_of_iterations);
+            //    write_nearwall_friction_velocity.writeToFile(number_of_iterations);
+            //}
             //if (GlobalStaticVariables::physical_time_ > end_time * 0.5)
             //body_states_recording.writeToFile();
             
@@ -496,10 +496,10 @@ int main(int ac, char *av[])
             //}
         }
         //TickCount t2 = TickCount::now();
-        if (!is_write_average_contour_file)  //** Average no need to comment *
-        {
-            body_states_recording.writeToFile();
-        }
+        //if (!is_write_average_contour_file)  //** Average no need to comment *
+        //{
+        //    body_states_recording.writeToFile();
+        //}
         observer_centerpoint_contact.updateConfiguration();
         num_output_file++;
         //if (num_output_file == 100)
