@@ -255,7 +255,7 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     //	Build up an SPHSystem and IO environment.
     //----------------------------------------------------------------------
-    SPHSystem sph_system(system_domain_bounds, resolution_ref);
+    SPHSystem sph_system(system_domain_bounds, resolution_ref, 1);
     sph_system.handleCommandlineOptions(ac, av)->setIOEnvironment();
     //----------------------------------------------------------------------
     //	Creating bodies with corresponding materials and particles.
@@ -373,8 +373,8 @@ int main(int ac, char *av[])
     size_t number_of_iterations = sph_system.RestartStep();
     int screen_output_interval = 100;
     int observation_sample_interval = screen_output_interval * 2;
-    Real end_time = 10.0;   /**< End time. */
-    Real Output_Time = 1.0; /**< Time stamps for output of body states. */
+    Real end_time = 100.0;   /**< End time. */
+    Real Output_Time = 50.0; /**< Time stamps for output of body states. */
     Real dt = 0.0;          /**< Default acoustic time step sizes. */
     //----------------------------------------------------------------------
     //	Statistics for CPU time
@@ -393,6 +393,7 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     //	Main loop starts here.
     //----------------------------------------------------------------------
+    std::ofstream logfile("output/output.log");
     while (GlobalStaticVariables::physical_time_ < end_time)
     {
         Real integration_time = 0.0;
@@ -435,6 +436,9 @@ int main(int ac, char *av[])
                 {
                     write_centerline_velocity.writeToFile(number_of_iterations);
                 }
+                logfile << std::fixed << std::setprecision(9) << "N=" << number_of_iterations << "	Time = "
+                    << GlobalStaticVariables::physical_time_
+                    << "	Dt = " << Dt << "	dt = " << dt << std::endl;
             }
             number_of_iterations++;
 
@@ -479,6 +483,9 @@ int main(int ac, char *av[])
               << interval_computing_pressure_relaxation.seconds() << "\n";
     std::cout << std::fixed << std::setprecision(9) << "interval_updating_configuration = "
               << interval_updating_configuration.seconds() << "\n";
+    logfile << "Total wall time for computation: " << tt.seconds()
+        << " seconds." << std::endl;
+    logfile.close();
 
     if (sph_system.GenerateRegressionData())
     {
