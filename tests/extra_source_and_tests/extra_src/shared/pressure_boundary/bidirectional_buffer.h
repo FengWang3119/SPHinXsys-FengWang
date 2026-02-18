@@ -70,7 +70,7 @@ class BidirectionalBuffer
 
         virtual void update(size_t index_i, Real dt = 0.0)
         {
-            buffer_particle_indicator_[index_i] = aligned_box_.checkInBounds(pos_[index_i]) ? 1 : 0;
+            buffer_particle_indicator_[index_i] = aligned_box_.checkContain(pos_[index_i]) ? 1 : 0;
         };
 
       protected:
