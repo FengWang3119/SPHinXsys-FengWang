@@ -70,7 +70,7 @@ class BidirectionalBuffer
 
         virtual void update(size_t index_i, Real dt = 0.0)
         {
-            if (aligned_box_.checkInBounds(pos_[index_i]))
+            if (aligned_box_.checkContain(pos_[index_i]))
             {
                 buffer_particle_indicator_[index_i] = part_id_;
             }
@@ -98,7 +98,7 @@ class BidirectionalBuffer
               p_(particles_->getVariableDataByName<Real>("Pressure")),
               previous_surface_indicator_(particles_->getVariableDataByName<int>("PreviousSurfaceIndicator")),
               buffer_particle_indicator_(particles_->getVariableDataByName<int>("BufferParticleIndicator")),
-              upper_bound_fringe_(0.0 * sph_body_.getSPHBodyResolutionRef()),
+              upper_bound_fringe_(0.5 * sph_body_.getSPHBodyResolutionRef()),
               physical_time_(sph_system_.getSystemVariableDataByName<Real>("PhysicalTime")),
               target_pressure_(target_pressure)
         {
