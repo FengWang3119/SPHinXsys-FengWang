@@ -68,12 +68,12 @@ int main() {
     double utau = utau_init;
 
     //Note: Node arrangement, solving for half channel
-    int ny = 256;
+    int ny = 16;
     double hy = delta / ny;
     double y_p = 0.5 * hy;
     //================== Input index ==================
     int NF = 2 * ny;
-    int index = 1;
+    int index = 2;
 
     // -------- RANS coefficients --------
     double std_kw_beta_star_ = 0.09;
