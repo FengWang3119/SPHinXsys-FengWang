@@ -5,6 +5,7 @@
 #include <iomanip>
 #include <stdexcept>
 #include <numeric> 
+#include <string>
 
 using namespace std;
 using Vec = std::vector<double>;
@@ -459,6 +460,56 @@ int main() {
     std::cout << "Turbu_omega = ";
     for (int i = 0; i < ny; ++i) std::cout << phi_solved[n_start + i] << " ";
     std::cout << std::endl;
+
+    // ================== 提取解 ==================
+    n_start = 0;
+
+    std::vector<double> U(ny);
+    for (int i = 0; i < ny; ++i) U[i] = phi_solved[n_start + i];
+
+    n_start += ny;
+    std::vector<double> K(ny);
+    for (int i = 0; i < ny; ++i) K[i] = phi_solved[n_start + i];
+
+    n_start += ny;
+    std::vector<double> OMEGA(ny);
+    for (int i = 0; i < ny; ++i) OMEGA[i] = phi_solved[n_start + i];
+
+    // ================== 使用已有的 y ==================
+    std::vector<double> Y = y;
+
+    // ================== 计算湍流粘性系数 ==================
+    double eps = 1e-12;
+    std::vector<double> NUT(ny);
+    for (int i = 0; i < ny; ++i) {
+        NUT[i] = K[i] / (OMEGA[i] + eps);
+    }
+
+    // ================== 输出 Tecplot 文件 ==================
+    std::string header_line = "ZONE T=\"SPH(1D)45 NF="
+        + std::to_string(NF)
+        + " ("
+        + std::to_string(index)
+        + ")\"";
+    std::string filename = "pipe_kw_nf" + std::to_string(NF) + "_" + std::to_string(index) + ".dat";
+
+    std::ofstream fout(filename);
+    fout << "$VARIABLES = \"Y\", \"U\", \"K\", \"OMEGA\", \"NUT(k/omega)\"\n";
+    fout << header_line << "\n";
+
+    fout << std::scientific << std::setprecision(8);
+
+    for (int i = 0; i < ny; ++i) {
+        fout << Y[i] << " "
+            << U[i] << " "
+            << K[i] << " "
+            << OMEGA[i] << " "
+            << NUT[i] << "\n";
+    }
+
+    fout.close();
+
+    std::cout << "Tecplot 文件已生成: " << filename << std::endl;
 
     return 0;
 }
