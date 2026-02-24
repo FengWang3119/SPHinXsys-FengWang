@@ -48,8 +48,10 @@ Vec tdma(const Vec& a, const Vec& b, const Vec& c, const Vec& d) {
     return x;
 }
 
+
 // ================= main =================
-int main() {
+void solve_1D_half_channel() 
+{
 
     // -------- Input parameters --------
     double utau_init = 6.37309e-02;
@@ -510,6 +512,10 @@ int main() {
     fout.close();
 
     std::cout << "Tecplot 文件已生成: " << filename << std::endl;
+}
 
+int main()
+{
+    solve_1D_half_channel();
     return 0;
 }
