@@ -533,9 +533,7 @@ void solve_1D_half_channel()
 
 void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, double vel_grad_p_outer)
 {
-    // -------- Import parameters --------
-
-    //--------¡ý Input parameters ¡ý--------
+    //------------------------------------------------¡ý Input parameters ¡ý------------------------------------------------
     double utau_init = 6.37309e-02;
     double H = 2.0;
     double height_sublayer = H / 2.0;
@@ -550,9 +548,9 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
 
     double flow_rate_target = U_avg * height_sublayer;
     double utau = utau_init;
-    //--------¡ü Input parameters ¡ü--------
+    //------------------------------------------------¡ü Input parameters ¡ü------------------------------------------------
 
-    //--------¡ý Node arrangement, for sublayer ¡ý--------
+    //------------------------------------------------¡ý Node arrangement, for sublayer ¡ý------------------------------------------------
     int ny = 16;
     double hy = height_sublayer / (double(ny));
     double y_p = 0.5 * hy;
@@ -561,18 +559,18 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
     {
         y[i] = y_p + i * hy;
     }
-    //--------¡ü Node arrangement, for sublayer ¡ü--------
+    //------------------------------------------------¡ü Node arrangement, for sublayer ¡ü------------------------------------------------
     
-    //--------¡ý Input index ¡ý--------
+    //------------------------------------------------¡ý Input index ¡ý------------------------------------------------
     int NF = 2 * ny;
     int index = 3;
-    //--------¡ü Input index ¡ü--------
+    //------------------------------------------------¡ü Input index ¡ü------------------------------------------------
 
-    //--------¡ý Calculate P value ¡ý--------
+    //------------------------------------------------¡ý Calculate P value ¡ý------------------------------------------------
     double yplus = utau * y_p / nu;
     double u_p = utau * yplus;
     double turbu_omega_p = 6.0 * nu / (std_kw_beta_i_ * y_p * y_p);
-    //--------¡ü Calculate P value ¡ü--------
+    //------------------------------------------------¡ü Calculate P value ¡ü------------------------------------------------
 
     printf("hy=%f\n", hy);
     printf("yp=%f\n", y_p);
@@ -595,11 +593,11 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
     std::cout << "press to continue" << std::endl;
     std::cin.get();
 
-    //--------¡ý Construct initial value ¡ý--------
+    //------------------------------------------------¡ý Construct initial value ¡ý------------------------------------------------
     Vec u_init_value(ny, u_init);
     Vec k_init_value(ny, k_init);
     Vec turbu_omega_init_value(ny, turbu_omega_init);
-    //--------¡ü Construct initial value ¡ü--------
+    //------------------------------------------------¡ü Construct initial value ¡ü------------------------------------------------
     
     std::cout << "u_init_value:" << std::endl;
     for (const auto& v : u_init_value) {
@@ -619,14 +617,14 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
     std::cout << "\n Press Enter to continue..." << std::endl;
     std::cin.get();
 
-    //--------¡ý Construct solution vector ¡ý--------
+    //------------------------------------------------¡ý Construct solution vector ¡ý------------------------------------------------
     std::vector<double> phi_current(0, 0.0);
     std::vector<double> phi_solved(3 * ny, 0.0);
     phi_current.insert(phi_current.end(), u_init_value.begin(), u_init_value.end());
     phi_current.insert(phi_current.end(), k_init_value.begin(), k_init_value.end());
     phi_current.insert(phi_current.end(), turbu_omega_init_value.begin(), turbu_omega_init_value.end());
     phi_solved = phi_current;
-    //--------¡ü Construct solution vector ¡ü--------
+    //------------------------------------------------¡ü Construct solution vector ¡ü------------------------------------------------
 
     std::cout << "Initial value = ";
     for (const auto& v : phi_current) {
@@ -639,7 +637,7 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
     int n_start = 0;
     while (differ > convergence_criteria_outer)
     {
-        //--------¡ý Update the star values ¡ý--------
+        //------------------------------------------------¡ý Update the star values ¡ý------------------------------------------------
         n_start = 0;
         std::vector<double> u_star(
             phi_solved.begin() + n_start,
@@ -657,9 +655,9 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
             phi_solved.begin() + n_start,
             phi_solved.begin() + n_start + ny
         );
-        //--------¡ü Update the star values ¡ü--------
+        //------------------------------------------------¡ü Update the star values ¡ü------------------------------------------------
 
-        //--------¡ý Calculate gradients of k and omega ¡ý--------
+        //------------------------------------------------¡ý Calculate gradients of k and omega ¡ý------------------------------------------------
         std::vector<double> dkdy(ny, 0.0);
         std::vector<double> dwdy(ny, 0.0);
         // backward diff£¨from i=1 £©
@@ -670,17 +668,17 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
         // B.C.
         dkdy[0] = 0.0;
         dwdy[0] = 0.0;
-        //--------¡ü Calculate gradients of k and omega ¡ü--------
+        //------------------------------------------------¡ü Calculate gradients of k and omega ¡ü------------------------------------------------
 
-        //--------¡ý Calculate gradients of u ¡ý--------
+        //------------------------------------------------¡ý Calculate gradients of u ¡ý------------------------------------------------
         std::vector<double> dudy_discretized(ny, 0.0);
         for (int i = 1; i < ny; ++i) {
             dudy_discretized[i] = (u_star[i] - u_star[i - 1]) / hy;
         }
         dudy_discretized[0] = 0.0;
-        //--------¡ü Calculate gradients of u ¡ü--------
+        //------------------------------------------------¡ü Calculate gradients of u ¡ü------------------------------------------------
 
-        //--------¡ý Calculate Dk, and gradients of Dk ¡ý--------
+        //------------------------------------------------¡ý Calculate Dk, and gradients of Dk ¡ý------------------------------------------------
         std::vector<double> dDkdy(ny, 0.0);
         std::vector<double> diffusion_coefficient_k(ny);
         for (int i = 0; i < ny; ++i) {
@@ -692,9 +690,9 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
         }
         // B.C.
         dDkdy[0] = 0.0;
-        //--------¡ü Calculate Dk, and gradients of Dk ¡ü--------
+        //------------------------------------------------¡ü Calculate Dk, and gradients of Dk ¡ü------------------------------------------------
 
-        //--------¡ý Calculate Dw, and gradients of Dw ¡ý--------
+        //------------------------------------------------¡ý Calculate Dw, and gradients of Dw ¡ý------------------------------------------------
         std::vector<double> dDwdy(ny, 0.0);
         std::vector<double> diffusion_coefficient_turbu_omega(ny);
         for (int i = 0; i < ny; ++i) {
@@ -706,9 +704,9 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
         }
         // B.C.
         dDwdy[0] = 0.0;
-        //--------¡ü Calculate Dw, and gradients of Dw ¡ü--------
+        //------------------------------------------------¡ü Calculate Dw, and gradients of Dw ¡ü------------------------------------------------
 
-        //--------¡ý Calculate nut_star ¡ý--------
+        //------------------------------------------------¡ý Calculate nut_star ¡ý------------------------------------------------
         std::vector<double> turbu_omega_tilde(ny);
         std::vector<double> nut_star(ny);
         for (int i = 0; i < ny; ++i) 
@@ -719,28 +717,28 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
             );
             nut_star[i] = k_star[i] / (turbu_omega_tilde[i] + tiny);
         }
-        //--------¡ü Calculate nut_star ¡ü--------
+        //------------------------------------------------¡ü Calculate nut_star ¡ü------------------------------------------------
 
-        //--------¡ý Calculate analytical gradient of u ¡ý--------
+        //------------------------------------------------¡ý Calculate analytical gradient of u ¡ý------------------------------------------------
         std::vector<double> dudy_star(ny);
         for (int i = 0; i < ny; ++i) 
         {
             dudy_star[i] = utau * utau * (1.0 - y[i] / height_sublayer) / (nu + nut_star[i]);
         }
-        //--------¡ü Calculate analytical gradient of u ¡ü--------
+        //------------------------------------------------¡ü Calculate analytical gradient of u ¡ü------------------------------------------------
          
-        //--------¡ý Update linearized source terms Sc Sp ¡ý--------
+        //------------------------------------------------¡ý Update linearized source terms Sc Sp ¡ý------------------------------------------------
         // 
-        //---¡ý For velocity ¡ý---
+        //-------------------------------------¡ý For velocity ¡ý-------------------------------------
         std::vector<double> Sc_u(ny);
         std::vector<double> Sp_u(ny, 0.0);
         for (int i = 0; i < ny; ++i) 
         {
             Sc_u[i] = -1.0 / (nu + nut_star[i]); // Sp_u already is 0
         }
-        //---¡ü For velocity ¡ü---
+        //-------------------------------------¡ü For velocity ¡ü-------------------------------------
 
-        //---¡ý For turbulent kinetic energy ¡ý---
+        //-------------------------------------¡ý For turbulent kinetic energy ¡ý-------------------------------------
         std::vector<double> Sc_k(ny);
         std::vector<double> Sp_k(ny);
         // for nested formulation, an extra viscous term appears, so for TKE, 2 components
@@ -752,9 +750,9 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
                 / diffusion_coefficient_k[i];
             Sp_k[i] = std_kw_beta_star_ * turbu_omega_star[i] / diffusion_coefficient_k[i];
         }
-        //---¡ü For turbulent kinetic energy ¡ü---
+        //-------------------------------------¡ü For turbulent kinetic energy ¡ü-------------------------------------
 
-        //---¡ý For turbulent specific dissipation ¡ý---
+        //-------------------------------------¡ý For turbulent specific dissipation ¡ý-------------------------------------
         std::vector<double> Sc_turbu_omega(ny);
         std::vector<double> Sp_turbu_omega(ny);
         // for nested formulation, an extra viscous term appears, so for omega, 3 components 
@@ -784,13 +782,13 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
                 / diffusion_coefficient_turbu_omega[i];
             Sp_turbu_omega[i] = std_kw_beta_ * turbu_omega_star[i] / diffusion_coefficient_turbu_omega[i];
         }
-        //---¡ü For turbulent specific dissipation ¡ü---
+        //-------------------------------------¡ü For turbulent specific dissipation ¡ü-------------------------------------
         // 
-        //--------¡ü Update linearized source terms Sc Sp ¡ü--------
+        //------------------------------------------------¡ü Update linearized source terms Sc Sp ¡ü------------------------------------------------
 
-        //--------¡ý Start solution using TDMA ¡ý--------
+        //------------------------------------------------¡ý Start solution using TDMA ¡ý------------------------------------------------
         // 
-        //---¡ý For velocity ¡ý---
+        //-------------------------------------¡ý For velocity ¡ý-------------------------------------
         std::vector<double> a_u(ny, 0.0);
         std::vector<double> b_u(ny, 0.0);
         std::vector<double> c_u(ny, 0.0);
@@ -810,9 +808,9 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
         d_u[0] = u_p;
         // solving
         std::vector<double> U_new = tdma(a_u, b_u, c_u, d_u);
-        //---¡ü For velocity ¡ü---
+        //-------------------------------------¡ü For velocity ¡ü-------------------------------------
         
-        //---¡ý For turbulent kinetic energy ¡ý---
+        //-------------------------------------¡ý For turbulent kinetic energy ¡ý-------------------------------------
         std::vector<double> a_k(ny, 0.0);
         std::vector<double> b_k(ny, 0.0);
         std::vector<double> c_k(ny, 0.0);
@@ -838,9 +836,9 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
         d_k[last] = -1.0 * hy * hy * Sc_k[last];
         // solving
         std::vector<double> K_new = tdma(a_k, b_k, c_k, d_k);
-        //---¡ü For turbulent kinetic energy ¡ü---
+        //-------------------------------------¡ü For turbulent kinetic energy ¡ü-------------------------------------
 
-        //---¡ý For turbulent specific dissipation ¡ý---
+        //-------------------------------------¡ý For turbulent specific dissipation ¡ý-------------------------------------
         std::vector<double> a_w(ny, 0.0);
         std::vector<double> b_w(ny, 0.0);
         std::vector<double> c_w(ny, 0.0);
@@ -865,50 +863,50 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
         d_w[last] = -1.0 * hy * hy * Sc_turbu_omega[last];
         // solving
         std::vector<double> Turbu_omega_new = tdma(a_w, b_w, c_w, d_w);
-        //---¡ü For turbulent specific dissipation ¡ü---
+        //-------------------------------------¡ü For turbulent specific dissipation ¡ü-------------------------------------
         // 
-        //--------¡ü Start solution using TDMA ¡ü--------
+        //------------------------------------------------¡ü Start solution using TDMA ¡ü------------------------------------------------
         
-        //--------¡ý update phi_solved ¡ý--------
+        //------------------------------------------------¡ý update phi_solved ¡ý------------------------------------------------
         n_start = 0;
         for (int i = 0; i < ny; ++i) phi_solved[n_start + i] = U_new[i];
         n_start += ny;
         for (int i = 0; i < ny; ++i) phi_solved[n_start + i] = K_new[i];
         n_start += ny;
         for (int i = 0; i < ny; ++i) phi_solved[n_start + i] = Turbu_omega_new[i];
-        //--------¡ü update phi_solved ¡ü--------
+        //------------------------------------------------¡ü update phi_solved ¡ü------------------------------------------------
         
         std::cout << "phi_solved = ";
         for (const auto& v : phi_solved) std::cout << v << " ";
         std::cout << std::endl;
 
-        //--------¡ý Check and update flow rate ¡ý--------
+        //------------------------------------------------¡ý Check and update flow rate ¡ý------------------------------------------------
         double flow_rate_current = accumulate(U_new.begin(), U_new.end(), 0.0) * hy;
         // flow control
         double ratio = flow_rate_target / (flow_rate_current + 1e-12);
         double alpha = 0.03;
         double utau_new = utau * std::sqrt(ratio);
         utau = (1.0 - alpha) * utau + alpha * utau_new;
-        //--------¡ü Check and update flow rate ¡ü--------
+        //------------------------------------------------¡ü Check and update flow rate ¡ü------------------------------------------------
 
         std::cout << "flow_rate_current = " << flow_rate_current
             << ", target = " << flow_rate_target << std::endl;
         std::cout << "updated utau = " << utau << std::endl;
 
-        //--------¡ý Calculate residue ¡ý--------
+        //------------------------------------------------¡ý Calculate residue ¡ý------------------------------------------------
         differ = 0.0;
         for (size_t i = 0; i < phi_current.size(); ++i) {
             double diff = phi_current[i] - phi_solved[i];
             differ += diff * diff;
         }
         differ = std::sqrt(differ);
-        //--------¡ü Calculate residue ¡ü--------
+        //------------------------------------------------¡ü Calculate residue ¡ü------------------------------------------------
         std::cout << "differ: " << differ << std::endl;
 
-        //--------¡ý Update ¡ý--------
+        //------------------------------------------------¡ý Update ¡ý------------------------------------------------
         phi_current = phi_solved;
         num_iter_out += 1;
-        //--------¡ü Update ¡ü--------
+        //------------------------------------------------¡ü Update ¡ü------------------------------------------------
 
         std::cout << "num_iter_out = " << num_iter_out << std::endl;
         std::cout << "------------" << std::endl;
