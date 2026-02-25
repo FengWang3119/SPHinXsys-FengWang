@@ -563,7 +563,7 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
     
     //------------------------------------------------¡ý Input index ¡ý------------------------------------------------
     int NF = 2 * ny;
-    int index = 5;
+    int index = 6;
     //------------------------------------------------¡ü Input index ¡ü------------------------------------------------
 
     //------------------------------------------------¡ý Calculate P value ¡ý------------------------------------------------
@@ -710,7 +710,7 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
         std::vector<double> dudy_star(ny);
         for (int i = 0; i < ny; ++i) 
         {
-            dudy_star[i] = utau * utau * (1.0 - y[i] / height_sublayer) / (nu + nut_star[i]);
+            dudy_star[i] = C_su[i] / (nu + nut_star[i]);
         }
         //------------------------------------------------¡ü Calculate analytical gradient of u ¡ü------------------------------------------------
          
