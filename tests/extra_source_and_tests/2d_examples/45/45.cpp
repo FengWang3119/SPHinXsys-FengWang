@@ -531,7 +531,7 @@ void solve_1D_half_channel()
     std::cout << "Tecplot 文件已生成: " << filename << std::endl;
 }
 
-void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, double vel_grad_p_outer)
+void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, double vel_grad_p_outer, double nut_p_outer)
 {
     //------------------------------------------------↓ Input parameters ↓------------------------------------------------
     double utau_init = 6.37309e-02;
@@ -563,7 +563,7 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
     
     //------------------------------------------------↓ Input index ↓------------------------------------------------
     int NF = 2 * ny;
-    int index = 4;
+    int index = 5;
     //------------------------------------------------↑ Input index ↑------------------------------------------------
 
     //------------------------------------------------↓ Calculate P value ↓------------------------------------------------
@@ -635,6 +635,7 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
     double differ = 1.0; // Should have a value 
     int num_iter_out = 0;
     int n_start = 0;
+    int last = 0;
     while (differ > convergence_criteria_outer)
     {
         //------------------------------------------------↓ Update the star values ↓------------------------------------------------
@@ -657,14 +658,15 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
         );
         //------------------------------------------------↑ Update the star values ↑------------------------------------------------
 
-        //------------------------------------------------↓ Calculate Dk, Dw ↓------------------------------------------------
+        //------------------------------------------------↓ Calculate Dk, Dw, C_su ↓------------------------------------------------
         std::vector<double> diffusion_coefficient_k(ny);
+        std::vector<double> diffusion_coefficient_turbu_omega(ny);
+        std::vector<double> C_su(ny);
+        double tau_over_rho_outer = (nu + nut_p_outer) * vel_grad_p_outer;
         for (int i = 0; i < ny; ++i) {
             diffusion_coefficient_k[i] = nu + std_kw_sigma_star_ * k_star[i] / (turbu_omega_star[i] + tiny);
-        }
-        std::vector<double> diffusion_coefficient_turbu_omega(ny);
-        for (int i = 0; i < ny; ++i) {
             diffusion_coefficient_turbu_omega[i] = nu + std_kw_sigma_ * k_star[i] / (turbu_omega_star[i] + tiny);
+            C_su[i] = (utau * utau - tau_over_rho_outer) * (1.0 - y[i] / height_sublayer) + tau_over_rho_outer;
         }
         //------------------------------------------------↑ Calculate Dk, Dw  ↑------------------------------------------------
 
@@ -778,19 +780,25 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
         std::vector<double> b_u(ny, 0.0);
         std::vector<double> c_u(ny, 0.0);
         std::vector<double> d_u(ny, 0.0);
-        // inner node, and last node
-        for (int i = 1; i < ny; ++i) 
+        // inner node
+        for (int i = 1; i < ny - 1; ++i) 
         {
             a_u[i] = -1.0;
             b_u[i] = 1.0;
             c_u[i] = 0.0;
-            d_u[i] = utau * utau * (1.0 - y[i] / height_sublayer) * hy * Sc_u[i] * (-1.0);
+            d_u[i] = C_su[i] * hy * Sc_u[i] * (-1.0);
         }
         // first node
         a_u[0] = 0.0;
         b_u[0] = 1.0;
         c_u[0] = 0.0;
         d_u[0] = u_p;
+        // last node
+        last = ny - 1;
+        a_u[last] = -1.0;
+        b_u[last] = 1.0;
+        c_u[last] = 0.0;
+        d_u[last] = C_su[last] * hy * Sc_u[last] * (-1.0);
         // solving
         std::vector<double> U_new = tdma(a_u, b_u, c_u, d_u);
         //-------------------------------------↑ For velocity ↑-------------------------------------
@@ -812,9 +820,8 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
         b_k[0] = -1.0 - Sp_k[0] * hy * hy;
         c_k[0] = 1.0;
         d_k[0] = -1.0 * hy * hy * Sc_k[0];
-
         // last node, grad k = 0
-        int last = ny - 1;
+        last = ny - 1;
         a_k[last] = 1.0;
         b_k[last] = -1.0 - Sp_k[last] * hy * hy;
         c_k[last] = 0.0;
@@ -970,6 +977,6 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
 int main()
 {
     //solve_1D_half_channel();
-    solve_1D_sublayer(0.0,0.0,0.0,0.0);
+    solve_1D_sublayer(0.0,0.0,0.0,0.0,0.0);
     return 0;
 }
