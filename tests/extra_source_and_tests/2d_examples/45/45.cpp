@@ -563,7 +563,7 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
     
     //------------------------------------------------¡ý Input index ¡ý------------------------------------------------
     int NF = 2 * ny;
-    int index = 3;
+    int index = 4;
     //------------------------------------------------¡ü Input index ¡ü------------------------------------------------
 
     //------------------------------------------------¡ý Calculate P value ¡ý------------------------------------------------
@@ -657,54 +657,39 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
         );
         //------------------------------------------------¡ü Update the star values ¡ü------------------------------------------------
 
-        //------------------------------------------------¡ý Calculate gradients of k and omega ¡ý------------------------------------------------
-        std::vector<double> dkdy(ny, 0.0);
-        std::vector<double> dwdy(ny, 0.0);
-        // backward diff£¨from i=1 £©
-        for (int i = 1; i < ny; ++i) {
-            dkdy[i] = (k_star[i] - k_star[i - 1]) / hy;
-            dwdy[i] = (turbu_omega_star[i] - turbu_omega_star[i - 1]) / hy;
-        }
-        // B.C.
-        dkdy[0] = 0.0;
-        dwdy[0] = 0.0;
-        //------------------------------------------------¡ü Calculate gradients of k and omega ¡ü------------------------------------------------
-
-        //------------------------------------------------¡ý Calculate gradients of u ¡ý------------------------------------------------
-        std::vector<double> dudy_discretized(ny, 0.0);
-        for (int i = 1; i < ny; ++i) {
-            dudy_discretized[i] = (u_star[i] - u_star[i - 1]) / hy;
-        }
-        dudy_discretized[0] = 0.0;
-        //------------------------------------------------¡ü Calculate gradients of u ¡ü------------------------------------------------
-
-        //------------------------------------------------¡ý Calculate Dk, and gradients of Dk ¡ý------------------------------------------------
-        std::vector<double> dDkdy(ny, 0.0);
+        //------------------------------------------------¡ý Calculate Dk, Dw ¡ý------------------------------------------------
         std::vector<double> diffusion_coefficient_k(ny);
         for (int i = 0; i < ny; ++i) {
             diffusion_coefficient_k[i] = nu + std_kw_sigma_star_ * k_star[i] / (turbu_omega_star[i] + tiny);
         }
-        // backward
-        for (int i = 1; i < ny; ++i) {
-            dDkdy[i] = (diffusion_coefficient_k[i] - diffusion_coefficient_k[i - 1]) / hy;
-        }
-        // B.C.
-        dDkdy[0] = 0.0;
-        //------------------------------------------------¡ü Calculate Dk, and gradients of Dk ¡ü------------------------------------------------
-
-        //------------------------------------------------¡ý Calculate Dw, and gradients of Dw ¡ý------------------------------------------------
-        std::vector<double> dDwdy(ny, 0.0);
         std::vector<double> diffusion_coefficient_turbu_omega(ny);
         for (int i = 0; i < ny; ++i) {
             diffusion_coefficient_turbu_omega[i] = nu + std_kw_sigma_ * k_star[i] / (turbu_omega_star[i] + tiny);
         }
-        // backward
-        for (int i = 1; i < ny; ++i) {
+        //------------------------------------------------¡ü Calculate Dk, Dw  ¡ü------------------------------------------------
+
+        //------------------------------------------------¡ý Calculate gradients of u, k, omega, Dk, Dw ¡ý------------------------------------------------
+        std::vector<double> dudy_discretized(ny, 0.0);
+        std::vector<double> dkdy(ny, 0.0);
+        std::vector<double> dwdy(ny, 0.0);
+        std::vector<double> dDkdy(ny, 0.0);
+        std::vector<double> dDwdy(ny, 0.0);
+        // backward diff£¨from i=1 £©
+        for (int i = 1; i < ny; ++i) 
+        {
+            dudy_discretized[i] = (u_star[i] - u_star[i - 1]) / hy;
+            dkdy[i] = (k_star[i] - k_star[i - 1]) / hy;
+            dwdy[i] = (turbu_omega_star[i] - turbu_omega_star[i - 1]) / hy;
+            dDkdy[i] = (diffusion_coefficient_k[i] - diffusion_coefficient_k[i - 1]) / hy;
             dDwdy[i] = (diffusion_coefficient_turbu_omega[i] - diffusion_coefficient_turbu_omega[i - 1]) / hy;
         }
         // B.C.
+        dudy_discretized[0] = 0.0;
+        dkdy[0] = 0.0;
+        dwdy[0] = 0.0;
+        dDkdy[0] = 0.0;
         dDwdy[0] = 0.0;
-        //------------------------------------------------¡ü Calculate Dw, and gradients of Dw ¡ü------------------------------------------------
+        //------------------------------------------------¡ü Calculate gradients of u, k, omega, Dk, Dw ¡ü------------------------------------------------
 
         //------------------------------------------------¡ý Calculate nut_star ¡ý------------------------------------------------
         std::vector<double> turbu_omega_tilde(ny);
