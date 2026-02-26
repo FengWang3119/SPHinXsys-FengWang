@@ -551,7 +551,7 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
     //------------------------------------------------¡ü Input parameters ¡ü------------------------------------------------
 
     //------------------------------------------------¡ý Node arrangement, for sublayer ¡ý------------------------------------------------
-    int ny = 32;
+    int ny = 64;
     double hy = height_sublayer / (double(ny) + 0.5); // distance from node U to P_outer is hy, hence with a 0.5
     double y_p = 0.5 * hy;
     Vec y(ny);  //computational nodes
@@ -563,7 +563,7 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
     
     //------------------------------------------------¡ý Input index ¡ý------------------------------------------------
     int NF = 2 * ny;
-    int index = 8;
+    int index = 9;
     //------------------------------------------------¡ü Input index ¡ü------------------------------------------------
 
     //------------------------------------------------¡ý Calculate P value ¡ý------------------------------------------------
@@ -583,10 +583,10 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
     {
         y_whole[i] = y_p + i * hy;
     }
-    std::cout << "The number of fluid particle along the Y direction is "
-        << Ny_whole << std::endl;
-    std::cout << "y_whole = ";
-    for (const auto& v : y_whole) {
+    std::cout << "NF= " << Ny_whole << std::endl;
+    std::cout << "ny= " << ny << std::endl;
+    std::cout << "y = ";
+    for (const auto& v : y) {
         std::cout << v << " ";
     }
     std::cout << std::endl;
