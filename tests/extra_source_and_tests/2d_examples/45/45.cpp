@@ -542,7 +542,7 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
 
     double u_init = u_p_outer;
     double k_init = k_p_outer;
-    double turbu_omega_init = w_p_outer;
+    double turbu_omega_init = w_p_outer * 10.0;
 
     double convergence_criteria_outer = 1.0e-6;
 
@@ -551,7 +551,7 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
     //------------------------------------------------¡ü Input parameters ¡ü------------------------------------------------
 
     //------------------------------------------------¡ý Node arrangement, for sublayer ¡ý------------------------------------------------
-    int ny = 128;
+    int ny = 256;
     double hy = height_sublayer / (double(ny) + 0.5); // distance from node U to P_outer is hy, hence with a 0.5
     double y_p = 0.5 * hy;
     Vec y(ny);  //computational nodes
@@ -563,7 +563,7 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
     
     //------------------------------------------------¡ý Input index ¡ý------------------------------------------------
     int NF = 2 * ny;
-    int index = 10;
+    int index = 11;
     //------------------------------------------------¡ü Input index ¡ü------------------------------------------------
 
     //------------------------------------------------¡ý Calculate P value ¡ý------------------------------------------------
