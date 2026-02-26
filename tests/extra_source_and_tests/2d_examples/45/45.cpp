@@ -552,7 +552,7 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
 
     //------------------------------------------------¡ý Node arrangement, for sublayer ¡ý------------------------------------------------
     int ny = 16;
-    double hy = height_sublayer / (double(ny));
+    double hy = height_sublayer / (double(ny) + 0.5); // distance from node U to P_outer is hy, hence with a 0.5
     double y_p = 0.5 * hy;
     Vec y(ny);  //computational nodes
     for (int i = 0; i < ny; ++i) 
@@ -563,7 +563,7 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
     
     //------------------------------------------------¡ý Input index ¡ý------------------------------------------------
     int NF = 2 * ny;
-    int index = 6;
+    int index = 7;
     //------------------------------------------------¡ü Input index ¡ü------------------------------------------------
 
     //------------------------------------------------¡ý Calculate P value ¡ý------------------------------------------------
@@ -636,6 +636,7 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
     int num_iter_out = 0;
     int n_start = 0;
     int last = 0;
+    double flow_rate_current = 0.0;
     while (differ > convergence_criteria_outer)
     {
         //------------------------------------------------¡ý Update the star values ¡ý------------------------------------------------
@@ -820,12 +821,12 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
         b_k[0] = -1.0 - Sp_k[0] * hy * hy;
         c_k[0] = 1.0;
         d_k[0] = -1.0 * hy * hy * Sc_k[0];
-        // last node, grad k = 0
+        // last node
         last = ny - 1;
         a_k[last] = 1.0;
-        b_k[last] = -1.0 - Sp_k[last] * hy * hy;
+        b_k[last] = -2.0 - Sp_k[last] * hy * hy;
         c_k[last] = 0.0;
-        d_k[last] = -1.0 * hy * hy * Sc_k[last];
+        d_k[last] = -1.0 * hy * hy * Sc_k[last] - k_p_outer;
         // solving
         std::vector<double> K_new = tdma(a_k, b_k, c_k, d_k);
         //-------------------------------------¡ü For turbulent kinetic energy ¡ü-------------------------------------
@@ -847,12 +848,12 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
         b_w[0] = 1.0;
         c_w[0] = 0.0;
         d_w[0] = turbu_omega_p;
-        // last node, grad w = 0
+        // last node
         last = ny - 1;
         a_w[last] = 1.0;
-        b_w[last] = -1.0 - Sp_turbu_omega[last] * hy * hy;
+        b_w[last] = -2.0 - Sp_turbu_omega[last] * hy * hy;
         c_w[last] = 0.0;
-        d_w[last] = -1.0 * hy * hy * Sc_turbu_omega[last];
+        d_w[last] = -1.0 * hy * hy * Sc_turbu_omega[last] - w_p_outer;
         // solving
         std::vector<double> Turbu_omega_new = tdma(a_w, b_w, c_w, d_w);
         //-------------------------------------¡ü For turbulent specific dissipation ¡ü-------------------------------------
@@ -873,7 +874,7 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
         std::cout << std::endl;
 
         //------------------------------------------------¡ý Check and update flow rate ¡ý------------------------------------------------
-        double flow_rate_current = accumulate(U_new.begin(), U_new.end(), 0.0) * hy;
+        flow_rate_current = accumulate(U_new.begin(), U_new.end(), 0.0) * hy;
         // flow control
         double ratio = flow_rate_target / (flow_rate_current + 1e-12);
         double alpha = 0.03;
@@ -957,6 +958,8 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
 
     std::ofstream fout(filename);
     fout << "$VARIABLES = \"Y\", \"U\", \"K\", \"OMEGA\", \"NUT(k/omega)\"\n";
+    fout << "$friction velocity = " << utau <<"\n";
+    fout << "$current flow rate = " << flow_rate_current << "\n";
     fout << header_line << "\n";
 
     fout << std::scientific << std::setprecision(8);
@@ -977,6 +980,11 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
 int main()
 {
     //solve_1D_half_channel();
-    solve_1D_sublayer(0.0,0.0,0.0,0.0,0.0);
+    double U_p = 1.12769219e+00;
+    double K_p = 2.96567534e-03;
+    double W_p = 5.02558657e-01;
+    double NUT_p = 5.90115262e-03;
+    double vel_grad_p = 0.0;
+    solve_1D_sublayer(U_p, K_p, W_p, vel_grad_p, NUT_p);
     return 0;
 }
