@@ -551,7 +551,7 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
     //------------------------------------------------¡ü Input parameters ¡ü------------------------------------------------
 
     //------------------------------------------------¡ý Node arrangement, for sublayer ¡ý------------------------------------------------
-    int ny = 64;
+    int ny = 128;
     double hy = height_sublayer / (double(ny) + 0.5); // distance from node U to P_outer is hy, hence with a 0.5
     double y_p = 0.5 * hy;
     Vec y(ny);  //computational nodes
@@ -563,7 +563,7 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
     
     //------------------------------------------------¡ý Input index ¡ý------------------------------------------------
     int NF = 2 * ny;
-    int index = 9;
+    int index = 10;
     //------------------------------------------------¡ü Input index ¡ü------------------------------------------------
 
     //------------------------------------------------¡ý Calculate P value ¡ý------------------------------------------------
