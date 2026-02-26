@@ -540,9 +540,9 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
     double nu = 3.5e-4;
     double U_avg = 1.0;
 
-    double u_init = 1.0;
-    double k_init = 1.0e-5;
-    double turbu_omega_init = 2.056;
+    double u_init = u_p_outer;
+    double k_init = k_p_outer;
+    double turbu_omega_init = w_p_outer;
 
     double convergence_criteria_outer = 1.0e-6;
 
@@ -551,7 +551,7 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
     //------------------------------------------------¡ü Input parameters ¡ü------------------------------------------------
 
     //------------------------------------------------¡ý Node arrangement, for sublayer ¡ý------------------------------------------------
-    int ny = 16;
+    int ny = 32;
     double hy = height_sublayer / (double(ny) + 0.5); // distance from node U to P_outer is hy, hence with a 0.5
     double y_p = 0.5 * hy;
     Vec y(ny);  //computational nodes
@@ -563,7 +563,7 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
     
     //------------------------------------------------¡ý Input index ¡ý------------------------------------------------
     int NF = 2 * ny;
-    int index = 7;
+    int index = 8;
     //------------------------------------------------¡ü Input index ¡ü------------------------------------------------
 
     //------------------------------------------------¡ý Calculate P value ¡ý------------------------------------------------
@@ -829,6 +829,11 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
         d_k[last] = -1.0 * hy * hy * Sc_k[last] - k_p_outer;
         // solving
         std::vector<double> K_new = tdma(a_k, b_k, c_k, d_k);
+        // avoid negative value, K_new = max(K_new, k_min)
+        double k_min = 1e-10;
+        for (int i = 0; i < ny; ++i) {
+            K_new[i] = std::max(K_new[i], k_min);
+        }
         //-------------------------------------¡ü For turbulent kinetic energy ¡ü-------------------------------------
 
         //-------------------------------------¡ý For turbulent specific dissipation ¡ý-------------------------------------
@@ -856,6 +861,11 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
         d_w[last] = -1.0 * hy * hy * Sc_turbu_omega[last] - w_p_outer;
         // solving
         std::vector<double> Turbu_omega_new = tdma(a_w, b_w, c_w, d_w);
+        // avoid negative value, Turbu_omega_new = max(Turbu_omega_new, omega_min)
+        double omega_min = 1e-10;
+        for (int i = 0; i < ny; ++i) {
+            Turbu_omega_new[i] = std::max(Turbu_omega_new[i], omega_min);
+        }
         //-------------------------------------¡ü For turbulent specific dissipation ¡ü-------------------------------------
         // 
         //------------------------------------------------¡ü Start solution using TDMA ¡ü------------------------------------------------
