@@ -563,7 +563,7 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
     
     //------------------------------------------------¡ý Input index ¡ý------------------------------------------------
     int NF = 2 * ny;
-    int index = 11;
+    int index = 12;
     //------------------------------------------------¡ü Input index ¡ü------------------------------------------------
 
     //------------------------------------------------¡ý Calculate P value ¡ý------------------------------------------------
@@ -707,6 +707,17 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
         }
         //------------------------------------------------¡ü Calculate nut_star ¡ü------------------------------------------------
 
+        //------------------------------------------------¡ý Calculate gradients of nu_eff ¡ý------------------------------------------------
+        std::vector<double> C_snu(ny, 0.0);
+        // forward diff
+        for (int i = 0; i < ny-1; ++i)
+        {
+            C_snu[i] = (nut_star[i + 1] - nut_star[i]) / hy; // nu is offset
+        }
+        // B.C.
+        C_snu[ny-1] = (nut_p_outer - nut_star[ny-1]) / hy;
+        //------------------------------------------------¡ü Calculate gradients of nu_eff ¡ü------------------------------------------------
+
         //------------------------------------------------¡ý Calculate analytical gradient of u ¡ý------------------------------------------------
         std::vector<double> dudy_star(ny);
         for (int i = 0; i < ny; ++i) 
@@ -784,10 +795,10 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
         // inner node
         for (int i = 1; i < ny - 1; ++i) 
         {
-            a_u[i] = -1.0;
-            b_u[i] = 1.0;
-            c_u[i] = 0.0;
-            d_u[i] = C_su[i] * hy * Sc_u[i] * (-1.0);
+            a_u[i] = -C_snu[i] / hy + (nu + nut_star[i]) / hy / hy;
+            b_u[i] = C_snu[i] / hy - 2.0 * (nu + nut_star[i]) / hy / hy;
+            c_u[i] = (nu + nut_star[i]) / hy / hy;
+            d_u[i] = -(utau * utau - tau_over_rho_outer) / height_sublayer;
         }
         // first node
         a_u[0] = 0.0;
@@ -796,10 +807,10 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
         d_u[0] = u_p;
         // last node
         last = ny - 1;
-        a_u[last] = -1.0;
-        b_u[last] = 1.0;
+        a_u[last] = -C_snu[last] / hy + (nu + nut_star[last]) / hy / hy;
+        b_u[last] = C_snu[last] / hy - 2.0 * (nu + nut_star[last]) / hy / hy;
         c_u[last] = 0.0;
-        d_u[last] = C_su[last] * hy * Sc_u[last] * (-1.0);
+        d_u[last] = -(utau * utau - tau_over_rho_outer) / height_sublayer - (nu + nut_star[last]) / hy / hy * u_p_outer;
         // solving
         std::vector<double> U_new = tdma(a_u, b_u, c_u, d_u);
         //-------------------------------------¡ü For velocity ¡ü-------------------------------------
