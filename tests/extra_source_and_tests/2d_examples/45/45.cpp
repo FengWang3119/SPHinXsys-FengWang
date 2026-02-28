@@ -546,12 +546,12 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
 
     double convergence_criteria_outer = 1.0e-6;
 
-    double flow_rate_target = 0.96;
+    double flow_rate_target = U_avg * height_sublayer;
     double utau = utau_init;
     //------------------------------------------------¡ü Input parameters ¡ü------------------------------------------------
 
     //------------------------------------------------¡ý Node arrangement, for sublayer ¡ý------------------------------------------------
-    int ny = 64;
+    int ny = 32;
     double hy = height_sublayer / (double(ny) + 0.5); // distance from node U to P_outer is hy, hence with a 0.5
     double y_p = 0.5 * hy;
     Vec y(ny);  //computational nodes
@@ -563,7 +563,7 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
     
     //------------------------------------------------¡ý Input index ¡ý------------------------------------------------
     int NF = 2 * ny;
-    int index = 17;
+    int index = 18;
     //------------------------------------------------¡ü Input index ¡ü------------------------------------------------
 
     //------------------------------------------------¡ý Calculate P value ¡ý------------------------------------------------
@@ -636,6 +636,7 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
     int num_iter_out = 0;
     int n_start = 0;
     int last = 0;
+    int first_index = 0;
     double flow_rate_current = 0.0;
     while (differ > convergence_criteria_outer)
     {
@@ -675,23 +676,23 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
         std::vector<double> dudy_discretized(ny, 0.0);
         std::vector<double> dkdy(ny, 0.0);
         std::vector<double> dwdy(ny, 0.0);
-        std::vector<double> dDkdy(ny, 0.0);
-        std::vector<double> dDwdy(ny, 0.0);
+        //std::vector<double> dDkdy(ny, 0.0);
+        //std::vector<double> dDwdy(ny, 0.0);
         // backward diff£¨from i=1 £©
         for (int i = 1; i < ny; ++i) 
         {
             dudy_discretized[i] = (u_star[i] - u_star[i - 1]) / hy;
             dkdy[i] = (k_star[i] - k_star[i - 1]) / hy;
             dwdy[i] = (turbu_omega_star[i] - turbu_omega_star[i - 1]) / hy;
-            dDkdy[i] = (diffusion_coefficient_k[i] - diffusion_coefficient_k[i - 1]) / hy;
-            dDwdy[i] = (diffusion_coefficient_turbu_omega[i] - diffusion_coefficient_turbu_omega[i - 1]) / hy;
+            //dDkdy[i] = (diffusion_coefficient_k[i] - diffusion_coefficient_k[i - 1]) / hy;
+            //dDwdy[i] = (diffusion_coefficient_turbu_omega[i] - diffusion_coefficient_turbu_omega[i - 1]) / hy;
         }
         // B.C.
         dudy_discretized[0] = 0.0;
         dkdy[0] = 0.0;
         dwdy[0] = 0.0;
-        dDkdy[0] = 0.0;
-        dDwdy[0] = 0.0;
+        //dDkdy[0] = 0.0;
+        //dDwdy[0] = 0.0;
         //------------------------------------------------¡ü Calculate gradients of u, k, omega, Dk, Dw ¡ü------------------------------------------------
 
         //------------------------------------------------¡ý Calculate nut_star ¡ý------------------------------------------------
@@ -729,44 +730,44 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
         //------------------------------------------------¡ý Update linearized source terms Sc Sp ¡ý------------------------------------------------
         // 
         //-------------------------------------¡ý For velocity ¡ý-------------------------------------
-        std::vector<double> Sc_u(ny);
-        std::vector<double> Sp_u(ny, 0.0);
-        for (int i = 0; i < ny; ++i) 
-        {
-            Sc_u[i] = -1.0 / (nu + nut_star[i]); // Sp_u already is 0
-        }
+        //std::vector<double> Sc_u(ny);
+        //std::vector<double> Sp_u(ny, 0.0);
+        //for (int i = 0; i < ny; ++i) 
+        //{
+        //    Sc_u[i] = -1.0 / (nu + nut_star[i]); // Sp_u already is 0
+        //}
         //-------------------------------------¡ü For velocity ¡ü-------------------------------------
 
         //-------------------------------------¡ý For turbulent kinetic energy ¡ý-------------------------------------
-        std::vector<double> Sc_k(ny);
-        std::vector<double> Sp_k(ny);
-        // for nested formulation, an extra viscous term appears, so for TKE, 2 components
-        std::vector<double> part_extra_viscous_term_k(ny);
-        // calculate part_extra_viscous_term_k = dDkdy * dkdy, and Sc Sp
-        for (int i = 0; i < ny; ++i) {
-            part_extra_viscous_term_k[i] = dDkdy[i] * dkdy[i];
-            Sc_k[i] = (nut_star[i] * dudy_star[i] * dudy_star[i] + part_extra_viscous_term_k[i])
-                / diffusion_coefficient_k[i];
-            Sp_k[i] = std_kw_beta_star_ * turbu_omega_star[i] / diffusion_coefficient_k[i];
-        }
+        //std::vector<double> Sc_k(ny);
+        //std::vector<double> Sp_k(ny);
+        //// for nested formulation, an extra viscous term appears, so for TKE, 2 components
+        //std::vector<double> part_extra_viscous_term_k(ny);
+        //// calculate part_extra_viscous_term_k = dDkdy * dkdy, and Sc Sp
+        //for (int i = 0; i < ny; ++i) {
+        //    part_extra_viscous_term_k[i] = dDkdy[i] * dkdy[i];
+        //    Sc_k[i] = (nut_star[i] * dudy_star[i] * dudy_star[i] + part_extra_viscous_term_k[i])
+        //        / diffusion_coefficient_k[i];
+        //    Sp_k[i] = std_kw_beta_star_ * turbu_omega_star[i] / diffusion_coefficient_k[i];
+        //}
         //-------------------------------------¡ü For turbulent kinetic energy ¡ü-------------------------------------
 
         //-------------------------------------¡ý For turbulent specific dissipation ¡ý-------------------------------------
-        std::vector<double> Sc_turbu_omega(ny);
-        std::vector<double> Sp_turbu_omega(ny);
-        // for nested formulation, an extra viscous term appears, so for omega, 3 components 
-        std::vector<double> part_extra_viscous_term_w(ny);
-        // calculate 3rd component, part_extra_viscous_term_w = dDwdy * dwdy
-        for (int i = 0; i < ny; ++i) 
-        {
-            part_extra_viscous_term_w[i] = dDwdy[i] * dwdy[i];
-        }
-        // calcualte 1st component, part_production = alpha*omega/k * nut * (dudy)^2
-        std::vector<double> part_production(ny);
-        for (int i = 0; i < ny; ++i) {
-            part_production[i] = std_kw_alpha_ * turbu_omega_star[i] / (k_star[i] + tiny)
-                * nut_star[i] * dudy_star[i] * dudy_star[i];
-        }
+        //std::vector<double> Sc_turbu_omega(ny);
+        //std::vector<double> Sp_turbu_omega(ny);
+        //// for nested formulation, an extra viscous term appears, so for omega, 3 components 
+        //std::vector<double> part_extra_viscous_term_w(ny);
+        //// calculate 3rd component, part_extra_viscous_term_w = dDwdy * dwdy
+        //for (int i = 0; i < ny; ++i) 
+        //{
+        //    part_extra_viscous_term_w[i] = dDwdy[i] * dwdy[i];
+        //}
+        //// calcualte 1st component, part_production = alpha*omega/k * nut * (dudy)^2
+        //std::vector<double> part_production(ny);
+        //for (int i = 0; i < ny; ++i) {
+        //    part_production[i] = std_kw_alpha_ * turbu_omega_star[i] / (k_star[i] + tiny)
+        //        * nut_star[i] * dudy_star[i] * dudy_star[i];
+        //}
         // calcualte 2nd component, part_cross_diffusion 
         std::vector<double> grad_prod(ny);
         std::vector<double> part_cross_diffusion(ny);
@@ -776,11 +777,11 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
             part_cross_diffusion[i] = sigma_d / (turbu_omega_star[i] + tiny) * grad_prod[i];
         }
         // calcualte Sc and Sp
-        for (int i = 0; i < ny; ++i) {
-            Sc_turbu_omega[i] = (part_production[i] + part_cross_diffusion[i] + part_extra_viscous_term_w[i])
-                / diffusion_coefficient_turbu_omega[i];
-            Sp_turbu_omega[i] = std_kw_beta_ * turbu_omega_star[i] / diffusion_coefficient_turbu_omega[i];
-        }
+        //for (int i = 0; i < ny; ++i) {
+        //    Sc_turbu_omega[i] = (part_production[i] + part_cross_diffusion[i] + part_extra_viscous_term_w[i])
+        //        / diffusion_coefficient_turbu_omega[i];
+        //    Sp_turbu_omega[i] = std_kw_beta_ * turbu_omega_star[i] / diffusion_coefficient_turbu_omega[i];
+        //}
         //-------------------------------------¡ü For turbulent specific dissipation ¡ü-------------------------------------
         // 
         //------------------------------------------------¡ü Update linearized source terms Sc Sp ¡ü------------------------------------------------
@@ -798,8 +799,8 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
             double nu_eff_i = nu + nut_star[i];
             double nu_eff_i_plus = nu + nut_star[i+1];
             double nu_eff_i_minus = nu + nut_star[i-1];
-            double nu_eff_i_plus_half = (nu_eff_i_plus + nu_eff_i) / 2.0;
-            double nu_eff_i_minus_half = (nu_eff_i_minus + nu_eff_i) / 2.0;
+            double nu_eff_i_plus_half = 2.0 * nu_eff_i_plus * nu_eff_i / (nu_eff_i_plus + nu_eff_i);
+            double nu_eff_i_minus_half = 2.0 * nu_eff_i_minus * nu_eff_i / (nu_eff_i_minus + nu_eff_i);
             a_u[i] = -nu_eff_i_minus_half;
             b_u[i] = (nu_eff_i_plus_half + nu_eff_i_minus_half);
             c_u[i] = -nu_eff_i_plus_half;
@@ -815,8 +816,8 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
         double nu_eff_last = nu + nut_star[last];
         double nu_eff_last_plus = nu + nut_p_outer; // B.C.
         double nu_eff_last_minus = nu + nut_star[last - 1];
-        double nu_eff_last_plus_half = (nu_eff_last_plus + nu_eff_last) / 2.0;
-        double nu_eff_last_minus_half = (nu_eff_last_minus + nu_eff_last) / 2.0;
+        double nu_eff_last_plus_half = 2.0 * nu_eff_last_plus * nu_eff_last / (nu_eff_last_plus + nu_eff_last);
+        double nu_eff_last_minus_half = 2.0 * nu_eff_last_minus * nu_eff_last / (nu_eff_last_minus + nu_eff_last);
         a_u[last] = -nu_eff_last_minus_half;
         b_u[last] = (nu_eff_last_plus_half + nu_eff_last_minus_half);
         c_u[last] = 0.0;
@@ -832,22 +833,35 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
         std::vector<double> d_k(ny, 0.0);
         // inner node
         for (int i = 1; i < ny - 1; ++i) {
-            a_k[i] = 1.0;
-            b_k[i] = -2.0 - Sp_k[i] * hy * hy;
-            c_k[i] = 1.0;
-            d_k[i] = -1.0 * hy * hy * Sc_k[i];
+            double Dk_i = diffusion_coefficient_k[i];
+            double Dk_i_plus = diffusion_coefficient_k[i + 1];
+            double Dk_i_minus = diffusion_coefficient_k[i - 1];
+            double Dk_i_plus_half = 2.0 * Dk_i_plus * Dk_i / (Dk_i_plus + Dk_i);
+            double Dk_i_minus_half = 2.0 * Dk_i_minus * Dk_i / (Dk_i_minus + Dk_i);
+            a_k[i] = -1.0 * Dk_i_minus_half;
+            b_k[i] = Dk_i_plus_half + Dk_i_minus_half + hy * hy * std_kw_beta_star_ * turbu_omega_star[i];
+            c_k[i] = -1.0 * Dk_i_plus_half;
+            d_k[i] = hy * hy * nut_star[i] * dudy_star[i] * dudy_star[i];
         }
         // first node, grad k = 0
+        double Dk_first = diffusion_coefficient_k[0];
+        double Dk_first_plus = diffusion_coefficient_k[0 + 1];
+        double Dk_first_plus_half = 2.0 * Dk_first_plus * Dk_first / (Dk_first_plus + Dk_first);
         a_k[0] = 0.0;
-        b_k[0] = -1.0 - Sp_k[0] * hy * hy;
-        c_k[0] = 1.0;
-        d_k[0] = -1.0 * hy * hy * Sc_k[0];
+        b_k[0] = Dk_first_plus_half + hy * hy * std_kw_beta_star_ * turbu_omega_star[0];
+        c_k[0] = -1.0 * Dk_first_plus_half;
+        d_k[0] = hy * hy * nut_star[0] * dudy_star[0] * dudy_star[0];
         // last node
         last = ny - 1;
-        a_k[last] = 1.0;
-        b_k[last] = -2.0 - Sp_k[last] * hy * hy;
+        double Dk_last = diffusion_coefficient_k[last];
+        double Dk_last_plus = nu + std_kw_sigma_star_ * k_p_outer / (w_p_outer + tiny);
+        double Dk_last_minus = diffusion_coefficient_k[last - 1];
+        double Dk_last_plus_half = 2.0 * Dk_last_plus * Dk_last / (Dk_last_plus + Dk_last);
+        double Dk_last_minus_half = 2.0 * Dk_last_minus * Dk_last / (Dk_last_minus + Dk_last);
+        a_k[last] = -1.0 * Dk_last_minus_half;
+        b_k[last] = Dk_last_plus_half + Dk_last_minus_half + hy * hy * std_kw_beta_star_ * turbu_omega_star[last];
         c_k[last] = 0.0;
-        d_k[last] = -1.0 * hy * hy * Sc_k[last] - k_p_outer;
+        d_k[last] = hy * hy * nut_star[last] * dudy_star[last] * dudy_star[last] + Dk_last_plus_half * k_p_outer;
         // solving
         std::vector<double> K_new = tdma(a_k, b_k, c_k, d_k);
         // avoid negative value, K_new = max(K_new, k_min)
@@ -864,10 +878,16 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
         std::vector<double> d_w(ny, 0.0);
         // inner node i = 1 ... ny-2
         for (int i = 1; i < ny - 1; ++i) {
-            a_w[i] = 1.0;
-            b_w[i] = -2.0 - Sp_turbu_omega[i] * hy * hy;
-            c_w[i] = 1.0;
-            d_w[i] = -1.0 * hy * hy * Sc_turbu_omega[i];
+            double Dw_i = diffusion_coefficient_turbu_omega[i];
+            double Dw_i_plus = diffusion_coefficient_turbu_omega[i + 1];
+            double Dw_i_minus = diffusion_coefficient_turbu_omega[i - 1];
+            double Dw_i_plus_half = 2.0 * Dw_i_plus * Dw_i / (Dw_i_plus + Dw_i);
+            double Dw_i_minus_half = 2.0 * Dw_i_minus * Dw_i / (Dw_i_minus + Dw_i);
+            a_w[i] = -1.0 * Dw_i_minus_half;
+            b_w[i] = Dw_i_plus_half + Dw_i_minus_half + hy * hy * std_kw_beta_ * turbu_omega_star[i];
+            c_w[i] = -1.0 * Dw_i_plus_half;
+            double part_production = std_kw_alpha_ * turbu_omega_star[i] / (k_star[i] + tiny) * nut_star[i] * dudy_star[i] * dudy_star[i];
+            d_w[i] = hy * hy * (part_production + part_cross_diffusion[i]);
         }
         // first node, w = Wp
         a_w[0] = 0.0;
@@ -876,10 +896,16 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
         d_w[0] = turbu_omega_p;
         // last node
         last = ny - 1;
-        a_w[last] = 1.0;
-        b_w[last] = -2.0 - Sp_turbu_omega[last] * hy * hy;
+        double Dw_last = diffusion_coefficient_turbu_omega[last];
+        double Dw_last_plus = nu + std_kw_sigma_ * k_p_outer / (w_p_outer + tiny);
+        double Dw_last_minus = diffusion_coefficient_turbu_omega[last - 1];
+        double Dw_last_plus_half = 2.0 * Dw_last_plus * Dw_last / (Dw_last_plus + Dw_last);
+        double Dw_last_minus_half = 2.0 * Dw_last_minus * Dw_last / (Dw_last_minus + Dw_last);
+        a_w[last] = -1.0 * Dw_last_minus_half;
+        b_w[last] = Dw_last_plus_half + Dw_last_minus_half + hy * hy * std_kw_beta_ * turbu_omega_star[last];
         c_w[last] = 0.0;
-        d_w[last] = -1.0 * hy * hy * Sc_turbu_omega[last] - w_p_outer;
+        double part_production_last = std_kw_alpha_ * turbu_omega_star[last] / (k_star[last] + tiny) * nut_star[last] * dudy_star[last] * dudy_star[last];
+        d_w[last] = hy * hy * (part_production_last + part_cross_diffusion[last]) + Dw_last_plus_half * w_p_outer;
         // solving
         std::vector<double> Turbu_omega_new = tdma(a_w, b_w, c_w, d_w);
         // avoid negative value, Turbu_omega_new = max(Turbu_omega_new, omega_min)
@@ -891,18 +917,21 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
         // 
         //------------------------------------------------¡ü Start solution using TDMA ¡ü------------------------------------------------
         
-        //------------------------------------------------¡ý update phi_solved ¡ý------------------------------------------------
+        //------------------------------------------------¡ý update phi_solved with under-relaxation ¡ý------------------------------------------------
         n_start = 0;
-        for (int i = 0; i < ny; ++i) phi_solved[n_start + i] = U_new[i];
+        double relax_u = 1.0;
+        for (int i = 0; i < ny; ++i) phi_solved[n_start + i] = (1.0 - relax_u) * u_star[i] + relax_u * U_new[i];
         n_start += ny;
-        for (int i = 0; i < ny; ++i) phi_solved[n_start + i] = K_new[i];
+        double relax_k = 1.0;
+        for (int i = 0; i < ny; ++i) phi_solved[n_start + i] = (1.0 - relax_k) * k_star[i] + relax_k * K_new[i];
         n_start += ny;
-        for (int i = 0; i < ny; ++i) phi_solved[n_start + i] = Turbu_omega_new[i];
-        //------------------------------------------------¡ü update phi_solved ¡ü------------------------------------------------
+        double relax_w = 0.02;
+        for (int i = 0; i < ny; ++i) phi_solved[n_start + i] = (1.0 - relax_w) * turbu_omega_star[i] + relax_w * Turbu_omega_new[i];
+        //------------------------------------------------¡ü update phi_solved with under-relaxation ¡ü------------------------------------------------
         
-        std::cout << "phi_solved = ";
-        for (const auto& v : phi_solved) std::cout << v << " ";
-        std::cout << std::endl;
+        //std::cout << "phi_solved = ";
+        //for (const auto& v : phi_solved) std::cout << v << " ";
+        //std::cout << std::endl;
 
         //------------------------------------------------¡ý Check and update flow rate ¡ý------------------------------------------------
         flow_rate_current = accumulate(U_new.begin(), U_new.end(), 0.0) * hy;
