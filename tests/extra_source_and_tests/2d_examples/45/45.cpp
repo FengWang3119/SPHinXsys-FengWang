@@ -563,7 +563,7 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
     
     //------------------------------------------------¡ý Input index ¡ý------------------------------------------------
     int NF = 2 * ny;
-    int index = 22;
+    int index = 23;
     //------------------------------------------------¡ü Input index ¡ü------------------------------------------------
 
     //------------------------------------------------¡ý Calculate P value ¡ý------------------------------------------------
@@ -874,6 +874,8 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
 
         //------------------------------------------------¡ý Check and update flow rate ¡ý------------------------------------------------
         flow_rate_current = accumulate(U_new.begin(), U_new.end(), 0.0) * hy;
+        flow_rate_current += u_p_outer * hy * 0.5;
+
         // flow control
         double ratio = flow_rate_target / (flow_rate_current + 1e-12);
         double alpha = 0.03;
