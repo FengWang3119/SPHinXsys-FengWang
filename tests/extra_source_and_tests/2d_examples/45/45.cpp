@@ -858,13 +858,13 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
         
         //------------------------------------------------¡ý update phi_solved with under-relaxation ¡ý------------------------------------------------
         n_start = 0;
-        double relax_u = 1.0;
+        double relax_u = 0.9;
         for (int i = 0; i < ny; ++i) phi_solved[n_start + i] = (1.0 - relax_u) * u_star[i] + relax_u * U_new[i];
         n_start += ny;
-        double relax_k = 1.0;
+        double relax_k = 0.9;
         for (int i = 0; i < ny; ++i) phi_solved[n_start + i] = (1.0 - relax_k) * k_star[i] + relax_k * K_new[i];
         n_start += ny;
-        double relax_w = 0.02;
+        double relax_w = 0.9;
         for (int i = 0; i < ny; ++i) phi_solved[n_start + i] = (1.0 - relax_w) * turbu_omega_star[i] + relax_w * Turbu_omega_new[i];
         //------------------------------------------------¡ü update phi_solved with under-relaxation ¡ü------------------------------------------------
         
