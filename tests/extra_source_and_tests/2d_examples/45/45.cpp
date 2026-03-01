@@ -551,7 +551,7 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
     //------------------------------------------------¡ü Input parameters ¡ü------------------------------------------------
 
     //------------------------------------------------¡ý Node arrangement, for sublayer ¡ý------------------------------------------------
-    int ny = 256;
+    int ny = 512;
     double hy = height_sublayer / (double(ny) + 0.5); // distance from node U to P_outer is hy, hence with a 0.5
     double y_p = 0.5 * hy;
     Vec y(ny);  //computational nodes
@@ -563,7 +563,7 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
     
     //------------------------------------------------¡ý Input index ¡ý------------------------------------------------
     int NF = 2 * ny;
-    int index = 23;
+    int index = 24;
     //------------------------------------------------¡ü Input index ¡ü------------------------------------------------
 
     //------------------------------------------------¡ý Calculate P value ¡ý------------------------------------------------
@@ -880,7 +880,9 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
         double ratio = flow_rate_target / (flow_rate_current + 1e-12);
         double alpha = 0.03;
         double utau_new = utau * std::sqrt(ratio);
-        utau = (1.0 - alpha) * utau + alpha * utau_new;
+        //utau = (1.0 - alpha) * utau + alpha * utau_new;
+        double error = U_new[ny-1] - u_p_outer;
+        utau -= 0.1 * error;
         //------------------------------------------------¡ü Check and update flow rate ¡ü------------------------------------------------
 
         std::cout << "flow_rate_current = " << flow_rate_current
