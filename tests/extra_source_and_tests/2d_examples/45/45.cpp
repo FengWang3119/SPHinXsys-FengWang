@@ -676,23 +676,17 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
         std::vector<double> dudy_discretized(ny, 0.0);
         std::vector<double> dkdy(ny, 0.0);
         std::vector<double> dwdy(ny, 0.0);
-        //std::vector<double> dDkdy(ny, 0.0);
-        //std::vector<double> dDwdy(ny, 0.0);
         // backward diff£¨from i=1 £©
         for (int i = 1; i < ny; ++i) 
         {
             dudy_discretized[i] = (u_star[i] - u_star[i - 1]) / hy;
             dkdy[i] = (k_star[i] - k_star[i - 1]) / hy;
             dwdy[i] = (turbu_omega_star[i] - turbu_omega_star[i - 1]) / hy;
-            //dDkdy[i] = (diffusion_coefficient_k[i] - diffusion_coefficient_k[i - 1]) / hy;
-            //dDwdy[i] = (diffusion_coefficient_turbu_omega[i] - diffusion_coefficient_turbu_omega[i - 1]) / hy;
         }
         // B.C.
         dudy_discretized[0] = 0.0;
         dkdy[0] = 0.0;
         dwdy[0] = 0.0;
-        //dDkdy[0] = 0.0;
-        //dDwdy[0] = 0.0;
         //------------------------------------------------¡ü Calculate gradients of u, k, omega, Dk, Dw ¡ü------------------------------------------------
 
         //------------------------------------------------¡ý Calculate nut_star ¡ý------------------------------------------------
@@ -708,17 +702,6 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
         }
         //------------------------------------------------¡ü Calculate nut_star ¡ü------------------------------------------------
 
-        //------------------------------------------------¡ý Calculate gradients of nu_eff ¡ý------------------------------------------------
-        //std::vector<double> C_snu(ny, 0.0);
-        //// forward diff
-        //for (int i = 0; i < ny-1; ++i)
-        //{
-        //    C_snu[i] = (nut_star[i + 1] - nut_star[i]) / hy; // nu is offset
-        //}
-        //// B.C.
-        //C_snu[ny-1] = (nut_p_outer - nut_star[ny-1]) / hy;
-        //------------------------------------------------¡ü Calculate gradients of nu_eff ¡ü------------------------------------------------
-
         //------------------------------------------------¡ý Calculate analytical gradient of u ¡ý------------------------------------------------
         std::vector<double> dudy_star(ny);
         for (int i = 0; i < ny; ++i) 
@@ -729,46 +712,8 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
          
         //------------------------------------------------¡ý Update linearized source terms Sc Sp ¡ý------------------------------------------------
         // 
-        //-------------------------------------¡ý For velocity ¡ý-------------------------------------
-        //std::vector<double> Sc_u(ny);
-        //std::vector<double> Sp_u(ny, 0.0);
-        //for (int i = 0; i < ny; ++i) 
-        //{
-        //    Sc_u[i] = -1.0 / (nu + nut_star[i]); // Sp_u already is 0
-        //}
-        //-------------------------------------¡ü For velocity ¡ü-------------------------------------
-
-        //-------------------------------------¡ý For turbulent kinetic energy ¡ý-------------------------------------
-        //std::vector<double> Sc_k(ny);
-        //std::vector<double> Sp_k(ny);
-        //// for nested formulation, an extra viscous term appears, so for TKE, 2 components
-        //std::vector<double> part_extra_viscous_term_k(ny);
-        //// calculate part_extra_viscous_term_k = dDkdy * dkdy, and Sc Sp
-        //for (int i = 0; i < ny; ++i) {
-        //    part_extra_viscous_term_k[i] = dDkdy[i] * dkdy[i];
-        //    Sc_k[i] = (nut_star[i] * dudy_star[i] * dudy_star[i] + part_extra_viscous_term_k[i])
-        //        / diffusion_coefficient_k[i];
-        //    Sp_k[i] = std_kw_beta_star_ * turbu_omega_star[i] / diffusion_coefficient_k[i];
-        //}
-        //-------------------------------------¡ü For turbulent kinetic energy ¡ü-------------------------------------
-
         //-------------------------------------¡ý For turbulent specific dissipation ¡ý-------------------------------------
-        //std::vector<double> Sc_turbu_omega(ny);
-        //std::vector<double> Sp_turbu_omega(ny);
-        //// for nested formulation, an extra viscous term appears, so for omega, 3 components 
-        //std::vector<double> part_extra_viscous_term_w(ny);
-        //// calculate 3rd component, part_extra_viscous_term_w = dDwdy * dwdy
-        //for (int i = 0; i < ny; ++i) 
-        //{
-        //    part_extra_viscous_term_w[i] = dDwdy[i] * dwdy[i];
-        //}
-        //// calcualte 1st component, part_production = alpha*omega/k * nut * (dudy)^2
-        //std::vector<double> part_production(ny);
-        //for (int i = 0; i < ny; ++i) {
-        //    part_production[i] = std_kw_alpha_ * turbu_omega_star[i] / (k_star[i] + tiny)
-        //        * nut_star[i] * dudy_star[i] * dudy_star[i];
-        //}
-        // calcualte 2nd component, part_cross_diffusion 
+        // calcualte part_cross_diffusion 
         std::vector<double> grad_prod(ny);
         std::vector<double> part_cross_diffusion(ny);
         for (int i = 0; i < ny; ++i) {
@@ -776,12 +721,6 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
             double sigma_d = (grad_prod[i] > 0.0) ? sigma_d_value : 0.0;
             part_cross_diffusion[i] = sigma_d / (turbu_omega_star[i] + tiny) * grad_prod[i];
         }
-        // calcualte Sc and Sp
-        //for (int i = 0; i < ny; ++i) {
-        //    Sc_turbu_omega[i] = (part_production[i] + part_cross_diffusion[i] + part_extra_viscous_term_w[i])
-        //        / diffusion_coefficient_turbu_omega[i];
-        //    Sp_turbu_omega[i] = std_kw_beta_ * turbu_omega_star[i] / diffusion_coefficient_turbu_omega[i];
-        //}
         //-------------------------------------¡ü For turbulent specific dissipation ¡ü-------------------------------------
         // 
         //------------------------------------------------¡ü Update linearized source terms Sc Sp ¡ü------------------------------------------------
