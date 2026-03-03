@@ -531,12 +531,12 @@ void solve_1D_half_channel()
     std::cout << "Tecplot 文件已生成: " << filename << std::endl;
 }
 
-void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, double vel_grad_p_outer, double nut_p_outer)
+void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, double vel_grad_p_outer, double nut_p_outer, double h_sublayer, double Q_target)
 {
     //------------------------------------------------↓ Input parameters ↓------------------------------------------------
     double utau_init = 6.37309e-02;
     double H = 2.0;
-    double height_sublayer = H / 2.0;
+    double height_sublayer = h_sublayer;
     double nu = 3.5e-4;
     double U_avg = 1.0;
 
@@ -546,7 +546,7 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
 
     double convergence_criteria_outer = 1.0e-6;
 
-    double flow_rate_target = U_avg * height_sublayer;
+    double flow_rate_target = Q_target;
     double utau = utau_init;
     //------------------------------------------------↑ Input parameters ↑------------------------------------------------
 
@@ -563,7 +563,7 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
     
     //------------------------------------------------↓ Input index ↓------------------------------------------------
     int NF = 2 * ny;
-    int index = 25;
+    int index = 26;
     //------------------------------------------------↑ Input index ↑------------------------------------------------
 
     //------------------------------------------------↓ Calculate P value ↓------------------------------------------------
@@ -984,11 +984,15 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
 int main()
 {
     //solve_1D_half_channel();
-    double U_p = 1.16680094e+00;
-    double K_p = 3.16171925e-03;
-    double W_p = 5.17199207e-01;
-    double NUT_p = 6.11315564e-03;
-    double vel_grad_p = 0.0;
-    solve_1D_sublayer(U_p, K_p, W_p, vel_grad_p, NUT_p);
+    double U_p = 3.674356e-01;
+    double K_p = 2.145868e-03;
+    double W_p = 4.179796e+01;
+    double NUT_p = 5.166097e-05;
+    double vel_grad_p = 1.021562e+01;
+    double distance_to_wall = 0.03125;
+    double target_flow_rate = 5.871126e-03;
+    solve_1D_sublayer(U_p, 
+        K_p, W_p, vel_grad_p, NUT_p, 
+        distance_to_wall, target_flow_rate);
     return 0;
 }
