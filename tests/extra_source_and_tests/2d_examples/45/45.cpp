@@ -563,7 +563,7 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
     
     //------------------------------------------------¡ý Input index ¡ý------------------------------------------------
     int NF = 2 * ny;
-    int index = 24;
+    int index = 25;
     //------------------------------------------------¡ü Input index ¡ü------------------------------------------------
 
     //------------------------------------------------¡ý Calculate P value ¡ý------------------------------------------------
@@ -880,9 +880,9 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
         double ratio = flow_rate_target / (flow_rate_current + 1e-12);
         double alpha = 0.03;
         double utau_new = utau * std::sqrt(ratio);
-        //utau = (1.0 - alpha) * utau + alpha * utau_new;
-        double error = U_new[ny-1] - u_p_outer;
-        utau -= 0.1 * error;
+        utau = (1.0 - alpha) * utau + alpha * utau_new;
+        /*double error = U_new[ny-1] - u_p_outer;
+        utau -= 0.1 * error;*/
         //------------------------------------------------¡ü Check and update flow rate ¡ü------------------------------------------------
 
         std::cout << "flow_rate_current = " << flow_rate_current
@@ -984,10 +984,10 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
 int main()
 {
     //solve_1D_half_channel();
-    double U_p = 1.12769219e+00;
-    double K_p = 2.96567534e-03;
-    double W_p = 5.02558657e-01;
-    double NUT_p = 5.90115262e-03;
+    double U_p = 1.16680094e+00;
+    double K_p = 3.16171925e-03;
+    double W_p = 5.17199207e-01;
+    double NUT_p = 6.11315564e-03;
     double vel_grad_p = 0.0;
     solve_1D_sublayer(U_p, K_p, W_p, vel_grad_p, NUT_p);
     return 0;
