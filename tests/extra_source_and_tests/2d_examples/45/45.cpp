@@ -28,6 +28,53 @@ double std_kw_beta_star_5_ = pow(std_kw_beta_star_, 0.5);
 
 double tiny = 1.0e-6;
 
+double compute_flow_rate_simpson_safe(const std::vector<double>& U, double h)
+{
+    int N = U.size();
+
+    if (N < 3)
+    {
+        throw std::runtime_error(
+            "Simpson rule requires at least 3 points."
+        );
+    }
+
+    if (N % 2 == 0)
+    {
+        // 前 N-1 点用 Simpson
+        double sum = U[0] + U[N - 2];
+
+        for (int i = 1; i < N - 2; ++i)
+        {
+            if (i % 2 == 0)
+                sum += 2.0 * U[i];
+            else
+                sum += 4.0 * U[i];
+        }
+
+        double Q_simpson = sum * h / 3.0;
+
+        // 最后一个区间用梯形
+        double Q_trap = 0.5 * h * (U[N - 2] + U[N - 1]);
+
+        return Q_simpson + Q_trap;
+    }
+    else
+    {
+        double sum = U[0] + U[N - 1];
+
+        for (int i = 1; i < N - 1; ++i)
+        {
+            if (i % 2 == 0)
+                sum += 2.0 * U[i];
+            else
+                sum += 4.0 * U[i];
+        }
+
+        return sum * h / 3.0;
+    }
+}
+
 // ================= TDMA =================
 // Solve a tridiagonal system: a[i]*x[i-1] + b[i]*x[i] + c[i]*x[i+1] = d[i]
 // a[0] must be 0, c[n-1] will be ignored
@@ -981,6 +1028,39 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
     std::cout << "Tecplot 文件已生成: " << filename << std::endl;
 }
 
+// ================= Simpson 测试 =================
+void test_simpson()
+{
+    double y_max = 1.0;
+    int ny = 5;
+    double hy = y_max / (double(ny) + 0.5); // distance from node U to P_outer is hy, hence with a 0.5
+    double y_p = 0.5 * hy;
+    Vec y(ny);  //computational nodes
+    vector<double> U(ny);
+    for (int i = 0; i < ny; ++i)
+    {
+        y[i] = y_p + i * hy;
+        U[i] = y[i] * y[i];
+    }
+    double U_max = 1.0 * 1.0;
+
+    // Simpson 积分
+    double Q_simpson = compute_flow_rate_simpson_safe(U, hy);
+
+    // 矩形法（你现在用的）
+    double Q_rect = accumulate(U.begin(), U.end(), 0.0) * hy;
+
+    // 精确解
+    double Q_exact = 1.0 / 3.0 - 0.5 * hy * U_max;
+
+    cout << "Exact integral     = " << Q_exact << endl;
+    cout << "Simpson integral   = " << Q_simpson << endl;
+    cout << "Rectangle integral = " << Q_rect << endl;
+
+    cout << "Simpson error      = " << fabs(Q_simpson - Q_exact) << endl;
+    cout << "Rectangle error    = " << fabs(Q_rect - Q_exact) << endl;
+}
+
 int main()
 {
     //solve_1D_half_channel();
@@ -994,5 +1074,6 @@ int main()
     solve_1D_sublayer(U_p, 
         K_p, W_p, vel_grad_p, NUT_p, 
         distance_to_wall, target_flow_rate);
+    //test_simpson();
     return 0;
 }
