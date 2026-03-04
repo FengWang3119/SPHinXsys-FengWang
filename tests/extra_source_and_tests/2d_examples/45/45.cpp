@@ -610,7 +610,7 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
     
     //------------------------------------------------¡ý Input index ¡ý------------------------------------------------
     int NF = 2 * ny;
-    int index = 27;
+    int index = 28;
     //------------------------------------------------¡ü Input index ¡ü------------------------------------------------
 
     //------------------------------------------------¡ý Calculate P value ¡ý------------------------------------------------
@@ -723,17 +723,21 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
         std::vector<double> dudy_discretized(ny, 0.0);
         std::vector<double> dkdy(ny, 0.0);
         std::vector<double> dwdy(ny, 0.0);
-        // backward diff£¨from i=1 £©
-        for (int i = 1; i < ny; ++i) 
+        // central diff£¨from i=1 to i=ny-2 £©
+        for (int i = 1; i < ny - 1; ++i)
         {
-            dudy_discretized[i] = (u_star[i] - u_star[i - 1]) / hy;
-            dkdy[i] = (k_star[i] - k_star[i - 1]) / hy;
-            dwdy[i] = (turbu_omega_star[i] - turbu_omega_star[i - 1]) / hy;
+            dudy_discretized[i] = (u_star[i + 1] - u_star[i - 1]) / (2.0 * hy);
+            dkdy[i] = (k_star[i + 1] - k_star[i - 1]) / (2.0 * hy);
+            dwdy[i] = (turbu_omega_star[i + 1] - turbu_omega_star[i - 1]) / (2.0 * hy);
         }
-        // B.C.
-        dudy_discretized[0] = 0.0;
-        dkdy[0] = 0.0;
-        dwdy[0] = 0.0;
+        // B.C. near wall (i=0, central difference)
+        dudy_discretized[0] = (u_star[1] + u_star[0]) / (2.0 * hy); // mirror B.C. u_star[-1] = -u_star[0]
+        dkdy[0] = (k_star[1] - k_star[0]) / (2.0 * hy); // zero gradient, k_star[-1] = k_star[0]
+        dwdy[0] = (turbu_omega_star[1] - turbu_omega_star[0]) / (2.0 * hy); //zero gradient, turbu_omega_star[-1] = turbu_omega[0]
+        // B.C. near P_outer (i=ny-1, central difference)
+        dudy_discretized[ny - 1] = (u_p_outer - u_star[ny - 2]) / (2.0 * hy);
+        dkdy[ny - 1] = (k_p_outer - k_star[ny - 2]) / (2.0 * hy);
+        dwdy[ny - 1] = (w_p_outer - turbu_omega_star[ny - 2]) / (2.0 * hy);
         //------------------------------------------------¡ü Calculate gradients of u, k, omega, Dk, Dw ¡ü------------------------------------------------
 
         //------------------------------------------------¡ý Calculate nut_star ¡ý------------------------------------------------
