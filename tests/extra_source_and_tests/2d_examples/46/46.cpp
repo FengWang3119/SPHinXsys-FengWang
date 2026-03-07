@@ -166,7 +166,7 @@ int main(int ac, char *av[])
     /** Turbulent.Note: When use wall function, K Epsilon calculation only consider inner */
     InteractionWithUpdate<fluid_dynamics::udf::JudgeIsNearWall> update_near_wall_status(water_block_inner, water_wall_contact, y_p_constant);
 
-    //InteractionWithUpdate<fluid_dynamics::kOmega_GetVelocityGradientInner> get_velocity_gradient(water_block_inner, weight_vel_grad_sub_nearwall);
+    InteractionWithUpdate<fluid_dynamics::udf::P_refinement_GetVelocityGradientInnerOnlyP> get_velocity_gradient_inner_only_for_P(water_block_inner);
     InteractionWithUpdate<fluid_dynamics::udf::kOmega_GetVelocityGradientComplex> get_velocity_gradient(water_block_inner, water_wall_contact);
 
 
@@ -238,6 +238,8 @@ int main(int ac, char *av[])
     
     ObservingAQuantity<Real> observing_pressure(fluid_pressure_contour_observer_contact, "Pressure");          //% Average pressure
     SimpleDynamics<ParticleSnapshotAverage<Real>> average_pressure(observer_body_pressure_contour, "Pressure"); //% Average pressure
+
+    SimpleDynamics<fluid_dynamics::udf::P_refinement> get_friction_velocity_from_sublayer(water_block);
     
     //----------------------------------------------------------------------
     //	Define the configuration related particles dynamics.
@@ -300,7 +302,7 @@ int main(int ac, char *av[])
     Real cutoff_ratio = 0.9;                    //** cutoff_time should be a integral and the same as the PY script */
     Real cutoff_time = end_time * cutoff_ratio; //** cutoff_time should be a integral and the same as the PY script */
     
-    Real num_output_files = 4.0 * (is_write_average_contour_file ? magnify_ratio_avergae_contour : 1.0);  //** Average but no need to comment*
+    Real num_output_files = 200.0 * (is_write_average_contour_file ? magnify_ratio_avergae_contour : 1.0);  //** Average but no need to comment*
     
     Real Output_Time = end_time / num_output_files; /**< Time stamps for output of body states. */
     Real index_check_file_fully_developed = num_output_files * cutoff_ratio;
@@ -325,6 +327,7 @@ int main(int ac, char *av[])
     corrected_configuration_fluid.exec();
     corrected_configuration_fluid_only_inner.exec();
     get_velocity_gradient.exec();
+    get_velocity_gradient_inner_only_for_P.exec();
     update_eddy_viscosity.exec();
     //----------------------------------------------------------------------
     //	First output before the main loop.
@@ -360,6 +363,8 @@ int main(int ac, char *av[])
             if (physical_time > turbulent_module_activate_time) //** A temporary treatment *
             {
                 update_eddy_viscosity.exec();
+                get_velocity_gradient_inner_only_for_P.exec(); //** Must make sure vel_grad_inner_P and utau-update and viscous cal. in a near-wall status *
+                get_friction_velocity_from_sublayer.exec();
             }
 
             //viscous_force.exec();
