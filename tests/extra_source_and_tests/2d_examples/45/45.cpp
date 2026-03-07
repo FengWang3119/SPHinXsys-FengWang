@@ -8,7 +8,6 @@
 #include <string>
 
 using namespace std;
-using Vec = std::vector<double>;
 
 // -------- RANS coefficients --------
 double std_kw_beta_star_ = 0.09;
@@ -78,15 +77,15 @@ double compute_flow_rate_simpson_safe(const std::vector<double>& U, double h)
 // ================= TDMA =================
 // Solve a tridiagonal system: a[i]*x[i-1] + b[i]*x[i] + c[i]*x[i+1] = d[i]
 // a[0] must be 0, c[n-1] will be ignored
-Vec tdma(const Vec& a, const Vec& b, const Vec& c, const Vec& d) {
+std::vector<double> tdma(const std::vector<double>& a, const std::vector<double>& b, const std::vector<double>& c, const std::vector<double>& d) {
     int n = d.size();
     if (a.size() != n || b.size() != n || c.size() != n) {
         throw std::invalid_argument("TDMA: vector size mismatch!");
     }
 
-    Vec cp(n, 0.0); // modified upper diagonal
-    Vec dp(n, 0.0); // modified right-hand side
-    Vec x(n, 0.0);  // solution vector
+    std::vector<double> cp(n, 0.0); // modified upper diagonal
+    std::vector<double> dp(n, 0.0); // modified right-hand side
+    std::vector<double> x(n, 0.0);  // solution vector
 
     // ---------------- Step 0: first row ----------------
     if (std::abs(b[0]) < 1e-14) throw std::runtime_error("TDMA: b[0] too small!");
@@ -169,11 +168,11 @@ void solve_1D_half_channel()
     printf("u_p=%f\n",u_p);
     double turbu_omega_p = 6.0 * nu / (std_kw_beta_i_ * y_p * y_p);
 
-    Vec y(ny);  //down half nodes, actually solved nodes
+    std::vector<double> y(ny);  //down half nodes, actually solved nodes
     for (int i = 0; i < ny; ++i) {
         y[i] = y_p + i * hy;
     }
-    Vec y_whole(2*ny);
+    std::vector<double> y_whole(2*ny);
     int Ny_whole = ny * 2;
     for (int i = 0; i < Ny_whole; ++i) {
         y_whole[i] = y_p + i * hy;
@@ -189,9 +188,9 @@ void solve_1D_half_channel()
     std::cout << "press to continue" << std::endl;
     std::cin.get();
 
-    Vec u_init_value(ny, u_init);
-    Vec k_init_value(ny, k_init);
-    Vec turbu_omega_init_value(ny, turbu_omega_init);
+    std::vector<double> u_init_value(ny, u_init);
+    std::vector<double> k_init_value(ny, k_init);
+    std::vector<double> turbu_omega_init_value(ny, turbu_omega_init);
     // u_init_value
     std::cout << "u_init_value:" << std::endl;
     for (const auto& v : u_init_value) {
@@ -601,7 +600,7 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
     int ny = 5;
     double hy = height_sublayer / (double(ny) + 0.5); // distance from node U to P_outer is hy, hence with a 0.5
     double y_p = 0.5 * hy;
-    Vec y(ny);  //computational nodes
+    std::vector<double> y(ny);  //computational nodes
     for (int i = 0; i < ny; ++i) 
     {
         y[i] = y_p + i * hy;
@@ -624,7 +623,7 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
     printf("yplus=%f\n", yplus);
     printf("u_p=%f\n", u_p);
     
-    Vec y_whole(2 * ny);
+    std::vector<double> y_whole(2 * ny);
     int Ny_whole = ny * 2;
     for (int i = 0; i < Ny_whole; ++i) 
     {
@@ -641,9 +640,9 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
     std::cin.get();
 
     //------------------------------------------------¡ý Construct initial value ¡ý------------------------------------------------
-    Vec u_init_value(ny, u_init);
-    Vec k_init_value(ny, k_init);
-    Vec turbu_omega_init_value(ny, turbu_omega_init);
+    std::vector<double> u_init_value(ny, u_init);
+    std::vector<double> k_init_value(ny, k_init);
+    std::vector<double> turbu_omega_init_value(ny, turbu_omega_init);
     //------------------------------------------------¡ü Construct initial value ¡ü------------------------------------------------
     
     std::cout << "u_init_value:" << std::endl;
@@ -1039,7 +1038,7 @@ void test_simpson()
     int ny = 5;
     double hy = y_max / (double(ny) + 0.5); // distance from node U to P_outer is hy, hence with a 0.5
     double y_p = 0.5 * hy;
-    Vec y(ny);  //computational nodes
+    std::vector<double> y(ny);  //computational nodes
     vector<double> U(ny);
     for (int i = 0; i < ny; ++i)
     {
