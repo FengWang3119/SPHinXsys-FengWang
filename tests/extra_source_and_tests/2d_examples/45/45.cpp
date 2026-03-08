@@ -643,7 +643,7 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
     double k_init = k_p_outer;
     double turbu_omega_init = w_p_outer;
 
-    double convergence_criteria_outer = 1.0e-6;
+    double convergence_criteria_outer = 1.0e-3;
 
     double flow_rate_target = Q_target;
     double utau = utau_init;
@@ -662,7 +662,7 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
     
     //------------------------------------------------¡ý Input index ¡ý------------------------------------------------
     int NF = 2 * ny;
-    int index = 31;
+    int index = 32;
     //------------------------------------------------¡ü Input index ¡ü------------------------------------------------
 
     //------------------------------------------------¡ý Calculate P value ¡ý------------------------------------------------
