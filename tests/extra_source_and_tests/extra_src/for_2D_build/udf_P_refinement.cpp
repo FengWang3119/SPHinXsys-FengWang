@@ -114,7 +114,7 @@ namespace udf
         double relax_u = 0.9;
         double relax_k = 0.9;
         double relax_w = 0.9;
-        double alpha = 0.03;
+        double alpha = 0.9;
 
         double flow_rate_target = Q_target;
         double utau = utau_init;
