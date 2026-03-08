@@ -40,6 +40,7 @@ namespace udf
             double w_p_outer, double vel_grad_p_outer, double nut_p_outer, double h_sublayer, 
             double utau_outer, double Q_target);
         std::vector<double> tdma(const std::vector<double>& a, const std::vector<double>& b, const std::vector<double>& c, const std::vector<double>& d);
+        void tdma5(const double a[5], const double b[5], const double c[5], const double d[5], double x[5]);
 
         inline Real obtainTangentialComponent(const Vecd& vec, const Vecd& normal)
         {

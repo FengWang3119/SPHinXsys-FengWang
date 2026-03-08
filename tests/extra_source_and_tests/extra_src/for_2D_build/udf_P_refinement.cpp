@@ -45,7 +45,7 @@ namespace udf
     P_refinement::
         P_refinement(SPHBody& sph_body)
         : LocalDynamics(sph_body),
-        num_sub_node_(5),
+        num_sub_node_(5), // ** Needs tobe modified in sublayer function, as well *
         friction_velocity_from_sublayer_(particles_->registerStateVariableData<Real>("FrictionVelocityFromSublayer")),
         //
         is_near_wall_P1_(particles_->getVariableDataByName<int>("IsNearWallP1")),
@@ -98,6 +98,9 @@ namespace udf
         double vel_grad_p_outer, double nut_p_outer, double h_sublayer, double utau_outer, double Q_target)
     {
         //------------------------------------------------¡ý Input parameters ¡ý------------------------------------------------
+        constexpr int ny = 5; // Manually determine
+        assert(num_sub_node_ == ny);
+
         double utau_init = utau_outer;
         double height_sublayer = h_sublayer;
         double nu = kinematic_viscosity;
@@ -118,10 +121,9 @@ namespace udf
         //------------------------------------------------¡ü Input parameters ¡ü------------------------------------------------
 
         //------------------------------------------------¡ý Node arrangement, for sublayer ¡ý------------------------------------------------
-        int ny = num_sub_node_;
         double hy = height_sublayer / (double(ny) + 0.5); // distance from node U to P_outer is hy, hence with a 0.5
         double y_p = 0.5 * hy;
-        std::vector<double> y(ny);  //computational nodes
+        double y[ny];  //computational nodes
         for (int i = 0; i < ny; ++i)
         {
             y[i] = y_p + i * hy;
@@ -148,18 +150,24 @@ namespace udf
         //std::cin.get();
 
         //------------------------------------------------¡ý Construct initial value ¡ý------------------------------------------------
-        std::vector<double> u_init_value(ny, u_init);
-        std::vector<double> k_init_value(ny, k_init);
-        std::vector<double> turbu_omega_init_value(ny, turbu_omega_init);
+        double u_init_value[ny];
+        double k_init_value[ny];
+        double turbu_omega_init_value[ny];
+        std::fill_n(u_init_value, ny, u_init);
+        std::fill_n(k_init_value, ny, k_init);
+        std::fill_n(turbu_omega_init_value, ny, turbu_omega_init);
         //------------------------------------------------¡ü Construct initial value ¡ü------------------------------------------------
 
         //------------------------------------------------¡ý Construct solution vector ¡ý------------------------------------------------
-        std::vector<double> phi_current(0, 0.0);
-        std::vector<double> phi_solved(3 * ny, 0.0);
-        phi_current.insert(phi_current.end(), u_init_value.begin(), u_init_value.end());
-        phi_current.insert(phi_current.end(), k_init_value.begin(), k_init_value.end());
-        phi_current.insert(phi_current.end(), turbu_omega_init_value.begin(), turbu_omega_init_value.end());
-        phi_solved = phi_current;
+        double phi_current[3 * ny];
+        double phi_solved[3 * ny];
+        for (int j = 0; j < ny; ++j)
+        {
+            phi_current[j] = u_init_value[j];
+            phi_current[j + ny] = k_init_value[j];
+            phi_current[j + 2 * ny] = turbu_omega_init_value[j];
+        }
+        std::copy_n(phi_current, 3 * ny, phi_solved);
         //------------------------------------------------¡ü Construct solution vector ¡ü------------------------------------------------
 
         double differ = 1.0; // Should have a value 
@@ -171,29 +179,15 @@ namespace udf
         while (differ > convergence_criteria_outer)
         {
             //------------------------------------------------¡ý Update the star values ¡ý------------------------------------------------
-            n_start = 0;
-            std::vector<double> u_star(
-                phi_solved.begin() + n_start,
-                phi_solved.begin() + n_start + ny
-            );
-
-            n_start = ny;
-            std::vector<double> k_star(
-                phi_solved.begin() + n_start,
-                phi_solved.begin() + n_start + ny
-            );
-
-            n_start = 2 * ny;
-            std::vector<double> turbu_omega_star(
-                phi_solved.begin() + n_start,
-                phi_solved.begin() + n_start + ny
-            );
+            double* u_star = phi_solved;
+            double* k_star = phi_solved + ny;
+            double* turbu_omega_star = phi_solved + 2 * ny;
             //------------------------------------------------¡ü Update the star values ¡ü------------------------------------------------
 
             //------------------------------------------------¡ý Calculate Dk, Dw, C_su ¡ý------------------------------------------------
-            std::vector<double> diffusion_coefficient_k(ny);
-            std::vector<double> diffusion_coefficient_turbu_omega(ny);
-            std::vector<double> C_su(ny);
+            double diffusion_coefficient_k[ny]{};
+            double diffusion_coefficient_turbu_omega[ny]{};
+            double C_su[ny]{};
             double tau_over_rho_outer = (nu + nut_p_outer) * vel_grad_p_outer;
             for (int i = 0; i < ny; ++i) {
                 diffusion_coefficient_k[i] = nu + std_kw_sigma_star_ * k_star[i] / (turbu_omega_star[i] + tiny);
@@ -203,9 +197,9 @@ namespace udf
             //------------------------------------------------¡ü Calculate Dk, Dw  ¡ü------------------------------------------------
 
             //------------------------------------------------¡ý Calculate gradients of u, k, omega, Dk, Dw ¡ý------------------------------------------------
-            std::vector<double> dudy_discretized(ny, 0.0);
-            std::vector<double> dkdy(ny, 0.0);
-            std::vector<double> dwdy(ny, 0.0);
+            double dudy_discretized[ny]{};
+            double dkdy[ny]{};
+            double dwdy[ny]{};
             // central diff£¨from i=1 to i=ny-2 £©
             for (int i = 1; i < ny - 1; ++i)
             {
@@ -224,8 +218,8 @@ namespace udf
             //------------------------------------------------¡ü Calculate gradients of u, k, omega, Dk, Dw ¡ü------------------------------------------------
 
             //------------------------------------------------¡ý Calculate nut_star ¡ý------------------------------------------------
-            std::vector<double> turbu_omega_tilde(ny);
-            std::vector<double> nut_star(ny);
+            double turbu_omega_tilde[ny]{};
+            double nut_star[ny]{};
             for (int i = 0; i < ny; ++i)
             {
                 turbu_omega_tilde[i] = std::max(
@@ -237,7 +231,7 @@ namespace udf
             //------------------------------------------------¡ü Calculate nut_star ¡ü------------------------------------------------
 
             //------------------------------------------------¡ý Calculate analytical gradient of u ¡ý------------------------------------------------
-            std::vector<double> dudy_star(ny);
+            double dudy_star[ny]{};
             for (int i = 0; i < ny; ++i)
             {
                 dudy_star[i] = C_su[i] / (nu + nut_star[i]);
@@ -248,8 +242,8 @@ namespace udf
             // 
             //-------------------------------------¡ý For turbulent specific dissipation ¡ý-------------------------------------
             // calcualte part_cross_diffusion 
-            std::vector<double> grad_prod(ny);
-            std::vector<double> part_cross_diffusion(ny);
+            double grad_prod[ny]{};
+            double part_cross_diffusion[ny]{};
             for (int i = 0; i < ny; ++i) {
                 grad_prod[i] = dkdy[i] * dwdy[i];
                 double sigma_d = (grad_prod[i] > 0.0) ? std_kw_sigma_do_ : 0.0;
@@ -262,10 +256,10 @@ namespace udf
             //------------------------------------------------¡ý Start solution using TDMA ¡ý------------------------------------------------
             // 
             //-------------------------------------¡ý For velocity ¡ý-------------------------------------
-            std::vector<double> a_u(ny, 0.0);
-            std::vector<double> b_u(ny, 0.0);
-            std::vector<double> c_u(ny, 0.0);
-            std::vector<double> d_u(ny, 0.0);
+            double a_u[ny]{};
+            double b_u[ny]{};
+            double c_u[ny]{};
+            double d_u[ny]{};
             // inner node
             for (int i = 1; i < ny - 1; ++i)
             {
@@ -296,14 +290,15 @@ namespace udf
             c_u[last] = 0.0;
             d_u[last] = (utau * utau - tau_over_rho_outer) / height_sublayer * hy * hy + nu_eff_last_plus_half * u_p_outer;
             // solving
-            std::vector<double> U_new = tdma(a_u, b_u, c_u, d_u);
+            double U_new[ny]{};
+            tdma5(a_u, b_u, c_u, d_u, U_new);
             //-------------------------------------¡ü For velocity ¡ü-------------------------------------
 
             //-------------------------------------¡ý For turbulent kinetic energy ¡ý-------------------------------------
-            std::vector<double> a_k(ny, 0.0);
-            std::vector<double> b_k(ny, 0.0);
-            std::vector<double> c_k(ny, 0.0);
-            std::vector<double> d_k(ny, 0.0);
+            double a_k[ny]{};
+            double b_k[ny]{};
+            double c_k[ny]{};
+            double d_k[ny]{};
             // inner node
             for (int i = 1; i < ny - 1; ++i) {
                 double Dk_i = diffusion_coefficient_k[i];
@@ -336,7 +331,8 @@ namespace udf
             c_k[last] = 0.0;
             d_k[last] = hy * hy * nut_star[last] * dudy_star[last] * dudy_star[last] + Dk_last_plus_half * k_p_outer;
             // solving
-            std::vector<double> K_new = tdma(a_k, b_k, c_k, d_k);
+            double K_new[ny]{};
+            tdma5(a_k, b_k, c_k, d_k, K_new);
             // avoid negative value, K_new = max(K_new, k_min)
             double k_min = 1e-10;
             for (int i = 0; i < ny; ++i) {
@@ -345,10 +341,10 @@ namespace udf
             //-------------------------------------¡ü For turbulent kinetic energy ¡ü-------------------------------------
 
             //-------------------------------------¡ý For turbulent specific dissipation ¡ý-------------------------------------
-            std::vector<double> a_w(ny, 0.0);
-            std::vector<double> b_w(ny, 0.0);
-            std::vector<double> c_w(ny, 0.0);
-            std::vector<double> d_w(ny, 0.0);
+            double a_w[ny]{};
+            double b_w[ny]{};
+            double c_w[ny]{};
+            double d_w[ny]{};
             // inner node i = 1 ... ny-2
             for (int i = 1; i < ny - 1; ++i) {
                 double Dw_i = diffusion_coefficient_turbu_omega[i];
@@ -380,7 +376,8 @@ namespace udf
             double part_production_last = std_kw_alpha_ * turbu_omega_star[last] / (k_star[last] + tiny) * nut_star[last] * dudy_star[last] * dudy_star[last];
             d_w[last] = hy * hy * (part_production_last + part_cross_diffusion[last]) + Dw_last_plus_half * w_p_outer;
             // solving
-            std::vector<double> Turbu_omega_new = tdma(a_w, b_w, c_w, d_w);
+            double Turbu_omega_new[ny]{};
+            tdma5(a_w, b_w, c_w, d_w, Turbu_omega_new);
             // avoid negative value, Turbu_omega_new = max(Turbu_omega_new, omega_min)
             double omega_min = 1e-10;
             for (int i = 0; i < ny; ++i) {
@@ -404,7 +401,7 @@ namespace udf
             //std::cout << std::endl;
 
             //------------------------------------------------¡ý Check and update flow rate ¡ý------------------------------------------------
-            flow_rate_current = accumulate(U_new.begin(), U_new.end(), 0.0) * hy;
+            flow_rate_current = std::accumulate(U_new, U_new + ny, 0.0) * hy;
             flow_rate_current += u_p_outer * hy * 0.5;
 
             // flow control
@@ -421,7 +418,7 @@ namespace udf
 
             //------------------------------------------------¡ý Calculate residue ¡ý------------------------------------------------
             differ = 0.0;
-            for (size_t i = 0; i < phi_current.size(); ++i) {
+            for (int i = 0; i < 3 * ny; ++i) {
                 double diff = phi_current[i] - phi_solved[i];
                 differ += diff * diff;
             }
@@ -430,7 +427,9 @@ namespace udf
             //std::cout << "differ: " << differ << std::endl;
 
             //------------------------------------------------¡ý Update ¡ý------------------------------------------------
-            phi_current = phi_solved;
+            for (int i = 0; i < 3 * ny; ++i) {
+                phi_current[i] = phi_solved[i];
+            }
             num_iter_out += 1;
             //------------------------------------------------¡ü Update ¡ü------------------------------------------------
 
@@ -522,6 +521,62 @@ namespace udf
         return x;
     }
 //=================================================================================================//
+    // ================= TDMA5 =================
+    // Solve a tridiagonal system of size 5:
+    // a[i]*x[i-1] + b[i]*x[i] + c[i]*x[i+1] = d[i]
+    // a[0] must be 0, c[4] will be ignored
+    void P_refinement::tdma5(const double a[5], const double b[5], const double c[5], const double d[5], double x[5])
+    {
+        assert(num_sub_node_ == 5);
+
+        double cp[5]{ 0.0 }; // modified upper diagonal
+        double dp[5]{ 0.0 }; // modified right-hand side
+
+        // ---------------- Step 0: first row ----------------
+        if (std::abs(b[0]) < 1e-14) throw std::runtime_error("TDMA5: b[0] too small!");
+        cp[0] = c[0] / b[0];
+        dp[0] = d[0] / b[0];
+
+        // ---------------- Forward sweep ----------------
+        // i = 1
+        {
+            double denom = b[1] - a[1] * cp[0];
+            if (std::abs(denom) < 1e-14) throw std::runtime_error("TDMA5: denom too small at row 1");
+            cp[1] = c[1] / denom;
+            dp[1] = (d[1] - a[1] * dp[0]) / denom;
+        }
+
+        // i = 2
+        {
+            double denom = b[2] - a[2] * cp[1];
+            if (std::abs(denom) < 1e-14) throw std::runtime_error("TDMA5: denom too small at row 2");
+            cp[2] = c[2] / denom;
+            dp[2] = (d[2] - a[2] * dp[1]) / denom;
+        }
+
+        // i = 3
+        {
+            double denom = b[3] - a[3] * cp[2];
+            if (std::abs(denom) < 1e-14) throw std::runtime_error("TDMA5: denom too small at row 3");
+            cp[3] = c[3] / denom;
+            dp[3] = (d[3] - a[3] * dp[2]) / denom;
+        }
+
+        // i = 4
+        {
+            double denom = b[4] - a[4] * cp[3];
+            if (std::abs(denom) < 1e-14) throw std::runtime_error("TDMA5: denom too small at row 4");
+            cp[4] = 0.0; // last row has no right neighbor
+            dp[4] = (d[4] - a[4] * dp[3]) / denom;
+        }
+
+        // ---------------- Back substitution ----------------
+        x[4] = dp[4];
+        x[3] = dp[3] - cp[3] * x[4];
+        x[2] = dp[2] - cp[2] * x[3];
+        x[1] = dp[1] - cp[1] * x[2];
+        x[0] = dp[0] - cp[0] * x[1];
+    }
 } // namespace udf
 //=================================================================================================//
 } // namespace fluid_dynamics
