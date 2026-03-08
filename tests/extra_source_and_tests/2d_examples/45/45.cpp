@@ -109,6 +109,62 @@ void tdma(const int n,
     }
 }
 
+// ================= TDMA5 =================
+// Solve a tridiagonal system of size 5:
+// a[i]*x[i-1] + b[i]*x[i] + c[i]*x[i+1] = d[i]
+// a[0] must be 0, c[4] will be ignored
+void tdma5(const double a[5], const double b[5], const double c[5], const double d[5], double x[5])
+{
+    if (ny!=5) throw std::runtime_error("TDMA5 can not be used!");
+
+    double cp[5]{ 0.0 }; // modified upper diagonal
+    double dp[5]{ 0.0 }; // modified right-hand side
+
+    // ---------------- Step 0: first row ----------------
+    if (std::abs(b[0]) < 1e-14) throw std::runtime_error("TDMA5: b[0] too small!");
+    cp[0] = c[0] / b[0];
+    dp[0] = d[0] / b[0];
+
+    // ---------------- Forward sweep ----------------
+    // i = 1
+    {
+        double denom = b[1] - a[1] * cp[0];
+        if (std::abs(denom) < 1e-14) throw std::runtime_error("TDMA5: denom too small at row 1");
+        cp[1] = c[1] / denom;
+        dp[1] = (d[1] - a[1] * dp[0]) / denom;
+    }
+
+    // i = 2
+    {
+        double denom = b[2] - a[2] * cp[1];
+        if (std::abs(denom) < 1e-14) throw std::runtime_error("TDMA5: denom too small at row 2");
+        cp[2] = c[2] / denom;
+        dp[2] = (d[2] - a[2] * dp[1]) / denom;
+    }
+
+    // i = 3
+    {
+        double denom = b[3] - a[3] * cp[2];
+        if (std::abs(denom) < 1e-14) throw std::runtime_error("TDMA5: denom too small at row 3");
+        cp[3] = c[3] / denom;
+        dp[3] = (d[3] - a[3] * dp[2]) / denom;
+    }
+
+    // i = 4
+    {
+        double denom = b[4] - a[4] * cp[3];
+        if (std::abs(denom) < 1e-14) throw std::runtime_error("TDMA5: denom too small at row 4");
+        cp[4] = 0.0; // last row has no right neighbor
+        dp[4] = (d[4] - a[4] * dp[3]) / denom;
+    }
+
+    // ---------------- Back substitution ----------------
+    x[4] = dp[4];
+    x[3] = dp[3] - cp[3] * x[4];
+    x[2] = dp[2] - cp[2] * x[3];
+    x[1] = dp[1] - cp[1] * x[2];
+    x[0] = dp[0] - cp[0] * x[1];
+}
 
 //void solve_1D_half_channel() 
 //{
@@ -606,7 +662,7 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
     
     //------------------------------------------------¡ý Input index ¡ý------------------------------------------------
     int NF = 2 * ny;
-    int index = 29;
+    int index = 30;
     //------------------------------------------------¡ü Input index ¡ü------------------------------------------------
 
     //------------------------------------------------¡ý Calculate P value ¡ý------------------------------------------------
@@ -803,7 +859,8 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
         d_u[last] = (utau * utau - tau_over_rho_outer) / height_sublayer * hy * hy + nu_eff_last_plus_half * u_p_outer;
         // solving
         double U_new[ny]{};
-        tdma(ny, a_u, b_u, c_u, d_u, U_new);
+        //tdma(ny, a_u, b_u, c_u, d_u, U_new);
+        tdma5(a_u, b_u, c_u, d_u, U_new);
         //-------------------------------------¡ü For velocity ¡ü-------------------------------------
         
         //-------------------------------------¡ý For turbulent kinetic energy ¡ý-------------------------------------
@@ -844,7 +901,8 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
         d_k[last] = hy * hy * nut_star[last] * dudy_star[last] * dudy_star[last] + Dk_last_plus_half * k_p_outer;
         // solving
         double K_new[ny]{};
-        tdma(ny, a_k, b_k, c_k, d_k, K_new);
+        //tdma(ny, a_k, b_k, c_k, d_k, K_new);
+        tdma5(a_k, b_k, c_k, d_k, K_new);
         // avoid negative value, K_new = max(K_new, k_min)
         double k_min = 1e-10;
         for (int i = 0; i < ny; ++i) {
@@ -889,7 +947,8 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
         d_w[last] = hy * hy * (part_production_last + part_cross_diffusion[last]) + Dw_last_plus_half * w_p_outer;
         // solving
         double Turbu_omega_new[ny]{};
-        tdma(ny, a_w, b_w, c_w, d_w, Turbu_omega_new);
+        //tdma(ny, a_w, b_w, c_w, d_w, Turbu_omega_new);
+        tdma5(a_w, b_w, c_w, d_w, Turbu_omega_new);
         // avoid negative value, Turbu_omega_new = max(Turbu_omega_new, omega_min)
         double omega_min = 1e-10;
         for (int i = 0; i < ny; ++i) {
