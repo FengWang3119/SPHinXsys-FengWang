@@ -662,7 +662,7 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
     
     //------------------------------------------------¡ý Input index ¡ý------------------------------------------------
     int NF = 2 * ny;
-    int index = 30;
+    int index = 31;
     //------------------------------------------------¡ü Input index ¡ü------------------------------------------------
 
     //------------------------------------------------¡ý Calculate P value ¡ý------------------------------------------------
@@ -980,9 +980,9 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
 
         // flow control
         double ratio = flow_rate_target / (flow_rate_current + 1e-12);
-        double alpha = 0.03;
+        double relax_flow_rate = 0.9;
         double utau_new = utau * std::sqrt(ratio);
-        utau = (1.0 - alpha) * utau + alpha * utau_new;
+        utau = (1.0 - relax_flow_rate) * utau + relax_flow_rate * utau_new;
         /*double error = U_new[ny-1] - u_p_outer;
         utau -= 0.1 * error;*/
         //------------------------------------------------¡ü Check and update flow rate ¡ü------------------------------------------------
