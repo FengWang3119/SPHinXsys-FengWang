@@ -16,12 +16,16 @@ namespace udf
         turbu_B_(particles_->getVariableDataByName<Matd>("TurbulentLinearGradientCorrectionMatrix")),
         Vol_(this->particles_->template getVariableDataByName<Real>("VolumetricMeasure")),
         vel_(this->particles_->template getVariableDataByName<Vecd>("Velocity")),
-        is_near_wall_P1_(this->particles_->template getVariableDataByName<int>("IsNearWallP1")) {}
+        is_near_wall_P1_(this->particles_->template getVariableDataByName<int>("IsNearWallP1")), 
+        is_near_wall_P2_(this->particles_->template getVariableDataByName<int>("IsNearWallP2"))
+    {
+        particles_->addVariableToWrite<Matd>("VelocityGradientInnerOnlyP");
+    }
     //=================================================================================================//
     void P_refinement_GetVelocityGradientInnerOnlyP::interaction(size_t index_i, Real dt)
     {
         velocity_gradient_inner_only_P_[index_i] = Matd::Zero();
-        if (is_near_wall_P1_[index_i] == 1)
+        if (is_near_wall_P2_[index_i] == 10)
         {
             Vecd vel_i = vel_[index_i];
             const Neighborhood& inner_neighborhood = inner_configuration_[index_i];
@@ -36,7 +40,7 @@ namespace udf
     //=================================================================================================//
     void P_refinement_GetVelocityGradientInnerOnlyP::update(size_t index_i, Real dt)
     {
-        if (is_near_wall_P1_[index_i] == 1)
+        if (is_near_wall_P2_[index_i] == 10)
         {
             velocity_gradient_inner_only_P_[index_i] *= turbu_B_[index_i];
         }
