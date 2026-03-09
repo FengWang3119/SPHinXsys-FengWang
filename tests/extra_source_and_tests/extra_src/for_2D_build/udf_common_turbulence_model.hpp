@@ -63,9 +63,9 @@ TurbulentLinearGradientCorrectionMatrix<DataDelegationType>::
           "TurbulentLinearGradientCorrectionMatrix", IdentityMatrix<Matd>::value)),
       B_(this->particles_->template getVariableDataByName<Matd>("LinearGradientCorrectionMatrix"))
 {
-    this->particles_->template addVariableToWrite<Matd>("TurbulentLinearGradientCorrectionMatrix");
+    //this->particles_->template addVariableToWrite<Matd>("TurbulentLinearGradientCorrectionMatrix");
     //this->particles_->template addEvolvingVariable<Matd>("TurbulentLinearGradientCorrectionMatrix");
-    this->particles_->template addVariableToWrite<Matd>("LinearGradientCorrectionMatrix");
+    //this->particles_->template addVariableToWrite<Matd>("LinearGradientCorrectionMatrix");
     //this->particles_->template addEvolvingVariable<Matd>("LinearGradientCorrectionMatrix");
 }
 //=================================================================================================//

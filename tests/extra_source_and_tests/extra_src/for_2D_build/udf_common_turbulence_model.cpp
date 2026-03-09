@@ -604,7 +604,7 @@ GetLimiterOfTransportVelocityCorrection::
       slope_(slope),
       limiter_tvc_(particles_->registerStateVariableData<Real>("LimiterOfTVC"))
 {
-    particles_->addVariableToWrite<Real>("LimiterOfTVC");
+    //particles_->addVariableToWrite<Real>("LimiterOfTVC");
 }
 //=================================================================================================//
 void GetLimiterOfTransportVelocityCorrection::update(size_t index_i, Real dt)

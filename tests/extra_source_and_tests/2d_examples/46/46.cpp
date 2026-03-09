@@ -256,7 +256,7 @@ int main(int ac, char *av[])
     body_states_recording.addToWrite<Real>(water_block, "Pressure");            // output for debug
     body_states_recording.addToWrite<int>(water_block, "Indicator");            // output for debug
     body_states_recording.addToWrite<Real>(water_block, "Density");             // output for debug
-    body_states_recording.addToWrite<Vecd>(water_block, "KernelGradientIntegral"); // output for debug
+    //body_states_recording.addToWrite<Vecd>(water_block, "KernelGradientIntegral"); // output for debug
     ObservedQuantityRecording<Vecd> write_recorded_water_velocity("Velocity", fluid_observer_contact);
     ObservedQuantityRecording<Real> write_recorded_water_k("TurbulenceKineticEnergy", fluid_observer_contact);
     ObservedQuantityRecording<Real> write_recorded_water_mut("TurbulentViscosity", fluid_observer_contact);
@@ -302,7 +302,7 @@ int main(int ac, char *av[])
     Real cutoff_ratio = 0.9;                    //** cutoff_time should be a integral and the same as the PY script */
     Real cutoff_time = end_time * cutoff_ratio; //** cutoff_time should be a integral and the same as the PY script */
     
-    Real num_output_files = 200.0 * (is_write_average_contour_file ? magnify_ratio_avergae_contour : 1.0);  //** Average but no need to comment*
+    Real num_output_files = 40.0 * (is_write_average_contour_file ? magnify_ratio_avergae_contour : 1.0);  //** Average but no need to comment*
     
     Real Output_Time = end_time / num_output_files; /**< Time stamps for output of body states. */
     Real index_check_file_fully_developed = num_output_files * cutoff_ratio;
@@ -363,6 +363,8 @@ int main(int ac, char *av[])
             if (physical_time > turbulent_module_activate_time) //** A temporary treatment *
             {
                 update_eddy_viscosity.exec();
+                update_near_wall_status.exec();
+                standard_wall_function_correction.exec();
                 get_velocity_gradient_inner_only_for_P.exec(); //** Must make sure vel_grad_inner_P and utau-update and viscous cal. in a near-wall status *
                 get_friction_velocity_from_sublayer.exec();
             }
@@ -375,8 +377,6 @@ int main(int ac, char *av[])
                 get_velocity_gradient.exec();
                 compute_TKE_diffusion.exec();
                 compute_TSDR_diffusion_and_gradient_k_omega.exec();
-                update_near_wall_status.exec();
-                standard_wall_function_correction.exec();
             }
 
             transport_velocity_correction.exec();

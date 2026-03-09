@@ -30,7 +30,7 @@ kOmega_GetVelocityGradient<Inner<>>::kOmega_GetVelocityGradient(BaseInnerRelatio
       turbu_strain_rate_traceless_magnitude_(particles_->registerStateVariableData<Real>("TurbulentStrainRateTracelessMagnitude"))
 {
     //this->particles_->addEvolvingVariable<Matd>("TurbulentVelocityGradient");
-    this->particles_->addVariableToWrite<Matd>("TurbulentVelocityGradient");
+    //this->particles_->addVariableToWrite<Matd>("TurbulentVelocityGradient");
 }
 //=================================================================================================//
 void kOmega_GetVelocityGradient<Inner<>>::interaction(size_t index_i, Real dt)
@@ -175,7 +175,7 @@ kOmega_WallFunctionCorrection::
     particles_->addVariableToWrite<Real>("WallYstar");
 
     //particles_->addEvolvingVariable<Real>("TangentialVelocity");
-    particles_->addVariableToWrite<Real>("TangentialVelocity");
+    //particles_->addVariableToWrite<Real>("TangentialVelocity");
 
     //particles_->addEvolvingVariable<Vecd>("FrictionVelocity");
     particles_->addVariableToWrite<Vecd>("FrictionVelocity");
@@ -415,7 +415,7 @@ kOmega_kTransportEquationInner::kOmega_kTransportEquationInner(BaseInnerRelation
     //particles_->addEvolvingVariable<Real>("ChangeRateOfTKEWithoutDissipation");
 
     //particles_->addEvolvingVariable<Real>("K_Production");
-    particles_->addVariableToWrite<Real>("K_Production");
+    //particles_->addVariableToWrite<Real>("K_Production");
 
     particles_->addEvolvingVariable<Real>("TurbulenceKineticEnergy");
     particles_->addVariableToWrite<Real>("TurbulenceKineticEnergy");
@@ -427,7 +427,7 @@ kOmega_kTransportEquationInner::kOmega_kTransportEquationInner(BaseInnerRelation
     particles_->addVariableToWrite<Real>("TurbulentViscosity");
 
     //particles_->addEvolvingVariable<Matd>("TurbulentStrainRate");
-    particles_->addVariableToWrite<Matd>("TurbulentStrainRate");
+    //particles_->addVariableToWrite<Matd>("TurbulentStrainRate");
 
     //** Obtain Initial values for transport equations *
     // std::fill(turbu_k_.begin(), turbu_k_.end(), initial_values[0]);
@@ -436,9 +436,9 @@ kOmega_kTransportEquationInner::kOmega_kTransportEquationInner(BaseInnerRelation
 
     //** for test */
     //particles_->addEvolvingVariable<Real>("K_Diffusion");
-    particles_->addVariableToWrite<Real>("K_Diffusion");
+    //particles_->addVariableToWrite<Real>("K_Diffusion");
 
-    particles_->addVariableToWrite<Real>("ChangeRateOfTKE");
+    //particles_->addVariableToWrite<Real>("ChangeRateOfTKE");
 
     //particles_->addEvolvingVariable<int>("TurbulentIndicator");
     particles_->addVariableToWrite<int>("TurbulentIndicator");
@@ -524,19 +524,19 @@ kOmega_omegaTransportEquationInner::kOmega_omegaTransportEquationInner(BaseInner
       is_near_wall_P1_(particles_->getVariableDataByName<int>("IsNearWallP1"))
 {
     //particles_->addEvolvingVariable<Real>("ChangeRateOfTDR");
-    particles_->addVariableToWrite<Real>("ChangeRateOfTDR");
+    //particles_->addVariableToWrite<Real>("ChangeRateOfTDR");
 
     //particles_->addEvolvingVariable<Real>("omega_Production");
-    particles_->addVariableToWrite<Real>("omega_Production");
+    //particles_->addVariableToWrite<Real>("omega_Production");
 
     //particles_->addEvolvingVariable<Real>("omega_Dissipation");
-    particles_->addVariableToWrite<Real>("omega_Dissipation");
+    //particles_->addVariableToWrite<Real>("omega_Dissipation");
 
     //particles_->addEvolvingVariable<Real>("omega_Diffusion");
-    particles_->addVariableToWrite<Real>("omega_Diffusion");
+    //particles_->addVariableToWrite<Real>("omega_Diffusion");
 
     //particles_->addEvolvingVariable<Real>("omega_Cross_Diffusion");
-    particles_->addVariableToWrite<Real>("omega_Cross_Diffusion");
+    //particles_->addVariableToWrite<Real>("omega_Cross_Diffusion");
 }
 //=================================================================================================//
 void kOmega_omegaTransportEquationInner::update(size_t index_i, Real dt)

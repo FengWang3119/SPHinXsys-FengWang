@@ -52,6 +52,10 @@ namespace udf
     protected:
         int num_sub_node_;
         Real* friction_velocity_from_sublayer_;
+        Real* target_flow_rate_in_sublayer_;
+        Real* vel_ps_magnitude_;
+        Real* dudn_;
+        Real* utau_node_;
         //
         int* is_near_wall_P1_;
         Real* y_p_;

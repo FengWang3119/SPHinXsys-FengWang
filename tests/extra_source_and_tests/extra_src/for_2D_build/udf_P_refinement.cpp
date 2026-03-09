@@ -47,6 +47,10 @@ namespace udf
         : LocalDynamics(sph_body),
         num_sub_node_(5), // ** Needs tobe modified in sublayer function, as well *
         friction_velocity_from_sublayer_(particles_->registerStateVariableData<Real>("FrictionVelocityFromSublayer")),
+        target_flow_rate_in_sublayer_(particles_->registerStateVariableData<Real>("TargetFlowRateInSublayer")),
+        vel_ps_magnitude_(particles_->registerStateVariableData<Real>("VelPS")),
+        dudn_(particles_->registerStateVariableData<Real>("dudn")),
+        utau_node_(particles_->registerStateVariableData<Real>("utauNode")),
         //
         is_near_wall_P1_(particles_->getVariableDataByName<int>("IsNearWallP1")),
         y_p_(particles_->getVariableDataByName<Real>("Y_P")),
@@ -63,11 +67,19 @@ namespace udf
         fluid_particle_spacing_(sph_body.getSPHAdaptation().ReferenceSpacing()) 
     {
         particles_->addVariableToWrite<Real>("FrictionVelocityFromSublayer");
+        particles_->addVariableToWrite<Real>("TargetFlowRateInSublayer");
+        particles_->addVariableToWrite<Real>("VelPS");
+        particles_->addVariableToWrite<Real>("dudn");
+        particles_->addVariableToWrite<Real>("utauNode");
     }
     //=================================================================================================//
     void P_refinement::update(size_t index_i, Real dt)
     {
         friction_velocity_from_sublayer_[index_i] = 0.0;
+        target_flow_rate_in_sublayer_[index_i] = 0.0;
+        vel_ps_magnitude_[index_i] = 0.0;
+        dudn_[index_i] = 0.0;
+        utau_node_[index_i] = 0.0;
         if (is_near_wall_P1_[index_i] == 1)
         {
             Vecd normal = e_nearest_normal_[index_i];
@@ -91,6 +103,10 @@ namespace udf
             
             friction_velocity_from_sublayer_[index_i] = solve_1D_sublayer(nu, u_outer, k_outer, omega_outer, std::abs(dudn),
                 nut_outer, distance_to_wall, friction_vel_magnitude, std::abs(flow_rate_local));
+            target_flow_rate_in_sublayer_[index_i] = flow_rate_local;
+            vel_ps_magnitude_[index_i] = u_ps;
+            dudn_[index_i] = dudn;
+            utau_node_[index_i] = friction_vel_magnitude;
         }
     }
     //=================================================================================================//
