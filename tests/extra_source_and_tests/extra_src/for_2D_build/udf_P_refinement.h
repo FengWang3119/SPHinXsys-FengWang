@@ -27,7 +27,6 @@ namespace udf
         Real* Vol_;
         Vecd* vel_;
         int* is_near_wall_P1_;
-        int* is_near_wall_P2_;
     };
 //=================================================================================================//
     class P_refinement : public LocalDynamics, public kOmega_BaseTurbuClosureCoeff
