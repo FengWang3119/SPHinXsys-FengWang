@@ -65,6 +65,7 @@ namespace udf
         mu_(viscosity_.ReferenceViscosity()),
         velocity_gradient_inner_only_P_(particles_->getVariableDataByName<Matd>("VelocityGradientInnerOnlyP")),
         turbu_mu_(particles_->getVariableDataByName<Real>("TurbulentViscosity")),
+        distance_to_dummy_interface_(particles_->getVariableDataByName<Real>("DistanceToDummyInterface")),
         wall_shear_stress_(particles_->getVariableDataByName<Real>("WallShearStress")),
         e_nearest_normal_(particles_->getVariableDataByName<Vecd>("WallNearestNormalUnitVector")),
         fluid_particle_spacing_(sph_body.getSPHAdaptation().ReferenceSpacing()) 
@@ -74,6 +75,7 @@ namespace udf
         particles_->addVariableToWrite<Real>("VelPS");
         particles_->addVariableToWrite<Real>("dudn");
         particles_->addVariableToWrite<Real>("utauNode");
+        particles_->addVariableToWrite<Real>("DistanceToDummyInterface");
     }
     //=================================================================================================//
     void P_refinement::update(size_t index_i, Real dt)
@@ -96,7 +98,10 @@ namespace udf
             Real dudn = obtainTangentialComponent(dudn_vector, normal);
             
             Real nut_outer = turbu_mu_[index_i] / rho_[index_i];
-            Real distance_to_wall = y_p_[index_i];
+            
+            //Real distance_to_wall = y_p_[index_i];
+            Real distance_to_wall = distance_to_dummy_interface_[index_i];
+            
             Real friction_vel_magnitude = std::sqrt(wall_shear_stress_[index_i] / rho_[index_i]);
 
             Real u_ps = u_outer + dudn * 0.5 * fluid_particle_spacing_;
@@ -106,6 +111,8 @@ namespace udf
             
             friction_velocity_from_sublayer_[index_i] = solve_1D_sublayer(nu, u_outer, k_outer, omega_outer, std::abs(dudn),
                 nut_outer, distance_to_wall, friction_vel_magnitude, std::abs(flow_rate_local));
+
+            //** For testing *
             target_flow_rate_in_sublayer_[index_i] = flow_rate_local;
             vel_ps_magnitude_[index_i] = u_ps;
             dudn_[index_i] = dudn;
