@@ -133,8 +133,6 @@ int main(int ac, char *av[])
     /** Density relaxation algorithm by using position verlet time stepping. */
     //Dynamics1Level<fluid_dynamics::Integration2ndHalfWithWallNoRiemann> density_relaxation(water_block_inner, water_wall_contact);
     Dynamics1Level<fluid_dynamics::Integration2ndHalfInnerNoRiemann> density_relaxation(water_block_inner);
-    InteractionDynamics<fluid_dynamics::Integration2ndHalfOnlyWallAcousticRiemannAdjusted> density_relaxation_wall(water_wall_contact);
-    density_relaxation.post_processes_.push_back(&density_relaxation_wall);
 
     /** Turbulent.Note: When use wall function, K Epsilon calculation only consider inner */
     InteractionWithUpdate<fluid_dynamics::JudgeIsNearWall> update_near_wall_status(water_block_inner, water_wall_contact, y_p_constant);
@@ -150,6 +148,10 @@ int main(int ac, char *av[])
 
     InteractionDynamics<fluid_dynamics::TKEnergyForceComplex> turbulent_kinetic_energy_force(water_block_inner, water_wall_contact);
     InteractionDynamics<fluid_dynamics::kOmega_WallFunctionCorrection> standard_wall_function_correction(water_block_inner, water_wall_contact);
+
+    //** ARD+ *
+    InteractionDynamics<fluid_dynamics::Integration2ndHalfOnlyWallAcousticRiemannAdjusted> density_relaxation_wall(water_wall_contact);
+    density_relaxation.post_processes_.push_back(&density_relaxation_wall);
 
     /** Turbulent.Extra boundary condition */
     SimpleDynamics<fluid_dynamics::ConstrainNormalVelocityInRegionP> constrain_normal_velocity_in_P_region(water_block);

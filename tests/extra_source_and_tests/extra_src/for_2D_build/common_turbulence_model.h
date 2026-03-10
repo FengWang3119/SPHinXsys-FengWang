@@ -392,6 +392,8 @@ class TurbulentIntegration2ndHalf<Contact<Wall>, RiemannSolverType>
 
   protected:
     RiemannSolverType riemann_solver_;
+    Real* wall_Y_plus_;
+    Real* wall_Y_star_;
 };
 using Integration2ndHalfOnlyWallAcousticRiemannAdjusted = TurbulentIntegration2ndHalf<Contact<Wall>, DissipativeRiemannSolver>;
 //using Integration2ndHalfOnlyWallAcousticRiemannAdjusted = TurbulentIntegration2ndHalf<Contact<Wall>, AcousticRiemannSolver>;

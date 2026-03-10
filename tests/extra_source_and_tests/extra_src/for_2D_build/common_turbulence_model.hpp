@@ -70,13 +70,16 @@ template <class RiemannSolverType>
 TurbulentIntegration2ndHalf<Contact<Wall>, RiemannSolverType>::
     TurbulentIntegration2ndHalf(BaseContactRelation &wall_contact_relation)
     : BaseIntegrationWithWall(wall_contact_relation),
-      riemann_solver_(this->fluid_, this->fluid_, 3.0) {}
+      riemann_solver_(this->fluid_, this->fluid_, 3.0),
+      wall_Y_plus_(this->particles_->template getVariableDataByName<Real>("WallYplus")),
+      wall_Y_star_(this->particles_->template getVariableDataByName<Real>("WallYstar")) {}
 //=================================================================================================//
 template <class RiemannSolverType>
 void TurbulentIntegration2ndHalf<Contact<Wall>, RiemannSolverType>::interaction(size_t index_i, Real dt)
 {
     Real density_change_rate = 0.0;
     Vecd p_dissipation = Vecd::Zero();
+    Real y_plus = wall_Y_plus_[index_i];
     for (size_t k = 0; k < contact_configuration_.size(); ++k)
     {
         Vecd *vel_ave_k = wall_vel_ave_[k];
@@ -92,7 +95,10 @@ void TurbulentIntegration2ndHalf<Contact<Wall>, RiemannSolverType>::interaction(
             Vecd vel_in_wall = 2.0 * vel_ave_k[index_j] - vel_[index_i];
             density_change_rate += (vel_[index_i] - vel_in_wall).dot(e_ij) * dW_ijV_j;
             Real u_jump = 2.0 * (vel_[index_i] - vel_ave_k[index_j]).dot(n_k[index_j]);
-            p_dissipation += riemann_solver_.DissipativePJump(u_jump) * dW_ijV_j * n_k[index_j];
+            if (y_plus >= 5.0)
+            {
+                p_dissipation += riemann_solver_.DissipativePJump(u_jump) * dW_ijV_j * n_k[index_j];
+            }
         }
     }
     drho_dt_[index_i] += density_change_rate * this->rho_[index_i];
