@@ -273,13 +273,21 @@ TurbuViscousForce<Inner<>>::TurbuViscousForce(BaseInnerRelation &inner_relation)
     : TurbuViscousForce<DataDelegateInner>(inner_relation),
       turbu_indicator_(this->particles_->template getVariableDataByName<int>("TurbulentIndicator")),
       is_extra_viscous_dissipation_(this->particles_->template getVariableDataByName<int>("TurbulentExtraViscousDissipation")),
-      B_(particles_->getVariableDataByName<Matd>("LinearGradientCorrectionMatrix")) {}
+      B_(particles_->getVariableDataByName<Matd>("LinearGradientCorrectionMatrix")),
+      wall_Y_plus_(this->particles_->template getVariableDataByName<Real>("WallYplus")),
+      wall_Y_star_(this->particles_->template getVariableDataByName<Real>("WallYstar")) {}
 //=================================================================================================//
 void TurbuViscousForce<Inner<>>::interaction(size_t index_i, Real dt)
 {
     turbu_indicator_[index_i] = 0;
 
     Real mu_eff_i = turbu_mu_[index_i] + molecular_viscosity_;
+    
+    Real y_plus = 100.0;
+    if (wall_Y_plus_[index_i] > TinyReal)
+    {
+        y_plus = wall_Y_plus_[index_i];
+    }
 
     Vecd force = Vecd::Zero();
     Vecd vel_derivative = Vecd::Zero();
@@ -303,7 +311,7 @@ void TurbuViscousForce<Inner<>>::interaction(size_t index_i, Real dt)
 
         //** Introduce dissipation *
         Vecd shear_stress_eij_corrected = shear_stress_eij;
-        if (mu_harmo < dissipation_judge && is_extra_viscous_dissipation_[index_i] == 1)
+        if (mu_harmo < dissipation_judge && is_extra_viscous_dissipation_[index_i] == 1 && (y_plus >= 5.0))
         {
             shear_stress_eij_corrected = ((dissipation * vel_derivative).dot(e_ij)) * e_ij;
             turbu_indicator_[index_i]++; //** For test *
