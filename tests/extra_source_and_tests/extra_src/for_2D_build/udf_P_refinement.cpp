@@ -99,8 +99,8 @@ namespace udf
             
             Real nut_outer = turbu_mu_[index_i] / rho_[index_i];
             
-            //Real distance_to_wall = y_p_[index_i];
-            Real distance_to_wall = distance_to_dummy_interface_[index_i];
+            Real distance_to_wall = y_p_[index_i];
+            //Real distance_to_wall = distance_to_dummy_interface_[index_i];
             
             Real friction_vel_magnitude = std::sqrt(wall_shear_stress_[index_i] / rho_[index_i]);
 
