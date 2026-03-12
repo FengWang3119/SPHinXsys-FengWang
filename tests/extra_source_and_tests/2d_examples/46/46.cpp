@@ -180,6 +180,8 @@ int main(int ac, char *av[])
 
     SimpleDynamics<fluid_dynamics::udf::ConstrainNormalVelocityInRegionP> constrain_normal_velocity_in_P_region(water_block);
 
+    SimpleDynamics<fluid_dynamics::udf::P_refinement> get_friction_velocity_from_sublayer(water_block);
+
     /** Choose one, ordinary or turbulent. Computing viscous force, */
     InteractionWithUpdate<fluid_dynamics::udf::TurbulentViscousForceWithWall> turbulent_viscous_force(water_block_inner, water_wall_contact);
     //InteractionWithUpdate<fluid_dynamics::ViscousForceWithWall> viscous_force(water_block_inner, water_wall_contact);
@@ -238,8 +240,6 @@ int main(int ac, char *av[])
     
     ObservingAQuantity<Real> observing_pressure(fluid_pressure_contour_observer_contact, "Pressure");          //% Average pressure
     SimpleDynamics<ParticleSnapshotAverage<Real>> average_pressure(observer_body_pressure_contour, "Pressure"); //% Average pressure
-
-    SimpleDynamics<fluid_dynamics::udf::P_refinement> get_friction_velocity_from_sublayer(water_block);
     
     //----------------------------------------------------------------------
     //	Define the configuration related particles dynamics.

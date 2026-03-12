@@ -299,7 +299,9 @@ TurbuViscousForce<Contact<Wall>>::TurbuViscousForce(BaseContactRelation &wall_co
       wall_particle_spacing_(wall_contact_relation.getSPHBody().getSPHAdaptation().ReferenceSpacing()),
       B_(particles_->getVariableDataByName<Matd>("LinearGradientCorrectionMatrix")),
       physical_time_(sph_system_->getSystemVariableDataByName<Real>("PhysicalTime")),
-      is_blended_(particles_->getVariableDataByName<int>("TurbulentWallTreatmentType")) {}
+      is_blended_(particles_->getVariableDataByName<int>("TurbulentWallTreatmentType")),
+      is_near_wall_P1_(particles_->getVariableDataByName<int>("IsNearWallP1")),
+      friction_velocity_from_sublayer_(particles_->getVariableDataByName<Real>("FrictionVelocityFromSublayer")) {}
 //=================================================================================================//
 void TurbuViscousForce<Contact<Wall>>::interaction(size_t index_i, Real dt)
 {
@@ -356,6 +358,11 @@ void TurbuViscousForce<Contact<Wall>>::interaction(size_t index_i, Real dt)
             Real y_star_j = rho_i * C_mu_wf_25_ * turbu_k_i_05 * y_p_j / molecular_viscosity_;
             Real u_star_j = get_dimensionless_velocity(y_star_j, current_time, u_star_previous, is_blended_[index_i]);
             Real fric_vel_mag_j = sqrt(C_mu_wf_25_ * turbu_k_i_05 * vel_i_tau_mag / u_star_j);
+
+            //if (is_near_wall_P1_[index_i] == 1)
+            //{
+            //    fric_vel_mag_j = friction_velocity_from_sublayer_[index_i];
+            //}
 
             //** Construct local wall shear stress, if this is on each wall particle j   *
             Real WSS_tn_mag_j = rho_i * fric_vel_mag_j * fric_vel_mag_j * boost::qvm::sign(vel_i.dot(e_j_tau));

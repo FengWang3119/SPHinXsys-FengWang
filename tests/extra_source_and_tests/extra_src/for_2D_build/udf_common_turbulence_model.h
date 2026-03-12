@@ -192,6 +192,8 @@ class TurbuViscousForce<Contact<Wall>> : public BaseTurbuViscousForceWithWall, p
     Matd *B_;
     Real *physical_time_;
     int *is_blended_;
+    int* is_near_wall_P1_;
+    Real* friction_velocity_from_sublayer_;
 };
 
 //** Interface part *

@@ -29,7 +29,7 @@ namespace udf
         int* is_near_wall_P1_;
     };
 //=================================================================================================//
-    class P_refinement : public LocalDynamics, public kOmega_BaseTurbuClosureCoeff
+    class P_refinement : public LocalDynamics, public kOmega_BaseTurbuClosureCoeff, public WallFunctionCoefficient
     {
     public:
         explicit P_refinement(SPHBody& sph_body);
@@ -71,6 +71,7 @@ namespace udf
         Real* wall_shear_stress_;
         Vecd* e_nearest_normal_;
         Real fluid_particle_spacing_;
+        Real* physical_time_;
     };
 //=================================================================================================//
 //=================================================================================================//

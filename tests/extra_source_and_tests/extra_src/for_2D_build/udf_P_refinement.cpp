@@ -68,7 +68,8 @@ namespace udf
         distance_to_dummy_interface_(particles_->getVariableDataByName<Real>("DistanceToDummyInterface")),
         wall_shear_stress_(particles_->getVariableDataByName<Real>("WallShearStress")),
         e_nearest_normal_(particles_->getVariableDataByName<Vecd>("WallNearestNormalUnitVector")),
-        fluid_particle_spacing_(sph_body.getSPHAdaptation().ReferenceSpacing()) 
+        fluid_particle_spacing_(sph_body.getSPHAdaptation().ReferenceSpacing()),
+        physical_time_(sph_system_->getSystemVariableDataByName<Real>("PhysicalTime"))
     {
         particles_->addVariableToWrite<Real>("FrictionVelocityFromSublayer");
         particles_->addVariableToWrite<Real>("TargetFlowRateInSublayer");
@@ -112,11 +113,30 @@ namespace udf
             friction_velocity_from_sublayer_[index_i] = solve_1D_sublayer(nu, u_outer, k_outer, omega_outer, std::abs(dudn),
                 nut_outer, distance_to_wall, friction_vel_magnitude, std::abs(flow_rate_local));
 
+            if (!std::isfinite(friction_velocity_from_sublayer_[index_i]))
+            {
+                if (*physical_time_ < start_time_laminar_)
+                    friction_velocity_from_sublayer_[index_i] = 0.0;
+                else
+                    std::cout << "Warning: unexpected NaN in sublayer solver\n";
+            }
+
             //** For testing *
             target_flow_rate_in_sublayer_[index_i] = flow_rate_local;
             vel_ps_magnitude_[index_i] = u_ps;
             dudn_[index_i] = dudn;
             utau_node_[index_i] = friction_vel_magnitude;
+            if (std::isnan(friction_velocity_from_sublayer_[index_i])) {
+                std::cout << "x is NaN\n";
+                std::cout << "u_outer=" << u_outer << std::endl;
+                std::cout <<  "k_outer=" << k_outer << std::endl;
+                std::cout <<  "omega_outer=" << omega_outer << std::endl;
+                std::cout <<  "dudn=" << dudn << std::endl;
+                std::cout <<  "nut_outer=" << nut_outer << std::endl;
+                std::cout <<  "distance_to_wall=" << distance_to_wall << std::endl;
+                std::cout <<  "friction_vel_magnitude=" << friction_vel_magnitude << std::endl;
+                std::cout <<  "flow_rate_local=" << flow_rate_local << std::endl;
+            }
         }
     }
     //=================================================================================================//
