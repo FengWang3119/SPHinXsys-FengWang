@@ -69,7 +69,8 @@ namespace udf
         wall_shear_stress_(particles_->getVariableDataByName<Real>("WallShearStress")),
         e_nearest_normal_(particles_->getVariableDataByName<Vecd>("WallNearestNormalUnitVector")),
         fluid_particle_spacing_(sph_body.getSPHAdaptation().ReferenceSpacing()),
-        physical_time_(sph_system_->getSystemVariableDataByName<Real>("PhysicalTime"))
+        physical_time_(sph_system_->getSystemVariableDataByName<Real>("PhysicalTime")),
+        velocity_gradient_(particles_->getVariableDataByName<Matd>("TurbulentVelocityGradient"))
     {
         particles_->addVariableToWrite<Real>("FrictionVelocityFromSublayer");
         particles_->addVariableToWrite<Real>("TargetFlowRateInSublayer");
@@ -95,7 +96,9 @@ namespace udf
             Real k_outer = turbu_k_[index_i];
             Real omega_outer = turbu_omega_[index_i];
             
-            Vecd dudn_vector = velocity_gradient_inner_only_P_[index_i] * normal;
+            //Vecd dudn_vector = velocity_gradient_inner_only_P_[index_i] * normal;
+            Vecd dudn_vector = velocity_gradient_[index_i] * normal;
+
             Real dudn = obtainTangentialComponent(dudn_vector, normal);
             
             Real nut_outer = turbu_mu_[index_i] / rho_[index_i];
@@ -110,7 +113,7 @@ namespace udf
             Real flow_rate_whole = u_outer * fluid_particle_spacing_;
             Real flow_rate_local = flow_rate_whole - flow_rate_half;
 
-            flow_rate_local = 3.781607e-3;
+            //flow_rate_local = 3.781607e-3;
             
             friction_velocity_from_sublayer_[index_i] = solve_1D_sublayer(nu, u_outer, k_outer, omega_outer, std::abs(dudn),
                 nut_outer, distance_to_wall, friction_vel_magnitude, std::abs(flow_rate_local));
