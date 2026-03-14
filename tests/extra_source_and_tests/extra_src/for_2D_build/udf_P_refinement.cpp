@@ -54,6 +54,10 @@ namespace udf
         vel_ps_magnitude_(particles_->registerStateVariableData<Real>("VelPS")),
         dudn_(particles_->registerStateVariableData<Real>("dudn")),
         utau_node_(particles_->registerStateVariableData<Real>("utauNode")),
+        node_value_(particles_->registerStateVariableData<Vec6d>("NodeValue")),
+        node_vel_first_second_(particles_->registerStateVariableData<Vecd>("NodeVelFirSec")),
+        node_vel_third_fourth_(particles_->registerStateVariableData<Vecd>("NodeVelThirFour")),
+        node_vel_fifth_(particles_->registerStateVariableData<Real>("NodeVelFifth")),
         //
         is_near_wall_P1_(particles_->getVariableDataByName<int>("IsNearWallP1")),
         y_p_(particles_->getVariableDataByName<Real>("Y_P")),
@@ -78,6 +82,10 @@ namespace udf
         particles_->addVariableToWrite<Real>("dudn");
         particles_->addVariableToWrite<Real>("utauNode");
         particles_->addVariableToWrite<Real>("DistanceToDummyInterface");
+        particles_->addVariableToWrite<Vec6d>("NodeValue");
+        particles_->addVariableToWrite<Vecd>("NodeVelFirSec");
+        particles_->addVariableToWrite<Vecd>("NodeVelThirFour");
+        particles_->addVariableToWrite<Real>("NodeVelFifth");
     }
     //=================================================================================================//
     void P_refinement::update(size_t index_i, Real dt)
@@ -87,6 +95,10 @@ namespace udf
         vel_ps_magnitude_[index_i] = 0.0;
         dudn_[index_i] = 0.0;
         utau_node_[index_i] = 0.0;
+        node_value_[index_i] = Vec6d::Zero();
+        node_vel_first_second_[index_i] = Vecd::Zero();
+        node_vel_third_fourth_[index_i] = Vecd::Zero();
+        node_vel_fifth_[index_i] = 0.0;
         if (is_near_wall_P1_[index_i] == 1)
         {
             Vecd normal = e_nearest_normal_[index_i];
@@ -115,8 +127,14 @@ namespace udf
 
             //flow_rate_local = 3.781607e-3;
             
-            friction_velocity_from_sublayer_[index_i] = solve_1D_sublayer(nu, u_outer, k_outer, omega_outer, std::abs(dudn),
+            node_value_[index_i] = solve_1D_sublayer(nu, u_outer, k_outer, omega_outer, std::abs(dudn),
                 nut_outer, distance_to_wall, friction_vel_magnitude, std::abs(flow_rate_local));
+            friction_velocity_from_sublayer_[index_i] = node_value_[index_i][0];
+            node_vel_first_second_[index_i][0] = node_value_[index_i][1];
+            node_vel_first_second_[index_i][1] = node_value_[index_i][2];
+            node_vel_third_fourth_[index_i][0] = node_value_[index_i][3];
+            node_vel_third_fourth_[index_i][1] = node_value_[index_i][4];
+            node_vel_fifth_[index_i] = node_value_[index_i][5];
 
             if (!std::isfinite(friction_velocity_from_sublayer_[index_i]))
             {
@@ -145,7 +163,7 @@ namespace udf
         }
     }
     //=================================================================================================//
-    double P_refinement::solve_1D_sublayer(double kinematic_viscosity, double u_p_outer, double k_p_outer, double w_p_outer,
+    Vec6d P_refinement::solve_1D_sublayer(double kinematic_viscosity, double u_p_outer, double k_p_outer, double w_p_outer,
         double vel_grad_p_outer, double nut_p_outer, double h_sublayer, double utau_outer, double Q_target)
     {
         //------------------------------------------------¡ý Input parameters ¡ý------------------------------------------------
@@ -488,6 +506,20 @@ namespace udf
             //std::cout << "------------" << std::endl;
 
         }
+
+        //** This is a temporary treatment *
+        if (ny != 5)
+        {
+            std::cout << "ny is not 5, currently not allowed! Stop here." << std::endl;
+            std::cin.get();
+        }
+        Vec6d results = Vec6d::Zero();
+        results[0] = utau;
+        for (int i = 0; i < ny; ++i) {
+            results[i+1] = phi_solved[i];
+        }
+
+        return results;
         //std::cout << "******Converge******" << std::endl;
 
         //std::cout << "******The results are: ******" << std::endl;
@@ -530,7 +562,7 @@ namespace udf
         //for (int i = 0; i < ny; ++i) {
         //    NUT[i] = K[i] / (OMEGA[i] + eps);
         //}
-        return utau;
+        //return utau;
     }
     //=================================================================================================//
     // ================= TDMA =================

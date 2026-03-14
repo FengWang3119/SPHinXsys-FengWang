@@ -36,7 +36,7 @@ namespace udf
         virtual ~P_refinement(){};
 
         void update(size_t index_i, Real dt = 0.0);
-        double solve_1D_sublayer(double kinematic_viscosity, double u_p_outer, double k_p_outer,
+        Vec6d solve_1D_sublayer(double kinematic_viscosity, double u_p_outer, double k_p_outer,
             double w_p_outer, double vel_grad_p_outer, double nut_p_outer, double h_sublayer, 
             double utau_outer, double Q_target);
         std::vector<double> tdma(const std::vector<double>& a, const std::vector<double>& b, const std::vector<double>& c, const std::vector<double>& d);
@@ -56,6 +56,10 @@ namespace udf
         Real* vel_ps_magnitude_;
         Real* dudn_;
         Real* utau_node_;
+        Vec6d* node_value_; // ** Temporary treatment only valid for 5-node configuration, first is utau, then velocity *
+        Vecd* node_vel_first_second_; // ** Temporary treatment
+        Vecd* node_vel_third_fourth_; // ** Temporary treatment
+        Real* node_vel_fifth_; // ** Temporary treatment
         //
         int* is_near_wall_P1_;
         Real* y_p_;
