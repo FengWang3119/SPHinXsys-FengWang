@@ -269,6 +269,10 @@ int main(int ac, char *av[])
     BodyStatesRecordingToVtp write_observation_states_pressure_contour(observer_body_pressure_contour);     //% Average
     write_observation_states_pressure_contour.addToWrite<Real>(observer_body_pressure_contour, "Pressure"); //% Average pressure
 
+    //** Temporary treatment *
+    ObservedQuantityRecording<Vecd> write_recorded_water_node_velocity_1_2("NodeVelFirSec", fluid_observer_contact);
+    ObservedQuantityRecording<Vecd> write_recorded_water_node_velocity_3_4("NodeVelThirFour", fluid_observer_contact);
+    ObservedQuantityRecording<Real> write_recorded_water_node_velocity_5("NodeVelFifth", fluid_observer_contact);
     /**
      * @brief Setup geometry and initial conditions.
      */
@@ -483,6 +487,10 @@ int main(int ac, char *av[])
                 write_recorded_water_mut.writeToFile(number_of_iterations);
                 write_recorded_water_omega.writeToFile(number_of_iterations);
                 write_nearwall_friction_velocity.writeToFile(number_of_iterations);
+                //** Temporary treatment *
+                write_recorded_water_node_velocity_1_2.writeToFile(number_of_iterations);
+                write_recorded_water_node_velocity_3_4.writeToFile(number_of_iterations);
+                write_recorded_water_node_velocity_5.writeToFile(number_of_iterations);
             }
             //if (GlobalStaticVariables::physical_time_ > end_time * 0.5)
             //body_states_recording.writeToFile();
