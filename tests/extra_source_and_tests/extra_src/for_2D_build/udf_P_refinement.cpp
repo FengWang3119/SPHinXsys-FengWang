@@ -108,8 +108,8 @@ namespace udf
             Real k_outer = turbu_k_[index_i];
             Real omega_outer = turbu_omega_[index_i];
             
-            //Vecd dudn_vector = velocity_gradient_inner_only_P_[index_i] * normal;
-            Vecd dudn_vector = velocity_gradient_[index_i] * normal;
+            Vecd dudn_vector = velocity_gradient_inner_only_P_[index_i] * normal;
+            //Vecd dudn_vector = velocity_gradient_[index_i] * normal;
 
             Real dudn = obtainTangentialComponent(dudn_vector, normal);
             
