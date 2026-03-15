@@ -464,6 +464,14 @@ int main(int ac, char *av[])
             left_bidirection_buffer.deletion.exec();
             right_bidirection_buffer.deletion.exec();
 
+            if (physical_time > cutoff_time)
+            {
+                //** Temporary treatment *
+                write_recorded_water_node_velocity_1_2.writeToFile(number_of_iterations);
+                write_recorded_water_node_velocity_3_4.writeToFile(number_of_iterations);
+                write_recorded_water_node_velocity_5.writeToFile(number_of_iterations);
+            }
+
             /** Update cell linked list and configuration. */
             if (number_of_iterations % 100 == 0 && number_of_iterations != 1)
             {
@@ -487,10 +495,6 @@ int main(int ac, char *av[])
                 write_recorded_water_mut.writeToFile(number_of_iterations);
                 write_recorded_water_omega.writeToFile(number_of_iterations);
                 write_nearwall_friction_velocity.writeToFile(number_of_iterations);
-                //** Temporary treatment *
-                write_recorded_water_node_velocity_1_2.writeToFile(number_of_iterations);
-                write_recorded_water_node_velocity_3_4.writeToFile(number_of_iterations);
-                write_recorded_water_node_velocity_5.writeToFile(number_of_iterations);
             }
             //if (GlobalStaticVariables::physical_time_ > end_time * 0.5)
             //body_states_recording.writeToFile();
