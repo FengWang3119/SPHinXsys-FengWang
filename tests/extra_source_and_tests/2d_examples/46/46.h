@@ -227,6 +227,52 @@ void output_number_observe_points_on_lines()
     outfile.close();
 }
 } // namespace observe_nearwall
+
+namespace observe_node_cross_section
+{
+    Real x_observe_node = x_observe_start;
+    // By kernel weight.
+    StdVec<Vecd> observation_location;
+    StdVec<Vecd> observation_theoretical_locations;
+    void get_observation_locations()
+    {
+        observation_location.push_back(Vec2d(x_observe_node, resolution_ref / 2.0 - observer_offset_distance));
+        observation_location.push_back(Vec2d(x_observe_node, (DH - resolution_ref / 2.0) + observer_offset_distance));
+        observation_theoretical_locations.push_back(Vec2d(x_observe_node, resolution_ref / 2.0));
+        observation_theoretical_locations.push_back(Vec2d(x_observe_node, DH - resolution_ref / 2.0));
+    }
+    constexpr const char* namespace_prefix = "Node_";
+    void output_observe_positions()
+    {
+        std::string filename = "../bin/output/" + std::string(namespace_prefix) + "observer_positions.dat";
+        std::ofstream outfile(filename);
+        if (!outfile.is_open())
+        {
+            std::cerr << "Error: Unable to open file " << filename << " for writing." << std::endl;
+            return;
+        }
+        for (const Vecd& position : observation_location)
+        {
+            outfile << position[0] << " " << position[1] << "\n";
+        }
+        outfile.close();
+    }
+    void output_observer_theoretical_y()
+    {
+        std::string filename = "../bin/output/" + std::string(namespace_prefix) + "observer_theoretical_y.dat";
+        std::ofstream outfile(filename);
+        if (!outfile.is_open())
+        {
+            std::cerr << "Error: Unable to open file " << filename << " for writing." << std::endl;
+            return;
+        }
+        for (const Vecd& position : observation_theoretical_locations)
+        {
+            outfile << position[1] << "\n";
+        }
+        outfile.close();
+    }
+} // namespace observe_node_cross_section
 //----------------------------------------------------------------------
 //	Cases-dependent geometries
 //----------------------------------------------------------------------

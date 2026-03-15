@@ -53,9 +53,13 @@ int main(int ac, char *av[])
 
     get_observation_locations();
     output_observer_theoretical_y();
-
     ObserverBody fluid_observer(sph_system, "FluidObserver");
     fluid_observer.generateParticles<ObserverParticles>(observation_location);
+    
+    observe_node_cross_section::get_observation_locations();
+    observe_node_cross_section::output_observer_theoretical_y();
+    ObserverBody node_observer(sph_system, "NodeObserver");
+    node_observer.generateParticles<ObserverParticles>(observe_node_cross_section::observation_location);
 
     observe_nearwall::getObservingLineLengthAndEndPoints();
     observe_nearwall::getPositionsOfMultipleObserveLines();
@@ -72,6 +76,7 @@ int main(int ac, char *av[])
     InnerRelation water_block_inner(water_block);
     ContactRelation water_wall_contact(water_block, {&wall_boundary});
     ContactRelation fluid_observer_contact(fluid_observer, {&water_block});
+    ContactRelation node_observer_contact(node_observer, { &water_block });
     ContactRelation observer_centerpoint_contact(observer_center_point, {&water_block});
     ContactRelation friction_velocity_observer_contact(friction_velocity_observer, {&water_block});
     ContactRelation fluid_pressure_contour_observer_contact(observer_body_pressure_contour, {&water_block}); //% Average
@@ -270,9 +275,9 @@ int main(int ac, char *av[])
     write_observation_states_pressure_contour.addToWrite<Real>(observer_body_pressure_contour, "Pressure"); //% Average pressure
 
     //** Temporary treatment *
-    ObservedQuantityRecording<Vecd> write_recorded_water_node_velocity_1_2("NodeVelFirSec", fluid_observer_contact);
-    ObservedQuantityRecording<Vecd> write_recorded_water_node_velocity_3_4("NodeVelThirFour", fluid_observer_contact);
-    ObservedQuantityRecording<Real> write_recorded_water_node_velocity_5("NodeVelFifth", fluid_observer_contact);
+    ObservedQuantityRecording<Vecd> write_recorded_water_node_velocity_1_2("NodeVelFirSec", node_observer_contact);
+    ObservedQuantityRecording<Vecd> write_recorded_water_node_velocity_3_4("NodeVelThirFour", node_observer_contact);
+    ObservedQuantityRecording<Real> write_recorded_water_node_velocity_5("NodeVelFifth", node_observer_contact);
     /**
      * @brief Setup geometry and initial conditions.
      */
@@ -292,6 +297,7 @@ int main(int ac, char *av[])
         water_block_complex.updateConfiguration();
         observer_centerpoint_contact.updateConfiguration();
         fluid_observer_contact.updateConfiguration();
+        node_observer_contact.updateConfiguration();
         friction_velocity_observer_contact.updateConfiguration();
         fluid_pressure_contour_observer_contact.updateConfiguration(); //** Average *
     }
@@ -480,6 +486,7 @@ int main(int ac, char *av[])
             water_block.updateCellLinkedList();
             water_block_complex.updateConfiguration();
             fluid_observer_contact.updateConfiguration();
+            node_observer_contact.updateConfiguration();
             friction_velocity_observer_contact.updateConfiguration();
 
             /** Tag truncated inlet/outlet particles*/
