@@ -660,7 +660,7 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
     
     //------------------------------------------------¡ý Input index ¡ý------------------------------------------------
     int NF = 2 * ny;
-    int index = 34;
+    int index = 35;
     //------------------------------------------------¡ü Input index ¡ü------------------------------------------------
 
     //------------------------------------------------¡ý Calculate P value ¡ý------------------------------------------------
@@ -671,8 +671,8 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
 
     printf("hy=%f\n", hy);
     printf("yp=%f\n", y_p);
-    printf("yplus=%f\n", yplus);
-    printf("u_p=%f\n", u_p);
+    printf("yplus_initial=%f\n", yplus);
+    printf("u_p_iniital=%f\n", u_p);
     
     double y_whole[2 * ny];
     int Ny_whole = ny * 2;
@@ -984,6 +984,12 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
         /*double error = U_new[ny-1] - u_p_outer;
         utau -= 0.1 * error;*/
         //------------------------------------------------¡ü Check and update flow rate ¡ü------------------------------------------------
+
+        //------------------------------------------------¡ý Update P value ¡ý------------------------------------------------
+        yplus = utau * y_p / nu;
+        u_p = utau * yplus;
+        turbu_omega_p = 6.0 * nu / (std_kw_beta_i_ * y_p * y_p);
+        //------------------------------------------------¡ü Update P value ¡ü------------------------------------------------
 
         std::cout << "flow_rate_current = " << flow_rate_current
             << ", target = " << flow_rate_target << std::endl;
