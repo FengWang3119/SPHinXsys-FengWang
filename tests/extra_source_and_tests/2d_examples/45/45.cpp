@@ -634,10 +634,8 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
 {
     //------------------------------------------------¡ý Input parameters ¡ý------------------------------------------------
     double utau_init = 6.37309e-02;
-    double H = 2.0;
     double height_sublayer = h_sublayer;
     double nu = 3.5e-4;
-    double U_avg = 1.0;
 
     double u_init = u_p_outer;
     double k_init = k_p_outer;
@@ -662,7 +660,7 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
     
     //------------------------------------------------¡ý Input index ¡ý------------------------------------------------
     int NF = 2 * ny;
-    int index = 32;
+    int index = 33;
     //------------------------------------------------¡ü Input index ¡ü------------------------------------------------
 
     //------------------------------------------------¡ý Calculate P value ¡ý------------------------------------------------
@@ -1118,13 +1116,13 @@ void test_simpson()
 int main()
 {
     //solve_1D_half_channel();
-    double U_p = 3.674356e-01;
-    double K_p = 2.145868e-03;
-    double W_p = 4.179796e+01;
-    double NUT_p = 5.166097e-05;
-    double vel_grad_p = 1.021562e+01;
-    double distance_to_wall = 0.03125;
-    double target_flow_rate = 5.871126e-03;
+    double U_p = 3.000607e-1;
+    double K_p = 1.118813e-3;
+    double W_p = 5.998469e+1;
+    double NUT_p = 1.885024e-5;
+    double vel_grad_p = 1.127180e+1;
+    double distance_to_wall = 0.025;
+    double target_flow_rate = 3.781607e-3;
     solve_1D_sublayer(U_p, 
         K_p, W_p, vel_grad_p, NUT_p, 
         distance_to_wall, target_flow_rate);
