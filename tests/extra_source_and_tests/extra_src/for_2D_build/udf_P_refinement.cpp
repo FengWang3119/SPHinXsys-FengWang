@@ -127,7 +127,10 @@ namespace udf
 
             flow_rate_local = 3.781607e-3;
             dudn = 1.127180e+1;
-            
+            k_outer = 1.118813e-3;
+            omega_outer = 5.998469e+1;
+            nut_outer = 1.885024e-5;
+
             node_value_[index_i] = solve_1D_sublayer(nu, u_outer, k_outer, omega_outer, std::abs(dudn),
                 nut_outer, distance_to_wall, friction_vel_magnitude, std::abs(flow_rate_local));
             friction_velocity_from_sublayer_[index_i] = node_value_[index_i][0];
