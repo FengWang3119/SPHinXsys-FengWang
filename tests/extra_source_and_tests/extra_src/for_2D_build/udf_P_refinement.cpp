@@ -130,6 +130,7 @@ namespace udf
             k_outer = 1.118813e-3;
             omega_outer = 5.998469e+1;
             nut_outer = 1.885024e-5;
+            u_outer = 3.000607e-1;
 
             node_value_[index_i] = solve_1D_sublayer(nu, u_outer, k_outer, omega_outer, std::abs(dudn),
                 nut_outer, distance_to_wall, friction_vel_magnitude, std::abs(flow_rate_local));
