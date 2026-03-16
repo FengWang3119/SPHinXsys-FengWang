@@ -633,7 +633,7 @@ void tdma5(const double a[5], const double b[5], const double c[5], const double
 void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, double vel_grad_p_outer, double nut_p_outer, double h_sublayer, double Q_target)
 {
     //------------------------------------------------¡ý Input parameters ¡ý------------------------------------------------
-    double utau_init = 6.37309e-02;
+    double utau_init = 0.01;
     double height_sublayer = h_sublayer;
     double nu = 3.5e-4;
 
@@ -660,7 +660,7 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
     
     //------------------------------------------------¡ý Input index ¡ý------------------------------------------------
     int NF = 2 * ny;
-    int index = 33;
+    int index = 34;
     //------------------------------------------------¡ü Input index ¡ü------------------------------------------------
 
     //------------------------------------------------¡ý Calculate P value ¡ý------------------------------------------------
