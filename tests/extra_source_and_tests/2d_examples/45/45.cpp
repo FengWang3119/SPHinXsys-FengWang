@@ -660,7 +660,7 @@ void solve_1D_sublayer(double u_p_outer, double k_p_outer, double w_p_outer, dou
     
     //------------------------------------------------¡ý Input index ¡ý------------------------------------------------
     int NF = 2 * ny;
-    int index = 35;
+    int index = 36;
     //------------------------------------------------¡ü Input index ¡ü------------------------------------------------
 
     //------------------------------------------------¡ý Calculate P value ¡ý------------------------------------------------
@@ -1122,7 +1122,10 @@ void test_simpson()
 int main()
 {
     //solve_1D_half_channel();
-    double U_p = 3.000607e-1;
+    
+    //double U_p = 3.000607e-1;
+    double U_p = 0.85;
+
     double K_p = 1.118813e-3;
     double W_p = 5.998469e+1;
     double NUT_p = 1.885024e-5;
