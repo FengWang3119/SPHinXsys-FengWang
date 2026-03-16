@@ -132,7 +132,7 @@ namespace udf
             nut_outer = 1.885024e-5;
             u_outer = 3.000607e-1;
             nu = 3.5e-4;
-            friction_vel_magnitude = 6.37309e-02;
+            //friction_vel_magnitude = 6.37309e-02;
 
             node_value_[index_i] = solve_1D_sublayer(nu, u_outer, k_outer, omega_outer, std::abs(dudn),
                 nut_outer, distance_to_wall, friction_vel_magnitude, std::abs(flow_rate_local));
@@ -487,6 +487,12 @@ namespace udf
             /*double error = U_new[ny-1] - u_p_outer;
             utau -= 0.1 * error;*/
             //------------------------------------------------¡ü Check and update flow rate ¡ü------------------------------------------------
+
+            //------------------------------------------------¡ý Update P value ¡ý------------------------------------------------
+            yplus = utau * y_p / nu;
+            u_p = utau * yplus;
+            turbu_omega_p = 6.0 * nu / (std_kw_beta_i_ * y_p * y_p);
+            //------------------------------------------------¡ü Update P value ¡ü------------------------------------------------
 
             //std::cout << "flow_rate_current = " << flow_rate_current
             //    << ", target = " << flow_rate_target << std::endl;
