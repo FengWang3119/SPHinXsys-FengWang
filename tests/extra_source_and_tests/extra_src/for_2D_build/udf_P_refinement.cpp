@@ -125,7 +125,7 @@ namespace udf
             Real flow_rate_whole = u_outer * fluid_particle_spacing_;
             Real flow_rate_local = flow_rate_whole - flow_rate_half;
 
-            //flow_rate_local = 3.781607e-3;
+            flow_rate_local = 3.781607e-3;
             
             node_value_[index_i] = solve_1D_sublayer(nu, u_outer, k_outer, omega_outer, std::abs(dudn),
                 nut_outer, distance_to_wall, friction_vel_magnitude, std::abs(flow_rate_local));

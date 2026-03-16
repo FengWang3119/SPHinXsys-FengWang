@@ -162,11 +162,11 @@ int main(int ac, char *av[])
 
     /** Density relaxation algorithm by using position verlet time stepping. */
     // ** If not use ARD+ *
-    Dynamics1Level<fluid_dynamics::Integration2ndHalfWithWallNoRiemann> density_relaxation(water_block_inner, water_wall_contact);
+    //Dynamics1Level<fluid_dynamics::Integration2ndHalfWithWallNoRiemann> density_relaxation(water_block_inner, water_wall_contact);
     // ** If use ARD+ *
-    //Dynamics1Level<fluid_dynamics::Integration2ndHalfInnerNoRiemann> density_relaxation(water_block_inner);
-    //InteractionDynamics<fluid_dynamics::udf::Integration2ndHalfOnlyWallAcousticRiemannAdjusted> density_relaxation_wall(water_wall_contact);
-    //density_relaxation.post_processes_.push_back(&density_relaxation_wall);
+    Dynamics1Level<fluid_dynamics::Integration2ndHalfInnerNoRiemann> density_relaxation(water_block_inner);
+    InteractionDynamics<fluid_dynamics::udf::Integration2ndHalfOnlyWallAcousticRiemannAdjusted> density_relaxation_wall(water_wall_contact);
+    density_relaxation.post_processes_.push_back(&density_relaxation_wall);
 
     /** Turbulent.Note: When use wall function, K Epsilon calculation only consider inner */
     InteractionWithUpdate<fluid_dynamics::udf::JudgeIsNearWall> update_near_wall_status(water_block_inner, water_wall_contact, y_p_constant);
