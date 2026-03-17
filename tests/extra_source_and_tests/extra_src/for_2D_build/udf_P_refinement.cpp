@@ -135,7 +135,7 @@ namespace udf
             //omega_outer = 5.998469e+1;
             nut_outer = 1.885024e-5;
             //u_outer = 3.000607e-1;
-            //nu = 3.5e-4;
+            nu = 3.5e-4;
             //friction_vel_magnitude = 6.37309e-02;
 
             node_value_[index_i] = solve_1D_sublayer(nu, u_outer, k_outer, omega_outer, std::abs(dudn),
