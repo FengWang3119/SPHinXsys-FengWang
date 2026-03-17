@@ -106,7 +106,7 @@ namespace udf
             Real nu = mu_ / rho_[index_i];
             
             Real u_outer = obtainTangentialComponent(vel_[index_i], normal);
-            u_outer = 3.000607e-1;
+            //u_outer = 3.000607e-1;
             
             Real k_outer = turbu_k_[index_i];
             Real omega_outer = turbu_omega_[index_i];
@@ -115,7 +115,7 @@ namespace udf
             Vecd dudn_vector = velocity_gradient_[index_i] * normal;
 
             Real dudn = obtainTangentialComponent(dudn_vector, normal);
-            dudn = 1.127180e+1;
+            //dudn = 1.127180e+1;
 
             Real nut_outer = turbu_mu_[index_i] / rho_[index_i];
             
@@ -129,13 +129,13 @@ namespace udf
             Real flow_rate_whole = u_outer * fluid_particle_spacing_;
             Real flow_rate_local = flow_rate_whole - flow_rate_half;
 
-            flow_rate_local = 3.781607e-3;
+            //flow_rate_local = 3.781607e-3;
             //dudn = 1.127180e+1;
-            k_outer = 1.118813e-3;
+            //k_outer = 1.118813e-3;
             //omega_outer = 5.998469e+1;
-            nut_outer = 1.885024e-5;
+            //nut_outer = 1.885024e-5;
             //u_outer = 3.000607e-1;
-            nu = 3.5e-4;
+            //nu = 3.5e-4;
             //friction_vel_magnitude = 6.37309e-02;
 
             node_value_[index_i] = solve_1D_sublayer(nu, u_outer, k_outer, omega_outer, std::abs(dudn),
