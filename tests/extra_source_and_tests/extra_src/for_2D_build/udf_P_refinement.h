@@ -25,7 +25,7 @@ namespace udf
         virtual ~P_refinement_GetVelocityGradient() {};
 
     protected:
-        Matd* velocity_gradient_inner_only_P_;
+        Matd* velocity_gradient_only_P_;
         //
         Real* Vol_;
         Vecd* vel_;
@@ -45,8 +45,25 @@ namespace udf
 
     protected:
         Matd* turbu_B_;
+        Matd* B_;
     };
     using P_refinement_GetVelocityGradientInner = P_refinement_GetVelocityGradient<Inner<>>;
+
+    //** Wall part *
+    template <>
+    class P_refinement_GetVelocityGradient<Contact<Wall>> : public InteractionWithWall<P_refinement_GetVelocityGradient>
+    {
+    public:
+        explicit P_refinement_GetVelocityGradient(BaseContactRelation& contact_relation);
+        virtual ~P_refinement_GetVelocityGradient() {};
+        void interaction(size_t index_i, Real dt = 0.0);
+
+    protected:
+
+    };
+
+    //** Interface part *
+    using P_refinement_GetVelocityGradientComplex = ComplexInteraction<P_refinement_GetVelocityGradient<Inner<>, Contact<Wall>>>;
 //=================================================================================================//
     class P_refinement : public LocalDynamics, public kOmega_BaseTurbuClosureCoeff, public WallFunctionCoefficient
     {
@@ -88,7 +105,7 @@ namespace udf
         Real* rho_;
         Viscosity& viscosity_;
         Real mu_;
-        Matd* velocity_gradient_inner_only_P_;
+        Matd* velocity_gradient_only_P_;
         Real* turbu_mu_;
         Real* distance_to_dummy_interface_;
         Real* wall_shear_stress_;

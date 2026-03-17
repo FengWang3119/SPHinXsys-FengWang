@@ -16,7 +16,7 @@ namespace udf
     P_refinement_GetVelocityGradient<DataDelegationType>::
         P_refinement_GetVelocityGradient(BaseRelationType& base_relation)
         : LocalDynamics(base_relation.getSPHBody()), DataDelegationType(base_relation),
-        velocity_gradient_inner_only_P_(this->particles_->template registerStateVariableData<Matd>("VelocityGradientInnerOnlyP")),
+        velocity_gradient_only_P_(this->particles_->template registerStateVariableData<Matd>("VelocityGradientInnerOnlyP")),
         Vol_(this->particles_->template getVariableDataByName<Real>("VolumetricMeasure")),
         vel_(this->particles_->template getVariableDataByName<Vecd>("Velocity")),
         is_near_wall_P1_(this->particles_->template getVariableDataByName<int>("IsNearWallP1")),

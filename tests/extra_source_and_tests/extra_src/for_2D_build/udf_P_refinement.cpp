@@ -12,14 +12,15 @@ namespace udf
     P_refinement_GetVelocityGradient<Inner<>>::
         P_refinement_GetVelocityGradient(BaseInnerRelation& inner_relation)
         : P_refinement_GetVelocityGradient<DataDelegateInner>(inner_relation),
-        turbu_B_(particles_->getVariableDataByName<Matd>("TurbulentLinearGradientCorrectionMatrix"))
+        turbu_B_(particles_->getVariableDataByName<Matd>("TurbulentLinearGradientCorrectionMatrix")),
+        B_(particles_->getVariableDataByName<Matd>("LinearGradientCorrectionMatrix"))
     {
         particles_->addVariableToWrite<Matd>("VelocityGradientInnerOnlyP");
     }
     //=================================================================================================//
     void P_refinement_GetVelocityGradient<Inner<>>::interaction(size_t index_i, Real dt)
     {
-        velocity_gradient_inner_only_P_[index_i] = Matd::Zero();
+        velocity_gradient_only_P_[index_i] = Matd::Zero();
         if (is_near_wall_P1_[index_i] == 1)
         {
             Vecd vel_i = vel_[index_i];
@@ -28,7 +29,7 @@ namespace udf
             {
                 size_t index_j = inner_neighborhood.j_[n];
                 Vecd nablaW_ijV_j = inner_neighborhood.dW_ij_[n] * Vol_[index_j] * inner_neighborhood.e_ij_[n];
-                velocity_gradient_inner_only_P_[index_i] += -(vel_i - vel_[index_j]) * nablaW_ijV_j.transpose();
+                velocity_gradient_only_P_[index_i] += -(vel_i - vel_[index_j]) * nablaW_ijV_j.transpose();
             }
         }
     }
@@ -37,7 +38,33 @@ namespace udf
     {
         if (is_near_wall_P1_[index_i] == 1)
         {
-            velocity_gradient_inner_only_P_[index_i] *= turbu_B_[index_i];
+            velocity_gradient_only_P_[index_i] *= turbu_B_[index_i];
+            //velocity_gradient_only_P_[index_i] *= B_[index_i];
+        }
+    }
+    //=================================================================================================//
+    P_refinement_GetVelocityGradient<Contact<Wall>>::P_refinement_GetVelocityGradient(BaseContactRelation& contact_relation)
+        : InteractionWithWall<P_refinement_GetVelocityGradient>(contact_relation) {}
+    //=================================================================================================//
+    void P_refinement_GetVelocityGradient<Contact<Wall>>::interaction(size_t index_i, Real dt)
+    {
+        if (is_near_wall_P1_[index_i] == 1)
+        {
+            Matd vel_grad = Matd::Zero();
+            for (size_t k = 0; k < contact_configuration_.size(); ++k)
+            {
+                Vecd* vel_ave_k = wall_vel_ave_[k];
+                Real* Vol_k = wall_Vol_[k];
+                Neighborhood& contact_neighborhood = (*contact_configuration_[k])[index_i];
+                for (size_t n = 0; n != contact_neighborhood.current_size_; ++n)
+                {
+                    size_t index_j = contact_neighborhood.j_[n];
+                    Vecd nablaW_ijV_j = contact_neighborhood.dW_ij_[n] * Vol_k[index_j] * contact_neighborhood.e_ij_[n];
+                    //vel_grad += -1.0 * (vel_i - vel_ave_k[index_j]) * nablaW_ijV_j.transpose();
+                    vel_grad += -1.0 * 2.0 * (vel_[index_i] - vel_ave_k[index_j]) * nablaW_ijV_j.transpose();
+                }
+            }
+            velocity_gradient_only_P_[index_i] += vel_grad;
         }
     }
 //=================================================================================================//
@@ -63,7 +90,7 @@ namespace udf
         rho_(particles_->getVariableDataByName<Real>("Density")),
         viscosity_(DynamicCast<Viscosity>(this, particles_->getBaseMaterial())), 
         mu_(viscosity_.ReferenceViscosity()),
-        velocity_gradient_inner_only_P_(particles_->getVariableDataByName<Matd>("VelocityGradientInnerOnlyP")),
+        velocity_gradient_only_P_(particles_->getVariableDataByName<Matd>("VelocityGradientInnerOnlyP")),
         turbu_mu_(particles_->getVariableDataByName<Real>("TurbulentViscosity")),
         distance_to_dummy_interface_(particles_->getVariableDataByName<Real>("DistanceToDummyInterface")),
         wall_shear_stress_(particles_->getVariableDataByName<Real>("WallShearStress")),
@@ -107,7 +134,7 @@ namespace udf
             Real k_outer = turbu_k_[index_i];
             Real omega_outer = turbu_omega_[index_i];
             
-            Vecd dudn_vector = velocity_gradient_inner_only_P_[index_i] * normal;
+            Vecd dudn_vector = velocity_gradient_only_P_[index_i] * normal;
             //Vecd dudn_vector = velocity_gradient_[index_i] * normal;
 
             Real dudn = obtainTangentialComponent(dudn_vector, normal);
