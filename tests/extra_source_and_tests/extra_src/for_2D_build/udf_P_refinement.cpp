@@ -9,15 +9,15 @@ namespace fluid_dynamics
 namespace udf
 {
 //=================================================================================================//
-    P_refinement_GetVelocityGradientInnerOnlyP<Inner<>>::
-        P_refinement_GetVelocityGradientInnerOnlyP(BaseInnerRelation& inner_relation)
-        : P_refinement_GetVelocityGradientInnerOnlyP<DataDelegateInner>(inner_relation),
+    P_refinement_GetVelocityGradient<Inner<>>::
+        P_refinement_GetVelocityGradient(BaseInnerRelation& inner_relation)
+        : P_refinement_GetVelocityGradient<DataDelegateInner>(inner_relation),
         turbu_B_(particles_->getVariableDataByName<Matd>("TurbulentLinearGradientCorrectionMatrix"))
     {
         particles_->addVariableToWrite<Matd>("VelocityGradientInnerOnlyP");
     }
     //=================================================================================================//
-    void P_refinement_GetVelocityGradientInnerOnlyP<Inner<>>::interaction(size_t index_i, Real dt)
+    void P_refinement_GetVelocityGradient<Inner<>>::interaction(size_t index_i, Real dt)
     {
         velocity_gradient_inner_only_P_[index_i] = Matd::Zero();
         if (is_near_wall_P1_[index_i] == 1)
@@ -33,7 +33,7 @@ namespace udf
         }
     }
     //=================================================================================================//
-    void P_refinement_GetVelocityGradientInnerOnlyP<Inner<>>::update(size_t index_i, Real dt)
+    void P_refinement_GetVelocityGradient<Inner<>>::update(size_t index_i, Real dt)
     {
         if (is_near_wall_P1_[index_i] == 1)
         {

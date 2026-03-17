@@ -13,16 +13,16 @@ namespace udf
 {
 //=================================================================================================//
     template <typename... InteractionTypes>
-    class P_refinement_GetVelocityGradientInnerOnlyP;
+    class P_refinement_GetVelocityGradient;
 
     template <class DataDelegationType>
-    class P_refinement_GetVelocityGradientInnerOnlyP<DataDelegationType>
+    class P_refinement_GetVelocityGradient<DataDelegationType>
         : public LocalDynamics, public DataDelegationType
     {
     public:
         template <class BaseRelationType>
-        explicit P_refinement_GetVelocityGradientInnerOnlyP(BaseRelationType& base_relation);
-        virtual ~P_refinement_GetVelocityGradientInnerOnlyP() {};
+        explicit P_refinement_GetVelocityGradient(BaseRelationType& base_relation);
+        virtual ~P_refinement_GetVelocityGradient() {};
 
     protected:
         Matd* velocity_gradient_inner_only_P_;
@@ -35,17 +35,18 @@ namespace udf
 
     //** Inner part *
     template <>
-    class P_refinement_GetVelocityGradientInnerOnlyP<Inner<>> : public P_refinement_GetVelocityGradientInnerOnlyP<DataDelegateInner>
+    class P_refinement_GetVelocityGradient<Inner<>> : public P_refinement_GetVelocityGradient<DataDelegateInner>
     {
     public:
-        explicit P_refinement_GetVelocityGradientInnerOnlyP(BaseInnerRelation& inner_relation);
-        virtual ~P_refinement_GetVelocityGradientInnerOnlyP() {};
+        explicit P_refinement_GetVelocityGradient(BaseInnerRelation& inner_relation);
+        virtual ~P_refinement_GetVelocityGradient() {};
         void interaction(size_t index_i, Real dt = 0.0);
         void update(size_t index_i, Real dt = 0.0);
 
     protected:
         Matd* turbu_B_;
     };
+    using P_refinement_GetVelocityGradientInner = P_refinement_GetVelocityGradient<Inner<>>;
 //=================================================================================================//
     class P_refinement : public LocalDynamics, public kOmega_BaseTurbuClosureCoeff, public WallFunctionCoefficient
     {
