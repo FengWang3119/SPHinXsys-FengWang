@@ -133,7 +133,7 @@ namespace udf
             //dudn = 1.127180e+1;
             //k_outer = 1.118813e-3;
             //omega_outer = 5.998469e+1;
-            //nut_outer = 1.885024e-5;
+            nut_outer = 1.885024e-5;
             //u_outer = 3.000607e-1;
             //nu = 3.5e-4;
             //friction_vel_magnitude = 6.37309e-02;
