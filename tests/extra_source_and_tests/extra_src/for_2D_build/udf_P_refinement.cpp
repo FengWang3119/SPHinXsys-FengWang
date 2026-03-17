@@ -131,7 +131,7 @@ namespace udf
 
             flow_rate_local = 3.781607e-3;
             //dudn = 1.127180e+1;
-            //k_outer = 1.118813e-3;
+            k_outer = 1.118813e-3;
             //omega_outer = 5.998469e+1;
             nut_outer = 1.885024e-5;
             //u_outer = 3.000607e-1;
