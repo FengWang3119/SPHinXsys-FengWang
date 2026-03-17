@@ -12,7 +12,30 @@ namespace fluid_dynamics
 namespace udf
 {
 //=================================================================================================//
-    class P_refinement_GetVelocityGradientInnerOnlyP : public LocalDynamics, public DataDelegateInner
+    template <typename... InteractionTypes>
+    class P_refinement_GetVelocityGradientInnerOnlyP;
+
+    template <class DataDelegationType>
+    class P_refinement_GetVelocityGradientInnerOnlyP<DataDelegationType>
+        : public LocalDynamics, public DataDelegationType
+    {
+    public:
+        template <class BaseRelationType>
+        explicit P_refinement_GetVelocityGradientInnerOnlyP(BaseRelationType& base_relation);
+        virtual ~P_refinement_GetVelocityGradientInnerOnlyP() {};
+
+    protected:
+        Matd* velocity_gradient_inner_only_P_;
+        //
+        Real* Vol_;
+        Vecd* vel_;
+        int* is_near_wall_P1_;
+        int* is_near_wall_P2_;
+    };
+
+    //** Inner part *
+    template <>
+    class P_refinement_GetVelocityGradientInnerOnlyP<Inner<>> : public P_refinement_GetVelocityGradientInnerOnlyP<DataDelegateInner>
     {
     public:
         explicit P_refinement_GetVelocityGradientInnerOnlyP(BaseInnerRelation& inner_relation);
@@ -21,12 +44,7 @@ namespace udf
         void update(size_t index_i, Real dt = 0.0);
 
     protected:
-        Matd* velocity_gradient_inner_only_P_;
-        //
         Matd* turbu_B_;
-        Real* Vol_;
-        Vecd* vel_;
-        int* is_near_wall_P1_;
     };
 //=================================================================================================//
     class P_refinement : public LocalDynamics, public kOmega_BaseTurbuClosureCoeff, public WallFunctionCoefficient
