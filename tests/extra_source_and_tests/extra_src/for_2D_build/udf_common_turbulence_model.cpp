@@ -288,10 +288,10 @@ void TurbuViscousForce<Inner<>>::interaction(size_t index_i, Real dt)
         }
 
         //** P-refinement for wall adjacent particle, not using ARD *
-        if (is_near_wall_P1_[index_i] == 1)
-        {
-            shear_stress_eij_corrected = shear_stress_eij;
-        }
+        //if (is_near_wall_P1_[index_i] == 1)
+        //{
+        //    shear_stress_eij_corrected = shear_stress_eij;
+        //}
 
 
         shear_stress = (shear_stress - shear_stress_eij) + shear_stress_eij_corrected;
@@ -369,10 +369,10 @@ void TurbuViscousForce<Contact<Wall>>::interaction(size_t index_i, Real dt)
             Real fric_vel_mag_j = sqrt(C_mu_wf_25_ * turbu_k_i_05 * vel_i_tau_mag / u_star_j);
 
             //** P-refinement for wall adjacent particle, obtain WSS from 1D sublayer solver *
-            if (is_near_wall_P1_[index_i] == 1)
-            {
+            //if (is_near_wall_P1_[index_i] == 1)
+            //{
                 fric_vel_mag_j = friction_velocity_from_sublayer_[index_i];
-            }
+            //}
 
             //** Construct local wall shear stress, if this is on each wall particle j   *
             Real WSS_tn_mag_j = rho_i * fric_vel_mag_j * fric_vel_mag_j * boost::qvm::sign(vel_i.dot(e_j_tau));
