@@ -373,6 +373,10 @@ void TurbuViscousForce<Contact<Wall>>::interaction(size_t index_i, Real dt)
             //{
                 fric_vel_mag_j = friction_velocity_from_sublayer_[index_i];
             //}
+            if (is_near_wall_P1_[index_i] != 1)
+            {
+                fric_vel_mag_j = 0.0;
+            }
 
             //** Construct local wall shear stress, if this is on each wall particle j   *
             Real WSS_tn_mag_j = rho_i * fric_vel_mag_j * fric_vel_mag_j * boost::qvm::sign(vel_i.dot(e_j_tau));
