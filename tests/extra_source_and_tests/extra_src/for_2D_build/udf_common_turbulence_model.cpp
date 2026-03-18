@@ -293,7 +293,12 @@ void TurbuViscousForce<Inner<>>::interaction(size_t index_i, Real dt)
         //    shear_stress_eij_corrected = shear_stress_eij;
         //}
         //** P-refinement for S particle, not using ARD *
-        if (this->is_near_wall_P2_[index_i] == 10 && is_near_wall_P1_[index_i] != 1)
+        //if (this->is_near_wall_P2_[index_i] == 10 && is_near_wall_P1_[index_i] != 1)
+        //{
+        //    shear_stress_eij_corrected = shear_stress_eij;
+        //}
+        //** P-refinement for S and P particle, not using ARD *
+        if (this->is_near_wall_P2_[index_i] == 10)
         {
             shear_stress_eij_corrected = shear_stress_eij;
         }
