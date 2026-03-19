@@ -96,6 +96,8 @@ namespace udf
         Vecd* node_vel_first_second_; // ** Temporary treatment
         Vecd* node_vel_third_fourth_; // ** Temporary treatment
         Real* node_vel_fifth_; // ** Temporary treatment
+        Real* dUdn_P_sublayer_magnitude_;
+        Matd* dUdn_P_sublayer_;
         //
         int* is_near_wall_P1_;
         Real* y_p_;

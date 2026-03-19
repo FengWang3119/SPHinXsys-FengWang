@@ -81,6 +81,8 @@ namespace udf
         node_vel_first_second_(particles_->registerStateVariableData<Vecd>("NodeVelFirSec")),
         node_vel_third_fourth_(particles_->registerStateVariableData<Vecd>("NodeVelThirFour")),
         node_vel_fifth_(particles_->registerStateVariableData<Real>("NodeVelFifth")),
+        dUdn_P_sublayer_magnitude_(particles_->registerStateVariableData<Real>("dUdnFromSublayerMagnitude")),
+        dUdn_P_sublayer_(particles_->registerStateVariableData<Matd>("dUdnFromSublayer")),
         //
         is_near_wall_P1_(particles_->getVariableDataByName<int>("IsNearWallP1")),
         y_p_(particles_->getVariableDataByName<Real>("Y_P")),
@@ -109,6 +111,8 @@ namespace udf
         particles_->addVariableToWrite<Vecd>("NodeVelFirSec");
         particles_->addVariableToWrite<Vecd>("NodeVelThirFour");
         particles_->addVariableToWrite<Real>("NodeVelFifth");
+        particles_->addVariableToWrite<Real>("dUdnFromSublayerMagnitude");
+        particles_->addVariableToWrite<Matd>("dUdnFromSublayer");
     }
     //=================================================================================================//
     void P_refinement::update(size_t index_i, Real dt)
@@ -122,6 +126,8 @@ namespace udf
         node_vel_first_second_[index_i] = Vecd::Zero();
         node_vel_third_fourth_[index_i] = Vecd::Zero();
         node_vel_fifth_[index_i] = 0.0;
+        dUdn_P_sublayer_magnitude_[index_i] = 0.0;
+        dUdn_P_sublayer_[index_i] = Matd::Zero();
         if (is_near_wall_P1_[index_i] == 1)
         {
             Vecd normal = e_nearest_normal_[index_i];
@@ -194,6 +200,21 @@ namespace udf
                 std::cout <<  "friction_vel_magnitude=" << friction_vel_magnitude << std::endl;
                 std::cout <<  "flow_rate_local=" << flow_rate_local << std::endl;
             }
+
+            //** Obtain value for correcting SPH solver *
+            Vecd vel_tangential = vel_[index_i] - vel_[index_i].dot(normal) * normal;
+            Real tangential_velocity_P_magnitude = vel_tangential.norm();
+            Vecd tangential = vel_tangential / (tangential_velocity_P_magnitude + TinyReal);
+            
+            Real tangential_velocity_node_U = node_value_[index_i][5]; //** Temporary treatment *
+            Real dist_nodeU_P = distance_to_wall / (double(num_sub_node_) + 0.5);
+
+            Real dUdn_P_sublayer_magnitude = std::abs(tangential_velocity_P_magnitude - tangential_velocity_node_U) / (dist_nodeU_P + TinyReal);
+            Matd dUdn_P_sublayer = dUdn_P_sublayer_magnitude * (tangential * normal.transpose());
+
+            dUdn_P_sublayer_magnitude_[index_i] = dUdn_P_sublayer_magnitude;
+            dUdn_P_sublayer_[index_i] = dUdn_P_sublayer;
+
         }
     }
     //=================================================================================================//

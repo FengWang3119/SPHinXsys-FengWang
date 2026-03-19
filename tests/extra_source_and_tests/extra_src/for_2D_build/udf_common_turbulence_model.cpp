@@ -251,7 +251,9 @@ TurbuViscousForce<Inner<>>::TurbuViscousForce(BaseInnerRelation &inner_relation)
       turbu_indicator_(this->particles_->template getVariableDataByName<int>("TurbulentIndicator")),
       is_extra_viscous_dissipation_(this->particles_->template getVariableDataByName<int>("TurbulentExtraViscousDissipation")),
       B_(particles_->getVariableDataByName<Matd>("LinearGradientCorrectionMatrix")),
-      is_near_wall_P1_(particles_->getVariableDataByName<int>("IsNearWallP1")) {}
+      is_near_wall_P1_(particles_->getVariableDataByName<int>("IsNearWallP1")),
+      dUdn_P_sublayer_(particles_->getVariableDataByName<Matd>("dUdnFromSublayer")),
+      physical_time_(sph_system_->getSystemVariableDataByName<Real>("PhysicalTime")) {}
 //=================================================================================================//
 void TurbuViscousForce<Inner<>>::interaction(size_t index_i, Real dt)
 {
@@ -306,6 +308,13 @@ void TurbuViscousForce<Inner<>>::interaction(size_t index_i, Real dt)
         shear_stress = (shear_stress - shear_stress_eij) + shear_stress_eij_corrected;
 
         Vecd force_j = 2.0 * mass_[index_i] * shear_stress * inner_neighborhood.dW_ij_[n] * this->Vol_[index_j];
+
+        //** P-refinement correct inner viscous force for P *
+        if (is_near_wall_P1_[index_i] == 1 && *physical_time_ > 2.0)
+        {
+            Matd shear_stress_sublayer = mu_eff_i * (dUdn_P_sublayer_[index_i] + dUdn_P_sublayer_[index_i].transpose());
+            force_j = 2.0 * mass_[index_i] * shear_stress_sublayer * e_ij * inner_neighborhood.dW_ij_[n] * this->Vol_[index_j];
+        }
 
         force += force_j;
     }
