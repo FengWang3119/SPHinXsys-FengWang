@@ -78,9 +78,6 @@ namespace udf
         dudn_(particles_->registerStateVariableData<Real>("dudn")),
         utau_node_(particles_->registerStateVariableData<Real>("utauNode")),
         node_value_(particles_->registerStateVariableData<Vec6d>("NodeValue")),
-        node_vel_first_second_(particles_->registerStateVariableData<Vecd>("NodeVelFirSec")),
-        node_vel_third_fourth_(particles_->registerStateVariableData<Vecd>("NodeVelThirFour")),
-        node_vel_fifth_(particles_->registerStateVariableData<Real>("NodeVelFifth")),
         dUdn_P_sublayer_magnitude_(particles_->registerStateVariableData<Real>("dUdnFromSublayerMagnitude")),
         dUdn_P_sublayer_(particles_->registerStateVariableData<Matd>("dUdnFromSublayer")),
         //
@@ -108,9 +105,6 @@ namespace udf
         particles_->addVariableToWrite<Real>("utauNode");
         particles_->addVariableToWrite<Real>("DistanceToDummyInterface");
         particles_->addVariableToWrite<Vec6d>("NodeValue");
-        particles_->addVariableToWrite<Vecd>("NodeVelFirSec");
-        particles_->addVariableToWrite<Vecd>("NodeVelThirFour");
-        particles_->addVariableToWrite<Real>("NodeVelFifth");
         particles_->addVariableToWrite<Real>("dUdnFromSublayerMagnitude");
         particles_->addVariableToWrite<Matd>("dUdnFromSublayer");
     }
@@ -123,9 +117,6 @@ namespace udf
         dudn_[index_i] = 0.0;
         utau_node_[index_i] = 0.0;
         node_value_[index_i] = Vec6d::Zero();
-        node_vel_first_second_[index_i] = Vecd::Zero();
-        node_vel_third_fourth_[index_i] = Vecd::Zero();
-        node_vel_fifth_[index_i] = 0.0;
         dUdn_P_sublayer_magnitude_[index_i] = 0.0;
         dUdn_P_sublayer_[index_i] = Matd::Zero();
         if (is_near_wall_P1_[index_i] == 1)
@@ -199,11 +190,6 @@ namespace udf
 
             //** Extract results *
             friction_velocity_from_sublayer_[index_i] = node_value_[index_i][0];
-            node_vel_first_second_[index_i][0] = node_value_[index_i][1];
-            node_vel_first_second_[index_i][1] = node_value_[index_i][2];
-            node_vel_third_fourth_[index_i][0] = node_value_[index_i][3];
-            node_vel_third_fourth_[index_i][1] = node_value_[index_i][4];
-            node_vel_fifth_[index_i] = node_value_[index_i][5];
 
             //** For testing *
             target_flow_rate_in_sublayer_[index_i] = flow_rate_local;
@@ -743,6 +729,90 @@ namespace udf
         x[2] = dp[2] - cp[2] * x[3];
         x[1] = dp[1] - cp[1] * x[2];
         x[0] = dp[0] - cp[0] * x[1];
+    }
+    //=============================================================================================//
+    void BodyStatesRecordingToVtpIncludeNode::writeWithFileName(const std::string& sequence)
+    {
+        for (SPHBody* body : bodies_)
+        {
+            if (body->checkNewlyUpdated())
+            {
+                BaseParticles& base_particles = body->getBaseParticles();
+
+                if (state_recording_)
+                {
+                    std::string filefullpath = io_environment_.OutputFolder() + "/" + body->getName() + "_" + sequence + ".vtp";
+                    if (fs::exists(filefullpath))
+                    {
+                        fs::remove(filefullpath);
+                    }
+                    std::ofstream out_file(filefullpath.c_str(), std::ios::trunc);
+                    // begin of the XML file
+                    out_file << "<?xml version=\"1.0\"?>\n";
+                    out_file << "<VTKFile type=\"PolyData\" version=\"0.1\" byte_order=\"LittleEndian\">\n";
+                    out_file << " <PolyData>\n";
+
+                    // physical time
+                    if (sph_system_.isPhysical())
+                    {
+                        out_file << "<FieldData>\n";
+                        out_file << "<DataArray type=\"Float64\"  Name=\"TimeValue\" NumberOfTuples=\"1\" format=\"ascii\">\n";
+                        out_file << std::fixed << std::setprecision(9) << sv_physical_time_->getValue() << "\n";
+                        out_file << " </DataArray>\n";
+                        out_file << "</FieldData>\n";
+                    }
+
+                    size_t total_real_particles = base_particles.TotalRealParticles();
+                    out_file << "  <Piece Name =\"" << body->getName() << "\" NumberOfPoints=\"" << total_real_particles
+                        << "\" NumberOfVerts=\"" << total_real_particles << "\">\n";
+
+                    // write current/final particle positions first
+                    out_file << "   <Points>\n";
+                    out_file << "    <DataArray Name=\"Position\" type=\"Float32\"  NumberOfComponents=\"3\" Format=\"ascii\">\n";
+                    out_file << "    ";
+                    for (size_t i = 0; i != total_real_particles; ++i)
+                    {
+                        Vec3d particle_position = upgradeToVec3d(base_particles.ParticlePositions()[i]);
+                        out_file << particle_position[0] << " " << particle_position[1] << " " << particle_position[2] << " ";
+                    }
+                    out_file << std::endl;
+                    out_file << "    </DataArray>\n";
+                    out_file << "   </Points>\n";
+
+                    // write header of particles data
+                    out_file << "   <PointData  Vectors=\"vector\">\n";
+                    writeParticlesToVtk(out_file, base_particles);
+                    out_file << "   </PointData>\n";
+
+                    // write empty cells
+                    out_file << "   <Verts>\n";
+                    out_file << "    <DataArray type=\"Int32\"  Name=\"connectivity\"  Format=\"ascii\">\n";
+                    out_file << "    ";
+                    for (size_t i = 0; i != total_real_particles; ++i)
+                    {
+                        out_file << i << " ";
+                    }
+                    out_file << std::endl;
+                    out_file << "    </DataArray>\n";
+                    out_file << "    <DataArray type=\"Int32\"  Name=\"offsets\"  Format=\"ascii\">\n";
+                    out_file << "    ";
+                    for (size_t i = 0; i != total_real_particles; ++i)
+                    {
+                        out_file << i + 1 << " ";
+                    }
+                    out_file << std::endl;
+                    out_file << "    </DataArray>\n";
+                    out_file << "   </Verts>\n";
+
+                    out_file << "  </Piece>\n";
+                    out_file << " </PolyData>\n";
+                    out_file << "</VTKFile>\n";
+
+                    out_file.close();
+                }
+            }
+            body->setNotNewlyUpdated();
+        }
     }
 } // namespace udf
 //=================================================================================================//

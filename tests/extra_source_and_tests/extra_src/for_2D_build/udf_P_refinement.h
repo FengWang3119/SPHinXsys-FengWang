@@ -93,9 +93,6 @@ namespace udf
         Real* dudn_;
         Real* utau_node_;
         Vec6d* node_value_; // ** Temporary treatment only valid for 5-node configuration, first is utau, then velocity *
-        Vecd* node_vel_first_second_; // ** Temporary treatment
-        Vecd* node_vel_third_fourth_; // ** Temporary treatment
-        Real* node_vel_fifth_; // ** Temporary treatment
         Real* dUdn_P_sublayer_magnitude_;
         Matd* dUdn_P_sublayer_;
         //
@@ -117,6 +114,146 @@ namespace udf
         Matd* velocity_gradient_;
     };
 //=================================================================================================//
+    class BodyStatesRecordingToVtpIncludeNode : public BodyStatesRecording
+    {
+    public:
+        BodyStatesRecordingToVtpIncludeNode(SPHSystem& sph_system) : BodyStatesRecording(sph_system) {};
+        virtual ~BodyStatesRecordingToVtpIncludeNode() {};
+
+    protected:
+        virtual void writeWithFileName(const std::string& sequence) override;
+
+        //** Apart from the one line P refinment statement, others are directly copied from Library *
+        template <typename OutStreamType>
+        void writeParticlesToVtk(OutStreamType& output_stream, BaseParticles& particles)
+        {
+            size_t total_real_particles = particles.TotalRealParticles();
+            ParticleVariables& variables_to_write = particles.VariablesToWrite();
+
+            // write sorted particles ID
+            output_stream
+                << "    <DataArray Name=\"SortedParticle_ID\" type=\"Int32\" Format=\"ascii\">\n";
+            output_stream << "    ";
+            for (size_t i = 0; i != total_real_particles; ++i)
+            {
+                output_stream << i << " ";
+            }
+            output_stream << std::endl;
+            output_stream << "    </DataArray>\n";
+
+            // write particle IDs
+            constexpr int type_index_UnsignedInt = DataTypeIndex<UnsignedInt>::value;
+            for (DiscreteVariable<UnsignedInt>* variable : std::get<type_index_UnsignedInt>(variables_to_write))
+            {
+                UnsignedInt* data_field = variable->Data();
+                output_stream << "    <DataArray Name=\"" << variable->Name() << "\" type=\"Int32\" Format=\"ascii\">\n";
+                output_stream << "    ";
+                for (size_t i = 0; i != total_real_particles; ++i)
+                {
+                    output_stream << std::fixed << std::setprecision(9) << data_field[i] << " ";
+                }
+                output_stream << std::endl;
+                output_stream << "    </DataArray>\n";
+            }
+
+            // write integers
+            constexpr int type_index_int = DataTypeIndex<int>::value;
+            for (DiscreteVariable<int>* variable : std::get<type_index_int>(variables_to_write))
+            {
+                int* data_field = variable->Data();
+                output_stream << "    <DataArray Name=\"" << variable->Name() << "\" type=\"Int32\" Format=\"ascii\">\n";
+                output_stream << "    ";
+                for (size_t i = 0; i != total_real_particles; ++i)
+                {
+                    output_stream << std::fixed << std::setprecision(9) << data_field[i] << " ";
+                }
+                output_stream << std::endl;
+                output_stream << "    </DataArray>\n";
+            }
+
+            // write scalars
+            constexpr int type_index_Real = DataTypeIndex<Real>::value;
+            for (DiscreteVariable<Real>* variable : std::get<type_index_Real>(variables_to_write))
+            {
+                Real* data_field = variable->Data();
+                output_stream << "    <DataArray Name=\"" << variable->Name() << "\" type=\"Float32\" Format=\"ascii\">\n";
+                output_stream << "    ";
+                for (size_t i = 0; i != total_real_particles; ++i)
+                {
+                    output_stream << std::fixed << std::setprecision(9) << data_field[i] << " ";
+                }
+                output_stream << std::endl;
+                output_stream << "    </DataArray>\n";
+            }
+
+            // write vectors
+            constexpr int type_index_Vecd = DataTypeIndex<Vecd>::value;
+            for (DiscreteVariable<Vecd>* variable : std::get<type_index_Vecd>(variables_to_write))
+            {
+                Vecd* data_field = variable->Data();
+                output_stream << "    <DataArray Name=\"" << variable->Name() << "\" type=\"Float32\"  NumberOfComponents=\"3\" Format=\"ascii\">\n";
+                output_stream << "    ";
+                for (size_t i = 0; i != total_real_particles; ++i)
+                {
+                    Vec3d vector_value = upgradeToVec3d(data_field[i]);
+                    output_stream << std::fixed << std::setprecision(9) << vector_value[0] << " " << vector_value[1] << " " << vector_value[2] << " ";
+                }
+                output_stream << std::endl;
+                output_stream << "    </DataArray>\n";
+            }
+
+            //** P refinement *
+            writeNodeValueToVtk(output_stream, particles);
+
+            // write matrices
+            constexpr int type_index_Matd = DataTypeIndex<Matd>::value;
+            for (DiscreteVariable<Matd>* variable : std::get<type_index_Matd>(variables_to_write))
+            {
+                Matd* data_field = variable->Data();
+                output_stream << "    <DataArray Name=\"" << variable->Name() << "\" type= \"Float32\"  NumberOfComponents=\"9\" Format=\"ascii\">\n";
+                output_stream << "    ";
+                for (size_t i = 0; i != total_real_particles; ++i)
+                {
+                    Mat3d matrix_value = upgradeToMat3d(data_field[i]);
+                    for (int k = 0; k != 3; ++k)
+                    {
+                        Vec3d col_vector = matrix_value.col(k);
+                        output_stream << std::fixed << std::setprecision(9) << col_vector[0] << " " << col_vector[1] << " " << col_vector[2] << " ";
+                    }
+                }
+                output_stream << std::endl;
+                output_stream << "    </DataArray>\n";
+            }
+        };
+        template <typename OutStreamType>
+        void writeNodeValueToVtk(OutStreamType& output_stream, BaseParticles& particles)
+        {
+
+            size_t total_real_particles = particles.TotalRealParticles();
+            ParticleVariables& variables_to_write = particles.VariablesToWrite();
+
+            // write vectors
+            constexpr int type_index_Vecd = DataTypeIndex<Vec6d>::value;
+            for (DiscreteVariable<Vec6d>* variable : std::get<type_index_Vecd>(variables_to_write))
+            {
+                Vec6d* data_field = variable->Data();
+                output_stream << "    <DataArray Name=\"" << variable->Name() << "\" type=\"Float32\"  NumberOfComponents=\"6\" Format=\"ascii\">\n";
+                output_stream << "    ";
+                for (size_t i = 0; i != total_real_particles; ++i)
+                {
+                    Vec6d vector_value = upgradeToVec6d(data_field[i]);
+                    output_stream << std::fixed << std::setprecision(9) << vector_value[0] << " " << vector_value[1] << " " << vector_value[2]
+                        << " " << vector_value[3] << " " << vector_value[4] << " " << vector_value[5] << " ";
+                }
+                output_stream << std::endl;
+                output_stream << "    </DataArray>\n";
+            }
+        };
+        inline Vec6d upgradeToVec6d(const Vec6d& input)
+        {
+            return input;
+        };
+     };
 //=================================================================================================//
 } // namespace udf
 } // namespace fluid_dynamics

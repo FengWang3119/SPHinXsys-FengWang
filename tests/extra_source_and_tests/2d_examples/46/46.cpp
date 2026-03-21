@@ -258,7 +258,9 @@ int main(int ac, char *av[])
     //	File output and regression check.
     //----------------------------------------------------------------------
     /** Output the body states. */
-    BodyStatesRecordingToVtp body_states_recording(sph_system);
+    //BodyStatesRecordingToVtp body_states_recording(sph_system);
+    fluid_dynamics::udf::BodyStatesRecordingToVtpIncludeNode body_states_recording(sph_system);
+    
     body_states_recording.addToWrite<Real>(water_block, "Pressure");            // output for debug
     body_states_recording.addToWrite<int>(water_block, "Indicator");            // output for debug
     body_states_recording.addToWrite<Real>(water_block, "Density");             // output for debug
@@ -276,9 +278,7 @@ int main(int ac, char *av[])
     write_observation_states_pressure_contour.addToWrite<Real>(observer_body_pressure_contour, "Pressure"); //% Average pressure
 
     //** Temporary treatment *
-    ObservedQuantityRecording<Vecd> write_recorded_water_node_velocity_1_2("NodeVelFirSec", node_observer_contact);
-    ObservedQuantityRecording<Vecd> write_recorded_water_node_velocity_3_4("NodeVelThirFour", node_observer_contact);
-    ObservedQuantityRecording<Real> write_recorded_water_node_velocity_5("NodeVelFifth", node_observer_contact);
+    ObservedQuantityRecording<Vec6d> write_recorded_water_node_velocity("NodeValue", node_observer_contact);
     /**
      * @brief Setup geometry and initial conditions.
      */
@@ -474,9 +474,7 @@ int main(int ac, char *av[])
             if (physical_time > cutoff_time)
             {
                 //** Temporary treatment *
-                write_recorded_water_node_velocity_1_2.writeToFile(number_of_iterations);
-                write_recorded_water_node_velocity_3_4.writeToFile(number_of_iterations);
-                write_recorded_water_node_velocity_5.writeToFile(number_of_iterations);
+                write_recorded_water_node_velocity.writeToFile(number_of_iterations);
             }
 
             /** Update cell linked list and configuration. */
