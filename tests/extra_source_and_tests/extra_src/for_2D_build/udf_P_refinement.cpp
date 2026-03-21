@@ -169,6 +169,35 @@ namespace udf
 
             node_value_[index_i] = solve_1D_sublayer(nu, u_outer, k_outer, omega_outer, std::abs(dudn),
                 nut_outer, distance_to_wall, friction_vel_magnitude, std::abs(flow_rate_local));
+
+            //** Check results *
+            if (!std::isfinite(node_value_[index_i][0]))
+            {
+                if (*physical_time_ < start_time_laminar_)
+                {
+                    std::cout << "Warning: initial NaN in sublayer solver\n";
+                    node_value_[index_i][0] = 0.0;
+                }
+                else
+                {
+                    std::cout << "Warning: unexpected NaN in sublayer solver\n";
+                    
+                    std::cout << "x is NaN\n";
+                    std::cout << "u_outer=" << u_outer << std::endl;
+                    std::cout << "k_outer=" << k_outer << std::endl;
+                    std::cout << "omega_outer=" << omega_outer << std::endl;
+                    std::cout << "dudn=" << dudn << std::endl;
+                    std::cout << "nut_outer=" << nut_outer << std::endl;
+                    std::cout << "distance_to_wall=" << distance_to_wall << std::endl;
+                    std::cout << "friction_vel_magnitude=" << friction_vel_magnitude << std::endl;
+                    std::cout << "flow_rate_local=" << flow_rate_local << std::endl;
+                    std::cout << "node_value_[index_i][0] = " << node_value_[index_i][0] << std::endl;
+
+                    node_value_[index_i][0] = 0.0;
+                }
+            }
+
+            //** Extract results *
             friction_velocity_from_sublayer_[index_i] = node_value_[index_i][0];
             node_vel_first_second_[index_i][0] = node_value_[index_i][1];
             node_vel_first_second_[index_i][1] = node_value_[index_i][2];
@@ -176,30 +205,12 @@ namespace udf
             node_vel_third_fourth_[index_i][1] = node_value_[index_i][4];
             node_vel_fifth_[index_i] = node_value_[index_i][5];
 
-            if (!std::isfinite(friction_velocity_from_sublayer_[index_i]))
-            {
-                if (*physical_time_ < start_time_laminar_)
-                    friction_velocity_from_sublayer_[index_i] = 0.0;
-                else
-                    std::cout << "Warning: unexpected NaN in sublayer solver\n";
-            }
-
             //** For testing *
             target_flow_rate_in_sublayer_[index_i] = flow_rate_local;
             vel_ps_magnitude_[index_i] = u_ps;
             dudn_[index_i] = dudn;
             utau_node_[index_i] = friction_vel_magnitude;
-            if (std::isnan(friction_velocity_from_sublayer_[index_i])) {
-                std::cout << "x is NaN\n";
-                std::cout << "u_outer=" << u_outer << std::endl;
-                std::cout <<  "k_outer=" << k_outer << std::endl;
-                std::cout <<  "omega_outer=" << omega_outer << std::endl;
-                std::cout <<  "dudn=" << dudn << std::endl;
-                std::cout <<  "nut_outer=" << nut_outer << std::endl;
-                std::cout <<  "distance_to_wall=" << distance_to_wall << std::endl;
-                std::cout <<  "friction_vel_magnitude=" << friction_vel_magnitude << std::endl;
-                std::cout <<  "flow_rate_local=" << flow_rate_local << std::endl;
-            }
+
 
             //** Obtain value for correcting SPH solver *
             Vecd vel_tangential = vel_[index_i] - vel_[index_i].dot(normal) * normal;
@@ -392,10 +403,10 @@ namespace udf
                 double nu_eff_i = nu + nut_star[i];
                 double nu_eff_i_plus = nu + nut_star[i + 1];
                 double nu_eff_i_minus = nu + nut_star[i - 1];
-                double nu_eff_i_plus_half = 2.0 * nu_eff_i_plus * nu_eff_i / (nu_eff_i_plus + nu_eff_i);
-                double nu_eff_i_minus_half = 2.0 * nu_eff_i_minus * nu_eff_i / (nu_eff_i_minus + nu_eff_i);
+                double nu_eff_i_plus_half = 2.0 * nu_eff_i_plus * nu_eff_i / std::max((nu_eff_i_plus + nu_eff_i), tiny);
+                double nu_eff_i_minus_half = 2.0 * nu_eff_i_minus * nu_eff_i / std::max((nu_eff_i_minus + nu_eff_i), tiny);
                 a_u[i] = -nu_eff_i_minus_half;
-                b_u[i] = (nu_eff_i_plus_half + nu_eff_i_minus_half);
+                b_u[i] = std::max((nu_eff_i_plus_half + nu_eff_i_minus_half), tiny);
                 c_u[i] = -nu_eff_i_plus_half;
                 d_u[i] = (utau * utau - tau_over_rho_outer) / height_sublayer * hy * hy;
             }
@@ -409,10 +420,10 @@ namespace udf
             double nu_eff_last = nu + nut_star[last];
             double nu_eff_last_plus = nu + nut_p_outer; // B.C.
             double nu_eff_last_minus = nu + nut_star[last - 1];
-            double nu_eff_last_plus_half = 2.0 * nu_eff_last_plus * nu_eff_last / (nu_eff_last_plus + nu_eff_last);
-            double nu_eff_last_minus_half = 2.0 * nu_eff_last_minus * nu_eff_last / (nu_eff_last_minus + nu_eff_last);
+            double nu_eff_last_plus_half = 2.0 * nu_eff_last_plus * nu_eff_last / std::max((nu_eff_last_plus + nu_eff_last), tiny);
+            double nu_eff_last_minus_half = 2.0 * nu_eff_last_minus * nu_eff_last / std::max((nu_eff_last_minus + nu_eff_last), tiny);
             a_u[last] = -nu_eff_last_minus_half;
-            b_u[last] = (nu_eff_last_plus_half + nu_eff_last_minus_half);
+            b_u[last] = std::max((nu_eff_last_plus_half + nu_eff_last_minus_half), tiny);
             c_u[last] = 0.0;
             d_u[last] = (utau * utau - tau_over_rho_outer) / height_sublayer * hy * hy + nu_eff_last_plus_half * u_p_outer;
             // solving
@@ -430,8 +441,8 @@ namespace udf
                 double Dk_i = diffusion_coefficient_k[i];
                 double Dk_i_plus = diffusion_coefficient_k[i + 1];
                 double Dk_i_minus = diffusion_coefficient_k[i - 1];
-                double Dk_i_plus_half = 2.0 * Dk_i_plus * Dk_i / (Dk_i_plus + Dk_i);
-                double Dk_i_minus_half = 2.0 * Dk_i_minus * Dk_i / (Dk_i_minus + Dk_i);
+                double Dk_i_plus_half = 2.0 * Dk_i_plus * Dk_i / std::max((Dk_i_plus + Dk_i), tiny);
+                double Dk_i_minus_half = 2.0 * Dk_i_minus * Dk_i / std::max((Dk_i_minus + Dk_i), tiny);
                 a_k[i] = -1.0 * Dk_i_minus_half;
                 b_k[i] = Dk_i_plus_half + Dk_i_minus_half + hy * hy * std_kw_beta_star_ * turbu_omega_star[i];
                 c_k[i] = -1.0 * Dk_i_plus_half;
@@ -440,7 +451,7 @@ namespace udf
             // first node, grad k = 0
             double Dk_first = diffusion_coefficient_k[0];
             double Dk_first_plus = diffusion_coefficient_k[0 + 1];
-            double Dk_first_plus_half = 2.0 * Dk_first_plus * Dk_first / (Dk_first_plus + Dk_first);
+            double Dk_first_plus_half = 2.0 * Dk_first_plus * Dk_first / std::max((Dk_first_plus + Dk_first), tiny);
             a_k[0] = 0.0;
             b_k[0] = Dk_first_plus_half + hy * hy * std_kw_beta_star_ * turbu_omega_star[0];
             c_k[0] = -1.0 * Dk_first_plus_half;
@@ -450,8 +461,8 @@ namespace udf
             double Dk_last = diffusion_coefficient_k[last];
             double Dk_last_plus = nu + std_kw_sigma_star_ * k_p_outer / (w_p_outer + tiny);
             double Dk_last_minus = diffusion_coefficient_k[last - 1];
-            double Dk_last_plus_half = 2.0 * Dk_last_plus * Dk_last / (Dk_last_plus + Dk_last);
-            double Dk_last_minus_half = 2.0 * Dk_last_minus * Dk_last / (Dk_last_minus + Dk_last);
+            double Dk_last_plus_half = 2.0 * Dk_last_plus * Dk_last / std::max((Dk_last_plus + Dk_last), tiny);
+            double Dk_last_minus_half = 2.0 * Dk_last_minus * Dk_last / std::max((Dk_last_minus + Dk_last), tiny);
             a_k[last] = -1.0 * Dk_last_minus_half;
             b_k[last] = Dk_last_plus_half + Dk_last_minus_half + hy * hy * std_kw_beta_star_ * turbu_omega_star[last];
             c_k[last] = 0.0;
@@ -476,8 +487,8 @@ namespace udf
                 double Dw_i = diffusion_coefficient_turbu_omega[i];
                 double Dw_i_plus = diffusion_coefficient_turbu_omega[i + 1];
                 double Dw_i_minus = diffusion_coefficient_turbu_omega[i - 1];
-                double Dw_i_plus_half = 2.0 * Dw_i_plus * Dw_i / (Dw_i_plus + Dw_i);
-                double Dw_i_minus_half = 2.0 * Dw_i_minus * Dw_i / (Dw_i_minus + Dw_i);
+                double Dw_i_plus_half = 2.0 * Dw_i_plus * Dw_i / std::max((Dw_i_plus + Dw_i), tiny);
+                double Dw_i_minus_half = 2.0 * Dw_i_minus * Dw_i / std::max((Dw_i_minus + Dw_i), tiny);
                 a_w[i] = -1.0 * Dw_i_minus_half;
                 b_w[i] = Dw_i_plus_half + Dw_i_minus_half + hy * hy * std_kw_beta_ * turbu_omega_star[i];
                 c_w[i] = -1.0 * Dw_i_plus_half;
@@ -494,8 +505,8 @@ namespace udf
             double Dw_last = diffusion_coefficient_turbu_omega[last];
             double Dw_last_plus = nu + std_kw_sigma_ * k_p_outer / (w_p_outer + tiny);
             double Dw_last_minus = diffusion_coefficient_turbu_omega[last - 1];
-            double Dw_last_plus_half = 2.0 * Dw_last_plus * Dw_last / (Dw_last_plus + Dw_last);
-            double Dw_last_minus_half = 2.0 * Dw_last_minus * Dw_last / (Dw_last_minus + Dw_last);
+            double Dw_last_plus_half = 2.0 * Dw_last_plus * Dw_last / std::max((Dw_last_plus + Dw_last), tiny);
+            double Dw_last_minus_half = 2.0 * Dw_last_minus * Dw_last / std::max((Dw_last_minus + Dw_last), tiny);
             a_w[last] = -1.0 * Dw_last_minus_half;
             b_w[last] = Dw_last_plus_half + Dw_last_minus_half + hy * hy * std_kw_beta_ * turbu_omega_star[last];
             c_w[last] = 0.0;
@@ -532,10 +543,20 @@ namespace udf
 
             // flow control
             double ratio = flow_rate_target / (flow_rate_current + 1e-12);
+            
+            // smooth limiter
+            ratio = 0.5 * (ratio + std::sqrt(ratio * ratio + 1e-12));
+            // optional upper bound
+            ratio = std::min(ratio, 10.0);
+            
             double utau_new = utau * std::sqrt(ratio);
             utau = (1.0 - alpha) * utau + alpha * utau_new;
             /*double error = U_new[ny-1] - u_p_outer;
             utau -= 0.1 * error;*/
+            if (!std::isfinite(utau)) 
+            {
+                utau = utau_init;   // fallback
+            }
             //------------------------------------------------¡ü Check and update flow rate ¡ü------------------------------------------------
 
             //------------------------------------------------¡ý Update P value ¡ý------------------------------------------------
