@@ -75,7 +75,7 @@ namespace udf
         friction_velocity_from_sublayer_(particles_->registerStateVariableData<Real>("FrictionVelocityFromSublayer")),
         target_flow_rate_in_sublayer_(particles_->registerStateVariableData<Real>("TargetFlowRateInSublayer")),
         vel_ps_magnitude_(particles_->registerStateVariableData<Real>("VelPS")),
-        dudn_for_local_flow_rate_(particles_->registerStateVariableData<Real>("dudn")),
+        dudn_for_local_flow_rate_(particles_->registerStateVariableData<Real>("dudnForLocalFlowRate")),
         utau_node_(particles_->registerStateVariableData<Real>("utauNode")),
         node_value_(particles_->registerStateVariableData<Vec6d>("NodeValue")),
         dUdn_P_sublayer_magnitude_(particles_->registerStateVariableData<Real>("dUdnFromSublayerMagnitude")),
@@ -101,7 +101,7 @@ namespace udf
         particles_->addVariableToWrite<Real>("FrictionVelocityFromSublayer");
         particles_->addVariableToWrite<Real>("TargetFlowRateInSublayer");
         particles_->addVariableToWrite<Real>("VelPS");
-        particles_->addVariableToWrite<Real>("dudn");
+        particles_->addVariableToWrite<Real>("dudnForLocalFlowRate");
         particles_->addVariableToWrite<Real>("utauNode");
         particles_->addVariableToWrite<Real>("DistanceToDummyInterface");
         particles_->addVariableToWrite<Vec6d>("NodeValue");
