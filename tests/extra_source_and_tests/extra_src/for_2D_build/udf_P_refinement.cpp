@@ -75,7 +75,7 @@ namespace udf
         friction_velocity_from_sublayer_(particles_->registerStateVariableData<Real>("FrictionVelocityFromSublayer")),
         target_flow_rate_in_sublayer_(particles_->registerStateVariableData<Real>("TargetFlowRateInSublayer")),
         vel_ps_magnitude_(particles_->registerStateVariableData<Real>("VelPS")),
-        dudn_(particles_->registerStateVariableData<Real>("dudn")),
+        dudn_for_local_flow_rate_(particles_->registerStateVariableData<Real>("dudn")),
         utau_node_(particles_->registerStateVariableData<Real>("utauNode")),
         node_value_(particles_->registerStateVariableData<Vec6d>("NodeValue")),
         dUdn_P_sublayer_magnitude_(particles_->registerStateVariableData<Real>("dUdnFromSublayerMagnitude")),
@@ -114,7 +114,7 @@ namespace udf
         friction_velocity_from_sublayer_[index_i] = 0.0;
         target_flow_rate_in_sublayer_[index_i] = 0.0;
         vel_ps_magnitude_[index_i] = 0.0;
-        dudn_[index_i] = 0.0;
+        dudn_for_local_flow_rate_[index_i] = 0.0;
         utau_node_[index_i] = 0.0;
         node_value_[index_i] = Vec6d::Zero();
         dUdn_P_sublayer_magnitude_[index_i] = 0.0;
@@ -194,7 +194,7 @@ namespace udf
             //** For testing *
             target_flow_rate_in_sublayer_[index_i] = flow_rate_local;
             vel_ps_magnitude_[index_i] = u_ps;
-            dudn_[index_i] = dudn;
+            dudn_for_local_flow_rate_[index_i] = dudn;
             utau_node_[index_i] = friction_vel_magnitude;
 
 

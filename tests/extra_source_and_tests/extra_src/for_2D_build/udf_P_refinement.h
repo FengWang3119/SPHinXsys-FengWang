@@ -90,7 +90,7 @@ namespace udf
         Real* friction_velocity_from_sublayer_;
         Real* target_flow_rate_in_sublayer_;
         Real* vel_ps_magnitude_;
-        Real* dudn_;
+        Real* dudn_for_local_flow_rate_;
         Real* utau_node_;
         Vec6d* node_value_; // ** Temporary treatment only valid for 5-node configuration, first is utau, then velocity *
         Real* dUdn_P_sublayer_magnitude_;
