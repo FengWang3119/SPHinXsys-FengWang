@@ -151,12 +151,12 @@ namespace udf
             Real dudn = 0.0;
 
             //** If use full from SPH *
-            dudn = dudn_from_SPH;
+            //dudn = dudn_from_SPH;
 
             //** If use weighting combination *
-            //Real weight_SPH = 0.5 * fluid_particle_spacing_;
-            //Real sum_weight_sublayer = distance_to_wall; //** Assume uniform division *
-            //dudn = (dudn_from_SPH * weight_SPH + sum_node_vel_difference) / (weight_SPH + sum_weight_sublayer); 
+            Real weight_SPH = 0.5 * fluid_particle_spacing_;
+            Real sum_weight_sublayer = distance_to_wall; //** Assume uniform division *
+            dudn = (dudn_from_SPH * weight_SPH + sum_node_vel_difference) / (weight_SPH + sum_weight_sublayer); 
 
             Real nut_outer = turbu_mu_[index_i] / rho_[index_i];
             
