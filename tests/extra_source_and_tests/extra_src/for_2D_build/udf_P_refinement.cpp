@@ -111,6 +111,17 @@ namespace udf
     //=================================================================================================//
     void P_refinement::update(size_t index_i, Real dt)
     {
+        Real sum_node_vel_difference = 0.0;
+        if (is_near_wall_P1_[index_i] == 1)
+        {
+            Vec6d node_value_i_prior = node_value_[index_i];
+            for (int j = 0; j < num_sub_node_; ++j)
+            {
+                Real vel_difference = node_value_i_prior[j + 1] - node_value_i_prior[j];
+                sum_node_vel_difference += vel_difference;
+            }
+        }
+
         friction_velocity_from_sublayer_[index_i] = 0.0;
         target_flow_rate_in_sublayer_[index_i] = 0.0;
         vel_ps_magnitude_[index_i] = 0.0;
@@ -130,17 +141,24 @@ namespace udf
             
             Real k_outer = turbu_k_[index_i];
             Real omega_outer = turbu_omega_[index_i];
-            
-            Vecd dudn_vector = velocity_gradient_only_P_[index_i] * normal;
-            //Vecd dudn_vector = velocity_gradient_[index_i] * normal;
 
-            Real dudn = obtainTangentialComponent(dudn_vector, normal);
-            //dudn = 1.127180e+1;
-
-            Real nut_outer = turbu_mu_[index_i] / rho_[index_i];
-            
             Real distance_to_wall = y_p_[index_i];
             //Real distance_to_wall = distance_to_dummy_interface_[index_i];
+            
+            Vecd velocity_gradient_only_P_normal = velocity_gradient_only_P_[index_i] * normal;
+            Real dudn_from_SPH = obtainTangentialComponent(velocity_gradient_only_P_normal, normal);
+
+            Real dudn = 0.0;
+
+            //** If use full from SPH *
+            //dudn = dudn_from_SPH;
+
+            //** If use weighting combination *
+            Real weight_SPH = 0.5 * fluid_particle_spacing_;
+            Real sum_weight_sublayer = distance_to_wall; //** Assume uniform division *
+            dudn = (dudn_from_SPH * weight_SPH + sum_node_vel_difference) / (weight_SPH + sum_weight_sublayer); 
+
+            Real nut_outer = turbu_mu_[index_i] / rho_[index_i];
             
             Real friction_vel_magnitude = std::sqrt(wall_shear_stress_[index_i] / rho_[index_i]);
 
