@@ -171,8 +171,8 @@ int main(int ac, char *av[])
     /** Turbulent.Note: When use wall function, K Epsilon calculation only consider inner */
     InteractionWithUpdate<fluid_dynamics::udf::JudgeIsNearWall> update_near_wall_status(water_block_inner, water_wall_contact, y_p_constant);
 
-    InteractionWithUpdate<fluid_dynamics::udf::P_refinement_GetVelocityGradientInner> get_velocity_gradient_inner_only_for_P(water_block_inner); //** Note that the B should change *
-    //InteractionWithUpdate<fluid_dynamics::udf::P_refinement_GetVelocityGradientComplex> get_velocity_gradient_inner_only_for_P(water_block_inner, water_wall_contact); //** Note that the B should change *
+    //InteractionWithUpdate<fluid_dynamics::udf::P_refinement_GetVelocityGradientInner> get_velocity_gradient_inner_only_for_P(water_block_inner); //** Note that the B should change *
+    InteractionWithUpdate<fluid_dynamics::udf::P_refinement_GetVelocityGradientComplex> get_velocity_gradient_inner_only_for_P(water_block_inner, water_wall_contact); //** Note that the B should change *
     InteractionWithUpdate<fluid_dynamics::udf::kOmega_GetVelocityGradientComplex> get_velocity_gradient(water_block_inner, water_wall_contact);
 
 
