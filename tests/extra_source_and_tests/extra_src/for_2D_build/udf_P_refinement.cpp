@@ -167,14 +167,17 @@ namespace udf
             Real flow_rate_whole = u_outer * fluid_particle_spacing_;
             Real flow_rate_local = flow_rate_whole - flow_rate_half;
 
-            //flow_rate_local = 3.781607e-3;
-            //dudn = 1.127180e+1;
-            //k_outer = 1.118813e-3;
-            //omega_outer = 5.998469e+1;
-            //nut_outer = 1.885024e-5;
-            //u_outer = 3.000607e-1;
-            //nu = 3.5e-4;
-            //friction_vel_magnitude = 6.37309e-02;
+            //** For test 1D analytical *
+            {
+            flow_rate_local = 3.781607e-3;
+            dudn = 1.127180e+1;
+            k_outer = 1.118813e-3;
+            omega_outer = 5.998469e+1;
+            nut_outer = 1.885024e-5;
+            u_outer = 3.000607e-1;
+            nu = 3.5e-4;
+            friction_vel_magnitude = 6.37309e-02;
+            }
 
             node_value_[index_i] = solve_1D_sublayer(nu, u_outer, k_outer, omega_outer, std::abs(dudn),
                 nut_outer, distance_to_wall, friction_vel_magnitude, std::abs(flow_rate_local));
@@ -277,18 +280,18 @@ namespace udf
         double turbu_omega_p = 6.0 * nu / (std_kw_beta_i_ * y_p * y_p);
         //------------------------------------------------¡ü Calculate P value ¡ü------------------------------------------------
 
-        //printf("hy=%f\n", hy);
-        //printf("yp=%f\n", y_p);
-        //printf("yplus=%f\n", yplus);
-        //printf("u_p=%f\n", u_p);
-        //std::cout << "ny= " << ny << std::endl;
-        //std::cout << "y = ";
-        //for (const auto& v : y) {
-        //    std::cout << v << " ";
-        //}
-        //std::cout << std::endl;
-        //std::cout << "press to continue" << std::endl;
-        //std::cin.get();
+        printf("hy=%f\n", hy);
+        printf("yp=%f\n", y_p);
+        printf("yplus=%f\n", yplus);
+        printf("u_p=%f\n", u_p);
+        std::cout << "ny= " << ny << std::endl;
+        std::cout << "y = ";
+        for (const auto& v : y) {
+            std::cout << v << " ";
+        }
+        std::cout << std::endl;
+        std::cout << "press to continue" << std::endl;
+        std::cin.get();
 
         //------------------------------------------------¡ý Construct initial value ¡ý------------------------------------------------
         double u_init_value[ny];
@@ -537,9 +540,9 @@ namespace udf
             for (int i = 0; i < ny; ++i) phi_solved[n_start + i] = (1.0 - relax_w) * turbu_omega_star[i] + relax_w * Turbu_omega_new[i];
             //------------------------------------------------¡ü update phi_solved with under-relaxation ¡ü------------------------------------------------
 
-            //std::cout << "phi_solved = ";
-            //for (const auto& v : phi_solved) std::cout << v << " ";
-            //std::cout << std::endl;
+            std::cout << "phi_solved = ";
+            for (const auto& v : phi_solved) std::cout << v << " ";
+            std::cout << std::endl;
 
             //------------------------------------------------¡ý Check and update flow rate ¡ý------------------------------------------------
             flow_rate_current = std::accumulate(U_new, U_new + ny, 0.0) * hy;
@@ -569,9 +572,9 @@ namespace udf
             turbu_omega_p = 6.0 * nu / (std_kw_beta_i_ * y_p * y_p);
             //------------------------------------------------¡ü Update P value ¡ü------------------------------------------------
 
-            //std::cout << "flow_rate_current = " << flow_rate_current
-            //    << ", target = " << flow_rate_target << std::endl;
-            //std::cout << "updated utau = " << utau << std::endl;
+            std::cout << "flow_rate_current = " << flow_rate_current
+                << ", target = " << flow_rate_target << std::endl;
+            std::cout << "updated utau = " << utau << std::endl;
 
             //------------------------------------------------¡ý Calculate residue ¡ý------------------------------------------------
             differ = 0.0;
@@ -581,7 +584,7 @@ namespace udf
             }
             differ = std::sqrt(differ);
             //------------------------------------------------¡ü Calculate residue ¡ü------------------------------------------------
-            //std::cout << "differ: " << differ << std::endl;
+            std::cout << "differ: " << differ << std::endl;
 
             //------------------------------------------------¡ý Update ¡ý------------------------------------------------
             for (int i = 0; i < 3 * ny; ++i) {
@@ -590,8 +593,8 @@ namespace udf
             num_iter_out += 1;
             //------------------------------------------------¡ü Update ¡ü------------------------------------------------
 
-            //std::cout << "num_iter_out = " << num_iter_out << std::endl;
-            //std::cout << "------------" << std::endl;
+            std::cout << "num_iter_out = " << num_iter_out << std::endl;
+            std::cout << "------------" << std::endl;
 
         }
 
@@ -607,50 +610,82 @@ namespace udf
             results[i+1] = phi_solved[i];
         }
 
-        return results;
-        //std::cout << "******Converge******" << std::endl;
+        //return results;
+        std::cout << "******Converge******" << std::endl;
 
-        //std::cout << "******The results are: ******" << std::endl;
+        std::cout << "******The results are: ******" << std::endl;
 
-        //n_start = 0;
-        //std::cout << "U = ";
-        //for (int i = 0; i < ny; ++i) std::cout << phi_solved[n_start + i] << " ";
-        //std::cout << std::endl;
+        n_start = 0;
+        std::cout << "U = ";
+        for (int i = 0; i < ny; ++i) std::cout << phi_solved[n_start + i] << " ";
+        std::cout << std::endl;
 
-        //n_start += ny;
-        //std::cout << "K = ";
-        //for (int i = 0; i < ny; ++i) std::cout << phi_solved[n_start + i] << " ";
-        //std::cout << std::endl;
+        n_start += ny;
+        std::cout << "K = ";
+        for (int i = 0; i < ny; ++i) std::cout << phi_solved[n_start + i] << " ";
+        std::cout << std::endl;
 
-        //n_start += ny;
-        //std::cout << "Turbu_omega = ";
-        //for (int i = 0; i < ny; ++i) std::cout << phi_solved[n_start + i] << " ";
-        //std::cout << std::endl;
+        n_start += ny;
+        std::cout << "Turbu_omega = ";
+        for (int i = 0; i < ny; ++i) std::cout << phi_solved[n_start + i] << " ";
+        std::cout << std::endl;
 
         // ================== Extract Solution ==================
-        //n_start = 0;
+        n_start = 0;
 
-        //std::vector<double> U(ny);
-        //for (int i = 0; i < ny; ++i) U[i] = phi_solved[n_start + i];
+        std::vector<double> U(ny);
+        for (int i = 0; i < ny; ++i) U[i] = phi_solved[n_start + i];
 
-        //n_start += ny;
-        //std::vector<double> K(ny);
-        //for (int i = 0; i < ny; ++i) K[i] = phi_solved[n_start + i];
+        n_start += ny;
+        std::vector<double> K(ny);
+        for (int i = 0; i < ny; ++i) K[i] = phi_solved[n_start + i];
 
-        //n_start += ny;
-        //std::vector<double> OMEGA(ny);
-        //for (int i = 0; i < ny; ++i) OMEGA[i] = phi_solved[n_start + i];
+        n_start += ny;
+        std::vector<double> OMEGA(ny);
+        for (int i = 0; i < ny; ++i) OMEGA[i] = phi_solved[n_start + i];
 
-        //// ================== use existing y ==================
+        // ================== use existing y ==================
         //std::vector<double> Y = y;
 
-        //// ================== calculate nut ==================
-        //double eps = 1e-12;
-        //std::vector<double> NUT(ny);
-        //for (int i = 0; i < ny; ++i) {
-        //    NUT[i] = K[i] / (OMEGA[i] + eps);
-        //}
-        //return utau;
+        // ================== calculate nut ==================
+        double eps = 1e-12;
+        std::vector<double> NUT(ny);
+        for (int i = 0; i < ny; ++i) {
+            NUT[i] = K[i] / (OMEGA[i] + eps);
+        }
+        
+        // ================== Êä³ö Tecplot ÎÄ¼þ ==================
+        int NF = 40;
+        int index = 67;
+        std::string header_line = "ZONE T=\"SPH(1D)46 NF="
+            + std::to_string(NF)
+            + " ("
+            + std::to_string(index)
+            + ")\"";
+        std::string filename = "pipe_kw_nf" + std::to_string(NF) + "_" + std::to_string(index) + ".dat";
+
+        std::ofstream fout(filename);
+        fout << "$VARIABLES = \"Y\", \"U\", \"K\", \"OMEGA\", \"NUT(k/omega)\"\n";
+        fout << "$friction velocity = " << utau << "\n";
+        fout << "$current flow rate = " << flow_rate_current << "\n";
+        fout << "$num_iter_out = " << num_iter_out << "\n";
+        fout << header_line << "\n";
+
+        fout << std::scientific << std::setprecision(8);
+
+        for (int i = 0; i < ny; ++i) {
+            fout << y[i] << " "
+                << U[i] << " "
+                << K[i] << " "
+                << OMEGA[i] << " "
+                << NUT[i] << "\n";
+        }
+
+        fout.close();
+
+        std::cout << "Tecplot has been created: " << filename << std::endl;
+
+        std::cin.get();
     }
     //=================================================================================================//
     // ================= TDMA =================
