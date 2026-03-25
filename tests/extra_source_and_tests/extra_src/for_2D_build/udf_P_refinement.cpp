@@ -243,7 +243,7 @@ namespace udf
         double Q_target, double k_grad_p_outer, double w_grad_p_outer)
     {
         //------------------------------------------------¡ý Input parameters ¡ý------------------------------------------------
-        constexpr int ny = 10; // Manually determine
+        constexpr int ny = 20; // Manually determine
 
         //if (num_sub_node_ != ny)
         //{
@@ -480,7 +480,7 @@ namespace udf
             d_u[last] = (utau * utau - tau_over_rho_outer) / height_sublayer * hy * hy + nu_eff_last_plus_half * u_nodeOM;
             // solving
             double U_new[ny]{};
-            tdma10(a_u, b_u, c_u, d_u, U_new);
+            tdma(ny, a_u, b_u, c_u, d_u, U_new);
             //-------------------------------------¡ü For velocity ¡ü-------------------------------------
 
             //-------------------------------------¡ý For turbulent kinetic energy ¡ý-------------------------------------
@@ -521,7 +521,7 @@ namespace udf
             d_k[last] = hy * hy * nut_star[last] * dudy_star[last] * dudy_star[last] + Dk_last_plus_half * k_nodeOM;
             // solving
             double K_new[ny]{};
-            tdma10(a_k, b_k, c_k, d_k, K_new);
+            tdma(ny, a_k, b_k, c_k, d_k, K_new);
             // avoid negative value, K_new = max(K_new, k_min)
             double k_min = 1e-10;
             for (int i = 0; i < ny; ++i) {
@@ -566,7 +566,7 @@ namespace udf
             d_w[last] = hy * hy * (part_production_last + part_cross_diffusion[last]) + Dw_last_plus_half * w_nodeOM;
             // solving
             double Turbu_omega_new[ny]{};
-            tdma10(a_w, b_w, c_w, d_w, Turbu_omega_new);
+            tdma(ny, a_w, b_w, c_w, d_w, Turbu_omega_new);
             // avoid negative value, Turbu_omega_new = max(Turbu_omega_new, omega_min)
             double omega_min = 1e-10;
             for (int i = 0; i < ny; ++i) {
@@ -697,7 +697,7 @@ namespace udf
         
         // ================== Êä³ö Tecplot ÎÄ¼þ ==================
         int NF = 40;
-        int index = 72;
+        int index = 73;
         std::string header_line = "ZONE T=\"SPH(1D)46 NF="
             + std::to_string(NF)
             + " ("
@@ -732,40 +732,32 @@ namespace udf
     // ================= TDMA =================
     // Solve a tridiagonal system: a[i]*x[i-1] + b[i]*x[i] + c[i]*x[i+1] = d[i]
     // a[0] must be 0, c[n-1] will be ignored
-    std::vector<double> P_refinement::tdma(const std::vector<double>& a, const std::vector<double>& b, const std::vector<double>& c, const std::vector<double>& d) 
+    void P_refinement::tdma(int N, const double* a, const double* b, const double* c, const double* d, double* x)
     {
-        int n = d.size();
-        if (a.size() != n || b.size() != n || c.size() != n) {
-            throw std::invalid_argument("TDMA: vector size mismatch!");
-        }
+        std::vector<double> cp(N, 0.0);
+        std::vector<double> dp(N, 0.0);
 
-        std::vector<double> cp(n, 0.0); // modified upper diagonal
-        std::vector<double> dp(n, 0.0); // modified right-hand side
-        std::vector<double> x(n, 0.0);  // solution vector
+        if (std::abs(b[0]) < 1e-14)
+            throw std::runtime_error("TDMA: b[0] too small!");
 
-        // ---------------- Step 0: first row ----------------
-        if (std::abs(b[0]) < 1e-14) throw std::runtime_error("TDMA: b[0] too small!");
         cp[0] = c[0] / b[0];
         dp[0] = d[0] / b[0];
 
-        // ---------------- Forward sweep ----------------
-        for (int i = 1; i < n; i++)
+        for (int i = 1; i < N; ++i)
         {
             double denom = b[i] - a[i] * cp[i - 1];
-            if (std::abs(denom) < 1e-14) {
-                throw std::runtime_error("TDMA: denom too small at row ");
-            }
-            cp[i] = (i < n - 1) ? c[i] / denom : 0.0;      // last row has no right neighbor
+            if (std::abs(denom) < 1e-14)
+                throw std::runtime_error("TDMA: denom too small");
+
+            cp[i] = (i == N - 1) ? 0.0 : c[i] / denom;
             dp[i] = (d[i] - a[i] * dp[i - 1]) / denom;
         }
 
-        // ---------------- Back substitution ----------------
-        x[n - 1] = dp[n - 1];
-        for (int i = n - 2; i >= 0; i--) {
+        x[N - 1] = dp[N - 1];
+        for (int i = N - 2; i >= 0; --i)
+        {
             x[i] = dp[i] - cp[i] * x[i + 1];
         }
-
-        return x;
     }
 //=================================================================================================//
     // ================= TDMA5 =================
