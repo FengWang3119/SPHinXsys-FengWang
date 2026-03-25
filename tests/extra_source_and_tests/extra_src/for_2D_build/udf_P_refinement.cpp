@@ -243,8 +243,13 @@ namespace udf
         double Q_target, double k_grad_p_outer, double w_grad_p_outer)
     {
         //------------------------------------------------¡ı Input parameters ¡ı------------------------------------------------
-        constexpr int ny = 5; // Manually determine
-        assert(num_sub_node_ == ny);
+        constexpr int ny = 10; // Manually determine
+
+        //if (num_sub_node_ != ny)
+        //{
+        //    std::cout << "Node number mismatch! Stop here." << std::endl;
+        //    std::cin.get();
+        //}
 
         double utau_init = utau_outer;
         double height_sublayer = h_sublayer;
@@ -475,7 +480,7 @@ namespace udf
             d_u[last] = (utau * utau - tau_over_rho_outer) / height_sublayer * hy * hy + nu_eff_last_plus_half * u_nodeUM;
             // solving
             double U_new[ny]{};
-            tdma5(a_u, b_u, c_u, d_u, U_new);
+            tdma10(a_u, b_u, c_u, d_u, U_new);
             //-------------------------------------¡ü For velocity ¡ü-------------------------------------
 
             //-------------------------------------¡ı For turbulent kinetic energy ¡ı-------------------------------------
@@ -516,7 +521,7 @@ namespace udf
             d_k[last] = hy * hy * nut_star[last] * dudy_star[last] * dudy_star[last] + Dk_last_plus_half * k_nodeUM;
             // solving
             double K_new[ny]{};
-            tdma5(a_k, b_k, c_k, d_k, K_new);
+            tdma10(a_k, b_k, c_k, d_k, K_new);
             // avoid negative value, K_new = max(K_new, k_min)
             double k_min = 1e-10;
             for (int i = 0; i < ny; ++i) {
@@ -561,7 +566,7 @@ namespace udf
             d_w[last] = hy * hy * (part_production_last + part_cross_diffusion[last]) + Dw_last_plus_half * w_nodeUM;
             // solving
             double Turbu_omega_new[ny]{};
-            tdma5(a_w, b_w, c_w, d_w, Turbu_omega_new);
+            tdma10(a_w, b_w, c_w, d_w, Turbu_omega_new);
             // avoid negative value, Turbu_omega_new = max(Turbu_omega_new, omega_min)
             double omega_min = 1e-10;
             for (int i = 0; i < ny; ++i) {
@@ -632,6 +637,7 @@ namespace udf
 
         }
 
+        /*
         //** This is a temporary treatment *
         if (ny != 5)
         {
@@ -643,8 +649,9 @@ namespace udf
         for (int i = 0; i < ny; ++i) {
             results[i+1] = phi_solved[i];
         }
+        return results;
+        */
 
-        //return results;
         std::cout << "******Converge******" << std::endl;
 
         std::cout << "******The results are: ******" << std::endl;
@@ -690,7 +697,7 @@ namespace udf
         
         // ================== Êä³ö Tecplot ÎÄ¼ş ==================
         int NF = 40;
-        int index = 68;
+        int index = 69;
         std::string header_line = "ZONE T=\"SPH(1D)46 NF="
             + std::to_string(NF)
             + " ("
@@ -767,7 +774,11 @@ namespace udf
     // a[0] must be 0, c[4] will be ignored
     void P_refinement::tdma5(const double a[5], const double b[5], const double c[5], const double d[5], double x[5])
     {
-        assert(num_sub_node_ == 5);
+        if (num_sub_node_ != 5)
+        {
+            std::cout << "TDMA5: Node number mismatch! Stop here." << std::endl;
+            std::cin.get();
+        }
 
         double cp[5]{ 0.0 }; // modified upper diagonal
         double dp[5]{ 0.0 }; // modified right-hand side
@@ -817,6 +828,112 @@ namespace udf
         x[1] = dp[1] - cp[1] * x[2];
         x[0] = dp[0] - cp[0] * x[1];
     }
+    // ================= TDMA10 =================
+    // Solve a tridiagonal system of size 10:
+    // a[i]*x[i-1] + b[i]*x[i] + c[i]*x[i+1] = d[i]
+    // a[0] must be 0, c[9] will be ignored
+    void P_refinement::tdma10(const double a[10], const double b[10], const double c[10], const double d[10], double x[10])
+    {
+        //if (num_sub_node_ != 10)
+        //{
+        //    std::cout << "TDMA10: Node number mismatch! Stop here." << std::endl;
+        //    std::cin.get();
+        //}
+
+        double cp[10]{ 0.0 }; // modified upper diagonal
+        double dp[10]{ 0.0 }; // modified RHS
+
+        // ---------------- Step 0 ----------------
+        if (std::abs(b[0]) < 1e-14) throw std::runtime_error("TDMA10: b[0] too small!");
+        cp[0] = c[0] / b[0];
+        dp[0] = d[0] / b[0];
+
+        // ---------------- Forward sweep ----------------
+        // i = 1
+        {
+            double denom = b[1] - a[1] * cp[0];
+            if (std::abs(denom) < 1e-14) throw std::runtime_error("TDMA10: denom too small at row 1");
+            cp[1] = c[1] / denom;
+            dp[1] = (d[1] - a[1] * dp[0]) / denom;
+        }
+
+        // i = 2
+        {
+            double denom = b[2] - a[2] * cp[1];
+            if (std::abs(denom) < 1e-14) throw std::runtime_error("TDMA10: denom too small at row 2");
+            cp[2] = c[2] / denom;
+            dp[2] = (d[2] - a[2] * dp[1]) / denom;
+        }
+
+        // i = 3
+        {
+            double denom = b[3] - a[3] * cp[2];
+            if (std::abs(denom) < 1e-14) throw std::runtime_error("TDMA10: denom too small at row 3");
+            cp[3] = c[3] / denom;
+            dp[3] = (d[3] - a[3] * dp[2]) / denom;
+        }
+
+        // i = 4
+        {
+            double denom = b[4] - a[4] * cp[3];
+            if (std::abs(denom) < 1e-14) throw std::runtime_error("TDMA10: denom too small at row 4");
+            cp[4] = c[4] / denom;
+            dp[4] = (d[4] - a[4] * dp[3]) / denom;
+        }
+
+        // i = 5
+        {
+            double denom = b[5] - a[5] * cp[4];
+            if (std::abs(denom) < 1e-14) throw std::runtime_error("TDMA10: denom too small at row 5");
+            cp[5] = c[5] / denom;
+            dp[5] = (d[5] - a[5] * dp[4]) / denom;
+        }
+
+        // i = 6
+        {
+            double denom = b[6] - a[6] * cp[5];
+            if (std::abs(denom) < 1e-14) throw std::runtime_error("TDMA10: denom too small at row 6");
+            cp[6] = c[6] / denom;
+            dp[6] = (d[6] - a[6] * dp[5]) / denom;
+        }
+
+        // i = 7
+        {
+            double denom = b[7] - a[7] * cp[6];
+            if (std::abs(denom) < 1e-14) throw std::runtime_error("TDMA10: denom too small at row 7");
+            cp[7] = c[7] / denom;
+            dp[7] = (d[7] - a[7] * dp[6]) / denom;
+        }
+
+        // i = 8
+        {
+            double denom = b[8] - a[8] * cp[7];
+            if (std::abs(denom) < 1e-14) throw std::runtime_error("TDMA10: denom too small at row 8");
+            cp[8] = c[8] / denom;
+            dp[8] = (d[8] - a[8] * dp[7]) / denom;
+        }
+
+        // i = 9 (last row)
+        {
+            double denom = b[9] - a[9] * cp[8];
+            if (std::abs(denom) < 1e-14) throw std::runtime_error("TDMA10: denom too small at row 9");
+            cp[9] = 0.0;
+            dp[9] = (d[9] - a[9] * dp[8]) / denom;
+        }
+
+        // ---------------- Back substitution ----------------
+        x[9] = dp[9];
+        x[8] = dp[8] - cp[8] * x[9];
+        x[7] = dp[7] - cp[7] * x[8];
+        x[6] = dp[6] - cp[6] * x[7];
+        x[5] = dp[5] - cp[5] * x[6];
+        x[4] = dp[4] - cp[4] * x[5];
+        x[3] = dp[3] - cp[3] * x[4];
+        x[2] = dp[2] - cp[2] * x[3];
+        x[1] = dp[1] - cp[1] * x[2];
+        x[0] = dp[0] - cp[0] * x[1];
+    }
+
     //=============================================================================================//
     void BodyStatesRecordingToVtpIncludeNode::writeWithFileName(const std::string& sequence)
     {
