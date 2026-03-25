@@ -74,7 +74,7 @@ namespace udf
         void update(size_t index_i, Real dt = 0.0);
         Vec6d solve_1D_sublayer(double kinematic_viscosity, double u_p_outer, double k_p_outer,
             double w_p_outer, double vel_grad_p_outer, double nut_p_outer, double h_sublayer, 
-            double utau_outer, double Q_target);
+            double utau_outer, double Q_target, double k_grad_p_outer, double w_grad_p_outer);
         std::vector<double> tdma(const std::vector<double>& a, const std::vector<double>& b, const std::vector<double>& c, const std::vector<double>& d);
         void tdma5(const double a[5], const double b[5], const double c[5], const double d[5], double x[5]);
 
