@@ -243,13 +243,13 @@ namespace udf
         double Q_target, double k_grad_p_outer, double w_grad_p_outer)
     {
         //------------------------------------------------¡ı Input parameters ¡ı------------------------------------------------
-        constexpr int ny = 10; // Manually determine
+        constexpr int ny = 5; // Manually determine
 
-        //if (num_sub_node_ != ny)
-        //{
-        //    std::cout << "Node number mismatch! Stop here." << std::endl;
-        //    std::cin.get();
-        //}
+        if (num_sub_node_ != ny)
+        {
+            std::cout << "Node number mismatch! Stop here." << std::endl;
+            std::cin.get();
+        }
 
         double utau_init = utau_outer;
         double height_sublayer = h_sublayer;
@@ -360,7 +360,9 @@ namespace udf
             //
             //-------------------------¡ı Calculate nodeO and nodeUM ¡ı-------------------------
             u_nodeUM = std::max((u_star[ny - 1] + vel_grad_p_outer * hy), tiny);
+            //u_nodeUM = 3.277959e-1;
             k_nodeUM = std::max((k_star[ny - 1] + k_grad_p_outer * hy), tiny);
+            //k_nodeUM = 1.495287e-3;
             w_nodeUM = std::max((turbu_omega_star[ny - 1] + w_grad_p_outer * hy), tiny);
             w_tilde_nodeUM = std::max(w_nodeUM, std_kw_C_lim_ * vel_grad_p_outer / std_kw_beta_star_5_); //** For calculating limiter of nut, assume vel_grad_p_outer = vel_grad_ndoeUM*
             nut_nodeUM = k_nodeUM / (w_tilde_nodeUM + tiny);
@@ -480,7 +482,7 @@ namespace udf
             d_u[last] = (utau * utau - tau_over_rho_outer) / height_sublayer * hy * hy + nu_eff_last_plus_half * u_nodeUM;
             // solving
             double U_new[ny]{};
-            tdma10(a_u, b_u, c_u, d_u, U_new);
+            tdma5(a_u, b_u, c_u, d_u, U_new);
             //-------------------------------------¡ü For velocity ¡ü-------------------------------------
 
             //-------------------------------------¡ı For turbulent kinetic energy ¡ı-------------------------------------
@@ -521,7 +523,7 @@ namespace udf
             d_k[last] = hy * hy * nut_star[last] * dudy_star[last] * dudy_star[last] + Dk_last_plus_half * k_nodeUM;
             // solving
             double K_new[ny]{};
-            tdma10(a_k, b_k, c_k, d_k, K_new);
+            tdma5(a_k, b_k, c_k, d_k, K_new);
             // avoid negative value, K_new = max(K_new, k_min)
             double k_min = 1e-10;
             for (int i = 0; i < ny; ++i) {
@@ -566,7 +568,7 @@ namespace udf
             d_w[last] = hy * hy * (part_production_last + part_cross_diffusion[last]) + Dw_last_plus_half * w_nodeUM;
             // solving
             double Turbu_omega_new[ny]{};
-            tdma10(a_w, b_w, c_w, d_w, Turbu_omega_new);
+            tdma5(a_w, b_w, c_w, d_w, Turbu_omega_new);
             // avoid negative value, Turbu_omega_new = max(Turbu_omega_new, omega_min)
             double omega_min = 1e-10;
             for (int i = 0; i < ny; ++i) {
@@ -697,7 +699,7 @@ namespace udf
         
         // ================== Êä³ö Tecplot ÎÄ¼ş ==================
         int NF = 40;
-        int index = 69;
+        int index = 70;
         std::string header_line = "ZONE T=\"SPH(1D)46 NF="
             + std::to_string(NF)
             + " ("
@@ -834,11 +836,11 @@ namespace udf
     // a[0] must be 0, c[9] will be ignored
     void P_refinement::tdma10(const double a[10], const double b[10], const double c[10], const double d[10], double x[10])
     {
-        //if (num_sub_node_ != 10)
-        //{
-        //    std::cout << "TDMA10: Node number mismatch! Stop here." << std::endl;
-        //    std::cin.get();
-        //}
+        if (num_sub_node_ != 10)
+        {
+            std::cout << "TDMA10: Node number mismatch! Stop here." << std::endl;
+            std::cin.get();
+        }
 
         double cp[10]{ 0.0 }; // modified upper diagonal
         double dp[10]{ 0.0 }; // modified RHS
