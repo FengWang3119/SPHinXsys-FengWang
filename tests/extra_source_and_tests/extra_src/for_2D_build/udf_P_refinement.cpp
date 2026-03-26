@@ -611,6 +611,7 @@ namespace udf
             {
                 utau = utau_init;   // fallback
             }
+            utau = std::max(utau, tiny);
             //------------------------------------------------¡ü Check and update flow rate ¡ü------------------------------------------------
 
             std::cout << "flow_rate_current = " << flow_rate_current
@@ -699,7 +700,7 @@ namespace udf
         
         // ================== Êä³ö Tecplot ÎÄ¼ş ==================
         int NF = 40;
-        int index = 75;
+        int index = 76;
         std::string header_line = "ZONE T=\"SPH(1D)46 NF="
             + std::to_string(NF)
             + " ("
