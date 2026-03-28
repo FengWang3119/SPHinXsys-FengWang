@@ -74,16 +74,86 @@ namespace udf
         void update(size_t index_i, Real dt = 0.0);
         Vec6d solve_1D_sublayer(double kinematic_viscosity, double u_p_outer, double k_p_outer,
             double w_p_outer, double vel_grad_p_outer, double nut_p_outer, double h_sublayer, 
-            double utau_outer, double Q_target, double k_grad_p_outer, double w_grad_p_outer);
+            double utau_outer, double Q_target, double k_grad_p_outer, double w_grad_p_outer, double& vel_nodeO, double& vel_nodeUM);
         void tdma(int N, const double* a, const double* b, const double* c, const double* d, double* x);
         void tdma5(const double a[5], const double b[5], const double c[5], const double d[5], double x[5]);
         void tdma10(const double a[10], const double b[10], const double c[10], const double d[10], double x[10]);
+
+        inline Real get_loacal_flow_rate(Real average_flow_rate_over_particle_P, Real SPH_vel_grad_P, Real nodeO_U, Real dp)
+        {
+            Real nodeOS_U = nodeO_U + SPH_vel_grad_P * 0.5 * dp;
+            Real flow_rate_half = (nodeO_U + nodeOS_U) * dp / 4.0;
+            Real flow_rate_whole = average_flow_rate_over_particle_P;
+            Real flow_rate_local = flow_rate_whole - flow_rate_half;
+            return flow_rate_local;
+        }
 
         inline Real obtainTangentialComponent(const Vecd& vec, const Vecd& normal)
         {
             Real dot_un = vec.dot(normal);                  
             Real norm_sqr = vec.dot(vec) - dot_un * dot_un;   
             return std::sqrt(std::max(0.0, norm_sqr));          
+        }
+
+        void writeTecplotFromVec6d(
+            const Vec6d& node_val,   // node_value_[index_i]
+            double U_nodeO,
+            double U_nodeUM,
+            double distance_to_wall,
+            int num_sub_node_,       // = 5
+            int NF,
+            int index
+        )
+        {
+            int ny = num_sub_node_; // 5
+            // ================== 提取数据 ==================
+            double utau = node_val[0];
+            std::vector<double> U;
+            std::vector<double> y;
+            U.reserve(ny + 2);
+            y.reserve(ny + 2);
+            // ================== 构造 y ==================
+            double hy = distance_to_wall / double(num_sub_node_);
+            double y_p = 0.5 * hy;
+            // ===== 原有5个节点 =====
+            for (int i = 0; i < ny; ++i) {
+                y.push_back(y_p + i * hy);
+                U.push_back(node_val[i + 1]);
+            }
+            // ===== nodeO =====
+            double y_nodeO = y.back() + 0.5 * hy;
+            y.push_back(y_nodeO);
+            U.push_back(U_nodeO);
+            // ===== nodeUM =====
+            double y_nodeUM = y.back() + 0.5 * hy; // 再往上 0.5hy → 总共 +hy
+            y.push_back(y_nodeUM);
+            U.push_back(U_nodeUM);
+            int n_total = y.size(); // = 7
+            std::vector<double> K(n_total, 0.0);
+            std::vector<double> OMEGA(n_total, 0.0);
+            std::vector<double> NUT(n_total, 0.0);
+            std::string header_line = "ZONE T=\"SPH(1D)-NODE NF="
+                + std::to_string(NF)
+                + " ("
+                + std::to_string(index)
+                + ")\"";
+            std::string filename = "pipe_node_nf"
+                + std::to_string(NF) + "_"
+                + std::to_string(index) + ".dat";
+            std::ofstream fout(filename);
+            fout << "$VARIABLES = \"Y\", \"U\", \"K\", \"OMEGA\", \"NUT(k/omega)\"\n";
+            fout << "$friction velocity = " << utau << "\n";
+            fout << header_line << "\n";
+            fout << std::scientific << std::setprecision(8);
+            for (int i = 0; i < n_total; ++i) {
+                fout << y[i] << " "
+                    << U[i] << " "
+                    << K[i] << " "
+                    << OMEGA[i] << " "
+                    << NUT[i] << "\n";
+            }
+            fout.close();
+            std::cout << "Tecplot (with nodeO & nodeUM) created: " << filename << std::endl;
         }
 
     protected:
@@ -96,6 +166,8 @@ namespace udf
         Vec6d* node_value_; // ** Temporary treatment only valid for 5-node configuration, first is utau, then velocity *
         Real* dUdn_P_sublayer_magnitude_;
         Matd* dUdn_P_sublayer_;
+        Real* vel_nodeO_;
+        Real* vel_nodeUM_;
         //
         int* is_near_wall_P1_;
         Real* y_p_;

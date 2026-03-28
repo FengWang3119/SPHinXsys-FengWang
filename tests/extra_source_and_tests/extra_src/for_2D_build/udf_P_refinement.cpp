@@ -80,6 +80,8 @@ namespace udf
         node_value_(particles_->registerStateVariableData<Vec6d>("NodeValue")),
         dUdn_P_sublayer_magnitude_(particles_->registerStateVariableData<Real>("dUdnFromSublayerMagnitude")),
         dUdn_P_sublayer_(particles_->registerStateVariableData<Matd>("dUdnFromSublayer")),
+        vel_nodeO_(particles_->registerStateVariableData<Real>("VelNodeO")),
+        vel_nodeUM_(particles_->registerStateVariableData<Real>("VelNodeUM")),
         //
         is_near_wall_P1_(particles_->getVariableDataByName<int>("IsNearWallP1")),
         y_p_(particles_->getVariableDataByName<Real>("Y_P")),
@@ -107,11 +109,14 @@ namespace udf
         particles_->addVariableToWrite<Vec6d>("NodeValue");
         particles_->addVariableToWrite<Real>("dUdnFromSublayerMagnitude");
         particles_->addVariableToWrite<Matd>("dUdnFromSublayer");
+        particles_->addVariableToWrite<Real>("VelNodeO");
+        particles_->addVariableToWrite<Real>("VelNodeUM");
     }
     //=================================================================================================//
     void P_refinement::update(size_t index_i, Real dt)
     {
         Real sum_node_vel_difference = 0.0;
+        Real vel_nodeO_i_prior = 0.0;
         if (is_near_wall_P1_[index_i] == 1)
         {
             Vec6d node_value_i_prior = node_value_[index_i];
@@ -120,6 +125,7 @@ namespace udf
                 Real vel_difference = node_value_i_prior[j + 1] - node_value_i_prior[j];
                 sum_node_vel_difference += vel_difference;
             }
+            vel_nodeO_i_prior = vel_nodeO_[index_i];
         }
 
         friction_velocity_from_sublayer_[index_i] = 0.0;
@@ -130,57 +136,161 @@ namespace udf
         node_value_[index_i] = Vec6d::Zero();
         dUdn_P_sublayer_magnitude_[index_i] = 0.0;
         dUdn_P_sublayer_[index_i] = Matd::Zero();
+        vel_nodeO_[index_i] = 0.0;
+        vel_nodeUM_[index_i] = 0.0;
+        double U_nodeO = 0.0;
+        double U_nodeUM = 0.0;
         if (is_near_wall_P1_[index_i] == 1)
         {
-            Vecd normal = e_nearest_normal_[index_i];
+            //** Define outside values, 3 grad values, 1 local flowrate, 5 initial values *
+            Real dudn = 0.0;
+            Real dkdn = 0.0;
+            Real dwdn = 0.0;
+            Real flow_rate_local = 0.0;
+            Real u_outer = 0.0;
+            Real k_outer = 0.0;
+            Real omega_outer = 0.0;
+            Real nut_outer = 0.0;
+            Real friction_vel_magnitude_outer = 0.0;
 
+            Vecd normal = e_nearest_normal_[index_i];
             Real nu = mu_ / rho_[index_i];
             
-            Real u_outer = obtainTangentialComponent(vel_[index_i], normal);
-            //u_outer = 3.000607e-1;
-            
-            Real k_outer = turbu_k_[index_i];
-            Real omega_outer = turbu_omega_[index_i];
+            u_outer = obtainTangentialComponent(vel_[index_i], normal);
+            k_outer = turbu_k_[index_i];
+            omega_outer = turbu_omega_[index_i];
+            nut_outer = turbu_mu_[index_i] / rho_[index_i];
+            friction_vel_magnitude_outer = std::sqrt(wall_shear_stress_[index_i] / rho_[index_i]);
 
+            //** Two ways to determine distance to wall *
             Real distance_to_wall = y_p_[index_i];
             //Real distance_to_wall = distance_to_dummy_interface_[index_i];
             
             Vecd velocity_gradient_only_P_normal = velocity_gradient_only_P_[index_i] * normal;
             Real dudn_from_SPH = obtainTangentialComponent(velocity_gradient_only_P_normal, normal);
-
-            Real dudn = 0.0;
-
+            //** Two ways to determine dudn *
             //** If use full from SPH *
             dudn = dudn_from_SPH;
-
             //** If use weighting combination *
             //Real weight_SPH = fluid_particle_spacing_;
             //Real sum_weight_sublayer = distance_to_wall; //** Assume uniform division *
             //dudn = (dudn_from_SPH * weight_SPH + sum_node_vel_difference) / (weight_SPH + sum_weight_sublayer); 
 
-            Real nut_outer = turbu_mu_[index_i] / rho_[index_i];
+
+            //------------------------------------------------¡ý For test 1D analytical ¡ý------------------------------------------------
+            //
+            //-------------------------¡ý If input fix analytical value ¡ý-------------------------
+            if(0)
+            {
+                std::cout << "Fixed input value test starts." << std::endl;
+                //** Define outside values *
+                flow_rate_local = 3.781607e-3;
+                dudn = 1.127180e+1;
+                k_outer = 1.118813e-3;
+                omega_outer = 5.998469e+1;
+                nut_outer = 1.885024e-5;
+                u_outer = 3.000607e-1;
+                friction_vel_magnitude_outer = 6.37309e-02;
+                dkdn = 1.391004e-01;
+                dwdn = -4.190042e+03;
+                nu = 3.5e-4;
+                U_nodeO = 0.0;
+                U_nodeUM = 0.0;
+                //** Remember to activate output function inside *
+                node_value_[index_i] = solve_1D_sublayer(nu, u_outer, k_outer, omega_outer, std::abs(dudn),
+                    nut_outer, distance_to_wall, friction_vel_magnitude_outer, std::abs(flow_rate_local), dkdn, dwdn, U_nodeO, U_nodeUM);
+                std::cout << "Fixed input value test ends, stop here." << std::endl;
+                std::cin.get();
+            }
+            //-------------------------¡ü If input fix analytical value ¡ü-------------------------
+
+            //-------------------------¡ý If dynamic test ¡ý-------------------------
+            if (1)
+            {
+                std::cout << "Dynamic test starts." << std::endl;
+                //------¡ý Mimic SPH average value ¡ý------
+                Real analytical_k_S = 5.603212e-3;
+                Real analytical_k_P = 1.118813e-3;
+                Real analytical_k_grad_P_inner = (analytical_k_S - analytical_k_P) / fluid_particle_spacing_;
+
+                Real analytical_w_S = 2.146871e+1;
+                Real analytical_w_P = 5.998469e+1;
+                Real analytical_w_grad_P_inner = (analytical_w_S - analytical_w_P) / fluid_particle_spacing_;
+
+                Real analytical_vel_S = 5.233007e-1;
+                Real analytical_vel_P = 3.000607e-1;
+                Real analytical_vel_grad_P_inner = (analytical_vel_S - analytical_vel_P) / fluid_particle_spacing_;
+
+                Real analytical_flow_rate_whole_PS_to_Wall = 1.433123e-2;
+                //------¡ü Mimic SPH average value ¡ü------
+                // 
+                //------¡ý Start testing ¡ý------
+                Real flow_rate_local_prior = 0.0;
+                Real residue = 1.0e3;
+                vel_nodeO_i_prior = analytical_vel_P;
+                
+                //** Fix 5+1 initial values *
+                k_outer = 1.118813e-3;
+                omega_outer = 5.998469e+1;
+                nut_outer = 1.885024e-5;
+                u_outer = 3.000607e-1;
+                nu = 3.5e-4;
+                friction_vel_magnitude_outer = 6.37309e-02;
+
+                //** Transfer 3 gradient values *
+                dudn = analytical_vel_grad_P_inner;
+                dkdn = analytical_k_grad_P_inner;
+                dwdn = analytical_w_grad_P_inner;
+
+                while (residue > 1.0e-6)
+                {
+                    flow_rate_local = get_loacal_flow_rate(analytical_flow_rate_whole_PS_to_Wall, dudn, vel_nodeO_i_prior, fluid_particle_spacing_);
+
+                    U_nodeO = 0.0;
+                    U_nodeUM = 0.0;
+                    node_value_[index_i] = solve_1D_sublayer(nu, u_outer, k_outer, omega_outer, std::abs(dudn),
+                        nut_outer, distance_to_wall, friction_vel_magnitude_outer, std::abs(flow_rate_local), dkdn, dwdn, U_nodeO, U_nodeUM);
+
+                    residue = std::abs(flow_rate_local - flow_rate_local_prior);
+                    std::cout << "residue =" << residue << std::endl;
+                    flow_rate_local_prior = flow_rate_local;
+                    Real relax_factor = 0.3;
+                    vel_nodeO_i_prior = (1.0 - relax_factor) * vel_nodeO_i_prior + relax_factor * U_nodeO;
+                }
+
+                std::cout << "flow rate local converge!." << std::endl;
+                std::cout << "node_value_[index_i][0]=" << node_value_[index_i][0] << std::endl;
+                std::cout << "node_value_[index_i][1]=" << node_value_[index_i][1] << std::endl;
+                std::cout << "node_value_[index_i][2]=" << node_value_[index_i][2] << std::endl;
+                std::cout << "node_value_[index_i][3]=" << node_value_[index_i][3] << std::endl;
+                std::cout << "node_value_[index_i][4]=" << node_value_[index_i][4] << std::endl;
+                std::cout << "node_value_[index_i][5]=" << node_value_[index_i][5] << std::endl;
+                std::cout << "U_nodeO=" << U_nodeO << std::endl;
+                std::cout << "U_nodeUM=" << U_nodeUM << std::endl;
+
+                writeTecplotFromVec6d(
+                    node_value_[index_i],
+                    U_nodeO,
+                    U_nodeUM,
+                    distance_to_wall,
+                    num_sub_node_,
+                    40,
+                    77
+                );
+
+                std::cout << "Dynamic test ends, stop here." << std::endl;
+                std::cin.get();
+                //------¡ü Start testing ¡ü------
+            }
+            //-------------------------¡ü If dynamic test ¡ü-------------------------
+            // 
+            //------------------------------------------------¡ü For test 1D analytical ¡ü------------------------------------------------
             
-            Real friction_vel_magnitude = std::sqrt(wall_shear_stress_[index_i] / rho_[index_i]);
-
-            Real u_ps = u_outer + dudn * 0.5 * fluid_particle_spacing_;
-            Real flow_rate_half = (u_outer + u_ps) * fluid_particle_spacing_ / 4.0;
-            Real flow_rate_whole = u_outer * fluid_particle_spacing_;
-            Real flow_rate_local = flow_rate_whole - flow_rate_half;
-
-            //** For test 1D analytical *
-            flow_rate_local = 3.781607e-3;
-            dudn = 1.127180e+1;
-            k_outer = 1.118813e-3;
-            omega_outer = 5.998469e+1;
-            nut_outer = 1.885024e-5;
-            u_outer = 3.000607e-1;
-            nu = 3.5e-4;
-            friction_vel_magnitude = 6.37309e-02;
-            Real dkdn = 1.391004e-01;
-            Real dwdn = -4.190042e+03;
-
+            flow_rate_local = get_loacal_flow_rate(u_outer * fluid_particle_spacing_, dudn, vel_nodeO_i_prior, fluid_particle_spacing_); //** This is for better testing *
+            U_nodeO = 0.0;
+            U_nodeUM = 0.0;
             node_value_[index_i] = solve_1D_sublayer(nu, u_outer, k_outer, omega_outer, std::abs(dudn),
-                nut_outer, distance_to_wall, friction_vel_magnitude, std::abs(flow_rate_local), dkdn, dwdn);
+                nut_outer, distance_to_wall, friction_vel_magnitude_outer, std::abs(flow_rate_local), dkdn, dwdn, U_nodeO, U_nodeUM);
 
             //** Check results *
             if (!std::isfinite(node_value_[index_i][0]))
@@ -201,7 +311,7 @@ namespace udf
                     std::cout << "dudn=" << dudn << std::endl;
                     std::cout << "nut_outer=" << nut_outer << std::endl;
                     std::cout << "distance_to_wall=" << distance_to_wall << std::endl;
-                    std::cout << "friction_vel_magnitude=" << friction_vel_magnitude << std::endl;
+                    std::cout << "friction_vel_magnitude_outer=" << friction_vel_magnitude_outer << std::endl;
                     std::cout << "flow_rate_local=" << flow_rate_local << std::endl;
                     std::cout << "node_value_[index_i][0] = " << node_value_[index_i][0] << std::endl;
 
@@ -211,12 +321,14 @@ namespace udf
 
             //** Extract results *
             friction_velocity_from_sublayer_[index_i] = node_value_[index_i][0];
+            vel_nodeO_[index_i] = U_nodeO;
+            vel_nodeUM_[index_i] = U_nodeUM;
 
             //** For testing *
             target_flow_rate_in_sublayer_[index_i] = flow_rate_local;
-            vel_ps_magnitude_[index_i] = u_ps;
+            vel_ps_magnitude_[index_i] = U_nodeO + dudn * 0.5 * fluid_particle_spacing_;
             dudn_for_local_flow_rate_[index_i] = dudn;
-            utau_node_[index_i] = friction_vel_magnitude;
+            utau_node_[index_i] = friction_vel_magnitude_outer;
 
 
             //** Obtain value for correcting SPH solver *
@@ -240,7 +352,7 @@ namespace udf
     //=================================================================================================//
     Vec6d P_refinement::solve_1D_sublayer(double kinematic_viscosity, double u_p_outer, double k_p_outer, 
         double w_p_outer, double vel_grad_p_outer, double nut_p_outer, double h_sublayer, double utau_outer, 
-        double Q_target, double k_grad_p_outer, double w_grad_p_outer)
+        double Q_target, double k_grad_p_outer, double w_grad_p_outer, double& vel_nodeO, double& vel_nodeUM)
     {
         //------------------------------------------------¡ý Input parameters ¡ý------------------------------------------------
         constexpr int ny = 5; // Manually determine
@@ -287,18 +399,18 @@ namespace udf
         double turbu_omega_p = 6.0 * nu / (std_kw_beta_i_ * y_p * y_p);
         //------------------------------------------------¡ü Calculate nodeP value ¡ü------------------------------------------------
 
-        printf("hy=%f\n", hy);
-        printf("yp=%f\n", y_p);
-        printf("yplus=%f\n", yplus);
-        printf("u_p=%f\n", u_p);
-        std::cout << "ny= " << ny << std::endl;
-        std::cout << "y = ";
-        for (const auto& v : y) {
-            std::cout << v << " ";
-        }
-        std::cout << std::endl;
-        std::cout << "press to continue" << std::endl;
-        std::cin.get();
+        //printf("hy=%f\n", hy);
+        //printf("yp=%f\n", y_p);
+        //printf("yplus=%f\n", yplus);
+        //printf("u_p=%f\n", u_p);
+        //std::cout << "ny= " << ny << std::endl;
+        //std::cout << "y = ";
+        //for (const auto& v : y) {
+        //    std::cout << v << " ";
+        //}
+        //std::cout << std::endl;
+        //std::cout << "press to continue" << std::endl;
+        //std::cin.get();
 
         //------------------------------------------------¡ý Construct initial value ¡ý------------------------------------------------
         double u_init_value[ny];
@@ -587,9 +699,9 @@ namespace udf
             for (int i = 0; i < ny; ++i) phi_solved[n_start + i] = (1.0 - relax_w) * turbu_omega_star[i] + relax_w * Turbu_omega_new[i];
             //------------------------------------------------¡ü update phi_solved with under-relaxation ¡ü------------------------------------------------
 
-            std::cout << "phi_solved = ";
-            for (const auto& v : phi_solved) std::cout << v << " ";
-            std::cout << std::endl;
+            //std::cout << "phi_solved = ";
+            //for (const auto& v : phi_solved) std::cout << v << " ";
+            //std::cout << std::endl;
 
             //------------------------------------------------¡ý Check and update flow rate ¡ý------------------------------------------------
             flow_rate_current = std::accumulate(U_new, U_new + ny, 0.0) * hy;
@@ -614,9 +726,9 @@ namespace udf
             utau = std::max(utau, tiny);
             //------------------------------------------------¡ü Check and update flow rate ¡ü------------------------------------------------
 
-            std::cout << "flow_rate_current = " << flow_rate_current
-                << ", target = " << flow_rate_target << std::endl;
-            std::cout << "updated utau = " << utau << std::endl;
+            //std::cout << "flow_rate_current = " << flow_rate_current
+            //    << ", target = " << flow_rate_target << std::endl;
+            //std::cout << "updated utau = " << utau << std::endl;
 
             //------------------------------------------------¡ý Calculate residue ¡ý------------------------------------------------
             differ = 0.0;
@@ -626,7 +738,7 @@ namespace udf
             }
             differ = std::sqrt(differ);
             //------------------------------------------------¡ü Calculate residue ¡ü------------------------------------------------
-            std::cout << "differ: " << differ << std::endl;
+            //std::cout << "differ: " << differ << std::endl;
 
             //------------------------------------------------¡ý Update ¡ý------------------------------------------------
             for (int i = 0; i < 3 * ny; ++i) {
@@ -635,12 +747,12 @@ namespace udf
             num_iter_out += 1;
             //------------------------------------------------¡ü Update ¡ü------------------------------------------------
 
-            std::cout << "num_iter_out = " << num_iter_out << std::endl;
-            std::cout << "------------" << std::endl;
+            //std::cout << "num_iter_out = " << num_iter_out << std::endl;
+            //std::cout << "------------" << std::endl;
 
         }
 
-        /*
+        ///*
         //** This is a temporary treatment *
         if (ny != 5)
         {
@@ -652,8 +764,10 @@ namespace udf
         for (int i = 0; i < ny; ++i) {
             results[i+1] = phi_solved[i];
         }
+        vel_nodeO = u_nodeO;
+        vel_nodeUM = u_nodeUM;
         return results;
-        */
+        //*/
 
         std::cout << "******Converge******" << std::endl;
 
