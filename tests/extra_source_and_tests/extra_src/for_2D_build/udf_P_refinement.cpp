@@ -275,7 +275,7 @@ namespace udf
                     distance_to_wall,
                     num_sub_node_,
                     40,
-                    77
+                    78
                 );
 
                 std::cout << "Dynamic test ends, stop here." << std::endl;
@@ -371,7 +371,7 @@ namespace udf
         double k_init = k_p_outer;
         double turbu_omega_init = w_p_outer;
 
-        double convergence_criteria_outer = 1.0e-3;
+        double convergence_criteria_outer = 1.0e-6;
         double tiny = 1.0e-6;
         double relax_u = 0.9;
         double relax_k = 0.9;
