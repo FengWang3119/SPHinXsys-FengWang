@@ -143,9 +143,9 @@ namespace udf
         if (is_near_wall_P1_[index_i] == 1)
         {
             //** Define outside values, 3 grad values, 1 local flowrate, 5 initial values *
-            Real dudn = 0.0;
-            Real dkdn = 0.0;
-            Real dwdn = 0.0;
+            Real dudn_outer = 0.0;
+            Real dkdn_outer = 0.0;
+            Real dwdn_outer = 0.0;
             Real flow_rate_local = 0.0;
             Real u_outer = 0.0;
             Real k_outer = 0.0;
@@ -168,13 +168,13 @@ namespace udf
             
             Vecd velocity_gradient_only_P_normal = velocity_gradient_only_P_[index_i] * normal;
             Real dudn_from_SPH = obtainTangentialComponent(velocity_gradient_only_P_normal, normal);
-            //** Two ways to determine dudn *
+            //** Two ways to determine dudn_outer *
             //** If use full from SPH *
-            dudn = dudn_from_SPH;
+            dudn_outer = dudn_from_SPH;
             //** If use weighting combination *
             //Real weight_SPH = fluid_particle_spacing_;
             //Real sum_weight_sublayer = distance_to_wall; //** Assume uniform division *
-            //dudn = (dudn_from_SPH * weight_SPH + sum_node_vel_difference) / (weight_SPH + sum_weight_sublayer); 
+            //dudn_outer = (dudn_from_SPH * weight_SPH + sum_node_vel_difference) / (weight_SPH + sum_weight_sublayer); 
 
 
             //------------------------------------------------¡ý For test 1D analytical ¡ý------------------------------------------------
@@ -185,20 +185,20 @@ namespace udf
                 std::cout << "Fixed input value test starts." << std::endl;
                 //** Define outside values *
                 flow_rate_local = 3.781607e-3;
-                dudn = 1.127180e+1;
+                dudn_outer = 1.127180e+1;
                 k_outer = 1.118813e-3;
                 omega_outer = 5.998469e+1;
                 nut_outer = 1.885024e-5;
                 u_outer = 3.000607e-1;
                 friction_vel_magnitude_outer = 6.37309e-02;
-                dkdn = 1.391004e-01;
-                dwdn = -4.190042e+03;
+                dkdn_outer = 1.391004e-01;
+                dwdn_outer = -4.190042e+03;
                 nu = 3.5e-4;
                 U_nodeO = 0.0;
                 U_nodeUM = 0.0;
                 //** Remember to activate output function inside *
-                node_value_[index_i] = solve_1D_sublayer(nu, u_outer, k_outer, omega_outer, std::abs(dudn),
-                    nut_outer, distance_to_wall, friction_vel_magnitude_outer, std::abs(flow_rate_local), dkdn, dwdn, U_nodeO, U_nodeUM);
+                node_value_[index_i] = solve_1D_sublayer(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
+                    nut_outer, distance_to_wall, friction_vel_magnitude_outer, std::abs(flow_rate_local), dkdn_outer, dwdn_outer, U_nodeO, U_nodeUM);
                 std::cout << "Fixed input value test ends, stop here." << std::endl;
                 std::cin.get();
             }
@@ -240,18 +240,18 @@ namespace udf
                 friction_vel_magnitude_outer = 6.37309e-02;
 
                 //** Transfer 3 gradient values *
-                dudn = analytical_vel_grad_P_inner;
-                dkdn = analytical_k_grad_P_inner;
-                dwdn = analytical_w_grad_P_inner;
+                dudn_outer = analytical_vel_grad_P_inner;
+                dkdn_outer = analytical_k_grad_P_inner;
+                dwdn_outer = analytical_w_grad_P_inner;
 
                 while (residue > 1.0e-6)
                 {
-                    flow_rate_local = get_loacal_flow_rate(analytical_flow_rate_whole_PS_to_Wall, dudn, vel_nodeO_i_prior, fluid_particle_spacing_);
+                    flow_rate_local = get_loacal_flow_rate(analytical_flow_rate_whole_PS_to_Wall, dudn_outer, vel_nodeO_i_prior, fluid_particle_spacing_);
 
                     U_nodeO = 0.0;
                     U_nodeUM = 0.0;
-                    node_value_[index_i] = solve_1D_sublayer(nu, u_outer, k_outer, omega_outer, std::abs(dudn),
-                        nut_outer, distance_to_wall, friction_vel_magnitude_outer, std::abs(flow_rate_local), dkdn, dwdn, U_nodeO, U_nodeUM);
+                    node_value_[index_i] = solve_1D_sublayer(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
+                        nut_outer, distance_to_wall, friction_vel_magnitude_outer, std::abs(flow_rate_local), dkdn_outer, dwdn_outer, U_nodeO, U_nodeUM);
 
                     residue = std::abs(flow_rate_local - flow_rate_local_prior);
                     std::cout << "residue =" << residue << std::endl;
@@ -288,11 +288,11 @@ namespace udf
             // 
             //------------------------------------------------¡ü For test 1D analytical ¡ü------------------------------------------------
             
-            flow_rate_local = get_loacal_flow_rate(u_outer * fluid_particle_spacing_, dudn, vel_nodeO_i_prior, fluid_particle_spacing_); //** This is for better testing *
+            flow_rate_local = get_loacal_flow_rate(u_outer * fluid_particle_spacing_, dudn_outer, vel_nodeO_i_prior, fluid_particle_spacing_); //** This is for better testing *
             U_nodeO = 0.0;
             U_nodeUM = 0.0;
-            node_value_[index_i] = solve_1D_sublayer(nu, u_outer, k_outer, omega_outer, std::abs(dudn),
-                nut_outer, distance_to_wall, friction_vel_magnitude_outer, std::abs(flow_rate_local), dkdn, dwdn, U_nodeO, U_nodeUM);
+            node_value_[index_i] = solve_1D_sublayer(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
+                nut_outer, distance_to_wall, friction_vel_magnitude_outer, std::abs(flow_rate_local), dkdn_outer, dwdn_outer, U_nodeO, U_nodeUM);
 
             //** Check results *
             if (!std::isfinite(node_value_[index_i][0]))
@@ -310,7 +310,7 @@ namespace udf
                     std::cout << "u_outer=" << u_outer << std::endl;
                     std::cout << "k_outer=" << k_outer << std::endl;
                     std::cout << "omega_outer=" << omega_outer << std::endl;
-                    std::cout << "dudn=" << dudn << std::endl;
+                    std::cout << "dudn_outer=" << dudn_outer << std::endl;
                     std::cout << "nut_outer=" << nut_outer << std::endl;
                     std::cout << "distance_to_wall=" << distance_to_wall << std::endl;
                     std::cout << "friction_vel_magnitude_outer=" << friction_vel_magnitude_outer << std::endl;
@@ -328,8 +328,8 @@ namespace udf
 
             //** For testing *
             target_flow_rate_in_sublayer_[index_i] = flow_rate_local;
-            vel_ps_magnitude_[index_i] = U_nodeO + dudn * 0.5 * fluid_particle_spacing_;
-            dudn_for_local_flow_rate_[index_i] = dudn;
+            vel_ps_magnitude_[index_i] = U_nodeO + dudn_outer * 0.5 * fluid_particle_spacing_;
+            dudn_for_local_flow_rate_[index_i] = dudn_outer;
             utau_node_[index_i] = friction_vel_magnitude_outer;
 
 
