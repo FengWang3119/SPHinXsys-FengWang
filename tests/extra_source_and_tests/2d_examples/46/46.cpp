@@ -6,7 +6,7 @@ int main(int ac, char *av[])
     /**
      * @brief Build up -- a SPHSystem --
      */
-    SPHSystem sph_system(system_domain_bounds, resolution_ref, 1);
+    SPHSystem sph_system(system_domain_bounds, resolution_ref);
 
     /** Restart. */
     bool is_write_restart_file = false;
@@ -171,8 +171,6 @@ int main(int ac, char *av[])
     /** Turbulent.Note: When use wall function, K Epsilon calculation only consider inner */
     InteractionWithUpdate<fluid_dynamics::udf::JudgeIsNearWall> update_near_wall_status(water_block_inner, water_wall_contact, y_p_constant);
 
-    InteractionWithUpdate<fluid_dynamics::udf::P_refinement_GetVelocityGradientInner> get_velocity_gradient_inner_only_for_P(water_block_inner); //** Note that the B should change *
-    //InteractionWithUpdate<fluid_dynamics::udf::P_refinement_GetVelocityGradientComplex> get_velocity_gradient_inner_only_for_P(water_block_inner, water_wall_contact); //** Note that the B should change *
     InteractionWithUpdate<fluid_dynamics::udf::kOmega_GetVelocityGradientComplex> get_velocity_gradient(water_block_inner, water_wall_contact);
 
 
@@ -185,6 +183,9 @@ int main(int ac, char *av[])
     InteractionDynamics<fluid_dynamics::udf::kOmega_WallFunctionCorrection> standard_wall_function_correction(water_block_inner, water_wall_contact);
 
     SimpleDynamics<fluid_dynamics::udf::ConstrainNormalVelocityInRegionP> constrain_normal_velocity_in_P_region(water_block);
+
+    InteractionWithUpdate<fluid_dynamics::udf::P_refinement_GetVelocityGradientInner> get_velocity_gradient_inner_only_for_P(water_block_inner); //** Note that the B should change *
+    //InteractionWithUpdate<fluid_dynamics::udf::P_refinement_GetVelocityGradientComplex> get_velocity_gradient_inner_only_for_P(water_block_inner, water_wall_contact); //** Note that the B should change *
 
     SimpleDynamics<fluid_dynamics::udf::P_refinement> get_friction_velocity_from_sublayer(water_block);
 

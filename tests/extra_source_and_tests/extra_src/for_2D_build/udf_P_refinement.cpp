@@ -21,15 +21,21 @@ namespace udf
     void P_refinement_GetVelocityGradient<Inner<>>::interaction(size_t index_i, Real dt)
     {
         velocity_gradient_only_P_[index_i] = Matd::Zero();
+        k_gradient_only_P_[index_i] = Vecd::Zero();
+        omega_gradient_only_P_[index_i] = Vecd::Zero();
         if (is_near_wall_P1_[index_i] == 1)
         {
             Vecd vel_i = vel_[index_i];
+            Real k_i = turbu_k_[index_i];
+            Real w_i = turbu_omega_[index_i];
             const Neighborhood& inner_neighborhood = inner_configuration_[index_i];
             for (size_t n = 0; n != inner_neighborhood.current_size_; ++n)
             {
                 size_t index_j = inner_neighborhood.j_[n];
                 Vecd nablaW_ijV_j = inner_neighborhood.dW_ij_[n] * Vol_[index_j] * inner_neighborhood.e_ij_[n];
                 velocity_gradient_only_P_[index_i] += -(vel_i - vel_[index_j]) * nablaW_ijV_j.transpose();
+                k_gradient_only_P_[index_i] += -1.0 * (k_i - turbu_k_[index_j]) * nablaW_ijV_j;
+                omega_gradient_only_P_[index_i] += -1.0 * (w_i - turbu_omega_[index_j]) * nablaW_ijV_j;
             }
         }
     }
@@ -98,7 +104,9 @@ namespace udf
         e_nearest_normal_(particles_->getVariableDataByName<Vecd>("WallNearestNormalUnitVector")),
         fluid_particle_spacing_(sph_body.getSPHAdaptation().ReferenceSpacing()),
         physical_time_(sph_system_->getSystemVariableDataByName<Real>("PhysicalTime")),
-        velocity_gradient_(particles_->getVariableDataByName<Matd>("TurbulentVelocityGradient"))
+        velocity_gradient_(particles_->getVariableDataByName<Matd>("TurbulentVelocityGradient")),
+        k_gradient_only_P_(particles_->getVariableDataByName<Vecd>("TurbulentKineticEnergyGradientOnlyP")),
+        omega_gradient_only_P_(particles_->getVariableDataByName<Vecd>("TurbulentSpecificDissipationGradientOnlyP"))
     {
         particles_->addVariableToWrite<Real>("FrictionVelocityFromSublayer");
         particles_->addVariableToWrite<Real>("TargetFlowRateInSublayer");
@@ -176,7 +184,8 @@ namespace udf
             //Real sum_weight_sublayer = distance_to_wall; //** Assume uniform division *
             //dudn_outer = (dudn_from_SPH * weight_SPH + sum_node_vel_difference) / (weight_SPH + sum_weight_sublayer); 
 
-
+            dkdn_outer = k_gradient_only_P_[index_i].dot(normal); //** Currently, only inner contribution is considered *
+            dwdn_outer = omega_gradient_only_P_[index_i].dot(normal);
             //------------------------------------------------¡ý For test 1D analytical ¡ý------------------------------------------------
             //
             //-------------------------¡ý If input fix analytical value ¡ý-------------------------

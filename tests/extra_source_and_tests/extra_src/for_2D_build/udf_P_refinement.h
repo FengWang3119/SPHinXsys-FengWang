@@ -26,11 +26,15 @@ namespace udf
 
     protected:
         Matd* velocity_gradient_only_P_;
+        Vecd* k_gradient_only_P_;
+        Vecd* omega_gradient_only_P_;
         //
         Real* Vol_;
         Vecd* vel_;
         int* is_near_wall_P1_;
         int* is_near_wall_P2_;
+        Real* turbu_k_;
+        Real* turbu_omega_;
     };
 
     //** Inner part *
@@ -185,6 +189,8 @@ namespace udf
         Real fluid_particle_spacing_;
         Real* physical_time_;
         Matd* velocity_gradient_;
+        Vecd* k_gradient_only_P_;
+        Vecd* omega_gradient_only_P_;
     };
 //=================================================================================================//
     class BodyStatesRecordingToVtpIncludeNode : public BodyStatesRecording
