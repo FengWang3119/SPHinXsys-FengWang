@@ -209,15 +209,15 @@ namespace udf
             {
                 std::cout << "Dynamic test starts." << std::endl;
                 //------¡ý Mimic SPH average value ¡ý------
-                Real analytical_k_S = 5.603212e-3;
+                Real analytical_k_S = 8.260674e-03;
                 Real analytical_k_P = 1.118813e-3;
                 Real analytical_k_grad_P_inner = (analytical_k_S - analytical_k_P) / fluid_particle_spacing_;
 
-                Real analytical_w_S = 2.146871e+1;
+                Real analytical_w_S = 1.242432e+01;
                 Real analytical_w_P = 5.998469e+1;
                 Real analytical_w_grad_P_inner = (analytical_w_S - analytical_w_P) / fluid_particle_spacing_;
 
-                Real analytical_vel_S = 5.233007e-1;
+                Real analytical_vel_S = 6.487377e-01;
                 Real analytical_vel_P = 3.000607e-1;
                 Real analytical_vel_grad_P_inner = (analytical_vel_S - analytical_vel_P) / fluid_particle_spacing_;
 
@@ -275,7 +275,7 @@ namespace udf
                     distance_to_wall,
                     num_sub_node_,
                     40,
-                    78
+                    79
                 );
 
                 std::cout << "Dynamic test ends, stop here." << std::endl;
