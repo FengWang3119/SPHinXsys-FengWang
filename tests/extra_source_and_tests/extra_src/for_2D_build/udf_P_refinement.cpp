@@ -297,11 +297,22 @@ namespace udf
             // 
             //------------------------------------------------¡ü For test 1D analytical ¡ü------------------------------------------------
             
-            flow_rate_local = get_loacal_flow_rate(u_outer * fluid_particle_spacing_, dudn_outer, vel_nodeO_i_prior, fluid_particle_spacing_); //** This is for better testing *
-            U_nodeO = 0.0;
-            U_nodeUM = 0.0;
-            node_value_[index_i] = solve_1D_sublayer(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
-                nut_outer, distance_to_wall, friction_vel_magnitude_outer, std::abs(flow_rate_local), dkdn_outer, dwdn_outer, U_nodeO, U_nodeUM);
+            Real flow_rate_local_prior = 0.0;
+            Real residue = 1.0e3;
+            while (residue > 1.0e-6)
+            {
+                flow_rate_local = get_loacal_flow_rate(u_outer * fluid_particle_spacing_, dudn_outer, vel_nodeO_i_prior, fluid_particle_spacing_); //** This is for better testing *
+                U_nodeO = 0.0;
+                U_nodeUM = 0.0;
+                node_value_[index_i] = solve_1D_sublayer(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
+                    nut_outer, distance_to_wall, friction_vel_magnitude_outer, std::abs(flow_rate_local), dkdn_outer, dwdn_outer, U_nodeO, U_nodeUM);
+
+                residue = std::abs(flow_rate_local - flow_rate_local_prior);
+                //std::cout << "residue =" << residue << std::endl;
+                flow_rate_local_prior = flow_rate_local;
+                Real relax_factor = 0.3;
+                vel_nodeO_i_prior = (1.0 - relax_factor) * vel_nodeO_i_prior + relax_factor * U_nodeO;
+            }
 
             //** Check results *
             if (!std::isfinite(node_value_[index_i][0]))
