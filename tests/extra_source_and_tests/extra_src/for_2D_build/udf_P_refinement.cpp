@@ -301,7 +301,7 @@ namespace udf
             Real residue = 1.0e3;
             while (residue > 1.0e-6)
             {
-                flow_rate_local = get_loacal_flow_rate(u_outer * fluid_particle_spacing_, dudn_outer, vel_nodeO_i_prior, fluid_particle_spacing_); //** This is for better testing *
+                flow_rate_local = get_loacal_flow_rate(1.433123e-2, dudn_outer, vel_nodeO_i_prior, fluid_particle_spacing_); //** This is for better testing *
                 U_nodeO = 0.0;
                 U_nodeUM = 0.0;
                 node_value_[index_i] = solve_1D_sublayer(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
