@@ -44,8 +44,8 @@ namespace udf
     {
         if (is_near_wall_P1_[index_i] == 1)
         {
-            //velocity_gradient_only_P_[index_i] *= turbu_B_[index_i];
-            velocity_gradient_only_P_[index_i] *= B_[index_i];
+            velocity_gradient_only_P_[index_i] *= turbu_B_[index_i];
+            //velocity_gradient_only_P_[index_i] *= B_[index_i];
         }
     }
     //=================================================================================================//
@@ -88,6 +88,9 @@ namespace udf
         dUdn_P_sublayer_(particles_->registerStateVariableData<Matd>("dUdnFromSublayer")),
         vel_nodeO_(particles_->registerStateVariableData<Real>("VelNodeO")),
         vel_nodeUM_(particles_->registerStateVariableData<Real>("VelNodeUM")),
+        dUdn_P_nodeU_(particles_->registerStateVariableData<Real>("dUdnP_NodeU")),
+        global_flow_rate_over_P_(particles_->registerStateVariableData<Real>("global_flow_rate_over_P_")),
+        half_flow_rate_over_P_(particles_->registerStateVariableData<Real>("half_flow_rate_over_P_")),
         //
         is_near_wall_P1_(particles_->getVariableDataByName<int>("IsNearWallP1")),
         y_p_(particles_->getVariableDataByName<Real>("Y_P")),
@@ -119,12 +122,15 @@ namespace udf
         particles_->addVariableToWrite<Matd>("dUdnFromSublayer");
         particles_->addVariableToWrite<Real>("VelNodeO");
         particles_->addVariableToWrite<Real>("VelNodeUM");
+        particles_->addVariableToWrite<Real>("global_flow_rate_over_P_");
+        particles_->addVariableToWrite<Real>("half_flow_rate_over_P_");
     }
     //=================================================================================================//
     void P_refinement::update(size_t index_i, Real dt)
     {
         Real sum_node_vel_difference = 0.0;
         Real vel_nodeO_i_prior = 0.0;
+        Real dUdn_P_nodeU_prior = 0.0;
         if (is_near_wall_P1_[index_i] == 1)
         {
             Vec6d node_value_i_prior = node_value_[index_i];
@@ -134,10 +140,13 @@ namespace udf
                 sum_node_vel_difference += vel_difference;
             }
             vel_nodeO_i_prior = vel_nodeO_[index_i];
+            dUdn_P_nodeU_prior = dUdn_P_nodeU_[index_i];
         }
 
         friction_velocity_from_sublayer_[index_i] = 0.0;
         target_flow_rate_in_sublayer_[index_i] = 0.0;
+        global_flow_rate_over_P_[index_i] = 0.0;
+        half_flow_rate_over_P_[index_i] = 0.0;
         vel_ps_magnitude_[index_i] = 0.0;
         dudn_for_local_flow_rate_[index_i] = 0.0;
         utau_node_[index_i] = 0.0;
@@ -146,6 +155,7 @@ namespace udf
         dUdn_P_sublayer_[index_i] = Matd::Zero();
         vel_nodeO_[index_i] = 0.0;
         vel_nodeUM_[index_i] = 0.0;
+        dUdn_P_nodeU_[index_i] = 0.0;
         double U_nodeO = 0.0;
         double U_nodeUM = 0.0;
         if (is_near_wall_P1_[index_i] == 1)
@@ -176,13 +186,16 @@ namespace udf
             
             Vecd velocity_gradient_only_P_normal = velocity_gradient_only_P_[index_i] * normal;
             Real dudn_from_SPH = obtainTangentialComponent(velocity_gradient_only_P_normal, normal);
-            //** Two ways to determine dudn_outer *
+            //** Different ways to determine dudn_outer *
             //** If use full from SPH *
-            dudn_outer = dudn_from_SPH;
+            //dudn_outer = dudn_from_SPH;
             //** If use weighting combination *
             //Real weight_SPH = fluid_particle_spacing_;
             //Real sum_weight_sublayer = distance_to_wall; //** Assume uniform division *
             //dudn_outer = (dudn_from_SPH * weight_SPH + sum_node_vel_difference) / (weight_SPH + sum_weight_sublayer); 
+            //** If use Arithmetic Mean  *
+            dudn_outer = (dudn_from_SPH * 0.8 + dUdn_P_nodeU_prior * 0.2);
+
 
             dkdn_outer = k_gradient_only_P_[index_i].dot(normal); //** Currently, only inner contribution is considered *
             dwdn_outer = omega_gradient_only_P_[index_i].dot(normal);
@@ -348,6 +361,8 @@ namespace udf
 
             //** For testing *
             target_flow_rate_in_sublayer_[index_i] = flow_rate_local;
+            global_flow_rate_over_P_[index_i] = u_outer * fluid_particle_spacing_;
+            half_flow_rate_over_P_[index_i] = (U_nodeO + (U_nodeO + dudn_outer * 0.5 * fluid_particle_spacing_)) * (0.5 * fluid_particle_spacing_) / 2.0;
             vel_ps_magnitude_[index_i] = U_nodeO + dudn_outer * 0.5 * fluid_particle_spacing_;
             dudn_for_local_flow_rate_[index_i] = dudn_outer;
             utau_node_[index_i] = friction_vel_magnitude_outer;
@@ -366,6 +381,17 @@ namespace udf
                 Matd dUdn_P_sublayer = dUdn_P_sublayer_magnitude * (tangential * normal.transpose());
                 dUdn_P_sublayer_magnitude_[index_i] = dUdn_P_sublayer_magnitude;
                 dUdn_P_sublayer_[index_i] = dUdn_P_sublayer;
+            }
+
+            //** If calculate dUdn_P_nodeU_ *
+            if (1)
+            {
+                Vecd vel_tangential = vel_[index_i] - vel_[index_i].dot(normal) * normal;
+                Real tangential_velocity_P_magnitude = vel_tangential.norm();
+                Vecd tangential = vel_tangential / (tangential_velocity_P_magnitude + TinyReal);
+                Real tangential_velocity_node_U = node_value_[index_i][5]; //** Temporary treatment *
+                Real dist_nodeU_P = (distance_to_wall / double(num_sub_node_)) / 2.0;
+                dUdn_P_nodeU_[index_i] = (tangential_velocity_P_magnitude - tangential_velocity_node_U) / (dist_nodeU_P + TinyReal);
             }
         }
     }

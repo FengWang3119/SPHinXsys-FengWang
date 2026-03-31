@@ -172,6 +172,9 @@ namespace udf
         Matd* dUdn_P_sublayer_;
         Real* vel_nodeO_;
         Real* vel_nodeUM_;
+        Real* dUdn_P_nodeU_;
+        Real* global_flow_rate_over_P_;
+        Real* half_flow_rate_over_P_;
         //
         int* is_near_wall_P1_;
         Real* y_p_;
