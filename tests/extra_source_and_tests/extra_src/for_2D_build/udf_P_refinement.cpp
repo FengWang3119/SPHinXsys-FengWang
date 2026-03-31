@@ -124,6 +124,7 @@ namespace udf
         particles_->addVariableToWrite<Real>("VelNodeUM");
         particles_->addVariableToWrite<Real>("global_flow_rate_over_P_");
         particles_->addVariableToWrite<Real>("half_flow_rate_over_P_");
+        particles_->addVariableToWrite<Real>("dUdnP_NodeU");
     }
     //=================================================================================================//
     void P_refinement::update(size_t index_i, Real dt)
@@ -188,13 +189,13 @@ namespace udf
             Real dudn_from_SPH = obtainTangentialComponent(velocity_gradient_only_P_normal, normal);
             //** Different ways to determine dudn_outer *
             //** If use full from SPH *
-            //dudn_outer = dudn_from_SPH;
+            dudn_outer = dudn_from_SPH;
             //** If use weighting combination *
             //Real weight_SPH = fluid_particle_spacing_;
             //Real sum_weight_sublayer = distance_to_wall; //** Assume uniform division *
             //dudn_outer = (dudn_from_SPH * weight_SPH + sum_node_vel_difference) / (weight_SPH + sum_weight_sublayer); 
             //** If use Arithmetic Mean  *
-            dudn_outer = (dudn_from_SPH * 0.8 + dUdn_P_nodeU_prior * 0.2);
+            //dudn_outer = (dudn_from_SPH * 0.8 + dUdn_P_nodeU_prior * 0.2);
 
 
             dkdn_outer = k_gradient_only_P_[index_i].dot(normal); //** Currently, only inner contribution is considered *
@@ -314,7 +315,10 @@ namespace udf
             Real residue = 1.0e3;
             while (residue > 1.0e-6)
             {
-                flow_rate_local = get_loacal_flow_rate(u_outer * fluid_particle_spacing_, dudn_outer, vel_nodeO_i_prior, fluid_particle_spacing_); //** This is for better testing *
+                //flow_rate_local = get_loacal_flow_rate(u_outer * fluid_particle_spacing_, dudn_outer, vel_nodeO_i_prior, fluid_particle_spacing_); //** This is for better testing *
+                //** If test small global flowrate *
+                flow_rate_local = get_loacal_flow_rate(1.0e-2, dudn_outer, vel_nodeO_i_prior, fluid_particle_spacing_); //** This is for better testing *
+                
                 U_nodeO = 0.0;
                 U_nodeUM = 0.0;
                 node_value_[index_i] = solve_1D_sublayer(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
