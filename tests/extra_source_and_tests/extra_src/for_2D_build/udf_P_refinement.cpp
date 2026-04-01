@@ -264,7 +264,7 @@ namespace udf
                 Real analytical_vel_P = 3.000607e-1;
                 Real analytical_vel_grad_P_inner = (analytical_vel_S - analytical_vel_P) / fluid_particle_spacing_;
 
-                analytical_vel_grad_P_inner = 1.127180e+1; //** Overwrite *
+                //analytical_vel_grad_P_inner = 1.127180e+1; //** Overwrite *
 
                 Real analytical_flow_rate_whole_PS_to_Wall = 1.433123e-2;
                 //------¡ü Mimic SPH average value ¡ü------
@@ -332,7 +332,7 @@ namespace udf
                     distance_to_wall,
                     num_sub_node_,
                     40,
-                    90
+                    91
                 );
 
                 std::cout << "Dynamic test ends, stop here." << std::endl;
