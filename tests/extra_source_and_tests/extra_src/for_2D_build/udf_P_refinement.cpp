@@ -303,7 +303,13 @@ namespace udf
                     std::cout << "residue =" << residue << std::endl;
                     flow_rate_local_prior = flow_rate_local;
                     Real relax_factor = 0.3;
-                    vel_nodeO_i_prior = (1.0 - relax_factor) * vel_nodeO_i_prior + relax_factor * U_nodeO;
+                    //vel_nodeO_i_prior = (1.0 - relax_factor) * vel_nodeO_i_prior + relax_factor * U_nodeO;
+
+                    double hy = distance_to_wall / (double(num_sub_node_) + 0.5); // distance from node U to P_outer is hy, hence with a 0.5
+                    double y_p = 0.5 * hy;
+                    Real vel_grad_nodeP = node_value_[index_i][1] / y_p;
+                    dudn_outer = (1.0 - relax_factor) * dudn_outer + relax_factor * vel_grad_nodeP;
+
                 }
 
                 std::cout << "flow rate local converge!." << std::endl;
@@ -332,7 +338,7 @@ namespace udf
                     distance_to_wall,
                     num_sub_node_,
                     40,
-                    91
+                    92
                 );
 
                 std::cout << "Dynamic test ends, stop here." << std::endl;
