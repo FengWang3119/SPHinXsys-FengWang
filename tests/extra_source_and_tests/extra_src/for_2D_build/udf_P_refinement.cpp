@@ -313,12 +313,16 @@ namespace udf
             
             Real flow_rate_local_prior = 0.0;
             Real residue = 1.0e3;
+            Real averaged_vel_over_P = u_outer;
             while (residue > 1.0e-6)
             {
                 //flow_rate_local = get_loacal_flow_rate(u_outer * fluid_particle_spacing_, dudn_outer, vel_nodeO_i_prior, fluid_particle_spacing_); //** This is for better testing *
                 //** If test small global flowrate *
-                flow_rate_local = get_loacal_flow_rate(1.0e-2, dudn_outer, vel_nodeO_i_prior, fluid_particle_spacing_); //** This is for better testing *
-                
+                //flow_rate_local = get_loacal_flow_rate(1.0e-2, dudn_outer, vel_nodeO_i_prior, fluid_particle_spacing_); //** This is for better testing *
+                //** If try dynamic adjust global flowrate *
+                flow_rate_local = get_loacal_flow_rate(averaged_vel_over_P * fluid_particle_spacing_, dudn_outer, vel_nodeO_i_prior, fluid_particle_spacing_); //** This is for better testing *
+
+
                 U_nodeO = 0.0;
                 U_nodeUM = 0.0;
                 node_value_[index_i] = solve_1D_sublayer(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
@@ -329,6 +333,14 @@ namespace udf
                 flow_rate_local_prior = flow_rate_local;
                 Real relax_factor = 0.3;
                 vel_nodeO_i_prior = (1.0 - relax_factor) * vel_nodeO_i_prior + relax_factor * U_nodeO;
+
+                Real error_flow_rate = vel_nodeO_i_prior - u_outer;
+                if (error_flow_rate > 0.0)
+                {
+                    Real corrected_averaged_vel_over_P = averaged_vel_over_P - error_flow_rate;
+                    averaged_vel_over_P = (1.0 - relax_factor) * averaged_vel_over_P + relax_factor * corrected_averaged_vel_over_P;
+                }
+
             }
 
             //** Check results *
@@ -365,7 +377,10 @@ namespace udf
 
             //** For testing *
             target_flow_rate_in_sublayer_[index_i] = flow_rate_local;
-            global_flow_rate_over_P_[index_i] = u_outer * fluid_particle_spacing_;
+            
+            //global_flow_rate_over_P_[index_i] = u_outer * fluid_particle_spacing_;
+            global_flow_rate_over_P_[index_i] = averaged_vel_over_P * fluid_particle_spacing_;
+            
             half_flow_rate_over_P_[index_i] = (U_nodeO + (U_nodeO + dudn_outer * 0.5 * fluid_particle_spacing_)) * (0.5 * fluid_particle_spacing_) / 2.0;
             vel_ps_magnitude_[index_i] = U_nodeO + dudn_outer * 0.5 * fluid_particle_spacing_;
             dudn_for_local_flow_rate_[index_i] = dudn_outer;
