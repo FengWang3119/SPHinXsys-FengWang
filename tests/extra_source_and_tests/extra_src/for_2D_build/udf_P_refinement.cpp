@@ -220,7 +220,7 @@ namespace udf
                 U_nodeO = 0.0;
                 U_nodeUM = 0.0;
                 //** Remember to activate output function inside *
-                node_value_[index_i] = solve_1D_sublayer(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
+                node_value_[index_i] = solve_1D_sublayer_Neumann(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
                     nut_outer, distance_to_wall, friction_vel_magnitude_outer, std::abs(flow_rate_local), dkdn_outer, dwdn_outer, U_nodeO, U_nodeUM);
                 std::cout << "Fixed input value test ends, stop here." << std::endl;
                 std::cin.get();
@@ -273,7 +273,7 @@ namespace udf
 
                     U_nodeO = 0.0;
                     U_nodeUM = 0.0;
-                    node_value_[index_i] = solve_1D_sublayer(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
+                    node_value_[index_i] = solve_1D_sublayer_Neumann(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
                         nut_outer, distance_to_wall, friction_vel_magnitude_outer, std::abs(flow_rate_local), dkdn_outer, dwdn_outer, U_nodeO, U_nodeUM);
 
                     residue = std::abs(flow_rate_local - flow_rate_local_prior);
@@ -325,7 +325,7 @@ namespace udf
 
                 U_nodeO = 0.0;
                 U_nodeUM = 0.0;
-                node_value_[index_i] = solve_1D_sublayer(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
+                node_value_[index_i] = solve_1D_sublayer_Neumann(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
                     nut_outer, distance_to_wall, friction_vel_magnitude_outer, std::abs(flow_rate_local), dkdn_outer, dwdn_outer, U_nodeO, U_nodeUM);
 
                 residue = std::abs(flow_rate_local - flow_rate_local_prior);
@@ -415,7 +415,7 @@ namespace udf
         }
     }
     //=================================================================================================//
-    Vec6d P_refinement::solve_1D_sublayer(double kinematic_viscosity, double u_p_outer, double k_p_outer, 
+    Vec6d P_refinement::solve_1D_sublayer_Neumann(double kinematic_viscosity, double u_p_outer, double k_p_outer, 
         double w_p_outer, double vel_grad_p_outer, double nut_p_outer, double h_sublayer, double utau_outer, 
         double Q_target, double k_grad_p_outer, double w_grad_p_outer, double& vel_nodeO, double& vel_nodeUM)
     {
