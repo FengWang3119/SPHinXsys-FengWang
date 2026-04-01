@@ -203,7 +203,7 @@ namespace udf
             //------------------------------------------------¡ý For test 1D analytical ¡ý------------------------------------------------
             //
             //-------------------------¡ý If input fix analytical value ¡ý-------------------------
-            if(1)
+            if(0)
             {
                 std::cout << "Fixed input value test starts." << std::endl;
                 //** Define outside values *
@@ -248,7 +248,7 @@ namespace udf
             //-------------------------¡ü If input fix analytical value ¡ü-------------------------
 
             //-------------------------¡ý If dynamic test ¡ý-------------------------
-            if (0)
+            if (1)
             {
                 std::cout << "Dynamic test starts." << std::endl;
                 //------¡ý Mimic SPH average value ¡ý------
@@ -293,7 +293,10 @@ namespace udf
 
                     U_nodeO = 0.0;
                     U_nodeUM = 0.0;
-                    node_value_[index_i] = solve_1D_sublayer_Neumann(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
+                    
+                    /*node_value_[index_i] = solve_1D_sublayer_Neumann(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
+                        nut_outer, distance_to_wall, friction_vel_magnitude_outer, std::abs(flow_rate_local), dkdn_outer, dwdn_outer, U_nodeO, U_nodeUM);*/
+                    node_value_[index_i] = solve_1D_sublayer_Dirichlet(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
                         nut_outer, distance_to_wall, friction_vel_magnitude_outer, std::abs(flow_rate_local), dkdn_outer, dwdn_outer, U_nodeO, U_nodeUM);
 
                     residue = std::abs(flow_rate_local - flow_rate_local_prior);
@@ -313,7 +316,7 @@ namespace udf
                 std::cout << "U_nodeO=" << U_nodeO << std::endl;
                 std::cout << "U_nodeUM=" << U_nodeUM << std::endl;
 
-                writeTecplotFromVec6d(
+                /*writeTecplotFromVec6d(
                     node_value_[index_i],
                     U_nodeO,
                     U_nodeUM,
@@ -321,6 +324,15 @@ namespace udf
                     num_sub_node_,
                     40,
                     80
+                );*/
+                writeTecplotFromVec6dDirichlet(
+                    node_value_[index_i],
+                    U_nodeO,
+                    U_nodeUM,
+                    distance_to_wall,
+                    num_sub_node_,
+                    40,
+                    90
                 );
 
                 std::cout << "Dynamic test ends, stop here." << std::endl;
