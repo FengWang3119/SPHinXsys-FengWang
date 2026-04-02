@@ -388,7 +388,7 @@ namespace udf
 
             if (1) //** If go Dirichlet Path *
             {
-                if (1)//** If probe iteration method *
+                if (0)//** If probe iteration method *
                 {
                     double hy = distance_to_wall / (double(num_sub_node_) + 0.5); // distance from node U to P_outer is hy, hence with a 0.5
                     double y_p = 0.5 * hy;
@@ -467,7 +467,7 @@ namespace udf
 
 
             //** If calculate local gradient for correcting SPH solver *
-            if(0)
+            if(1)
             { 
                 Vecd vel_tangential = vel_[index_i] - vel_[index_i].dot(normal) * normal;
                 Real tangential_velocity_P_magnitude = vel_tangential.norm();
@@ -482,7 +482,7 @@ namespace udf
             }
 
             //** If calculate dUdn_P_nodeU_ *
-            if (1)
+            if (0)
             {
                 Vecd vel_tangential = vel_[index_i] - vel_[index_i].dot(normal) * normal;
                 Real tangential_velocity_P_magnitude = vel_tangential.norm();
@@ -1136,9 +1136,9 @@ namespace udf
             double diffusion_coefficient_turbu_omega[ny]{};
             double C_su[ny]{};
 
-            //double tau_over_rho_outer = (nu + nut_nodeO) * vel_grad_p_outer;  //** Here, nodeO value is used not nodeUM, since this is from anlytical *
-            double vel_grad_p_for_momentum_iterated = (u_p_outer - u_star[ny - 1]) / hy;
-            double tau_over_rho_outer = (nu + nut_nodeO) * vel_grad_p_for_momentum_iterated;  //** Here, nodeO value is used not nodeUM, since this is from anlytical *
+            double tau_over_rho_outer = (nu + nut_nodeO) * vel_grad_p_outer;  //** Here, nodeO value is used not nodeUM, since this is from anlytical *
+            //double vel_grad_p_for_momentum_iterated = (u_p_outer - u_star[ny - 1]) / hy;
+            //double tau_over_rho_outer = (nu + nut_nodeO) * vel_grad_p_for_momentum_iterated;  //** Here, nodeO value is used not nodeUM, since this is from anlytical *
 
             for (int i = 0; i < ny; ++i) {
                 diffusion_coefficient_k[i] = nu + std_kw_sigma_star_ * k_star[i] / (turbu_omega_star[i] + tiny);
