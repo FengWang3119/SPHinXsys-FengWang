@@ -388,7 +388,7 @@ namespace udf
 
             if (1) //** If go Dirichlet Path *
             {
-                if (0)//** If probe iteration method *
+                if (1)//** If probe iteration method *
                 {
                     double hy = distance_to_wall / (double(num_sub_node_) + 0.5); // distance from node U to P_outer is hy, hence with a 0.5
                     double y_p = 0.5 * hy;
