@@ -248,7 +248,7 @@ namespace udf
             //-------------------------¡ü If input fix analytical value ¡ü-------------------------
 
             //-------------------------¡ý If dynamic test ¡ý-------------------------
-            if (1)
+            if (0)
             {
                 std::cout << "Dynamic test starts." << std::endl;
                 //------¡ý Mimic SPH average value ¡ý------
@@ -349,36 +349,77 @@ namespace udf
             // 
             //------------------------------------------------¡ü For test 1D analytical ¡ü------------------------------------------------
             
+            
+            
             Real flow_rate_local_prior = 0.0;
             Real residue = 1.0e3;
             Real averaged_vel_over_P = u_outer;
-            while (residue > 1.0e-6)
+            
+            if (0) //** If go Neumann Path *
             {
-                //flow_rate_local = get_loacal_flow_rate(u_outer * fluid_particle_spacing_, dudn_outer, vel_nodeO_i_prior, fluid_particle_spacing_); //** This is for better testing *
-                //** If test small global flowrate *
-                //flow_rate_local = get_loacal_flow_rate(1.0e-2, dudn_outer, vel_nodeO_i_prior, fluid_particle_spacing_); //** This is for better testing *
-                //** If try dynamic adjust global flowrate *
-                flow_rate_local = get_loacal_flow_rate(averaged_vel_over_P * fluid_particle_spacing_, dudn_outer, vel_nodeO_i_prior, fluid_particle_spacing_); //** This is for better testing *
-
-
-                U_nodeO = 0.0;
-                U_nodeUM = 0.0;
-                node_value_[index_i] = solve_1D_sublayer_Neumann(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
-                    nut_outer, distance_to_wall, friction_vel_magnitude_outer, std::abs(flow_rate_local), dkdn_outer, dwdn_outer, U_nodeO, U_nodeUM);
-
-                residue = std::abs(flow_rate_local - flow_rate_local_prior);
-                //std::cout << "residue =" << residue << std::endl;
-                flow_rate_local_prior = flow_rate_local;
-                Real relax_factor = 0.3;
-                vel_nodeO_i_prior = (1.0 - relax_factor) * vel_nodeO_i_prior + relax_factor * U_nodeO;
-
-                Real error_flow_rate = vel_nodeO_i_prior - u_outer;
-                if (error_flow_rate > 0.0)
+                while (residue > 1.0e-6)
                 {
-                    Real corrected_averaged_vel_over_P = averaged_vel_over_P - error_flow_rate;
-                    averaged_vel_over_P = (1.0 - relax_factor) * averaged_vel_over_P + relax_factor * corrected_averaged_vel_over_P;
-                }
+                    //flow_rate_local = get_loacal_flow_rate(u_outer * fluid_particle_spacing_, dudn_outer, vel_nodeO_i_prior, fluid_particle_spacing_); //** This is for better testing *
+                    //** If test small global flowrate *
+                    //flow_rate_local = get_loacal_flow_rate(1.0e-2, dudn_outer, vel_nodeO_i_prior, fluid_particle_spacing_); //** This is for better testing *
+                    //** If try dynamic adjust global flowrate *
+                    flow_rate_local = get_loacal_flow_rate(averaged_vel_over_P * fluid_particle_spacing_, dudn_outer, vel_nodeO_i_prior, fluid_particle_spacing_); //** This is for better testing *
 
+
+                    U_nodeO = 0.0;
+                    U_nodeUM = 0.0;
+                    node_value_[index_i] = solve_1D_sublayer_Neumann(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
+                        nut_outer, distance_to_wall, friction_vel_magnitude_outer, std::abs(flow_rate_local), dkdn_outer, dwdn_outer, U_nodeO, U_nodeUM);
+
+                    residue = std::abs(flow_rate_local - flow_rate_local_prior);
+                    //std::cout << "residue =" << residue << std::endl;
+                    flow_rate_local_prior = flow_rate_local;
+                    Real relax_factor = 0.3;
+                    vel_nodeO_i_prior = (1.0 - relax_factor) * vel_nodeO_i_prior + relax_factor * U_nodeO;
+
+                    Real error_flow_rate = vel_nodeO_i_prior - u_outer;
+                    if (error_flow_rate > 0.0)
+                    {
+                        Real corrected_averaged_vel_over_P = averaged_vel_over_P - error_flow_rate;
+                        averaged_vel_over_P = (1.0 - relax_factor) * averaged_vel_over_P + relax_factor * corrected_averaged_vel_over_P;
+                    }
+                }
+            }
+
+            if (1) //** If go Dirichlet Path *
+            {
+                if (0)//** If probe iteration method *
+                {
+                    double hy = distance_to_wall / (double(num_sub_node_) + 0.5); // distance from node U to P_outer is hy, hence with a 0.5
+                    double y_p = 0.5 * hy;
+                    while (residue > 1.0e-6)
+                    {
+                        flow_rate_local = get_loacal_flow_rate(u_outer * fluid_particle_spacing_, dudn_outer, vel_nodeO_i_prior, fluid_particle_spacing_); //** This is for better testing *
+
+                        U_nodeO = 0.0;
+                        U_nodeUM = 0.0;
+                        node_value_[index_i] = solve_1D_sublayer_Dirichlet(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
+                            nut_outer, distance_to_wall, friction_vel_magnitude_outer, std::abs(flow_rate_local), dkdn_outer, dwdn_outer, U_nodeO, U_nodeUM);
+
+                        residue = std::abs(flow_rate_local - flow_rate_local_prior);
+                        //std::cout << "residue =" << residue << std::endl;
+                        flow_rate_local_prior = flow_rate_local;
+                        Real relax_factor = 0.3;
+                        //vel_nodeO_i_prior = (1.0 - relax_factor) * vel_nodeO_i_prior + relax_factor * U_nodeO;
+
+                        Real vel_grad_nodeP = node_value_[index_i][1] / y_p;
+                        dudn_outer = (1.0 - relax_factor) * dudn_outer + relax_factor * vel_grad_nodeP;
+                    }
+                }
+                else
+                {
+                    flow_rate_local = get_loacal_flow_rate(u_outer * fluid_particle_spacing_, dudn_outer, vel_nodeO_i_prior, fluid_particle_spacing_); //** This is for better testing *
+
+                    U_nodeO = 0.0;
+                    U_nodeUM = 0.0;
+                    node_value_[index_i] = solve_1D_sublayer_Dirichlet(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
+                        nut_outer, distance_to_wall, friction_vel_magnitude_outer, std::abs(flow_rate_local), dkdn_outer, dwdn_outer, U_nodeO, U_nodeUM);
+                }
             }
 
             //** Check results *
@@ -976,10 +1017,10 @@ namespace udf
 
         double convergence_criteria_outer = 1.0e-6;
         double tiny = 1.0e-6;
-        double relax_u = 0.9;
-        double relax_k = 0.9;
-        double relax_w = 0.9;
-        double alpha = 0.9;
+        double relax_u = 0.3;
+        double relax_k = 0.3;
+        double relax_w = 0.3;
+        double alpha = 0.3;
 
         double flow_rate_target = Q_target;
         double utau = utau_init;
