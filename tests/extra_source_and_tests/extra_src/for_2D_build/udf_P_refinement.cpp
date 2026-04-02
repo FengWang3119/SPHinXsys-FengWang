@@ -1137,9 +1137,9 @@ namespace udf
             double diffusion_coefficient_turbu_omega[ny]{};
             double C_su[ny]{};
 
-            double tau_over_rho_outer = (nu + nut_nodeO) * vel_grad_p_outer;  //** Here, nodeO value is used not nodeUM, since this is from anlytical *
-            //double vel_grad_p_for_momentum_iterated = (u_p_outer - u_star[ny - 1]) / hy;
-            //double tau_over_rho_outer = (nu + nut_nodeO) * vel_grad_p_for_momentum_iterated;  //** Here, nodeO value is used not nodeUM, since this is from anlytical *
+            //double tau_over_rho_outer = (nu + nut_nodeO) * vel_grad_p_outer;  //** Here, nodeO value is used not nodeUM, since this is from anlytical *
+            double vel_grad_p_for_momentum_iterated = 0.5 * ((u_p_outer - u_star[ny - 1]) / hy) + 0.5 * vel_grad_p_outer;
+            double tau_over_rho_outer = (nu + nut_nodeO) * vel_grad_p_for_momentum_iterated;  //** Here, nodeO value is used not nodeUM, since this is from anlytical *
 
             for (int i = 0; i < ny; ++i) {
                 diffusion_coefficient_k[i] = nu + std_kw_sigma_star_ * k_star[i] / (turbu_omega_star[i] + tiny);
