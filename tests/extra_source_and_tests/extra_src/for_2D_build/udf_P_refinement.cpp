@@ -1022,7 +1022,7 @@ namespace udf
         double relax_k = 0.3;
         double relax_w = 0.3;
         double alpha = 0.3; // ** For flowrate *
-        double relax_tau_p = 0.3;
+        double relax_tau_p = 1.0; //** For the tau_p in u equation *
 
         double flow_rate_target = Q_target;
         double utau = utau_init;
@@ -1084,7 +1084,7 @@ namespace udf
 
         //------------------------------------------------¡ý Calculate P value ¡ý------------------------------------------------
         //** These values need tobe updated in each iteration *
-        double vel_grad_p_for_momentum_iterated_prior = (u_p_outer - 0.5 * u_p_outer) / distance_from_P_to_nodeU; // ** Initial guess *
+        double vel_grad_p_from_nodeU_side_prior = (u_p_outer - 0.5 * u_p_outer) / distance_from_P_to_nodeU; // ** Initial guess *
         //------------------------------------------------¡ü Calculate P value ¡ü------------------------------------------------
 
         //------------------------------------------------¡ý Construct solution vector ¡ý------------------------------------------------
@@ -1145,9 +1145,11 @@ namespace udf
             double C_su[ny]{};
 
             //double tau_over_rho_outer = (nu + nut_nodeO) * vel_grad_p_outer;  //** Here, nodeO value is used not nodeUM, since this is from anlytical *
-            //double vel_grad_p_for_momentum_iterated = (1.0 - relax_tau_p) * vel_grad_p_for_momentum_iterated_prior + relax_tau_p * (u_p_outer - u_star[ny - 1]) / distance_from_P_to_nodeU;
-            double vel_grad_p_for_momentum_iterated = (u_nodeUM - u_star[ny - 1]) / distance_from_P_to_nodeU;
-            double tau_over_rho_outer = (nu + nut_nodeO) * vel_grad_p_for_momentum_iterated;  //** Here, nodeO value is used not nodeUM, but for dirichlet path, nodeO and nodeUM same *
+            //** If regard vel_grad_p as analytical solution, one side from node, and the other from SPH(outer), 
+            // under-relax is not added here since this is also for analytical calculation of K and OMEGA equ. *
+            double vel_grad_p_from_nodeU_side = (u_nodeO - u_star[ny - 1]) / distance_from_P_to_nodeU;
+            double vel_grad_p_from_SPH_side = vel_grad_p_outer;
+            double tau_over_rho_outer = (nu + nut_nodeO) * (vel_grad_p_from_nodeU_side + vel_grad_p_from_SPH_side) / 2.0;  //** Here, nodeO value is used not nodeUM, but for dirichlet path, nodeO and nodeUM same *
 
             for (int i = 0; i < ny; ++i) {
                 diffusion_coefficient_k[i] = nu + std_kw_sigma_star_ * k_star[i] / (turbu_omega_star[i] + tiny);
@@ -1220,6 +1222,9 @@ namespace udf
             double b_u[ny]{};
             double c_u[ny]{};
             double d_u[ny]{};
+            double vel_grad_p_from_nodeU_side_relaxed = (1.0 - relax_tau_p) * vel_grad_p_from_nodeU_side_prior + relax_tau_p * vel_grad_p_from_nodeU_side;
+            double tau_p_over_rho_relaxed = (nu + nut_nodeO) * (vel_grad_p_from_nodeU_side_relaxed + vel_grad_p_from_SPH_side) / 2.0;
+            double pressure_gradient_approximated = (utau * utau - tau_p_over_rho_relaxed) / height_sublayer;
             // inner node
             for (int i = 1; i < ny - 1; ++i)
             {
@@ -1231,7 +1236,7 @@ namespace udf
                 a_u[i] = -nu_eff_i_minus_half;
                 b_u[i] = std::max((nu_eff_i_plus_half + nu_eff_i_minus_half), tiny);
                 c_u[i] = -nu_eff_i_plus_half;
-                d_u[i] = (utau * utau ) / height_sublayer * hy * hy;
+                d_u[i] = pressure_gradient_approximated * hy * hy;
             }
             // first node
             a_u[0] = 0.0;
@@ -1407,7 +1412,7 @@ namespace udf
 
             //------------------------------------------------¡ý Calculate P value ¡ý------------------------------------------------
             //** These values need tobe updated in each iteration *
-            vel_grad_p_for_momentum_iterated_prior = (u_p_outer - u_star[ny - 1]) / hy; //** Current u_star is still the old value *
+            vel_grad_p_from_nodeU_side_prior = (u_p_outer - u_star[ny - 1]) / hy; //** Current u_star is still the old value *
             //------------------------------------------------¡ü Calculate P value ¡ü------------------------------------------------
 
             //------------------------------------------------¡ý Update ¡ý------------------------------------------------
