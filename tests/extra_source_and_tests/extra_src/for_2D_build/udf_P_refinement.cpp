@@ -1021,7 +1021,8 @@ namespace udf
         double relax_u = 0.3;
         double relax_k = 0.3;
         double relax_w = 0.3;
-        double alpha = 0.3;
+        double alpha = 0.3; // ** For flowrate *
+        double relax_tau_p = 0.3;
 
         double flow_rate_target = Q_target;
         double utau = utau_init;
@@ -1035,6 +1036,7 @@ namespace udf
         {
             y[i] = y_p + i * hy;
         }
+        double distance_from_P_to_nodeU = hy;
         //------------------------------------------------¡ü Node arrangement, for sublayer ¡ü------------------------------------------------
 
         //------------------------------------------------¡ý Calculate nodeP value ¡ý------------------------------------------------
@@ -1079,6 +1081,11 @@ namespace udf
         //double w_tilde_nodeO = std::max(w_nodeO, std_kw_C_lim_ * vel_grad_p_outer / std_kw_beta_star_5_);
         double nut_nodeO = nut_nodeUM;
         //------------------------------------------------¡ü Calculate nodeO and nodeUM ¡ü------------------------------------------------
+
+        //------------------------------------------------¡ý Calculate P value ¡ý------------------------------------------------
+        //** These values need tobe updated in each iteration *
+        double vel_grad_p_for_momentum_iterated_prior = (u_p_outer - 0.5 * u_p_outer) / distance_from_P_to_nodeU; // ** Initial guess *
+        //------------------------------------------------¡ü Calculate P value ¡ü------------------------------------------------
 
         //------------------------------------------------¡ý Construct solution vector ¡ý------------------------------------------------
         double phi_current[3 * ny];
@@ -1138,8 +1145,9 @@ namespace udf
             double C_su[ny]{};
 
             //double tau_over_rho_outer = (nu + nut_nodeO) * vel_grad_p_outer;  //** Here, nodeO value is used not nodeUM, since this is from anlytical *
-            double vel_grad_p_for_momentum_iterated = 0.5 * ((u_p_outer - u_star[ny - 1]) / hy) + 0.5 * vel_grad_p_outer;
-            double tau_over_rho_outer = (nu + nut_nodeO) * vel_grad_p_for_momentum_iterated;  //** Here, nodeO value is used not nodeUM, since this is from anlytical *
+            //double vel_grad_p_for_momentum_iterated = (1.0 - relax_tau_p) * vel_grad_p_for_momentum_iterated_prior + relax_tau_p * (u_p_outer - u_star[ny - 1]) / distance_from_P_to_nodeU;
+            double vel_grad_p_for_momentum_iterated = (u_nodeUM - u_star[ny - 1]) / distance_from_P_to_nodeU;
+            double tau_over_rho_outer = (nu + nut_nodeO) * vel_grad_p_for_momentum_iterated;  //** Here, nodeO value is used not nodeUM, but for dirichlet path, nodeO and nodeUM same *
 
             for (int i = 0; i < ny; ++i) {
                 diffusion_coefficient_k[i] = nu + std_kw_sigma_star_ * k_star[i] / (turbu_omega_star[i] + tiny);
@@ -1223,7 +1231,7 @@ namespace udf
                 a_u[i] = -nu_eff_i_minus_half;
                 b_u[i] = std::max((nu_eff_i_plus_half + nu_eff_i_minus_half), tiny);
                 c_u[i] = -nu_eff_i_plus_half;
-                d_u[i] = (utau * utau - tau_over_rho_outer) / height_sublayer * hy * hy;
+                d_u[i] = (utau * utau ) / height_sublayer * hy * hy;
             }
             // first node
             a_u[0] = 0.0;
@@ -1238,9 +1246,17 @@ namespace udf
             double nu_eff_last_plus_half = 2.0 * nu_eff_last_plus * nu_eff_last / std::max((nu_eff_last_plus + nu_eff_last), tiny);
             double nu_eff_last_minus_half = 2.0 * nu_eff_last_minus * nu_eff_last / std::max((nu_eff_last_minus + nu_eff_last), tiny);
             a_u[last] = -nu_eff_last_minus_half;
-            b_u[last] = std::max((nu_eff_last_plus_half + nu_eff_last_minus_half), tiny);
+
+            //b_u[last] = std::max((nu_eff_last_plus_half + nu_eff_last_minus_half), tiny);
+            double tau_over_rho_nodeU = hy * hy * (nu + nut_nodeUM) / height_sublayer / distance_from_P_to_nodeU;
+            b_u[last] = std::max((nu_eff_last_plus_half + nu_eff_last_minus_half - tau_over_rho_nodeU), tiny);
+
             c_u[last] = 0.0;
-            d_u[last] = (utau * utau - tau_over_rho_outer) / height_sublayer * hy * hy + nu_eff_last_plus_half * u_nodeUM;
+            
+            //d_u[last] = (utau * utau - tau_over_rho_outer) / height_sublayer * hy * hy + nu_eff_last_plus_half * u_nodeUM;
+            double tau_over_rho_constant = (nu + nut_nodeUM) * u_nodeUM / distance_from_P_to_nodeU;
+            d_u[last] = (utau * utau - tau_over_rho_constant) / height_sublayer * hy * hy + nu_eff_last_plus_half * u_nodeUM;
+            
             // solving
             double U_new[ny]{};
             tdma5(a_u, b_u, c_u, d_u, U_new);
@@ -1389,13 +1405,30 @@ namespace udf
             //------------------------------------------------¡ü Calculate residue ¡ü------------------------------------------------
             //std::cout << "differ: " << differ << std::endl;
 
+            //------------------------------------------------¡ý Calculate P value ¡ý------------------------------------------------
+            //** These values need tobe updated in each iteration *
+            vel_grad_p_for_momentum_iterated_prior = (u_p_outer - u_star[ny - 1]) / hy; //** Current u_star is still the old value *
+            //------------------------------------------------¡ü Calculate P value ¡ü------------------------------------------------
+
             //------------------------------------------------¡ý Update ¡ý------------------------------------------------
             for (int i = 0; i < 3 * ny; ++i) {
                 phi_current[i] = phi_solved[i];
             }
             num_iter_out += 1;
             //------------------------------------------------¡ü Update ¡ü------------------------------------------------
-
+            int num_iter_out_limit = 50000;
+            if (num_iter_out > num_iter_out_limit)
+            {
+                std::cout << "num_iter_out = " << num_iter_out << std::endl;
+                std::cout << "Hard to achieve convergence in sublayer solver!" << std::endl;
+                std::cout << "differ: " << differ << std::endl;
+                std::cout << "------------" << std::endl;
+                if (num_iter_out > 1.5 * num_iter_out_limit)
+                {
+                    std::cout << "Too many iterations, stop here!" << std::endl;
+                    std::cin.get();
+                }
+            }
             //std::cout << "num_iter_out = " << num_iter_out << std::endl;
             //std::cout << "------------" << std::endl;
 
