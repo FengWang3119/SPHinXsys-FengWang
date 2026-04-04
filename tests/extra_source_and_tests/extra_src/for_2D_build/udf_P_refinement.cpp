@@ -1253,13 +1253,13 @@ namespace udf
             a_u[last] = -nu_eff_last_minus_half;
 
             //b_u[last] = std::max((nu_eff_last_plus_half + nu_eff_last_minus_half), tiny);
-            double tau_over_rho_nodeU = hy * hy * (nu + nut_nodeUM) / height_sublayer / distance_from_P_to_nodeU;
+            double tau_over_rho_nodeU = 0.5 * hy * hy * (nu + nut_nodeUM) / height_sublayer / distance_from_P_to_nodeU;
             b_u[last] = std::max((nu_eff_last_plus_half + nu_eff_last_minus_half - tau_over_rho_nodeU), tiny);
 
             c_u[last] = 0.0;
             
             //d_u[last] = (utau * utau - tau_over_rho_outer) / height_sublayer * hy * hy + nu_eff_last_plus_half * u_nodeUM;
-            double tau_over_rho_constant = (nu + nut_nodeUM) * u_nodeUM / distance_from_P_to_nodeU;
+            double tau_over_rho_constant = (nu + nut_nodeUM) * ((0.5 * u_nodeUM / distance_from_P_to_nodeU) + 0.5 * vel_grad_p_from_SPH_side);
             d_u[last] = (utau * utau - tau_over_rho_constant) / height_sublayer * hy * hy + nu_eff_last_plus_half * u_nodeUM;
             
             // solving
