@@ -305,26 +305,33 @@ void TurbuViscousForce<Inner<>>::interaction(size_t index_i, Real dt)
             shear_stress_eij_corrected = shear_stress_eij;
         }
 
+        //** P-refinement for S and P particle, not using ARD, and impose SS from sublayer *
+        if (this->is_near_wall_P2_[index_i] == 10)
+        {
+            Matd shear_stress_sublayer = mu_eff_i * (dUdn_P_sublayer_[index_i] + dUdn_P_sublayer_[index_i].transpose());
+            shear_stress_eij_corrected = shear_stress_sublayer * e_ij;
+        }
+
         shear_stress = (shear_stress - shear_stress_eij) + shear_stress_eij_corrected;
 
         Vecd force_j = 2.0 * mass_[index_i] * shear_stress * inner_neighborhood.dW_ij_[n] * this->Vol_[index_j];
 
         //** P-refinement correct inner viscous force for P *
-        if (is_near_wall_P1_[index_i] == 1 && *physical_time_ > 2.0)
-        {
-            Matd shear_stress_sublayer = mu_eff_i * (dUdn_P_sublayer_[index_i] + dUdn_P_sublayer_[index_i].transpose());
-            force_j = 2.0 * mass_[index_i] * shear_stress_sublayer * e_ij * inner_neighborhood.dW_ij_[n] * this->Vol_[index_j];
-        }
+        //if (is_near_wall_P1_[index_i] == 1 && *physical_time_ > 2.0)
+        //{
+        //    Matd shear_stress_sublayer = mu_eff_i * (dUdn_P_sublayer_[index_i] + dUdn_P_sublayer_[index_i].transpose());
+        //    force_j = 2.0 * mass_[index_i] * shear_stress_sublayer * e_ij * inner_neighborhood.dW_ij_[n] * this->Vol_[index_j];
+        //}
 
         //** P-refinement for S particle, when pairing with P particle, use SS from sublayer *
-        if (this->is_near_wall_P2_[index_i] == 10 && is_near_wall_P1_[index_i] != 1)
-        {
-            if (is_near_wall_P1_[index_j] == 1 && *physical_time_ > 2.0)
-            {
-                Matd shear_stress_sublayer = mu_eff_i * (dUdn_P_sublayer_[index_i] + dUdn_P_sublayer_[index_i].transpose());
-                force_j = 2.0 * mass_[index_i] * shear_stress_sublayer * e_ij * inner_neighborhood.dW_ij_[n] * this->Vol_[index_j];
-            }
-        }
+        //if (this->is_near_wall_P2_[index_i] == 10 && is_near_wall_P1_[index_i] != 1)
+        //{
+        //    if (is_near_wall_P1_[index_j] == 1 && *physical_time_ > 2.0)
+        //    {
+        //        Matd shear_stress_sublayer = mu_eff_i * (dUdn_P_sublayer_[index_i] + dUdn_P_sublayer_[index_i].transpose());
+        //        force_j = 2.0 * mass_[index_i] * shear_stress_sublayer * e_ij * inner_neighborhood.dW_ij_[n] * this->Vol_[index_j];
+        //    }
+        //}
 
         force += force_j;
     }
@@ -397,10 +404,10 @@ void TurbuViscousForce<Contact<Wall>>::interaction(size_t index_i, Real dt)
             Real fric_vel_mag_j = sqrt(C_mu_wf_25_ * turbu_k_i_05 * vel_i_tau_mag / u_star_j);
 
             //** P-refinement for wall adjacent particle, obtain WSS from 1D sublayer solver *
-            //if (is_near_wall_P1_[index_i] == 1)
-            //{
+            if (is_near_wall_P1_[index_i] == 1)
+            {
                 fric_vel_mag_j = friction_velocity_from_sublayer_[index_i];
-            //}
+            }
             //if (is_near_wall_P1_[index_i] != 1)
             //{
             //    fric_vel_mag_j = 0.0;
