@@ -1016,12 +1016,12 @@ namespace udf
         double k_init = k_p_outer;
         double turbu_omega_init = w_p_outer;
 
-        double convergence_criteria_outer = 1.0e-6;
+        double convergence_criteria_outer = 1.0e-3;
         double tiny = 1.0e-6;
-        double relax_u = 0.3;
-        double relax_k = 0.3;
-        double relax_w = 0.3;
-        double alpha = 0.3; // ** For flowrate *
+        double relax_u = 0.9;
+        double relax_k = 0.9;
+        double relax_w = 0.9;
+        double alpha = 0.9; // ** For flowrate *
         double relax_tau_p = 1.0; //** For the tau_p in u equation *
 
         double flow_rate_target = Q_target;
