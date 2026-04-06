@@ -397,10 +397,10 @@ void TurbuViscousForce<Contact<Wall>>::interaction(size_t index_i, Real dt)
             Real fric_vel_mag_j = sqrt(C_mu_wf_25_ * turbu_k_i_05 * vel_i_tau_mag / u_star_j);
 
             //** P-refinement for wall adjacent particle, obtain WSS from 1D sublayer solver *
-            if (is_near_wall_P1_[index_i] == 1)
-            {
+            //if (is_near_wall_P1_[index_i] == 1)
+            //{
                 fric_vel_mag_j = friction_velocity_from_sublayer_[index_i];
-            }
+            //}
             //if (is_near_wall_P1_[index_i] != 1)
             //{
             //    fric_vel_mag_j = 0.0;
