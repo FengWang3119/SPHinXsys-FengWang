@@ -240,7 +240,7 @@ namespace udf
                     distance_to_wall,
                     num_sub_node_,
                     40,
-                    115
+                    116
                 );
                 std::cout << "Fixed input value test ends, stop here." << std::endl;
                 std::cin.get();
@@ -1264,7 +1264,7 @@ namespace udf
             
             // solving
             double U_new[ny]{};
-            tdma5(a_u, b_u, c_u, d_u, U_new);
+            solve5_eigen(a_u, b_u, c_u, d_u, U_new);
             //-------------------------------------¡ü For velocity ¡ü-------------------------------------
 
             //-------------------------------------¡ý For turbulent kinetic energy ¡ý-------------------------------------
@@ -1305,7 +1305,7 @@ namespace udf
             d_k[last] = hy * hy * nut_star[last] * dudy_star[last] * dudy_star[last] + Dk_last_plus_half * k_nodeUM;
             // solving
             double K_new[ny]{};
-            tdma5(a_k, b_k, c_k, d_k, K_new);
+            solve5_eigen(a_k, b_k, c_k, d_k, K_new);
             // avoid negative value, K_new = max(K_new, k_min)
             double k_min = 1e-10;
             for (int i = 0; i < ny; ++i) {
@@ -1350,7 +1350,7 @@ namespace udf
             d_w[last] = hy * hy * (part_production_last + part_cross_diffusion[last]) + Dw_last_plus_half * w_nodeUM;
             // solving
             double Turbu_omega_new[ny]{};
-            tdma5(a_w, b_w, c_w, d_w, Turbu_omega_new);
+            solve5_eigen(a_w, b_w, c_w, d_w, Turbu_omega_new);
             // avoid negative value, Turbu_omega_new = max(Turbu_omega_new, omega_min)
             double omega_min = 1e-10;
             for (int i = 0; i < ny; ++i) {
@@ -1654,6 +1654,29 @@ namespace udf
         x[0] = dp[0] - cp[0] * x[1];
     }
 
+    void P_refinement:: solve5_eigen(const double a[5],
+        const double b[5],
+        const double c[5],
+        const double d[5],
+        double x[5])
+    {
+        Eigen::Matrix<double, 5, 5> A = Eigen::Matrix<double, 5, 5>::Zero();
+        Eigen::Matrix<double, 5, 1> rhs;
+        for (int i = 0; i < 5; ++i)
+        {
+            A(i, i) = b[i];
+            rhs(i) = d[i];
+
+            if (i > 0)
+                A(i, i - 1) = a[i];
+
+            if (i < 4)
+                A(i, i + 1) = c[i];
+        }
+        Eigen::Matrix<double, 5, 1> sol = A.colPivHouseholderQr().solve(rhs);
+        for (int i = 0; i < 5; ++i)
+            x[i] = sol(i);
+    }
     //=============================================================================================//
     void BodyStatesRecordingToVtpIncludeNode::writeWithFileName(const std::string& sequence)
     {

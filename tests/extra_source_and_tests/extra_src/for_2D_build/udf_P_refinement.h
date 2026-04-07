@@ -85,6 +85,7 @@ namespace udf
         void tdma(int N, const double* a, const double* b, const double* c, const double* d, double* x);
         void tdma5(const double a[5], const double b[5], const double c[5], const double d[5], double x[5]);
         void tdma10(const double a[10], const double b[10], const double c[10], const double d[10], double x[10]);
+        void solve5_eigen(const double a[5], const double b[5], const double c[5], const double d[5], double x[5]);
 
         inline Real get_loacal_flow_rate(Real average_flow_rate_over_particle_P, Real SPH_vel_grad_P, Real nodeO_U, Real dp)
         {
