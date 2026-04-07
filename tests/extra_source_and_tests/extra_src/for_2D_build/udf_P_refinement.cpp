@@ -203,7 +203,7 @@ namespace udf
             //------------------------------------------------¡ý For test 1D analytical ¡ý------------------------------------------------
             //
             //-------------------------¡ý If input fix analytical value ¡ý-------------------------
-            if(0)
+            if(1)
             {
                 std::cout << "Fixed input value test starts." << std::endl;
                 //** Define outside values *
@@ -240,7 +240,7 @@ namespace udf
                     distance_to_wall,
                     num_sub_node_,
                     40,
-                    89
+                    115
                 );
                 std::cout << "Fixed input value test ends, stop here." << std::endl;
                 std::cin.get();
