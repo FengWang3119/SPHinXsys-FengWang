@@ -240,7 +240,7 @@ namespace udf
                     distance_to_wall,
                     num_sub_node_,
                     40,
-                    117
+                    118
                 );
                 std::cout << "Fixed input value test ends, stop here." << std::endl;
                 std::cin.get();
@@ -1023,6 +1023,7 @@ namespace udf
         double relax_w = 0.9;
         double alpha = 0.9; // ** For flowrate *
         double relax_tau_p = 1.0; //** For the tau_p in u equation *
+        double yplus_min = 0.01; //** To constrain min utau *
 
         double flow_rate_target = Q_target;
         double utau = utau_init;
@@ -1037,6 +1038,7 @@ namespace udf
             y[i] = y_p + i * hy;
         }
         double distance_from_P_to_nodeU = hy;
+        double utau_min = yplus_min * nu / y_p;
         //------------------------------------------------¡ü Node arrangement, for sublayer ¡ü------------------------------------------------
 
         //------------------------------------------------¡ý Calculate nodeP value ¡ý------------------------------------------------
@@ -1050,6 +1052,7 @@ namespace udf
         //printf("yp=%f\n", y_p);
         //printf("yplus=%f\n", yplus);
         //printf("u_p=%f\n", u_p);
+        //printf("utau_min=%f\n", utau_min);
         //std::cout << "ny= " << ny << std::endl;
         //std::cout << "y = ";
         //for (const auto& v : y) {
@@ -1410,7 +1413,7 @@ namespace udf
             {
                 utau = utau_init;   // fallback
             }
-            utau = std::max(utau, tiny);
+            utau = std::max(utau, utau_min);
             //------------------------------------------------¡ü Check and update flow rate ¡ü------------------------------------------------
 
             //std::cout << "flow_rate_current = " << flow_rate_current
