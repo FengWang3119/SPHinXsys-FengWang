@@ -203,7 +203,7 @@ namespace udf
             //------------------------------------------------¡ý For test 1D analytical ¡ý------------------------------------------------
             //
             //-------------------------¡ý If input fix analytical value ¡ý-------------------------
-            if(1)
+            if(0)
             {
                 std::cout << "Fixed input value test starts." << std::endl;
                 //** Define outside values *
@@ -1018,10 +1018,10 @@ namespace udf
 
         double convergence_criteria_outer = 1.0e-3;
         double tiny = 1.0e-6;
-        double relax_u = 0.9;
-        double relax_k = 0.9;
-        double relax_w = 0.9;
-        double alpha = 0.9; // ** For flowrate *
+        double relax_u = 0.3;
+        double relax_k = 0.3;
+        double relax_w = 0.3;
+        double alpha = 0.3; // ** For flowrate *
         double relax_tau_p = 1.0; //** For the tau_p in u equation *
         double yplus_min = 0.01; //** To constrain min utau *
 
@@ -1394,24 +1394,38 @@ namespace udf
             //std::cout << std::endl;
 
             //------------------------------------------------¡ý Check and update flow rate ¡ý------------------------------------------------
+            // --- compute flow rate ---
             flow_rate_current = std::accumulate(U_new, U_new + ny, 0.0) * hy;
             flow_rate_current += u_p_outer * hy * 0.5;
 
-            // flow control
-            double ratio = flow_rate_target / (flow_rate_current + 1e-12);
+            // --- low-pass filter ---
+            static double Q_avg = flow_rate_current;
+            double beta = 0.1;
+            Q_avg = (1.0 - beta) * Q_avg + beta * flow_rate_current;
 
-            // smooth limiter
-            ratio = 0.5 * (ratio + std::sqrt(ratio * ratio + 1e-12));
-            // optional upper bound
-            ratio = std::min(ratio, 10.0);
+            // --- only update occasionally ---
+            if (num_iter_out % 10 == 0)
+            {
+                // --- gentle correction ---
+                double correction = pow(flow_rate_target / (Q_avg + 1e-12), 0.25);
 
-            double utau_new = utau * std::sqrt(ratio);
-            utau = (1.0 - alpha) * utau + alpha * utau_new;
-            /*double error = U_new[ny-1] - u_p_outer;
-            utau -= 0.1 * error;*/
+                // --- candidate ---
+                double utau_candidate = utau * correction;
+
+                // --- rate limiter ---
+                double max_change = 0.05 * utau;
+                double delta = utau_candidate - utau;
+                delta = std::clamp(delta, -max_change, max_change);
+
+                // --- relaxation ---
+                double alpha = 0.2;
+                utau = utau + alpha * delta;
+            }
+
+            // --- safety ---
             if (!std::isfinite(utau))
             {
-                utau = utau_init;   // fallback
+                utau = utau_init;
             }
             utau = std::max(utau, utau_min);
             //------------------------------------------------¡ü Check and update flow rate ¡ü------------------------------------------------
@@ -1441,12 +1455,15 @@ namespace udf
             }
             num_iter_out += 1;
             //------------------------------------------------¡ü Update ¡ü------------------------------------------------
-            int num_iter_out_limit = 50000;
+            int num_iter_out_limit = 100000;
             if (num_iter_out > num_iter_out_limit)
             {
                 std::cout << "num_iter_out = " << num_iter_out << std::endl;
                 std::cout << "Hard to achieve convergence in sublayer solver!" << std::endl;
                 std::cout << "differ: " << differ << std::endl;
+                std::cout << "flow_rate_current = " << flow_rate_current
+                    << ", target = " << flow_rate_target << std::endl;
+                std::cout << "updated utau = " << utau << std::endl;
                 std::cout << "------------" << std::endl;
                 if (num_iter_out > 1.5 * num_iter_out_limit)
                 {
