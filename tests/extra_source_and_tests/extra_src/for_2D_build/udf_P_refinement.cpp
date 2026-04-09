@@ -1152,10 +1152,10 @@ namespace udf
             //** If regard vel_grad_p as analytical solution, one side from node, and the other from SPH(outer), 
             // under-relax is not added here since this is also for analytical calculation of K and OMEGA equ. *
             //double vel_grad_p_from_nodeU_side = (u_nodeO - u_star[ny - 1]) / distance_from_P_to_nodeU;
-            //double vel_grad_p_from_SPH_side = vel_grad_p_outer;
+            double vel_grad_p_from_SPH_side = vel_grad_p_outer;
             //double tau_over_rho_outer = (nu + nut_nodeO) * (vel_grad_p_from_nodeU_side + vel_grad_p_from_SPH_side) / 2.0;  //** Here, nodeO value is used not nodeUM, but for dirichlet path, nodeO and nodeUM same *
             //** If fully implicit 
-            double vel_grad_p_from_nodeU_side = (u_nodeO - u_star[ny - 1]) / distance_from_P_to_nodeU;
+            double vel_grad_p_from_nodeU_side = std::max((u_nodeO - u_star[ny - 1]), tiny) / distance_from_P_to_nodeU;
             double tau_over_rho_outer = (nu + nut_nodeO) * vel_grad_p_from_nodeU_side ;  //** Here, nodeO value is used not nodeUM, but for dirichlet path, nodeO and nodeUM same *
 
             for (int i = 0; i < ny; ++i) {
@@ -1230,15 +1230,21 @@ namespace udf
             double c_u[ny]{};
             double d_u[ny]{};
             //** IF half-half *
-            //double vel_grad_p_from_nodeU_side_relaxed = (1.0 - relax_tau_p) * vel_grad_p_from_nodeU_side_prior + relax_tau_p * vel_grad_p_from_nodeU_side;
+            double vel_grad_p_from_nodeU_side_relaxed = (1.0 - relax_tau_p) * vel_grad_p_from_nodeU_side_prior + relax_tau_p * vel_grad_p_from_nodeU_side;
+            
+            //** temp test *
             //double tau_p_over_rho_relaxed = (nu + nut_nodeO) * (vel_grad_p_from_nodeU_side_relaxed + vel_grad_p_from_SPH_side) / 2.0;
-            //double pressure_gradient_approximated = (utau * utau - tau_p_over_rho_relaxed) / height_sublayer;
+            double tau_p_over_rho_relaxed = (nu + nut_nodeO) * (vel_grad_p_from_nodeU_side_relaxed );
+
+            double pressure_gradient_approximated = (utau * utau - tau_p_over_rho_relaxed) / height_sublayer;
             //** IF fully implicit *
             double tau_over_rho_p_constant_part = (nu + nut_nodeO) * u_nodeO / distance_from_P_to_nodeU;
             double pressure_gradient_approximated_constant_part = (utau * utau - tau_over_rho_p_constant_part) / height_sublayer;
             double additional_coefficient_for_nodeU = -hy * hy * (nu + nut_nodeO) / height_sublayer / distance_from_P_to_nodeU;
             double e_u[ny]{};
-            std::fill_n(e_u, ny, additional_coefficient_for_nodeU);
+            //std::fill_n(e_u, ny, additional_coefficient_for_nodeU);
+            std::fill_n(e_u, ny, 0.0);
+            e_u[4] = additional_coefficient_for_nodeU;
 
             // inner node
             for (int i = 1; i < ny - 1; ++i)
@@ -1251,7 +1257,8 @@ namespace udf
                 a_u[i] = -nu_eff_i_minus_half;
                 b_u[i] = std::max((nu_eff_i_plus_half + nu_eff_i_minus_half), tiny);
                 c_u[i] = -nu_eff_i_plus_half;
-                d_u[i] = pressure_gradient_approximated_constant_part * hy * hy;
+                //d_u[i] = pressure_gradient_approximated_constant_part * hy * hy;
+                d_u[i] = pressure_gradient_approximated * hy * hy;
             }
             // first node
             a_u[0] = 0.0;
@@ -1277,6 +1284,7 @@ namespace udf
             
             //** IF fully implicit *
             d_u[last] = pressure_gradient_approximated_constant_part * hy * hy + nu_eff_last_plus_half * u_nodeUM;
+            //d_u[last] = pressure_gradient_approximated * hy * hy + nu_eff_last_plus_half * u_nodeUM;
             //** IF half-half *
             //double tau_over_rho_constant = (nu + nut_nodeUM) * ((0.5 * u_nodeUM / distance_from_P_to_nodeU) + 0.5 * vel_grad_p_from_SPH_side);
             //d_u[last] = (utau * utau - tau_over_rho_constant) / height_sublayer * hy * hy + nu_eff_last_plus_half * u_nodeUM;
@@ -1285,6 +1293,7 @@ namespace udf
             double U_new[ny]{};
             //solve5_eigen(a_u, b_u, c_u, d_u, U_new);
             solve5_eigen_with_additonal_coefficient(a_u, b_u, c_u, e_u, d_u, U_new);
+            //tdma5(a_u, b_u, c_u, d_u, U_new);
             //-------------------------------------¡ü For velocity ¡ü-------------------------------------
 
             //-------------------------------------¡ý For turbulent kinetic energy ¡ý-------------------------------------
@@ -1397,30 +1406,54 @@ namespace udf
             // --- compute flow rate ---
             flow_rate_current = std::accumulate(U_new, U_new + ny, 0.0) * hy;
             flow_rate_current += u_p_outer * hy * 0.5;
-
-            // --- low-pass filter ---
-            static double Q_avg = flow_rate_current;
-            double beta = 0.1;
-            Q_avg = (1.0 - beta) * Q_avg + beta * flow_rate_current;
-
-            // --- only update occasionally ---
-            if (num_iter_out % 10 == 0)
+            
+            if (1)
             {
-                // --- gentle correction ---
-                double correction = pow(flow_rate_target / (Q_avg + 1e-12), 0.25);
+                // flow control
+                double ratio = flow_rate_target / (flow_rate_current + 1e-12);
 
-                // --- candidate ---
-                double utau_candidate = utau * correction;
+                // smooth limiter
+                ratio = 0.5 * (ratio + std::sqrt(ratio * ratio + 1e-12));
+                // optional upper bound
+                ratio = std::min(ratio, 10.0);
 
-                // --- rate limiter ---
-                double max_change = 0.05 * utau;
-                double delta = utau_candidate - utau;
-                delta = std::clamp(delta, -max_change, max_change);
-
-                // --- relaxation ---
-                double alpha = 0.2;
-                utau = utau + alpha * delta;
+                double utau_new = utau * std::sqrt(ratio);
+                utau = (1.0 - alpha) * utau + alpha * utau_new;
+                /*double error = U_new[ny-1] - u_p_outer;
+                utau -= 0.1 * error;*/
+                if (!std::isfinite(utau))
+                {
+                    utau = utau_init;   // fallback
+                }
+                utau = std::max(utau, utau_min);
             }
+            if (0)
+            {
+                // --- low-pass filter ---
+                static double Q_avg = flow_rate_current;
+                double beta = 0.1;
+                Q_avg = (1.0 - beta) * Q_avg + beta * flow_rate_current;
+
+                // --- only update occasionally ---
+                //if (num_iter_out % 10 == 0)
+                //{
+                    // --- gentle correction ---
+                    double correction = pow(flow_rate_target / (Q_avg + 1e-12), 0.25);
+
+                    // --- candidate ---
+                    double utau_candidate = utau * correction;
+
+                    // --- rate limiter ---
+                    double max_change = 0.05 * utau;
+                    double delta = utau_candidate - utau;
+                    delta = std::clamp(delta, -max_change, max_change);
+
+                    // --- relaxation ---
+                    double alpha = 0.2;
+                    utau = utau + alpha * delta;
+                //}
+            }
+            
 
             // --- safety ---
             if (!std::isfinite(utau))
@@ -1465,6 +1498,7 @@ namespace udf
                     << ", target = " << flow_rate_target << std::endl;
                 std::cout << "updated utau = " << utau << std::endl;
                 std::cout << "------------" << std::endl;
+                std::cin.get();
                 if (num_iter_out > 1.5 * num_iter_out_limit)
                 {
                     std::cout << "Too many iterations, stop here!" << std::endl;
