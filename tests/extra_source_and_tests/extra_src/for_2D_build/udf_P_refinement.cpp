@@ -1018,11 +1018,11 @@ namespace udf
 
         double convergence_criteria_outer = 1.0e-3;
         double tiny = 1.0e-6;
-        double relax_u = 0.3;
-        double relax_k = 0.3;
-        double relax_w = 0.3;
-        double alpha = 0.3; // ** For flowrate *
-        double relax_tau_p = 1.0; //** For the tau_p in u equation *
+        double relax_u = 0.9;
+        double relax_k = 0.9;
+        double relax_w = 0.6;
+        double relax_utau = 0.4; 
+        double relax_dudn_P_nodeU = 0.9; //** For the tau_p in u equation *
         double yplus_min = 0.01; //** To constrain min utau *
 
         double flow_rate_target = Q_target;
@@ -1145,7 +1145,7 @@ namespace udf
 
             //------------------------------------------------¡ý Calculate gradients of u, k, omega, Dk, Dw ¡ý------------------------------------------------
             double vel_grad_p_from_nodeU_side = std::max((u_nodeO - u_star[ny - 1]), tiny) / distance_from_P_to_nodeU;
-            double vel_grad_p_from_nodeU_side_relaxed = (1.0 - relax_tau_p) * vel_grad_p_from_nodeU_side_prior + relax_tau_p * vel_grad_p_from_nodeU_side;
+            double vel_grad_p_from_nodeU_side_relaxed = (1.0 - relax_dudn_P_nodeU) * vel_grad_p_from_nodeU_side_prior + relax_dudn_P_nodeU * vel_grad_p_from_nodeU_side;
 
             double dudy_discretized[ny]{};
             double dkdy[ny]{};
@@ -1405,7 +1405,7 @@ namespace udf
                 ratio = std::min(ratio, 10.0);
 
                 double utau_new = utau * std::sqrt(ratio);
-                utau = (1.0 - alpha) * utau + alpha * utau_new;
+                utau = (1.0 - relax_utau) * utau + relax_utau * utau_new;
                 /*double error = U_new[ny-1] - u_nodeO;
                 utau -= 0.1 * error;*/
                 if (!std::isfinite(utau))
