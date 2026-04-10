@@ -1150,12 +1150,14 @@ namespace udf
             double dudy_discretized[ny]{};
             double dkdy[ny]{};
             double dwdy[ny]{};
+            double dudy_discretized_forward[ny]{};
             // central diff£¨from i=1 to i=ny-2 £©
             for (int i = 1; i < ny - 1; ++i)
             {
                 dudy_discretized[i] = (u_star[i + 1] - u_star[i - 1]) / (2.0 * hy);
                 dkdy[i] = (k_star[i + 1] - k_star[i - 1]) / (2.0 * hy);
                 dwdy[i] = (turbu_omega_star[i + 1] - turbu_omega_star[i - 1]) / (2.0 * hy);
+                dudy_discretized_forward[i] = (u_star[i + 1] - u_star[i]) / (hy);
             }
             // B.C. near wall (i=0, central difference)
             dudy_discretized[0] = (u_star[1] + u_star[0]) / (2.0 * hy); // mirror B.C. u_star[-1] = -u_star[0]
@@ -1165,17 +1167,18 @@ namespace udf
             dudy_discretized[ny - 1] = (u_nodeUM - u_star[ny - 2]) / (2.0 * hy);
             dkdy[ny - 1] = (k_nodeUM - k_star[ny - 2]) / (2.0 * hy);
             dwdy[ny - 1] = (w_nodeUM - turbu_omega_star[ny - 2]) / (2.0 * hy);
+            dudy_discretized_forward[ny - 1] = (u_nodeUM - u_star[ny - 1]) / (hy);
             //------------------------------------------------¡ü Calculate gradients of u, k, omega, Dk, Dw ¡ü------------------------------------------------
 
             //------------------------------------------------¡ý Calculate Dk, Dw, C_su ¡ý------------------------------------------------
             double diffusion_coefficient_k[ny]{};
             double diffusion_coefficient_turbu_omega[ny]{};
-            double C_su[ny]{};
+            //double C_su[ny]{};
             double tau_p_over_rho_for_transport_equ = (nu + nut_nodeO) * vel_grad_p_from_nodeU_side_relaxed;  //** Here, nodeO value is used not nodeUM, but for dirichlet path, nodeO and nodeUM same *
             for (int i = 0; i < ny; ++i) {
                 diffusion_coefficient_k[i] = nu + std_kw_sigma_star_ * k_star[i] / (turbu_omega_star[i] + tiny);
                 diffusion_coefficient_turbu_omega[i] = nu + std_kw_sigma_ * k_star[i] / (turbu_omega_star[i] + tiny);
-                C_su[i] = (utau * utau - tau_p_over_rho_for_transport_equ) * (1.0 - y[i] / height_sublayer) + tau_p_over_rho_for_transport_equ;
+                //C_su[i] = (utau * utau - tau_p_over_rho_for_transport_equ) * (1.0 - y[i] / height_sublayer) + tau_p_over_rho_for_transport_equ;
             }
             //------------------------------------------------¡ü Calculate Dk, Dw  ¡ü------------------------------------------------
 
@@ -1196,7 +1199,9 @@ namespace udf
             double dudy_star[ny]{};
             for (int i = 0; i < ny; ++i)
             {
-                dudy_star[i] = C_su[i] / (nu + nut_star[i]);
+                //dudy_star[i] = C_su[i] / (nu + nut_star[i]);
+                //** IF (inner node explicit, P adjacent node implicit), dpdx can be diffrent *
+                dudy_star[i] = dudy_discretized_forward[i];
             }
             //------------------------------------------------¡ü Calculate analytical gradient of u ¡ü------------------------------------------------
 
@@ -1230,18 +1235,35 @@ namespace udf
             //std::fill_n(e_u, ny, additional_coefficient_for_nodeU);
             //-------------------------------------¡ü IF fully implicit ¡ü-------------------------------------
 
-            //-------------------------------------¡ý IF inner node explicit, P adjacent node implicit ¡ý-------------------------------------
+            //-------------------------------------¡ý IF inner node explicit, P adjacent node implicit, constant dpdx assumption ¡ý-------------------------------------
+            ////** explicity part *
+            //double tau_p_over_rho_relaxed = (nu + nut_nodeO) * (vel_grad_p_from_nodeU_side_relaxed);
+            //double pressure_gradient = (utau * utau - tau_p_over_rho_relaxed) / height_sublayer;
+            ////** implicity part *
+            //double tau_p_over_rho_constant_part = (nu + nut_nodeO) * u_nodeO / distance_from_P_to_nodeU;
+            //double pressure_gradient_approximated_constant_part = (utau * utau - tau_p_over_rho_constant_part) / height_sublayer;
+            //double e_u[ny]{};
+            //std::fill_n(e_u, ny, 0.0);
+            //double additional_coefficient_for_nodeU = -hy * hy * (nu + nut_nodeO) / height_sublayer / distance_from_P_to_nodeU;
+            //e_u[ny-1] = additional_coefficient_for_nodeU; //** Only for the last node *
+            //-------------------------------------¡ü IF inner node explicit, P adjacent node implicit, constant dpdx assumption ¡ü-------------------------------------
+
+            //-------------------------------------¡ý IF inner node explicit, P adjacent node implicit, dpdx can be diffrent ¡ý-------------------------------------
             //** explicity part *
-            double tau_p_over_rho_relaxed = (nu + nut_nodeO) * (vel_grad_p_from_nodeU_side_relaxed);
-            double pressure_gradient = (utau * utau - tau_p_over_rho_relaxed) / height_sublayer;
+            double tau_i_over_rho[ny]{};
+            double pressure_gradient[ny]{};
+            for (int i = 0; i < ny; ++i) {
+                tau_i_over_rho[i] = (nu + nut_star[i]) * (dudy_discretized_forward[i]);
+                pressure_gradient[i]= (utau * utau - tau_i_over_rho[i]) / height_sublayer;
+            }
             //** implicity part *
             double tau_p_over_rho_constant_part = (nu + nut_nodeO) * u_nodeO / distance_from_P_to_nodeU;
             double pressure_gradient_approximated_constant_part = (utau * utau - tau_p_over_rho_constant_part) / height_sublayer;
             double e_u[ny]{};
             std::fill_n(e_u, ny, 0.0);
             double additional_coefficient_for_nodeU = -hy * hy * (nu + nut_nodeO) / height_sublayer / distance_from_P_to_nodeU;
-            e_u[ny-1] = additional_coefficient_for_nodeU; //** Only for the last node *
-            //-------------------------------------¡ü IF inner node explicit, P adjacent node implicit ¡ü-------------------------------------
+            e_u[ny - 1] = additional_coefficient_for_nodeU; //** Only for the last node *
+            //-------------------------------------¡ü IF inner node explicit, P adjacent node implicit, dpdx can be diffrent ¡ü-------------------------------------
 
             // inner node
             for (int i = 1; i < ny - 1; ++i)
@@ -1257,7 +1279,9 @@ namespace udf
                 //** IF (fully implicit) *
                 //d_u[i] = pressure_gradient_approximated_constant_part * hy * hy;
                 //** IF (inner node explicit, P adjacent node implicit) *
-                d_u[i] = pressure_gradient * hy * hy;
+                //d_u[i] = pressure_gradient * hy * hy;
+                //** IF (inner node explicit, P adjacent node implicit), dpdx can be diffrent *
+                d_u[i] = pressure_gradient[i] * hy * hy;
             }
             // first node
             a_u[0] = 0.0;
