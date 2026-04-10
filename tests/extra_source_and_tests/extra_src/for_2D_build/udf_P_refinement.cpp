@@ -1087,7 +1087,7 @@ namespace udf
 
         //------------------------------------------------¡ý Calculate P value ¡ý------------------------------------------------
         //** These values need tobe updated in each iteration *
-        double vel_grad_p_from_nodeU_side_prior = (u_p_outer - 0.5 * u_p_outer) / distance_from_P_to_nodeU; // ** Initial guess *
+        double vel_grad_p_from_nodeU_side_prior = vel_grad_p_outer; // ** Initial guess *
         //------------------------------------------------¡ü Calculate P value ¡ü------------------------------------------------
 
         //------------------------------------------------¡ý Construct solution vector ¡ý------------------------------------------------
@@ -1143,29 +1143,10 @@ namespace udf
             }
             //------------------------------------------------¡ü Update boundary values ¡ü------------------------------------------------
 
-            //------------------------------------------------¡ý Calculate Dk, Dw, C_su ¡ý------------------------------------------------
-            double diffusion_coefficient_k[ny]{};
-            double diffusion_coefficient_turbu_omega[ny]{};
-            double C_su[ny]{};
-
-            //double tau_over_rho_outer = (nu + nut_nodeO) * vel_grad_p_outer;  //** Here, nodeO value is used not nodeUM, since this is from anlytical *
-            //** If regard vel_grad_p as analytical solution, one side from node, and the other from SPH(outer), 
-            // under-relax is not added here since this is also for analytical calculation of K and OMEGA equ. *
-            //double vel_grad_p_from_nodeU_side = (u_nodeO - u_star[ny - 1]) / distance_from_P_to_nodeU;
-            double vel_grad_p_from_SPH_side = vel_grad_p_outer;
-            //double tau_over_rho_outer = (nu + nut_nodeO) * (vel_grad_p_from_nodeU_side + vel_grad_p_from_SPH_side) / 2.0;  //** Here, nodeO value is used not nodeUM, but for dirichlet path, nodeO and nodeUM same *
-            //** If fully implicit 
-            double vel_grad_p_from_nodeU_side = std::max((u_nodeO - u_star[ny - 1]), tiny) / distance_from_P_to_nodeU;
-            double tau_over_rho_outer = (nu + nut_nodeO) * vel_grad_p_from_nodeU_side ;  //** Here, nodeO value is used not nodeUM, but for dirichlet path, nodeO and nodeUM same *
-
-            for (int i = 0; i < ny; ++i) {
-                diffusion_coefficient_k[i] = nu + std_kw_sigma_star_ * k_star[i] / (turbu_omega_star[i] + tiny);
-                diffusion_coefficient_turbu_omega[i] = nu + std_kw_sigma_ * k_star[i] / (turbu_omega_star[i] + tiny);
-                C_su[i] = (utau * utau - tau_over_rho_outer) * (1.0 - y[i] / height_sublayer) + tau_over_rho_outer;
-            }
-            //------------------------------------------------¡ü Calculate Dk, Dw  ¡ü------------------------------------------------
-
             //------------------------------------------------¡ý Calculate gradients of u, k, omega, Dk, Dw ¡ý------------------------------------------------
+            double vel_grad_p_from_nodeU_side = std::max((u_nodeO - u_star[ny - 1]), tiny) / distance_from_P_to_nodeU;
+            double vel_grad_p_from_nodeU_side_relaxed = (1.0 - relax_tau_p) * vel_grad_p_from_nodeU_side_prior + relax_tau_p * vel_grad_p_from_nodeU_side;
+
             double dudy_discretized[ny]{};
             double dkdy[ny]{};
             double dwdy[ny]{};
@@ -1185,6 +1166,18 @@ namespace udf
             dkdy[ny - 1] = (k_nodeUM - k_star[ny - 2]) / (2.0 * hy);
             dwdy[ny - 1] = (w_nodeUM - turbu_omega_star[ny - 2]) / (2.0 * hy);
             //------------------------------------------------¡ü Calculate gradients of u, k, omega, Dk, Dw ¡ü------------------------------------------------
+
+            //------------------------------------------------¡ý Calculate Dk, Dw, C_su ¡ý------------------------------------------------
+            double diffusion_coefficient_k[ny]{};
+            double diffusion_coefficient_turbu_omega[ny]{};
+            double C_su[ny]{};
+            double tau_p_over_rho_for_transport_equ = (nu + nut_nodeO) * vel_grad_p_from_nodeU_side_relaxed;  //** Here, nodeO value is used not nodeUM, but for dirichlet path, nodeO and nodeUM same *
+            for (int i = 0; i < ny; ++i) {
+                diffusion_coefficient_k[i] = nu + std_kw_sigma_star_ * k_star[i] / (turbu_omega_star[i] + tiny);
+                diffusion_coefficient_turbu_omega[i] = nu + std_kw_sigma_ * k_star[i] / (turbu_omega_star[i] + tiny);
+                C_su[i] = (utau * utau - tau_p_over_rho_for_transport_equ) * (1.0 - y[i] / height_sublayer) + tau_p_over_rho_for_transport_equ;
+            }
+            //------------------------------------------------¡ü Calculate Dk, Dw  ¡ü------------------------------------------------
 
             //------------------------------------------------¡ý Calculate nut_star ¡ý------------------------------------------------
             double turbu_omega_tilde[ny]{};
@@ -1229,22 +1222,26 @@ namespace udf
             double b_u[ny]{};
             double c_u[ny]{};
             double d_u[ny]{};
-            //** IF half-half *
-            double vel_grad_p_from_nodeU_side_relaxed = (1.0 - relax_tau_p) * vel_grad_p_from_nodeU_side_prior + relax_tau_p * vel_grad_p_from_nodeU_side;
-            
-            //** temp test *
-            //double tau_p_over_rho_relaxed = (nu + nut_nodeO) * (vel_grad_p_from_nodeU_side_relaxed + vel_grad_p_from_SPH_side) / 2.0;
-            double tau_p_over_rho_relaxed = (nu + nut_nodeO) * (vel_grad_p_from_nodeU_side_relaxed );
-
-            double pressure_gradient_approximated = (utau * utau - tau_p_over_rho_relaxed) / height_sublayer;
-            //** IF fully implicit *
-            double tau_over_rho_p_constant_part = (nu + nut_nodeO) * u_nodeO / distance_from_P_to_nodeU;
-            double pressure_gradient_approximated_constant_part = (utau * utau - tau_over_rho_p_constant_part) / height_sublayer;
-            double additional_coefficient_for_nodeU = -hy * hy * (nu + nut_nodeO) / height_sublayer / distance_from_P_to_nodeU;
-            double e_u[ny]{};
+            //-------------------------------------¡ý IF fully implicit ¡ý-------------------------------------
+            //double tau_p_over_rho_constant_part = (nu + nut_nodeO) * u_nodeO / distance_from_P_to_nodeU;
+            //double pressure_gradient_approximated_constant_part = (utau * utau - tau_p_over_rho_constant_part) / height_sublayer;
+            //double additional_coefficient_for_nodeU = -hy * hy * (nu + nut_nodeO) / height_sublayer / distance_from_P_to_nodeU;
+            //double e_u[ny]{};
             //std::fill_n(e_u, ny, additional_coefficient_for_nodeU);
+            //-------------------------------------¡ü IF fully implicit ¡ü-------------------------------------
+
+            //-------------------------------------¡ý IF inner node explicit, P adjacent node implicit ¡ý-------------------------------------
+            //** explicity part *
+            double tau_p_over_rho_relaxed = (nu + nut_nodeO) * (vel_grad_p_from_nodeU_side_relaxed);
+            double pressure_gradient = (utau * utau - tau_p_over_rho_relaxed) / height_sublayer;
+            //** implicity part *
+            double tau_p_over_rho_constant_part = (nu + nut_nodeO) * u_nodeO / distance_from_P_to_nodeU;
+            double pressure_gradient_approximated_constant_part = (utau * utau - tau_p_over_rho_constant_part) / height_sublayer;
+            double e_u[ny]{};
             std::fill_n(e_u, ny, 0.0);
-            e_u[4] = additional_coefficient_for_nodeU;
+            double additional_coefficient_for_nodeU = -hy * hy * (nu + nut_nodeO) / height_sublayer / distance_from_P_to_nodeU;
+            e_u[ny-1] = additional_coefficient_for_nodeU; //** Only for the last node *
+            //-------------------------------------¡ü IF inner node explicit, P adjacent node implicit ¡ü-------------------------------------
 
             // inner node
             for (int i = 1; i < ny - 1; ++i)
@@ -1257,8 +1254,10 @@ namespace udf
                 a_u[i] = -nu_eff_i_minus_half;
                 b_u[i] = std::max((nu_eff_i_plus_half + nu_eff_i_minus_half), tiny);
                 c_u[i] = -nu_eff_i_plus_half;
+                //** IF (fully implicit) *
                 //d_u[i] = pressure_gradient_approximated_constant_part * hy * hy;
-                d_u[i] = pressure_gradient_approximated * hy * hy;
+                //** IF (inner node explicit, P adjacent node implicit) *
+                d_u[i] = pressure_gradient * hy * hy;
             }
             // first node
             a_u[0] = 0.0;
@@ -1273,22 +1272,10 @@ namespace udf
             double nu_eff_last_plus_half = 2.0 * nu_eff_last_plus * nu_eff_last / std::max((nu_eff_last_plus + nu_eff_last), tiny);
             double nu_eff_last_minus_half = 2.0 * nu_eff_last_minus * nu_eff_last / std::max((nu_eff_last_minus + nu_eff_last), tiny);
             a_u[last] = -nu_eff_last_minus_half;
-
-            //** IF fully implicit *
             b_u[last] = std::max((nu_eff_last_plus_half + nu_eff_last_minus_half), tiny);
-            //** IF half-half *
-            //double tau_over_rho_nodeU = 0.5 * hy * hy * (nu + nut_nodeUM) / height_sublayer / distance_from_P_to_nodeU;
-            //b_u[last] = std::max((nu_eff_last_plus_half + nu_eff_last_minus_half - tau_over_rho_nodeU), tiny);
-
             c_u[last] = 0.0;
-            
-            //** IF fully implicit *
+            //** IF (fully implicit) or (inner node explicit, P adjacent node implicit) *
             d_u[last] = pressure_gradient_approximated_constant_part * hy * hy + nu_eff_last_plus_half * u_nodeUM;
-            //d_u[last] = pressure_gradient_approximated * hy * hy + nu_eff_last_plus_half * u_nodeUM;
-            //** IF half-half *
-            //double tau_over_rho_constant = (nu + nut_nodeUM) * ((0.5 * u_nodeUM / distance_from_P_to_nodeU) + 0.5 * vel_grad_p_from_SPH_side);
-            //d_u[last] = (utau * utau - tau_over_rho_constant) / height_sublayer * hy * hy + nu_eff_last_plus_half * u_nodeUM;
-            
             // solving
             double U_new[ny]{};
             //solve5_eigen(a_u, b_u, c_u, d_u, U_new);
@@ -1405,7 +1392,7 @@ namespace udf
             //------------------------------------------------¡ý Check and update flow rate ¡ý------------------------------------------------
             // --- compute flow rate ---
             flow_rate_current = std::accumulate(U_new, U_new + ny, 0.0) * hy;
-            flow_rate_current += u_p_outer * hy * 0.5;
+            flow_rate_current += u_nodeO * hy * 0.5;
             
             if (1)
             {
@@ -1419,7 +1406,7 @@ namespace udf
 
                 double utau_new = utau * std::sqrt(ratio);
                 utau = (1.0 - alpha) * utau + alpha * utau_new;
-                /*double error = U_new[ny-1] - u_p_outer;
+                /*double error = U_new[ny-1] - u_nodeO;
                 utau -= 0.1 * error;*/
                 if (!std::isfinite(utau))
                 {
@@ -1479,7 +1466,7 @@ namespace udf
 
             //------------------------------------------------¡ý Calculate P value ¡ý------------------------------------------------
             //** These values need tobe updated in each iteration *
-            vel_grad_p_from_nodeU_side_prior = (u_p_outer - u_star[ny - 1]) / hy; //** Current u_star is still the old value *
+            vel_grad_p_from_nodeU_side_prior = std::max((u_nodeO - u_star[ny - 1]), tiny) / hy; //** Current u_star is still the old value *
             //------------------------------------------------¡ü Calculate P value ¡ü------------------------------------------------
 
             //------------------------------------------------¡ý Update ¡ý------------------------------------------------
