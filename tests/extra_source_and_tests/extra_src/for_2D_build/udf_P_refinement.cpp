@@ -240,7 +240,7 @@ namespace udf
                     distance_to_wall,
                     num_sub_node_,
                     40,
-                    118
+                    122
                 );
                 std::cout << "Fixed input value test ends, stop here." << std::endl;
                 std::cin.get();
@@ -1024,6 +1024,7 @@ namespace udf
         double relax_utau = 0.4; 
         double relax_dudn_P_nodeU = 0.9; //** For the tau_p in u equation *
         double yplus_min = 0.01; //** To constrain min utau *
+        bool output_detailed_info = false;
 
         double flow_rate_target = Q_target;
         double utau = utau_init;
@@ -1473,10 +1474,13 @@ namespace udf
             }
             utau = std::max(utau, utau_min);
             //------------------------------------------------¡ü Check and update flow rate ¡ü------------------------------------------------
-
-            //std::cout << "flow_rate_current = " << flow_rate_current
-            //    << ", target = " << flow_rate_target << std::endl;
-            //std::cout << "updated utau = " << utau << std::endl;
+            
+            if (output_detailed_info)
+            {
+                std::cout << "flow_rate_current = " << flow_rate_current
+                    << ", target = " << flow_rate_target << std::endl;
+                std::cout << "updated utau = " << utau << std::endl;
+            }
 
             //------------------------------------------------¡ý Calculate residue ¡ý------------------------------------------------
             differ = 0.0;
@@ -1486,7 +1490,11 @@ namespace udf
             }
             differ = std::sqrt(differ);
             //------------------------------------------------¡ü Calculate residue ¡ü------------------------------------------------
-            //std::cout << "differ: " << differ << std::endl;
+            
+            if (output_detailed_info)
+            {
+                std::cout << "differ: " << differ << std::endl;
+            }
 
             //------------------------------------------------¡ý Calculate P value ¡ý------------------------------------------------
             //** These values need tobe updated in each iteration *
@@ -1516,8 +1524,13 @@ namespace udf
                     std::cin.get();
                 }
             }
-            //std::cout << "num_iter_out = " << num_iter_out << std::endl;
-            //std::cout << "------------" << std::endl;
+
+            if (output_detailed_info)
+            {
+                std::cout << "num_iter_out = " << num_iter_out << std::endl;
+                std::cout << "------------" << std::endl;
+            }
+
 
         }
 
