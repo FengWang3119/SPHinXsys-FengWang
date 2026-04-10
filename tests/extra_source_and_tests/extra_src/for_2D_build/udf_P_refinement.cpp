@@ -1145,7 +1145,7 @@ namespace udf
             //------------------------------------------------¡ü Update boundary values ¡ü------------------------------------------------
 
             //------------------------------------------------¡ý Calculate gradients of u, k, omega, Dk, Dw ¡ý------------------------------------------------
-            double vel_grad_p_from_nodeU_side = std::max((u_nodeO - u_star[ny - 1]), tiny) / distance_from_P_to_nodeU;
+            double vel_grad_p_from_nodeU_side = (u_nodeO - u_star[ny - 1]) / distance_from_P_to_nodeU;
             double vel_grad_p_from_nodeU_side_relaxed = (1.0 - relax_dudn_P_nodeU) * vel_grad_p_from_nodeU_side_prior + relax_dudn_P_nodeU * vel_grad_p_from_nodeU_side;
 
             double dudy_discretized[ny]{};
@@ -1498,7 +1498,7 @@ namespace udf
 
             //------------------------------------------------¡ý Calculate P value ¡ý------------------------------------------------
             //** These values need tobe updated in each iteration *
-            vel_grad_p_from_nodeU_side_prior = std::max((u_nodeO - u_star[ny - 1]), tiny) / hy; //** Current u_star is still the old value *
+            vel_grad_p_from_nodeU_side_prior = (u_nodeO - u_star[ny - 1]) / hy; //** Current u_star is still the old value *
             //------------------------------------------------¡ü Calculate P value ¡ü------------------------------------------------
 
             //------------------------------------------------¡ý Update ¡ý------------------------------------------------
