@@ -649,22 +649,22 @@ namespace udf
             //------------------------------------------------¡ü Calculate Dk, Dw  ¡ü------------------------------------------------
 
             //------------------------------------------------¡ý Calculate gradients of u, k, omega, Dk, Dw ¡ý------------------------------------------------
-            double dudy_discretized[ny]{};
+            double dudy_discretized_central[ny]{};
             double dkdy[ny]{};
             double dwdy[ny]{};
             // central diff£¨from i=1 to i=ny-2 £©
             for (int i = 1; i < ny - 1; ++i)
             {
-                dudy_discretized[i] = (u_star[i + 1] - u_star[i - 1]) / (2.0 * hy);
+                dudy_discretized_central[i] = (u_star[i + 1] - u_star[i - 1]) / (2.0 * hy);
                 dkdy[i] = (k_star[i + 1] - k_star[i - 1]) / (2.0 * hy);
                 dwdy[i] = (turbu_omega_star[i + 1] - turbu_omega_star[i - 1]) / (2.0 * hy);
             }
             // B.C. near wall (i=0, central difference)
-            dudy_discretized[0] = (u_star[1] + u_star[0]) / (2.0 * hy); // mirror B.C. u_star[-1] = -u_star[0]
+            dudy_discretized_central[0] = (u_star[1] + u_star[0]) / (2.0 * hy); // mirror B.C. u_star[-1] = -u_star[0]
             dkdy[0] = (k_star[1] - k_star[0]) / (2.0 * hy); // zero gradient, k_star[-1] = k_star[0]
             dwdy[0] = (turbu_omega_star[1] - turbu_omega_star[0]) / (2.0 * hy); //zero gradient, turbu_omega_star[-1] = turbu_omega[0]
             // B.C. near P_outer (i=ny-1, central difference)
-            dudy_discretized[ny - 1] = (u_nodeUM - u_star[ny - 2]) / (2.0 * hy);
+            dudy_discretized_central[ny - 1] = (u_nodeUM - u_star[ny - 2]) / (2.0 * hy);
             dkdy[ny - 1] = (k_nodeUM - k_star[ny - 2]) / (2.0 * hy);
             dwdy[ny - 1] = (w_nodeUM - turbu_omega_star[ny - 2]) / (2.0 * hy);
             //------------------------------------------------¡ü Calculate gradients of u, k, omega, Dk, Dw ¡ü------------------------------------------------
@@ -676,7 +676,7 @@ namespace udf
             {
                 turbu_omega_tilde[i] = std::max(
                     turbu_omega_star[i],
-                    std_kw_C_lim_ * dudy_discretized[i] / std_kw_beta_star_5_
+                    std_kw_C_lim_ * dudy_discretized_central[i] / std_kw_beta_star_5_
                 );
                 nut_star[i] = k_star[i] / (turbu_omega_tilde[i] + tiny);
             }
@@ -1150,24 +1150,24 @@ namespace udf
             double vel_grad_p_from_nodeU_side = (u_nodeO - u_star[ny - 1]) / distance_from_P_to_nodeU;
             double vel_grad_p_from_nodeU_side_relaxed = (1.0 - relax_dudn_P_nodeU) * vel_grad_p_from_nodeU_side_prior + relax_dudn_P_nodeU * vel_grad_p_from_nodeU_side;
 
-            double dudy_discretized[ny]{};
+            double dudy_discretized_central[ny]{};
             double dkdy[ny]{};
             double dwdy[ny]{};
             double dudy_discretized_forward[ny]{};
             // central diff£¨from i=1 to i=ny-2 £©
             for (int i = 1; i < ny - 1; ++i)
             {
-                dudy_discretized[i] = (u_star[i + 1] - u_star[i - 1]) / (2.0 * hy);
+                dudy_discretized_central[i] = (u_star[i + 1] - u_star[i - 1]) / (2.0 * hy);
                 dkdy[i] = (k_star[i + 1] - k_star[i - 1]) / (2.0 * hy);
                 dwdy[i] = (turbu_omega_star[i + 1] - turbu_omega_star[i - 1]) / (2.0 * hy);
                 dudy_discretized_forward[i] = (u_star[i + 1] - u_star[i]) / (hy);
             }
             // B.C. near wall (i=0, central difference)
-            dudy_discretized[0] = (u_star[1] + u_star[0]) / (2.0 * hy); // mirror B.C. u_star[-1] = -u_star[0]
+            dudy_discretized_central[0] = (u_star[1] + u_star[0]) / (2.0 * hy); // mirror B.C. u_star[-1] = -u_star[0]
             dkdy[0] = (k_star[1] - k_star[0]) / (2.0 * hy); // zero gradient, k_star[-1] = k_star[0]
             dwdy[0] = (turbu_omega_star[1] - turbu_omega_star[0]) / (2.0 * hy); //zero gradient, turbu_omega_star[-1] = turbu_omega[0]
             // B.C. near P_outer (i=ny-1, central difference)
-            dudy_discretized[ny - 1] = (u_nodeUM - u_star[ny - 2]) / (2.0 * hy);
+            dudy_discretized_central[ny - 1] = (u_nodeUM - u_star[ny - 2]) / (2.0 * hy);
             dkdy[ny - 1] = (k_nodeUM - k_star[ny - 2]) / (2.0 * hy);
             dwdy[ny - 1] = (w_nodeUM - turbu_omega_star[ny - 2]) / (2.0 * hy);
             dudy_discretized_forward[ny - 1] = (u_nodeUM - u_star[ny - 1]) / (hy);
@@ -1192,7 +1192,7 @@ namespace udf
             {
                 turbu_omega_tilde[i] = std::max(
                     turbu_omega_star[i],
-                    std_kw_C_lim_ * dudy_discretized[i] / std_kw_beta_star_5_
+                    std_kw_C_lim_ * dudy_discretized_central[i] / std_kw_beta_star_5_
                 );
                 nut_star[i] = k_star[i] / (turbu_omega_tilde[i] + tiny);
             }
