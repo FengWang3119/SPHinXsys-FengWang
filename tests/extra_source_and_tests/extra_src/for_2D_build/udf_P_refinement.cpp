@@ -1034,9 +1034,11 @@ namespace udf
         double hy = height_sublayer / (double(ny) + 0.5); // distance from node U to P_outer is hy, hence with a 0.5
         double y_p = 0.5 * hy;
         double y[ny];  //computational nodes
+        double dist_node_i_to_wall[ny]{};
         for (int i = 0; i < ny; ++i)
         {
             y[i] = y_p + i * hy;
+            dist_node_i_to_wall[i] = y[i];
         }
         double distance_from_P_to_nodeU = hy;
         double utau_min = yplus_min * nu / y_p;
@@ -1257,14 +1259,14 @@ namespace udf
             double pressure_gradient[ny]{};
             for (int i = 0; i < ny; ++i) {
                 tau_i_over_rho[i] = (nu + nut_star[i]) * (dudy_discretized_forward[i]);
-                pressure_gradient[i]= (utau * utau - tau_i_over_rho[i]) / height_sublayer;
+                pressure_gradient[i]= (utau * utau - tau_i_over_rho[i]) / dist_node_i_to_wall[i];
             }
             //** implicity part *
             double tau_p_over_rho_constant_part = (nu + nut_star[ny-1]) * u_nodeO / distance_from_P_to_nodeU;
-            double pressure_gradient_approximated_constant_part = (utau * utau - tau_p_over_rho_constant_part) / height_sublayer;
+            double pressure_gradient_approximated_constant_part = (utau * utau - tau_p_over_rho_constant_part) / dist_node_i_to_wall[ny-1];
             double e_u[ny]{};
             std::fill_n(e_u, ny, 0.0);
-            double additional_coefficient_for_nodeU = -hy * hy * (nu + nut_star[ny - 1]) / height_sublayer / distance_from_P_to_nodeU;
+            double additional_coefficient_for_nodeU = -hy * hy * (nu + nut_star[ny - 1]) / dist_node_i_to_wall[ny - 1] / distance_from_P_to_nodeU;
             e_u[ny - 1] = additional_coefficient_for_nodeU; //** Only for the last node *
             //-------------------------------------¡ü IF inner node explicit, P adjacent node implicit, dpdx can be diffrent ¡ü-------------------------------------
 
