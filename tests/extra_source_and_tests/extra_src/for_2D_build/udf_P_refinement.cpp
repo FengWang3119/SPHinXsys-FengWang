@@ -414,7 +414,7 @@ namespace udf
                 else
                 {
                     vel_nodeO_i_prior = u_outer; //** Overwrite *
-                    flow_rate_local = get_loacal_flow_rate(u_outer * fluid_particle_spacing_, dudn_outer, vel_nodeO_i_prior, fluid_particle_spacing_); //** This is for better testing *
+                    flow_rate_local = get_loacal_flow_rate(u_outer * fluid_particle_spacing_, 1.1 * dudn_outer, vel_nodeO_i_prior, fluid_particle_spacing_); //** This is for better testing *
 
                     U_nodeO = 0.0;
                     U_nodeUM = 0.0;
