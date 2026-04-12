@@ -184,8 +184,8 @@ int main(int ac, char *av[])
 
     SimpleDynamics<fluid_dynamics::udf::ConstrainNormalVelocityInRegionP> constrain_normal_velocity_in_P_region(water_block);
 
-    InteractionWithUpdate<fluid_dynamics::udf::P_refinement_GetVelocityGradientInner> get_velocity_gradient_inner_only_for_P(water_block_inner); //** Note that the B should change *
-    //InteractionWithUpdate<fluid_dynamics::udf::P_refinement_GetVelocityGradientComplex> get_velocity_gradient_inner_only_for_P(water_block_inner, water_wall_contact); //** Note that the B should change *
+    //InteractionWithUpdate<fluid_dynamics::udf::P_refinement_GetVelocityGradientInner> get_velocity_gradient_inner_only_for_P(water_block_inner); //** Note that the B should change *
+    InteractionWithUpdate<fluid_dynamics::udf::P_refinement_GetVelocityGradientComplex> get_velocity_gradient_inner_only_for_P(water_block_inner, water_wall_contact); //** Note that the B should change *
 
     SimpleDynamics<fluid_dynamics::udf::P_refinement> get_friction_velocity_from_sublayer(water_block);
 
