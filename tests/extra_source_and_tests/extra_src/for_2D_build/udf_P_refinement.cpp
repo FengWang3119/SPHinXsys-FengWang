@@ -1231,7 +1231,8 @@ namespace udf
             double c_u[ny]{};
             double d_u[ny]{};
             //** 1: IF (inner node explicit, P adjacent node implicit), dpdx can be diffrent *
-            int type_u_discretization = 1; 
+            //** 2: IF fully implicit, dpdx can be diffrent *
+            int type_u_discretization = 2;
             //-------------------------------------¡ý IF fully implicit ¡ý-------------------------------------
             //double tau_p_over_rho_constant_part = (nu + nut_nodeO) * u_nodeO / distance_from_P_to_nodeU;
             //double pressure_gradient_approximated_constant_part = (utau * utau - tau_p_over_rho_constant_part) / height_sublayer;
@@ -1254,22 +1255,33 @@ namespace udf
             //-------------------------------------¡ü IF inner node explicit, P adjacent node implicit, constant dpdx assumption ¡ü-------------------------------------
 
             //-------------------------------------¡ý IF inner node explicit, P adjacent node implicit, dpdx can be diffrent ¡ý-------------------------------------
-            //** explicity part *
-            double tau_i_over_rho[ny]{};
-            double pressure_gradient[ny]{};
-            for (int i = 0; i < ny; ++i) {
-                tau_i_over_rho[i] = (nu + nut_star[i]) * (dudy_discretized_central[i]);
-                pressure_gradient[i]= (utau * utau - tau_i_over_rho[i]) / dist_node_i_to_wall[i];
-            }
-            //** implicity part *
-            double tau_p_over_rho_constant_part = (nu + nut_star[ny - 1]) * u_nodeO / (2.0 * hy);
-            double pressure_gradient_approximated_constant_part = (utau * utau - tau_p_over_rho_constant_part) / dist_node_i_to_wall[ny-1];
-            //double e_u[ny]{};
-            //std::fill_n(e_u, ny, 0.0);
-            //double additional_coefficient_for_nodeU = -hy * hy * (nu + nut_star[ny - 1]) / dist_node_i_to_wall[ny - 1] / distance_from_P_to_nodeU;
-            //e_u[ny - 1] = additional_coefficient_for_nodeU; //** Only for the last node *
-            double additional_coefficient = -hy * hy * (nu + nut_star[ny - 1]) / dist_node_i_to_wall[ny - 1] / (2.0 * hy); // ** add on ny-2 *
+            ////** explicity part *
+            //double tau_i_over_rho[ny]{};
+            //double pressure_gradient[ny]{};
+            //for (int i = 0; i < ny; ++i) {
+            //    tau_i_over_rho[i] = (nu + nut_star[i]) * (dudy_discretized_central[i]);
+            //    pressure_gradient[i]= (utau * utau - tau_i_over_rho[i]) / dist_node_i_to_wall[i];
+            //}
+            ////** implicity part *
+            //double tau_p_over_rho_constant_part = (nu + nut_star[ny - 1]) * u_nodeO / (2.0 * hy);
+            //double pressure_gradient_approximated_constant_part = (utau * utau - tau_p_over_rho_constant_part) / dist_node_i_to_wall[ny-1];
+            ////double e_u[ny]{};
+            ////std::fill_n(e_u, ny, 0.0);
+            ////double additional_coefficient_for_nodeU = -hy * hy * (nu + nut_star[ny - 1]) / dist_node_i_to_wall[ny - 1] / distance_from_P_to_nodeU;
+            ////e_u[ny - 1] = additional_coefficient_for_nodeU; //** Only for the last node *
+            //double additional_coefficient = -hy * hy * (nu + nut_star[ny - 1]) / dist_node_i_to_wall[ny - 1] / (2.0 * hy); // ** add on ny-2 *
             //-------------------------------------¡ü IF inner node explicit, P adjacent node implicit, dpdx can be diffrent ¡ü-------------------------------------
+
+            //-------------------------------------¡ý IF fully implicity, dpdx can be diffrent ¡ý-------------------------------------
+            double pressure_gradient_constant_part[ny]{};
+            double additional_coefficient_iminus1[ny]{};
+            double additional_coefficient_iplus1[ny]{};
+            for (int i = 0; i < ny; ++i) {
+                pressure_gradient_constant_part[i] = (utau * utau) / dist_node_i_to_wall[i];
+                additional_coefficient_iminus1[i] = -hy * (nu + nut_star[i]) / dist_node_i_to_wall[i] / (2.0);
+                additional_coefficient_iplus1[i] = hy * (nu + nut_star[i]) / dist_node_i_to_wall[i] / (2.0);
+            }
+            //-------------------------------------¡ü IF fully implicity, P adjacent node implicit, dpdx can be diffrent ¡ü-------------------------------------
 
             // inner node
             for (int i = 1; i < ny - 1; ++i)
@@ -1281,10 +1293,17 @@ namespace udf
                 double nu_eff_i_minus_half = 2.0 * nu_eff_i_minus * nu_eff_i / std::max((nu_eff_i_minus + nu_eff_i), tiny);
                 if (type_u_discretization == 1)
                 {
-                    a_u[i] = -nu_eff_i_minus_half;
+                    //a_u[i] = -nu_eff_i_minus_half;
+                    //b_u[i] = std::max((nu_eff_i_plus_half + nu_eff_i_minus_half), tiny);
+                    //c_u[i] = -nu_eff_i_plus_half;
+                    //d_u[i] = pressure_gradient[i] * hy * hy;
+                }
+                if (type_u_discretization == 2)
+                {
+                    a_u[i] = -nu_eff_i_minus_half + additional_coefficient_iminus1[i];
                     b_u[i] = std::max((nu_eff_i_plus_half + nu_eff_i_minus_half), tiny);
-                    c_u[i] = -nu_eff_i_plus_half;
-                    d_u[i] = pressure_gradient[i] * hy * hy;
+                    c_u[i] = -nu_eff_i_plus_half + additional_coefficient_iplus1[i];
+                    d_u[i] = pressure_gradient_constant_part[i] * hy * hy;
                 }
             }
             // first node
@@ -1301,10 +1320,17 @@ namespace udf
             double nu_eff_last_minus_half = 2.0 * nu_eff_last_minus * nu_eff_last / std::max((nu_eff_last_minus + nu_eff_last), tiny);
             if (type_u_discretization == 1)
             {
-                a_u[last] = -nu_eff_last_minus_half + additional_coefficient;
+                //a_u[last] = -nu_eff_last_minus_half + additional_coefficient;
+                //b_u[last] = std::max((nu_eff_last_plus_half + nu_eff_last_minus_half), tiny);
+                //c_u[last] = 0.0;
+                //d_u[last] = pressure_gradient_approximated_constant_part * hy * hy + nu_eff_last_plus_half * u_nodeUM;
+            }
+            if (type_u_discretization == 2)
+            {
+                a_u[last] = -nu_eff_last_minus_half + additional_coefficient_iminus1[last];
                 b_u[last] = std::max((nu_eff_last_plus_half + nu_eff_last_minus_half), tiny);
                 c_u[last] = 0.0;
-                d_u[last] = pressure_gradient_approximated_constant_part * hy * hy + nu_eff_last_plus_half * u_nodeUM;
+                d_u[last] = pressure_gradient_constant_part[last] * hy * hy + (nu_eff_last_plus_half - additional_coefficient_iplus1[last]) * u_nodeUM;
             }
 
             // solving
