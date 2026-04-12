@@ -1204,7 +1204,7 @@ namespace udf
             {
                 //dudy_star[i] = C_su[i] / (nu + nut_star[i]);
                 //** IF (inner node explicit, P adjacent node implicit), dpdx can be diffrent *
-                dudy_star[i] = dudy_discretized_forward[i];
+                dudy_star[i] = dudy_discretized_central[i];
             }
             //------------------------------------------------¡ü Calculate analytical gradient of u ¡ü------------------------------------------------
 
@@ -1258,16 +1258,17 @@ namespace udf
             double tau_i_over_rho[ny]{};
             double pressure_gradient[ny]{};
             for (int i = 0; i < ny; ++i) {
-                tau_i_over_rho[i] = (nu + nut_star[i]) * (dudy_discretized_forward[i]);
+                tau_i_over_rho[i] = (nu + nut_star[i]) * (dudy_discretized_central[i]);
                 pressure_gradient[i]= (utau * utau - tau_i_over_rho[i]) / dist_node_i_to_wall[i];
             }
             //** implicity part *
-            double tau_p_over_rho_constant_part = (nu + nut_star[ny-1]) * u_nodeO / distance_from_P_to_nodeU;
+            double tau_p_over_rho_constant_part = (nu + nut_star[ny - 1]) * u_nodeO / (2.0 * hy);
             double pressure_gradient_approximated_constant_part = (utau * utau - tau_p_over_rho_constant_part) / dist_node_i_to_wall[ny-1];
-            double e_u[ny]{};
-            std::fill_n(e_u, ny, 0.0);
-            double additional_coefficient_for_nodeU = -hy * hy * (nu + nut_star[ny - 1]) / dist_node_i_to_wall[ny - 1] / distance_from_P_to_nodeU;
-            e_u[ny - 1] = additional_coefficient_for_nodeU; //** Only for the last node *
+            //double e_u[ny]{};
+            //std::fill_n(e_u, ny, 0.0);
+            //double additional_coefficient_for_nodeU = -hy * hy * (nu + nut_star[ny - 1]) / dist_node_i_to_wall[ny - 1] / distance_from_P_to_nodeU;
+            //e_u[ny - 1] = additional_coefficient_for_nodeU; //** Only for the last node *
+            double additional_coefficient = -hy * hy * (nu + nut_star[ny - 1]) / dist_node_i_to_wall[ny - 1] / (2.0 * hy); // ** add on ny-2 *
             //-------------------------------------¡ü IF inner node explicit, P adjacent node implicit, dpdx can be diffrent ¡ü-------------------------------------
 
             // inner node
@@ -1300,7 +1301,7 @@ namespace udf
             double nu_eff_last_minus_half = 2.0 * nu_eff_last_minus * nu_eff_last / std::max((nu_eff_last_minus + nu_eff_last), tiny);
             if (type_u_discretization == 1)
             {
-                a_u[last] = -nu_eff_last_minus_half;
+                a_u[last] = -nu_eff_last_minus_half + additional_coefficient;
                 b_u[last] = std::max((nu_eff_last_plus_half + nu_eff_last_minus_half), tiny);
                 c_u[last] = 0.0;
                 d_u[last] = pressure_gradient_approximated_constant_part * hy * hy + nu_eff_last_plus_half * u_nodeUM;
@@ -1309,8 +1310,8 @@ namespace udf
             // solving
             double U_new[ny]{};
             //solve5_eigen(a_u, b_u, c_u, d_u, U_new);
-            solve5_eigen_with_additonal_coefficient(a_u, b_u, c_u, e_u, d_u, U_new);
-            //tdma5(a_u, b_u, c_u, d_u, U_new);
+            //solve5_eigen_with_additonal_coefficient(a_u, b_u, c_u, e_u, d_u, U_new);
+            tdma5(a_u, b_u, c_u, d_u, U_new);
             //-------------------------------------¡ü For velocity ¡ü-------------------------------------
 
             //-------------------------------------¡ý For turbulent kinetic energy ¡ý-------------------------------------
@@ -1351,7 +1352,7 @@ namespace udf
             d_k[last] = hy * hy * nut_star[last] * dudy_star[last] * dudy_star[last] + Dk_last_plus_half * k_nodeUM;
             // solving
             double K_new[ny]{};
-            solve5_eigen(a_k, b_k, c_k, d_k, K_new);
+            tdma5(a_k, b_k, c_k, d_k, K_new);
             // avoid negative value, K_new = max(K_new, k_min)
             double k_min = 1e-10;
             for (int i = 0; i < ny; ++i) {
@@ -1396,7 +1397,7 @@ namespace udf
             d_w[last] = hy * hy * (part_production_last + part_cross_diffusion[last]) + Dw_last_plus_half * w_nodeUM;
             // solving
             double Turbu_omega_new[ny]{};
-            solve5_eigen(a_w, b_w, c_w, d_w, Turbu_omega_new);
+            tdma5(a_w, b_w, c_w, d_w, Turbu_omega_new);
             // avoid negative value, Turbu_omega_new = max(Turbu_omega_new, omega_min)
             double omega_min = 1e-10;
             for (int i = 0; i < ny; ++i) {
