@@ -475,7 +475,7 @@ namespace udf
                 Vecd tangential = vel_tangential / (tangential_velocity_P_magnitude + TinyReal);
                 Real tangential_velocity_node_U = node_value_[index_i][5]; //** Temporary treatment *
                 Real dist_nodeU_P = distance_to_wall / (double(num_sub_node_) + 0.5);
-                Real dUdn_P_sublayer_magnitude = 0.5 * std::abs(tangential_velocity_P_magnitude - tangential_velocity_node_U) / (dist_nodeU_P + TinyReal);
+                Real dUdn_P_sublayer_magnitude = 0.1 * std::abs(tangential_velocity_P_magnitude - tangential_velocity_node_U) / (dist_nodeU_P + TinyReal);
                 //Real dUdn_P_sublayer_magnitude = std::abs(node_value_[index_i][5] - node_value_[index_i][1]) / (4.0 * dist_nodeU_P + TinyReal);
                 Matd dUdn_P_sublayer = dUdn_P_sublayer_magnitude * (tangential * normal.transpose());
                 dUdn_P_sublayer_magnitude_[index_i] = dUdn_P_sublayer_magnitude;
