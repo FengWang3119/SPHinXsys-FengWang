@@ -319,13 +319,13 @@ void TurbuViscousForce<Inner<>>::interaction(size_t index_i, Real dt)
         //** P-refinement correct inner viscous force for P *
         if (is_near_wall_P1_[index_i] == 1)
         {
-            Matd shear_stress_sublayer = mu_eff_i * (dUdn_P_sublayer_[index_i] + dUdn_P_sublayer_[index_i].transpose());
-            Matd correction_matrix_average = (B_[index_i] + B_[index_j]) / 2.0;
-            Vecd corrected_kernel_gradient = correction_matrix_average * (e_ij * inner_neighborhood.dW_ij_[n]);
-            force_j = 2.0 * mass_[index_i] * (shear_stress_sublayer * corrected_kernel_gradient) * this->Vol_[index_j];
-
             //Matd shear_stress_sublayer = mu_eff_i * (dUdn_P_sublayer_[index_i] + dUdn_P_sublayer_[index_i].transpose());
-            //force_j = 2.0 * mass_[index_i] * shear_stress_sublayer * e_ij * inner_neighborhood.dW_ij_[n] * this->Vol_[index_j];
+            //Matd correction_matrix_average = (B_[index_i] + B_[index_j]) / 2.0;
+            //Vecd corrected_kernel_gradient = correction_matrix_average * (e_ij * inner_neighborhood.dW_ij_[n]);
+            //force_j = 2.0 * mass_[index_i] * (shear_stress_sublayer * corrected_kernel_gradient) * this->Vol_[index_j];
+
+            Matd shear_stress_sublayer = mu_eff_i * (dUdn_P_sublayer_[index_i] + dUdn_P_sublayer_[index_i].transpose());
+            force_j = 2.0 * mass_[index_i] * shear_stress_sublayer * e_ij * inner_neighborhood.dW_ij_[n] * this->Vol_[index_j];
         }
 
         //** P-refinement for S particle, when pairing with P particle, use SS from sublayer *
@@ -333,13 +333,13 @@ void TurbuViscousForce<Inner<>>::interaction(size_t index_i, Real dt)
         {
             if (is_near_wall_P1_[index_j] == 1)
             {
-                Matd shear_stress_sublayer = mu_eff_i * (dUdn_P_sublayer_[index_i] + dUdn_P_sublayer_[index_i].transpose());
-                Matd correction_matrix_average = (B_[index_i] + B_[index_j]) / 2.0;
-                Vecd corrected_kernel_gradient = correction_matrix_average * (e_ij * inner_neighborhood.dW_ij_[n]);
-                force_j = 2.0 * mass_[index_i] * (shear_stress_sublayer * corrected_kernel_gradient) * this->Vol_[index_j];
-
                 //Matd shear_stress_sublayer = mu_eff_i * (dUdn_P_sublayer_[index_i] + dUdn_P_sublayer_[index_i].transpose());
-                //force_j = 2.0 * mass_[index_i] * shear_stress_sublayer * e_ij * inner_neighborhood.dW_ij_[n] * this->Vol_[index_j];
+                //Matd correction_matrix_average = (B_[index_i] + B_[index_j]) / 2.0;
+                //Vecd corrected_kernel_gradient = correction_matrix_average * (e_ij * inner_neighborhood.dW_ij_[n]);
+                //force_j = 2.0 * mass_[index_i] * (shear_stress_sublayer * corrected_kernel_gradient) * this->Vol_[index_j];
+
+                Matd shear_stress_sublayer = mu_eff_i * (dUdn_P_sublayer_[index_i] + dUdn_P_sublayer_[index_i].transpose());
+                force_j = 2.0 * mass_[index_i] * shear_stress_sublayer * e_ij * inner_neighborhood.dW_ij_[n] * this->Vol_[index_j];
             }
         }
 
@@ -362,7 +362,8 @@ TurbuViscousForce<Contact<Wall>>::TurbuViscousForce(BaseContactRelation &wall_co
       physical_time_(sph_system_->getSystemVariableDataByName<Real>("PhysicalTime")),
       is_blended_(particles_->getVariableDataByName<int>("TurbulentWallTreatmentType")),
       is_near_wall_P1_(particles_->getVariableDataByName<int>("IsNearWallP1")),
-      friction_velocity_from_sublayer_(particles_->getVariableDataByName<Real>("FrictionVelocityFromSublayer")) {}
+      friction_velocity_from_sublayer_(particles_->getVariableDataByName<Real>("FrictionVelocityFromSublayer")),
+      turbu_B_(particles_->getVariableDataByName<Matd>("TurbulentLinearGradientCorrectionMatrix")) {}
 //=================================================================================================//
 void TurbuViscousForce<Contact<Wall>>::interaction(size_t index_i, Real dt)
 {
@@ -441,7 +442,7 @@ void TurbuViscousForce<Contact<Wall>>::interaction(size_t index_i, Real dt)
             //** Transform local wall shear stress to global   *
             WSS_j = Q.transpose() * WSS_j_tn * Q;
             
-            Matd correction_matrix_average = (B_[index_i] + B_[index_j]) / 2.0;
+            Matd correction_matrix_average = (turbu_B_[index_i] + turbu_B_[index_j]) / 2.0;
             Vecd corrected_kernel_gradient = correction_matrix_average * (e_ij * contact_neighborhood.dW_ij_[n]);
             Vecd force_j = 2.0 * mass_[index_i] * (WSS_j * corrected_kernel_gradient) * this->Vol_[index_j] / rho_i;
 
