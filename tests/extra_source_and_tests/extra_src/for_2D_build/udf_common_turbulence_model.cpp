@@ -316,7 +316,7 @@ void TurbuViscousForce<Inner<>>::interaction(size_t index_i, Real dt)
 
         Vecd force_j = 2.0 * mass_[index_i] * shear_stress * inner_neighborhood.dW_ij_[n] * this->Vol_[index_j];
 
-        bool is_inner_SS_correction = false;
+        bool is_inner_SS_correction = true;
         if(is_inner_SS_correction)
         { 
             //** P-refinement correct inner viscous force for P *

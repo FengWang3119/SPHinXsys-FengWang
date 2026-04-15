@@ -347,7 +347,7 @@ namespace udf
             Real residue = 1.0e3;
             Real averaged_vel_over_P = u_outer;
             
-            bool is_Neumann_path = true;
+            bool is_Neumann_path = false;
 
             if (is_Neumann_path) //** If go Neumann Path *
             {
@@ -457,7 +457,7 @@ namespace udf
             }
 
             //** Extract results *
-            friction_velocity_from_sublayer_[index_i] = 0.5 * node_value_[index_i][0];
+            friction_velocity_from_sublayer_[index_i] = node_value_[index_i][0];
             vel_nodeO_[index_i] = U_nodeO;
             vel_nodeUM_[index_i] = U_nodeUM;
 
