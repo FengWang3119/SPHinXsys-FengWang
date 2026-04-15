@@ -220,28 +220,20 @@ namespace udf
                 U_nodeO = 0.0;
                 U_nodeUM = 0.0;
                 //** Remember to activate output function inside if want to output K OMEGA NUT *
-                //node_value_[index_i] = solve_1D_sublayer_Neumann(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
+                node_value_[index_i] = solve_1D_sublayer_Neumann(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
+                    nut_outer, distance_to_wall, friction_vel_magnitude_outer, std::abs(flow_rate_local), dkdn_outer, dwdn_outer, U_nodeO, U_nodeUM);
+
+                //node_value_[index_i] = solve_1D_sublayer_Dirichlet(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
                 //    nut_outer, distance_to_wall, friction_vel_magnitude_outer, std::abs(flow_rate_local), dkdn_outer, dwdn_outer, U_nodeO, U_nodeUM);
-                //writeTecplotFromVec6d(
+                //writeTecplotFromVec6dDirichlet(
                 //    node_value_[index_i],
                 //    U_nodeO,
                 //    U_nodeUM,
                 //    distance_to_wall,
                 //    num_sub_node_,
                 //    40,
-                //    89
+                //    122
                 //);
-                node_value_[index_i] = solve_1D_sublayer_Dirichlet(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
-                    nut_outer, distance_to_wall, friction_vel_magnitude_outer, std::abs(flow_rate_local), dkdn_outer, dwdn_outer, U_nodeO, U_nodeUM);
-                writeTecplotFromVec6dDirichlet(
-                    node_value_[index_i],
-                    U_nodeO,
-                    U_nodeUM,
-                    distance_to_wall,
-                    num_sub_node_,
-                    40,
-                    122
-                );
                 std::cout << "Fixed input value test ends, stop here." << std::endl;
                 std::cin.get();
             }
@@ -355,38 +347,52 @@ namespace udf
             Real residue = 1.0e3;
             Real averaged_vel_over_P = u_outer;
             
-            if (0) //** If go Neumann Path *
-            {
-                while (residue > 1.0e-6)
-                {
-                    //flow_rate_local = get_loacal_flow_rate(u_outer * fluid_particle_spacing_, dudn_outer, vel_nodeO_i_prior, fluid_particle_spacing_); //** This is for better testing *
-                    //** If test small global flowrate *
-                    //flow_rate_local = get_loacal_flow_rate(1.0e-2, dudn_outer, vel_nodeO_i_prior, fluid_particle_spacing_); //** This is for better testing *
-                    //** If try dynamic adjust global flowrate *
-                    flow_rate_local = get_loacal_flow_rate(averaged_vel_over_P * fluid_particle_spacing_, dudn_outer, vel_nodeO_i_prior, fluid_particle_spacing_); //** This is for better testing *
+            bool is_Neumann_path = true;
 
+            if (is_Neumann_path) //** If go Neumann Path *
+            {
+                if (0) //** Whether probe iteration *
+                {
+                    while (residue > 1.0e-6)
+                    {
+                        //flow_rate_local = get_loacal_flow_rate(u_outer * fluid_particle_spacing_, dudn_outer, vel_nodeO_i_prior, fluid_particle_spacing_); //** This is for better testing *
+                        //** If test small global flowrate *
+                        //flow_rate_local = get_loacal_flow_rate(1.0e-2, dudn_outer, vel_nodeO_i_prior, fluid_particle_spacing_); //** This is for better testing *
+                        //** If try dynamic adjust global flowrate *
+                        flow_rate_local = get_loacal_flow_rate(averaged_vel_over_P * fluid_particle_spacing_, dudn_outer, vel_nodeO_i_prior, fluid_particle_spacing_); //** This is for better testing *
+
+
+                        U_nodeO = 0.0;
+                        U_nodeUM = 0.0;
+                        node_value_[index_i] = solve_1D_sublayer_Neumann(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
+                            nut_outer, distance_to_wall, friction_vel_magnitude_outer, std::abs(flow_rate_local), dkdn_outer, dwdn_outer, U_nodeO, U_nodeUM);
+
+                        residue = std::abs(flow_rate_local - flow_rate_local_prior);
+                        //std::cout << "residue =" << residue << std::endl;
+                        flow_rate_local_prior = flow_rate_local;
+                        Real relax_factor = 0.3;
+                        vel_nodeO_i_prior = (1.0 - relax_factor) * vel_nodeO_i_prior + relax_factor * U_nodeO;
+
+                        Real error_flow_rate = vel_nodeO_i_prior - u_outer;
+                        if (error_flow_rate > 0.0)
+                        {
+                            Real corrected_averaged_vel_over_P = averaged_vel_over_P - error_flow_rate;
+                            averaged_vel_over_P = (1.0 - relax_factor) * averaged_vel_over_P + relax_factor * corrected_averaged_vel_over_P;
+                        }
+                    }
+                }
+                else
+                {
+                    vel_nodeO_i_prior = u_outer; //** Overwrite *
+                    flow_rate_local = get_loacal_flow_rate(averaged_vel_over_P * fluid_particle_spacing_, dudn_outer, vel_nodeO_i_prior, fluid_particle_spacing_); //** This is for better testing *
 
                     U_nodeO = 0.0;
                     U_nodeUM = 0.0;
                     node_value_[index_i] = solve_1D_sublayer_Neumann(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
                         nut_outer, distance_to_wall, friction_vel_magnitude_outer, std::abs(flow_rate_local), dkdn_outer, dwdn_outer, U_nodeO, U_nodeUM);
-
-                    residue = std::abs(flow_rate_local - flow_rate_local_prior);
-                    //std::cout << "residue =" << residue << std::endl;
-                    flow_rate_local_prior = flow_rate_local;
-                    Real relax_factor = 0.3;
-                    vel_nodeO_i_prior = (1.0 - relax_factor) * vel_nodeO_i_prior + relax_factor * U_nodeO;
-
-                    Real error_flow_rate = vel_nodeO_i_prior - u_outer;
-                    if (error_flow_rate > 0.0)
-                    {
-                        Real corrected_averaged_vel_over_P = averaged_vel_over_P - error_flow_rate;
-                        averaged_vel_over_P = (1.0 - relax_factor) * averaged_vel_over_P + relax_factor * corrected_averaged_vel_over_P;
-                    }
                 }
             }
-
-            if (1) //** If go Dirichlet Path *
+            else //** If go Dirichlet Path *
             {
                 if (0)//** If probe iteration method *
                 {
@@ -474,7 +480,20 @@ namespace udf
                 Real tangential_velocity_P_magnitude = vel_tangential.norm();
                 Vecd tangential = vel_tangential / (tangential_velocity_P_magnitude + TinyReal);
                 Real tangential_velocity_node_U = node_value_[index_i][5]; //** Temporary treatment *
-                Real dist_nodeU_P = distance_to_wall / (double(num_sub_node_) + 0.5);
+                
+                Real dist_nodeU_P = TinyReal;
+                Real uniform_dist_between_node = TinyReal;
+                if (is_Neumann_path)
+                {
+                    uniform_dist_between_node = distance_to_wall / double(num_sub_node_);
+                    dist_nodeU_P = uniform_dist_between_node / 2.0;
+                }
+                else
+                {
+                    uniform_dist_between_node = distance_to_wall / (double(num_sub_node_) + 0.5);
+                    dist_nodeU_P = uniform_dist_between_node;
+                }
+                
                 Real dUdn_P_sublayer_magnitude = std::abs(tangential_velocity_P_magnitude - tangential_velocity_node_U) / (dist_nodeU_P + TinyReal);
                 //Real dUdn_P_sublayer_magnitude = std::abs(node_value_[index_i][5] - node_value_[index_i][1]) / (4.0 * dist_nodeU_P + TinyReal);
                 Matd dUdn_P_sublayer = dUdn_P_sublayer_magnitude * (tangential * normal.transpose());
@@ -512,16 +531,22 @@ namespace udf
         double height_sublayer = h_sublayer;
         double nu = kinematic_viscosity;
 
-        double u_init = u_p_outer;
+        double u_init = std::min(u_p_outer, 1e+4);  //** when u_p from SPH is 1e+6£¬ not working, so add this limiter *
         double k_init = k_p_outer;
         double turbu_omega_init = w_p_outer;
 
-        double convergence_criteria_outer = 1.0e-6;
+        double convergence_criteria_outer = 1.0e-3;
         double tiny = 1.0e-6;
         double relax_u = 0.9;
         double relax_k = 0.9;
         double relax_w = 0.9;
-        double alpha = 0.9;
+        double relax_utau = 0.9;
+        double yplus_min = 0.01; //** To constrain min utau *
+        
+        //** For 1D verification *
+        bool output_detailed_info = false;
+        int NF = 40;
+        int index = 148;
 
         double flow_rate_target = Q_target;
         double utau = utau_init;
@@ -531,10 +556,13 @@ namespace udf
         double hy = height_sublayer / double(ny); // distance from node U to P_outer is hy/2
         double y_p = 0.5 * hy;
         double y[ny];  //computational nodes
+        double dist_node_i_to_wall[ny]{};
         for (int i = 0; i < ny; ++i)
         {
             y[i] = y_p + i * hy;
+            dist_node_i_to_wall[i] = y[i];
         }
+        double utau_min = yplus_min * nu / y_p;
         //------------------------------------------------¡ü Node arrangement, for sublayer ¡ü------------------------------------------------
 
         //------------------------------------------------¡ý Calculate nodeP value ¡ý------------------------------------------------
@@ -635,16 +663,16 @@ namespace udf
             //------------------------------------------------¡ý Calculate Dk, Dw, C_su ¡ý------------------------------------------------
             double diffusion_coefficient_k[ny]{};
             double diffusion_coefficient_turbu_omega[ny]{};
-            double C_su[ny]{};
+            //double C_su[ny]{};
             
-            double tau_over_rho_outer = (nu + nut_nodeO) * vel_grad_p_outer;  //** Here, nodeO value is used not nodeUM, since this is from anlytical *
+            //double tau_over_rho_outer = (nu + nut_nodeO) * vel_grad_p_outer;  //** Here, nodeO value is used not nodeUM, since this is from anlytical *
             //double vel_grad_p_for_momentum_iterated = (u_p_outer - u_star[ny - 1]) / (hy / 2.0);
             //double tau_over_rho_outer = (nu + nut_nodeO) * vel_grad_p_for_momentum_iterated;  //** Here, nodeO value is used not nodeUM, since this is from anlytical *
             
             for (int i = 0; i < ny; ++i) {
                 diffusion_coefficient_k[i] = nu + std_kw_sigma_star_ * k_star[i] / (turbu_omega_star[i] + tiny);
                 diffusion_coefficient_turbu_omega[i] = nu + std_kw_sigma_ * k_star[i] / (turbu_omega_star[i] + tiny);
-                C_su[i] = (utau * utau - tau_over_rho_outer) * (1.0 - y[i] / height_sublayer) + tau_over_rho_outer;
+                //C_su[i] = (utau * utau - tau_over_rho_outer) * (1.0 - y[i] / height_sublayer) + tau_over_rho_outer;
             }
             //------------------------------------------------¡ü Calculate Dk, Dw  ¡ü------------------------------------------------
 
@@ -686,7 +714,9 @@ namespace udf
             double dudy_star[ny]{};
             for (int i = 0; i < ny; ++i)
             {
-                dudy_star[i] = C_su[i] / (nu + nut_star[i]);
+                //dudy_star[i] = C_su[i] / (nu + nut_star[i]);
+                //** IF (inner node explicit, P adjacent node implicit), dpdx can be diffrent *
+                dudy_star[i] = dudy_discretized_central[i];
             }
             //------------------------------------------------¡ü Calculate analytical gradient of u ¡ü------------------------------------------------
 
@@ -712,6 +742,18 @@ namespace udf
             double b_u[ny]{};
             double c_u[ny]{};
             double d_u[ny]{};
+
+            //-------------------------------------¡ý IF fully implicity, dpdx can be diffrent ¡ý-------------------------------------
+            double pressure_gradient_constant_part[ny]{};
+            double additional_coefficient_iminus1[ny]{};
+            double additional_coefficient_iplus1[ny]{};
+            for (int i = 0; i < ny; ++i) {
+                pressure_gradient_constant_part[i] = (utau * utau) / dist_node_i_to_wall[i];
+                additional_coefficient_iminus1[i] = -hy * (nu + nut_star[i]) / dist_node_i_to_wall[i] / (2.0);
+                additional_coefficient_iplus1[i] = hy * (nu + nut_star[i]) / dist_node_i_to_wall[i] / (2.0);
+            }
+            //-------------------------------------¡ü IF fully implicity, dpdx can be diffrent ¡ü-------------------------------------
+
             // inner node
             for (int i = 1; i < ny - 1; ++i)
             {
@@ -720,10 +762,10 @@ namespace udf
                 double nu_eff_i_minus = nu + nut_star[i - 1];
                 double nu_eff_i_plus_half = 2.0 * nu_eff_i_plus * nu_eff_i / std::max((nu_eff_i_plus + nu_eff_i), tiny);
                 double nu_eff_i_minus_half = 2.0 * nu_eff_i_minus * nu_eff_i / std::max((nu_eff_i_minus + nu_eff_i), tiny);
-                a_u[i] = -nu_eff_i_minus_half;
+                a_u[i] = -nu_eff_i_minus_half + additional_coefficient_iminus1[i];
                 b_u[i] = std::max((nu_eff_i_plus_half + nu_eff_i_minus_half), tiny);
-                c_u[i] = -nu_eff_i_plus_half;
-                d_u[i] = (utau * utau - tau_over_rho_outer) / height_sublayer * hy * hy;
+                c_u[i] = -nu_eff_i_plus_half + additional_coefficient_iplus1[i];
+                d_u[i] = pressure_gradient_constant_part[i] * hy * hy;
             }
             // first node
             a_u[0] = 0.0;
@@ -737,10 +779,10 @@ namespace udf
             double nu_eff_last_minus = nu + nut_star[last - 1];
             double nu_eff_last_plus_half = 2.0 * nu_eff_last_plus * nu_eff_last / std::max((nu_eff_last_plus + nu_eff_last), tiny);
             double nu_eff_last_minus_half = 2.0 * nu_eff_last_minus * nu_eff_last / std::max((nu_eff_last_minus + nu_eff_last), tiny);
-            a_u[last] = -nu_eff_last_minus_half;
+            a_u[last] = -nu_eff_last_minus_half + additional_coefficient_iminus1[last];
             b_u[last] = std::max((nu_eff_last_plus_half + nu_eff_last_minus_half), tiny);
             c_u[last] = 0.0;
-            d_u[last] = (utau * utau - tau_over_rho_outer) / height_sublayer * hy * hy + nu_eff_last_plus_half * u_nodeUM;
+            d_u[last] = pressure_gradient_constant_part[last] * hy * hy + (nu_eff_last_plus_half - additional_coefficient_iplus1[last]) * u_nodeUM;
             // solving
             double U_new[ny]{};
             tdma5(a_u, b_u, c_u, d_u, U_new);
@@ -858,26 +900,29 @@ namespace udf
 
             // flow control
             double ratio = flow_rate_target / (flow_rate_current + 1e-12);
-            
+
             // smooth limiter
             ratio = 0.5 * (ratio + std::sqrt(ratio * ratio + 1e-12));
             // optional upper bound
             ratio = std::min(ratio, 10.0);
-            
+
             double utau_new = utau * std::sqrt(ratio);
-            utau = (1.0 - alpha) * utau + alpha * utau_new;
-            /*double error = U_new[ny-1] - u_p_outer;
+            utau = (1.0 - relax_utau) * utau + relax_utau * utau_new;
+            /*double error = U_new[ny-1] - u_nodeO;
             utau -= 0.1 * error;*/
-            if (!std::isfinite(utau)) 
+            if (!std::isfinite(utau))
             {
                 utau = utau_init;   // fallback
             }
-            utau = std::max(utau, tiny);
+            utau = std::max(utau, utau_min);
             //------------------------------------------------¡ü Check and update flow rate ¡ü------------------------------------------------
 
-            //std::cout << "flow_rate_current = " << flow_rate_current
-            //    << ", target = " << flow_rate_target << std::endl;
-            //std::cout << "updated utau = " << utau << std::endl;
+            if (output_detailed_info)
+            {
+                std::cout << "flow_rate_current = " << flow_rate_current
+                    << ", target = " << flow_rate_target << std::endl;
+                std::cout << "updated utau = " << utau << std::endl;
+            }
 
             //------------------------------------------------¡ý Calculate residue ¡ý------------------------------------------------
             differ = 0.0;
@@ -887,7 +932,11 @@ namespace udf
             }
             differ = std::sqrt(differ);
             //------------------------------------------------¡ü Calculate residue ¡ü------------------------------------------------
-            //std::cout << "differ: " << differ << std::endl;
+            
+            if (output_detailed_info)
+            {
+                std::cout << "differ: " << differ << std::endl;
+            }
 
             //------------------------------------------------¡ý Update ¡ý------------------------------------------------
             for (int i = 0; i < 3 * ny; ++i) {
@@ -896,8 +945,29 @@ namespace udf
             num_iter_out += 1;
             //------------------------------------------------¡ü Update ¡ü------------------------------------------------
 
-            //std::cout << "num_iter_out = " << num_iter_out << std::endl;
-            //std::cout << "------------" << std::endl;
+            int num_iter_out_limit = 100000;
+            if (num_iter_out > num_iter_out_limit)
+            {
+                std::cout << "num_iter_out = " << num_iter_out << std::endl;
+                std::cout << "Hard to achieve convergence in sublayer solver!" << std::endl;
+                std::cout << "differ: " << differ << std::endl;
+                std::cout << "flow_rate_current = " << flow_rate_current
+                    << ", target = " << flow_rate_target << std::endl;
+                std::cout << "updated utau = " << utau << std::endl;
+                std::cout << "------------" << std::endl;
+                std::cin.get();
+                if (num_iter_out > 1.5 * num_iter_out_limit)
+                {
+                    std::cout << "Too many iterations, stop here!" << std::endl;
+                    std::cin.get();
+                }
+            }
+
+            if (output_detailed_info)
+            {
+                std::cout << "num_iter_out = " << num_iter_out << std::endl;
+                std::cout << "------------" << std::endl;
+            }
 
         }
 
@@ -915,7 +985,9 @@ namespace udf
         }
         vel_nodeO = u_nodeO;
         vel_nodeUM = u_nodeUM;
-        return results;
+        
+        if (!output_detailed_info) //** If 1D test, no return and output detaied information *
+            return results;
         //*/
 
         std::cout << "******Converge******" << std::endl;
@@ -962,8 +1034,6 @@ namespace udf
         }
         
         // ================== Êä³ö Tecplot ÎÄ¼þ ==================
-        int NF = 40;
-        int index = 76;
         std::string header_line = "ZONE T=\"SPH(1D)46 NF="
             + std::to_string(NF)
             + " ("
