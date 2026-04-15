@@ -442,11 +442,11 @@ void TurbuViscousForce<Contact<Wall>>::interaction(size_t index_i, Real dt)
             //** Transform local wall shear stress to global   *
             WSS_j = Q.transpose() * WSS_j_tn * Q;
             
-            Matd correction_matrix_average = (turbu_B_[index_i] + turbu_B_[index_j]) / 2.0;
-            Vecd corrected_kernel_gradient = correction_matrix_average * (e_ij * contact_neighborhood.dW_ij_[n]);
-            Vecd force_j = 2.0 * mass_[index_i] * (WSS_j * corrected_kernel_gradient) * this->Vol_[index_j] / rho_i;
+            //Matd correction_matrix_average = (turbu_B_[index_i] + turbu_B_[index_j]) / 2.0;
+            //Vecd corrected_kernel_gradient = correction_matrix_average * (e_ij * contact_neighborhood.dW_ij_[n]);
+            //Vecd force_j = 2.0 * mass_[index_i] * (WSS_j * corrected_kernel_gradient) * this->Vol_[index_j] / rho_i;
 
-            //Vecd force_j = 2.0 * mass_[index_i] * WSS_j * e_ij * contact_neighborhood.dW_ij_[n] * this->Vol_[index_j] / rho_i;
+            Vecd force_j = 2.0 * mass_[index_i] * WSS_j * e_ij * contact_neighborhood.dW_ij_[n] * this->Vol_[index_j] / rho_i;
 
             force += force_j;
         }
