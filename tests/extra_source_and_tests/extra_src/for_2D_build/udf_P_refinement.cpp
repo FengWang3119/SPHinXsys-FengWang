@@ -535,7 +535,7 @@ namespace udf
         //** For 1D verification *
         bool output_detailed_info = true;
         int NF = 40;
-        int index = 151;
+        int index = 152;
 
         double flow_rate_target = Q_target;
         double utau = utau_init;
@@ -683,7 +683,7 @@ namespace udf
             dudy_discretized_backward[ny - 2] = (u_star[ny - 2] - u_p) / hy;
             //** Transfer *
             vel_grad_nodeO = dudy_discretized_backward[ny - 1];
-            //vel_grad_nodeO = vel_grad_p_outer;
+            vel_grad_nodeO = vel_grad_p_outer;
             //------------------------------------------------¡ü Calculate gradients of u, k, omega, Dk, Dw ¡ü------------------------------------------------
 
             //------------------------------------------------¡ý Calculate nut_star ¡ý------------------------------------------------
@@ -1029,7 +1029,7 @@ namespace udf
         fout << "$friction velocity = " << utau << "\n";
         fout << "$current flow rate = " << flow_rate_current << "\n";
         fout << "$num_iter_out = " << num_iter_out << "\n";
-        fout << "u_nodeUM = " << u_nodeUM << "\n";
+        fout << "$u_nodeUM = " << u_nodeUM << "\n";
         fout << header_line << "\n";
 
         fout << std::scientific << std::setprecision(8);
