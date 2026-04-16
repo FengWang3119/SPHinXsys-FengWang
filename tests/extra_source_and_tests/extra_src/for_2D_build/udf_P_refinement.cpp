@@ -535,7 +535,7 @@ namespace udf
         //** For 1D verification *
         bool output_detailed_info = true;
         int NF = 40;
-        int index = 153;
+        int index = 154;
 
         double flow_rate_target = Q_target;
         double utau = utau_init;
@@ -613,7 +613,6 @@ namespace udf
         int last = 0;
         int first_index = 0;
         double flow_rate_current = 0.0;
-        double dudy_discretized_backward[ny]{};
         double vel_grad_nodeO = 0.0;
         while (differ > convergence_criteria_outer)
         {
@@ -662,7 +661,9 @@ namespace udf
             double dudy_discretized_central[ny]{};
             double dkdy[ny]{};
             double dwdy[ny]{};
-            // central diff£¨from i=1 to i=ny-2 £©
+            double dudy_discretized_backward[ny]{};
+            //** Please note below we calculate gradients together, and separate as 3 parts *
+            //** Part 1: from i=1 to i=ny-2, note that whatever schemes, separated i=0 and i=ny-1 *
             for (int i = 1; i < ny - 1; ++i)
             {
                 dudy_discretized_central[i] = (u_star[i + 1] - u_star[i - 1]) / (2.0 * hy);
@@ -670,17 +671,16 @@ namespace udf
                 dwdy[i] = (turbu_omega_star[i + 1] - turbu_omega_star[i - 1]) / (2.0 * hy);
                 dudy_discretized_backward[i] = (u_star[i] - u_star[i - 1]) / hy;
             }
-            // B.C. near wall (i=0, central difference)
+            //** Part 2: near wall i=0 *
             dudy_discretized_central[0] = (u_star[1] + u_star[0]) / (2.0 * hy); // mirror B.C. u_star[-1] = -u_star[0]
             dkdy[0] = (k_star[1] - k_star[0]) / (2.0 * hy); // zero gradient, k_star[-1] = k_star[0]
             dwdy[0] = (turbu_omega_star[1] - turbu_omega_star[0]) / (2.0 * hy); //zero gradient, turbu_omega_star[-1] = turbu_omega[0]
             dudy_discretized_backward[0] = (u_star[0] + u_star[0]) / hy; // mirror B.C. u_star[-1] = -u_star[0]
-            // B.C. near P_outer (i=ny-1, central difference)
+            //** Part 3: near P i=ny-1 *
             dudy_discretized_central[ny - 1] = (u_nodeUM - u_star[ny - 2]) / (2.0 * hy);
             dkdy[ny - 1] = (k_nodeUM - k_star[ny - 2]) / (2.0 * hy);
             dwdy[ny - 1] = (w_nodeUM - turbu_omega_star[ny - 2]) / (2.0 * hy);
-            //** Correct *
-            dudy_discretized_backward[ny - 2] = (u_star[ny - 2] - u_p) / hy;
+            dudy_discretized_backward[ny - 1] = (u_star[ny - 1] - u_star[ny - 2]) / hy; //** No need for nodeUM *
             //** Transfer *
             vel_grad_nodeO = dudy_discretized_backward[ny - 1];
             //vel_grad_nodeO = vel_grad_p_outer;
