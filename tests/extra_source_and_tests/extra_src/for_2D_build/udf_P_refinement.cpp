@@ -508,8 +508,8 @@ namespace udf
         double Q_target, double k_grad_p_outer, double w_grad_p_outer, double& vel_nodeO, double& vel_nodeUM)
     {
         //------------------------------------------------¡ý Input parameters ¡ý------------------------------------------------
-        constexpr int ny = 5; // Manually determine
-
+        constexpr int ny = 10; // Manually determine
+        num_sub_node_ = 10; //** Temp *
         if (num_sub_node_ != ny)
         {
             std::cout << "Node number mismatch! Stop here." << std::endl;
@@ -535,7 +535,7 @@ namespace udf
         //** For 1D verification *
         bool output_detailed_info = true;
         int NF = 40;
-        int index = 152;
+        int index = 153;
 
         double flow_rate_target = Q_target;
         double utau = utau_init;
@@ -683,7 +683,7 @@ namespace udf
             dudy_discretized_backward[ny - 2] = (u_star[ny - 2] - u_p) / hy;
             //** Transfer *
             vel_grad_nodeO = dudy_discretized_backward[ny - 1];
-            vel_grad_nodeO = vel_grad_p_outer;
+            //vel_grad_nodeO = vel_grad_p_outer;
             //------------------------------------------------¡ü Calculate gradients of u, k, omega, Dk, Dw ¡ü------------------------------------------------
 
             //------------------------------------------------¡ý Calculate nut_star ¡ý------------------------------------------------
@@ -768,7 +768,8 @@ namespace udf
             d_u[last] = pressure_gradient_constant * hy * hy + nu_eff_last_plus_half * u_nodeUM;
             // solving
             double U_new[ny]{};
-            tdma5(a_u, b_u, c_u, d_u, U_new);
+            //tdma5(a_u, b_u, c_u, d_u, U_new);
+            tdma(ny, a_u, b_u, c_u, d_u, U_new);
             //-------------------------------------¡ü For velocity ¡ü-------------------------------------
 
             //-------------------------------------¡ý For turbulent kinetic energy ¡ý-------------------------------------
@@ -809,7 +810,8 @@ namespace udf
             d_k[last] = hy * hy * nut_star[last] * dudy_star[last] * dudy_star[last] + Dk_last_plus_half * k_nodeUM;
             // solving
             double K_new[ny]{};
-            tdma5(a_k, b_k, c_k, d_k, K_new);
+            //tdma5(a_k, b_k, c_k, d_k, K_new);
+            tdma(ny, a_k, b_k, c_k, d_k, K_new);
             // avoid negative value, K_new = max(K_new, k_min)
             double k_min = 1e-10;
             for (int i = 0; i < ny; ++i) {
@@ -854,7 +856,8 @@ namespace udf
             d_w[last] = hy * hy * (part_production_last + part_cross_diffusion[last]) + Dw_last_plus_half * w_nodeUM;
             // solving
             double Turbu_omega_new[ny]{};
-            tdma5(a_w, b_w, c_w, d_w, Turbu_omega_new);
+            //tdma5(a_w, b_w, c_w, d_w, Turbu_omega_new);
+            tdma(ny, a_w, b_w, c_w, d_w, Turbu_omega_new);
             // avoid negative value, Turbu_omega_new = max(Turbu_omega_new, omega_min)
             double omega_min = 1e-10;
             for (int i = 0; i < ny; ++i) {
@@ -956,10 +959,13 @@ namespace udf
 
         ///*
         //** This is a temporary treatment *
-        if (ny != 5)
+        if (!output_detailed_info)
         {
-            std::cout << "ny is not 5, currently not allowed! Stop here." << std::endl;
-            std::cin.get();
+            if (ny != 5)
+            {
+                std::cout << "ny is not 5, currently not allowed! Stop here." << std::endl;
+                std::cin.get();
+            }
         }
         Vec6d results = Vec6d::Zero();
         results[0] = utau;
@@ -1030,6 +1036,7 @@ namespace udf
         fout << "$current flow rate = " << flow_rate_current << "\n";
         fout << "$num_iter_out = " << num_iter_out << "\n";
         fout << "$u_nodeUM = " << u_nodeUM << "\n";
+        fout << "$y_nodeUM = " << (y[ny - 1] + hy) << "\n";
         fout << header_line << "\n";
 
         fout << std::scientific << std::setprecision(8);
