@@ -203,7 +203,7 @@ namespace udf
             //------------------------------------------------¡ý For test 1D analytical ¡ý------------------------------------------------
             //
             //-------------------------¡ý If input fix analytical value ¡ý-------------------------
-            if(0)
+            if(1)
             {
                 std::cout << "Fixed input value test starts." << std::endl;
                 //** Define outside values *
@@ -220,20 +220,9 @@ namespace udf
                 U_nodeO = 0.0;
                 U_nodeUM = 0.0;
                 //** Remember to activate output function inside if want to output K OMEGA NUT *
-                node_value_[index_i] = solve_1D_sublayer_Neumann(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
+                node_value_[index_i] = solve_1D_sublayer_constantPG(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
                     nut_outer, distance_to_wall, friction_vel_magnitude_outer, std::abs(flow_rate_local), dkdn_outer, dwdn_outer, U_nodeO, U_nodeUM);
 
-                //node_value_[index_i] = solve_1D_sublayer_Dirichlet(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
-                //    nut_outer, distance_to_wall, friction_vel_magnitude_outer, std::abs(flow_rate_local), dkdn_outer, dwdn_outer, U_nodeO, U_nodeUM);
-                //writeTecplotFromVec6dDirichlet(
-                //    node_value_[index_i],
-                //    U_nodeO,
-                //    U_nodeUM,
-                //    distance_to_wall,
-                //    num_sub_node_,
-                //    40,
-                //    122
-                //);
                 std::cout << "Fixed input value test ends, stop here." << std::endl;
                 std::cin.get();
             }
@@ -544,23 +533,21 @@ namespace udf
         double yplus_min = 0.01; //** To constrain min utau *
 
         //** For 1D verification *
-        bool output_detailed_info = false;
+        bool output_detailed_info = true;
         int NF = 40;
-        int index = 148;
+        int index = 151;
 
         double flow_rate_target = Q_target;
         double utau = utau_init;
         //------------------------------------------------¡ü Input parameters ¡ü------------------------------------------------
 
         //------------------------------------------------¡ý Node arrangement, for sublayer ¡ý------------------------------------------------
-        double hy = height_sublayer / double(ny); // distance from node U to P_outer is hy/2
+        double hy = height_sublayer / (double(ny) - 0.5); // distance from node U to P_outer is hy/2
         double y_p = 0.5 * hy;
         double y[ny];  //computational nodes
-        double dist_node_i_to_wall[ny]{};
         for (int i = 0; i < ny; ++i)
         {
             y[i] = y_p + i * hy;
-            dist_node_i_to_wall[i] = y[i];
         }
         double utau_min = yplus_min * nu / y_p;
         //------------------------------------------------¡ü Node arrangement, for sublayer ¡ü------------------------------------------------
@@ -594,16 +581,16 @@ namespace udf
         std::fill_n(turbu_omega_init_value, ny, turbu_omega_init);
         //------------------------------------------------¡ü Construct initial value ¡ü------------------------------------------------
 
-        //------------------------------------------------¡ý Calculate nodeO and nodeUM ¡ý------------------------------------------------
+        //------------------------------------------------¡ý Calculate nodeO and nodeUM, the vel_grad_from_SPH is used here only as initial value¡ý------------------------------------------------
         //** These values need tobe updated in each iteration *
         double u_nodeUM = std::max((u_init_value[ny - 1] + vel_grad_p_outer * hy), tiny);
         double k_nodeUM = std::max((k_init_value[ny - 1] + k_grad_p_outer * hy), tiny);
         double w_nodeUM = std::max((turbu_omega_init_value[ny - 1] + w_grad_p_outer * hy), tiny);
         double w_tilde_nodeUM = std::max(w_nodeUM, std_kw_C_lim_ * vel_grad_p_outer / std_kw_beta_star_5_); //** For calculating limiter of nut, assume vel_grad_p_outer = vel_grad_ndoeUM*
         double nut_nodeUM = k_nodeUM / (w_tilde_nodeUM + tiny);
-        double u_nodeO = std::max((u_init_value[ny - 1] + vel_grad_p_outer * 0.5 * hy), tiny);
-        double k_nodeO = std::max((k_init_value[ny - 1] + k_grad_p_outer * 0.5 * hy), tiny);
-        double w_nodeO = std::max((turbu_omega_init_value[ny - 1] + w_grad_p_outer * 0.5 * hy), tiny);
+        double u_nodeO = std::max(u_init_value[ny - 1] , tiny);
+        double k_nodeO = std::max(k_init_value[ny - 1] , tiny);
+        double w_nodeO = std::max(turbu_omega_init_value[ny - 1], tiny);
         double w_tilde_nodeO = std::max(w_nodeO, std_kw_C_lim_ * vel_grad_p_outer / std_kw_beta_star_5_);
         double nut_nodeO = k_nodeO / (w_tilde_nodeO + tiny);
         //------------------------------------------------¡ü Calculate nodeO and nodeUM ¡ü------------------------------------------------
@@ -626,6 +613,8 @@ namespace udf
         int last = 0;
         int first_index = 0;
         double flow_rate_current = 0.0;
+        double dudy_discretized_backward[ny]{};
+        double vel_grad_nodeO = 0.0;
         while (differ > convergence_criteria_outer)
         {
             //------------------------------------------------¡ý Update the star values ¡ý------------------------------------------------
@@ -644,17 +633,17 @@ namespace udf
                 //-------------------------¡ü Update P value ¡ü-------------------------
                 //
                 //-------------------------¡ý Calculate nodeO and nodeUM ¡ý-------------------------
-                u_nodeUM = std::max((u_star[ny - 1] + vel_grad_p_outer * hy), tiny);
+                u_nodeUM = std::max((u_star[ny - 1] + vel_grad_nodeO * hy), tiny);
                 //u_nodeUM = 3.277959e-1;
                 k_nodeUM = std::max((k_star[ny - 1] + k_grad_p_outer * hy), tiny);
                 //k_nodeUM = 1.495287e-3;
                 w_nodeUM = std::max((turbu_omega_star[ny - 1] + w_grad_p_outer * hy), tiny);
-                w_tilde_nodeUM = std::max(w_nodeUM, std_kw_C_lim_ * vel_grad_p_outer / std_kw_beta_star_5_); //** For calculating limiter of nut, assume vel_grad_p_outer = vel_grad_ndoeUM*
+                w_tilde_nodeUM = std::max(w_nodeUM, std_kw_C_lim_ * vel_grad_nodeO / std_kw_beta_star_5_); //** For calculating limiter of nut, assume vel_grad_p_outer = vel_grad_ndoeUM*
                 nut_nodeUM = k_nodeUM / (w_tilde_nodeUM + tiny);
-                u_nodeO = std::max((u_star[ny - 1] + vel_grad_p_outer * 0.5 * hy), tiny);
-                k_nodeO = std::max((k_star[ny - 1] + k_grad_p_outer * 0.5 * hy), tiny);
-                w_nodeO = std::max((turbu_omega_star[ny - 1] + w_grad_p_outer * 0.5 * hy), tiny);
-                w_tilde_nodeO = std::max(w_nodeO, std_kw_C_lim_ * vel_grad_p_outer / std_kw_beta_star_5_);
+                u_nodeO = std::max((u_star[ny - 1]), tiny);
+                k_nodeO = std::max((k_star[ny - 1]), tiny);
+                w_nodeO = std::max((turbu_omega_star[ny - 1]), tiny);
+                w_tilde_nodeO = std::max(w_nodeO, std_kw_C_lim_ * vel_grad_nodeO / std_kw_beta_star_5_);
                 nut_nodeO = k_nodeO / (w_tilde_nodeO + tiny);
                 //-------------------------¡ü Calculate nodeO and nodeUM ¡ü-------------------------
             }
@@ -663,16 +652,9 @@ namespace udf
             //------------------------------------------------¡ý Calculate Dk, Dw, C_su ¡ý------------------------------------------------
             double diffusion_coefficient_k[ny]{};
             double diffusion_coefficient_turbu_omega[ny]{};
-            //double C_su[ny]{};
-
-            //double tau_over_rho_outer = (nu + nut_nodeO) * vel_grad_p_outer;  //** Here, nodeO value is used not nodeUM, since this is from anlytical *
-            //double vel_grad_p_for_momentum_iterated = (u_p_outer - u_star[ny - 1]) / (hy / 2.0);
-            //double tau_over_rho_outer = (nu + nut_nodeO) * vel_grad_p_for_momentum_iterated;  //** Here, nodeO value is used not nodeUM, since this is from anlytical *
-
             for (int i = 0; i < ny; ++i) {
                 diffusion_coefficient_k[i] = nu + std_kw_sigma_star_ * k_star[i] / (turbu_omega_star[i] + tiny);
                 diffusion_coefficient_turbu_omega[i] = nu + std_kw_sigma_ * k_star[i] / (turbu_omega_star[i] + tiny);
-                //C_su[i] = (utau * utau - tau_over_rho_outer) * (1.0 - y[i] / height_sublayer) + tau_over_rho_outer;
             }
             //------------------------------------------------¡ü Calculate Dk, Dw  ¡ü------------------------------------------------
 
@@ -686,15 +668,22 @@ namespace udf
                 dudy_discretized_central[i] = (u_star[i + 1] - u_star[i - 1]) / (2.0 * hy);
                 dkdy[i] = (k_star[i + 1] - k_star[i - 1]) / (2.0 * hy);
                 dwdy[i] = (turbu_omega_star[i + 1] - turbu_omega_star[i - 1]) / (2.0 * hy);
+                dudy_discretized_backward[i] = (u_star[i] - u_star[i - 1]) / hy;
             }
             // B.C. near wall (i=0, central difference)
             dudy_discretized_central[0] = (u_star[1] + u_star[0]) / (2.0 * hy); // mirror B.C. u_star[-1] = -u_star[0]
             dkdy[0] = (k_star[1] - k_star[0]) / (2.0 * hy); // zero gradient, k_star[-1] = k_star[0]
             dwdy[0] = (turbu_omega_star[1] - turbu_omega_star[0]) / (2.0 * hy); //zero gradient, turbu_omega_star[-1] = turbu_omega[0]
+            dudy_discretized_backward[0] = (u_star[0] + u_star[0]) / hy; // mirror B.C. u_star[-1] = -u_star[0]
             // B.C. near P_outer (i=ny-1, central difference)
             dudy_discretized_central[ny - 1] = (u_nodeUM - u_star[ny - 2]) / (2.0 * hy);
             dkdy[ny - 1] = (k_nodeUM - k_star[ny - 2]) / (2.0 * hy);
             dwdy[ny - 1] = (w_nodeUM - turbu_omega_star[ny - 2]) / (2.0 * hy);
+            //** Correct *
+            dudy_discretized_backward[ny - 2] = (u_star[ny - 2] - u_p) / hy;
+            //** Transfer *
+            vel_grad_nodeO = dudy_discretized_backward[ny - 1];
+            //vel_grad_nodeO = vel_grad_p_outer;
             //------------------------------------------------¡ü Calculate gradients of u, k, omega, Dk, Dw ¡ü------------------------------------------------
 
             //------------------------------------------------¡ý Calculate nut_star ¡ý------------------------------------------------
@@ -743,17 +732,11 @@ namespace udf
             double c_u[ny]{};
             double d_u[ny]{};
 
-            //-------------------------------------¡ý IF fully implicity, dpdx can be diffrent ¡ý-------------------------------------
-            double pressure_gradient_constant_part[ny]{};
-            double additional_coefficient_iminus1[ny]{};
-            double additional_coefficient_iplus1[ny]{};
-            for (int i = 0; i < ny; ++i) {
-                pressure_gradient_constant_part[i] = (utau * utau) / dist_node_i_to_wall[i];
-                additional_coefficient_iminus1[i] = -hy * (nu + nut_star[i]) / dist_node_i_to_wall[i] / (2.0);
-                additional_coefficient_iplus1[i] = hy * (nu + nut_star[i]) / dist_node_i_to_wall[i] / (2.0);
-            }
-            //-------------------------------------¡ü IF fully implicity, dpdx can be diffrent ¡ü-------------------------------------
-
+            //-------------------------------------¡ý dpdx constant ¡ý-------------------------------------
+            double tau_nodeO = (nu + nut_nodeO) * vel_grad_nodeO;
+            double tau_wall = utau * utau;
+            double pressure_gradient_constant = (tau_wall - tau_nodeO) / height_sublayer;
+            //-------------------------------------¡ü dpdx constant ¡ü-------------------------------------
             // inner node
             for (int i = 1; i < ny - 1; ++i)
             {
@@ -762,10 +745,10 @@ namespace udf
                 double nu_eff_i_minus = nu + nut_star[i - 1];
                 double nu_eff_i_plus_half = 2.0 * nu_eff_i_plus * nu_eff_i / std::max((nu_eff_i_plus + nu_eff_i), tiny);
                 double nu_eff_i_minus_half = 2.0 * nu_eff_i_minus * nu_eff_i / std::max((nu_eff_i_minus + nu_eff_i), tiny);
-                a_u[i] = -nu_eff_i_minus_half + additional_coefficient_iminus1[i];
+                a_u[i] = -nu_eff_i_minus_half;
                 b_u[i] = std::max((nu_eff_i_plus_half + nu_eff_i_minus_half), tiny);
-                c_u[i] = -nu_eff_i_plus_half + additional_coefficient_iplus1[i];
-                d_u[i] = pressure_gradient_constant_part[i] * hy * hy;
+                c_u[i] = -nu_eff_i_plus_half;
+                d_u[i] = pressure_gradient_constant * hy * hy;
             }
             // first node
             a_u[0] = 0.0;
@@ -779,10 +762,10 @@ namespace udf
             double nu_eff_last_minus = nu + nut_star[last - 1];
             double nu_eff_last_plus_half = 2.0 * nu_eff_last_plus * nu_eff_last / std::max((nu_eff_last_plus + nu_eff_last), tiny);
             double nu_eff_last_minus_half = 2.0 * nu_eff_last_minus * nu_eff_last / std::max((nu_eff_last_minus + nu_eff_last), tiny);
-            a_u[last] = -nu_eff_last_minus_half + additional_coefficient_iminus1[last];
+            a_u[last] = -nu_eff_last_minus_half;
             b_u[last] = std::max((nu_eff_last_plus_half + nu_eff_last_minus_half), tiny);
             c_u[last] = 0.0;
-            d_u[last] = pressure_gradient_constant_part[last] * hy * hy + (nu_eff_last_plus_half - additional_coefficient_iplus1[last]) * u_nodeUM;
+            d_u[last] = pressure_gradient_constant * hy * hy + nu_eff_last_plus_half * u_nodeUM;
             // solving
             double U_new[ny]{};
             tdma5(a_u, b_u, c_u, d_u, U_new);
@@ -896,7 +879,7 @@ namespace udf
 
             //------------------------------------------------¡ý Check and update flow rate ¡ý------------------------------------------------
             flow_rate_current = std::accumulate(U_new, U_new + ny, 0.0) * hy;
-            //flow_rate_current -= U_new[ny-1] * hy * 0.5;
+            flow_rate_current -= U_new[ny-1] * hy * 0.5;
 
             // flow control
             double ratio = flow_rate_target / (flow_rate_current + 1e-12);
@@ -1046,6 +1029,7 @@ namespace udf
         fout << "$friction velocity = " << utau << "\n";
         fout << "$current flow rate = " << flow_rate_current << "\n";
         fout << "$num_iter_out = " << num_iter_out << "\n";
+        fout << "u_nodeUM = " << u_nodeUM << "\n";
         fout << header_line << "\n";
 
         fout << std::scientific << std::setprecision(8);
