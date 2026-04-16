@@ -535,7 +535,7 @@ namespace udf
         //** For 1D verification *
         bool output_detailed_info = true;
         int NF = 40;
-        int index = 154;
+        int index = 155;
 
         double flow_rate_target = Q_target;
         double utau = utau_init;
@@ -682,7 +682,7 @@ namespace udf
             dwdy[ny - 1] = (w_nodeUM - turbu_omega_star[ny - 2]) / (2.0 * hy);
             dudy_discretized_backward[ny - 1] = (u_star[ny - 1] - u_star[ny - 2]) / hy; //** No need for nodeUM *
             //** Transfer *
-            vel_grad_nodeO = dudy_discretized_backward[ny - 1];
+            vel_grad_nodeO = dudy_discretized_central[ny - 1];
             //vel_grad_nodeO = vel_grad_p_outer;
             //------------------------------------------------¡ü Calculate gradients of u, k, omega, Dk, Dw ¡ü------------------------------------------------
 
