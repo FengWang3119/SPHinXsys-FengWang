@@ -231,7 +231,7 @@ namespace udf
             //-------------------------¡ü If input fix analytical value ¡ü-------------------------
 
             //-------------------------¡ý If dynamic test ¡ý-------------------------
-            if (0)
+            if (1)
             {
                 std::cout << "Dynamic test starts." << std::endl;
                 //------¡ý Mimic SPH average value ¡ý------
@@ -279,19 +279,22 @@ namespace udf
                     
                     /*node_value_[index_i] = solve_1D_sublayer_Neumann(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
                         nut_outer, distance_to_wall, friction_vel_magnitude_outer, std::abs(flow_rate_local), dkdn_outer, dwdn_outer, U_nodeO, U_nodeUM);*/
-                    node_value_[index_i] = solve_1D_sublayer_Dirichlet(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
-                        nut_outer, distance_to_wall, friction_vel_magnitude_outer, std::abs(flow_rate_local), dkdn_outer, dwdn_outer, U_nodeO, U_nodeUM);
+                    //node_value_[index_i] = solve_1D_sublayer_Dirichlet(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
+                    //    nut_outer, distance_to_wall, friction_vel_magnitude_outer, std::abs(flow_rate_local), dkdn_outer, dwdn_outer, U_nodeO, U_nodeUM);
+                    velocity_gradient_nodeO = 0.0;
+                    node_value_[index_i] = solve_1D_sublayer_constantPG(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
+                        nut_outer, distance_to_wall, friction_vel_magnitude_outer, std::abs(flow_rate_local), dkdn_outer, dwdn_outer, U_nodeO, U_nodeUM, velocity_gradient_nodeO);
 
                     residue = std::abs(flow_rate_local - flow_rate_local_prior);
                     std::cout << "residue =" << residue << std::endl;
                     flow_rate_local_prior = flow_rate_local;
                     Real relax_factor = 0.3;
-                    //vel_nodeO_i_prior = (1.0 - relax_factor) * vel_nodeO_i_prior + relax_factor * U_nodeO;
+                    vel_nodeO_i_prior = (1.0 - relax_factor) * vel_nodeO_i_prior + relax_factor * U_nodeO;
 
-                    double hy = distance_to_wall / (double(num_sub_node_) + 0.5); // distance from node U to P_outer is hy, hence with a 0.5
-                    double y_p = 0.5 * hy;
-                    Real vel_grad_nodeP = node_value_[index_i][1] / y_p;
-                    dudn_outer = (1.0 - relax_factor) * dudn_outer + relax_factor * vel_grad_nodeP;
+                    //double hy = distance_to_wall / (double(num_sub_node_) + 0.5); // distance from node U to P_outer is hy, hence with a 0.5
+                    //double y_p = 0.5 * hy;
+                    //Real vel_grad_nodeP = node_value_[index_i][1] / y_p;
+                    //dudn_outer = (1.0 - relax_factor) * dudn_outer + relax_factor * vel_grad_nodeP;
 
                 }
 
@@ -305,23 +308,14 @@ namespace udf
                 std::cout << "U_nodeO=" << U_nodeO << std::endl;
                 std::cout << "U_nodeUM=" << U_nodeUM << std::endl;
 
-                /*writeTecplotFromVec6d(
+                writeTecplotFromVec6dConstantPG(
                     node_value_[index_i],
                     U_nodeO,
                     U_nodeUM,
                     distance_to_wall,
                     num_sub_node_,
                     40,
-                    80
-                );*/
-                writeTecplotFromVec6dDirichlet(
-                    node_value_[index_i],
-                    U_nodeO,
-                    U_nodeUM,
-                    distance_to_wall,
-                    num_sub_node_,
-                    40,
-                    92
+                    158
                 );
 
                 std::cout << "Dynamic test ends, stop here." << std::endl;
@@ -421,13 +415,35 @@ namespace udf
             }
             else if (type_sublayer_solver == 3) //** If go ConstantPG Path *
             {
-                flow_rate_local = get_loacal_flow_rate(u_outer * fluid_particle_spacing_, dudn_outer, vel_nodeO_i_prior, fluid_particle_spacing_); //** This is for better testing *
+                if (1) //** Whether probe iteration *
+                {
+                    while (residue > 1.0e-6)
+                    {
+                        flow_rate_local = get_loacal_flow_rate(averaged_vel_over_P * fluid_particle_spacing_, dudn_outer, vel_nodeO_i_prior, fluid_particle_spacing_); //** This is for better testing *
 
-                U_nodeO = 0.0;
-                U_nodeUM = 0.0;
-                velocity_gradient_nodeO = 0.0;
-                node_value_[index_i] = solve_1D_sublayer_constantPG(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
-                    nut_outer, distance_to_wall, friction_vel_magnitude_outer, std::abs(flow_rate_local), dkdn_outer, dwdn_outer, U_nodeO, U_nodeUM, velocity_gradient_nodeO);
+                        U_nodeO = 0.0;
+                        U_nodeUM = 0.0;
+                        velocity_gradient_nodeO = 0.0;
+                        node_value_[index_i] = solve_1D_sublayer_constantPG(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
+                            nut_outer, distance_to_wall, friction_vel_magnitude_outer, std::abs(flow_rate_local), dkdn_outer, dwdn_outer, U_nodeO, U_nodeUM, velocity_gradient_nodeO);
+
+                        residue = std::abs(flow_rate_local - flow_rate_local_prior);
+                        //std::cout << "residue =" << residue << std::endl;
+                        flow_rate_local_prior = flow_rate_local;
+                        Real relax_factor = 0.3;
+                        vel_nodeO_i_prior = (1.0 - relax_factor) * vel_nodeO_i_prior + relax_factor * U_nodeO;
+                    }
+                }
+                else
+                {
+                    flow_rate_local = get_loacal_flow_rate(u_outer * fluid_particle_spacing_, dudn_outer, vel_nodeO_i_prior, fluid_particle_spacing_); //** This is for better testing *
+
+                    U_nodeO = 0.0;
+                    U_nodeUM = 0.0;
+                    velocity_gradient_nodeO = 0.0;
+                    node_value_[index_i] = solve_1D_sublayer_constantPG(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
+                        nut_outer, distance_to_wall, friction_vel_magnitude_outer, std::abs(flow_rate_local), dkdn_outer, dwdn_outer, U_nodeO, U_nodeUM, velocity_gradient_nodeO);
+                }
             }
 
             //** Check results *

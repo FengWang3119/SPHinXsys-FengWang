@@ -106,6 +106,66 @@ namespace udf
             Real norm_sqr = vec.dot(vec) - dot_un * dot_un;   
             return std::sqrt(std::max(0.0, norm_sqr));          
         }
+        void writeTecplotFromVec6dConstantPG(
+            const Vec6d& node_val,   // node_value_[index_i]
+            double U_nodeO,
+            double U_nodeUM,
+            double distance_to_wall,
+            int num_sub_node_,       // = 5
+            int NF,
+            int index
+        )
+        {
+            int ny = num_sub_node_; // 5
+            // ================== 提取数据 ==================
+            double utau = node_val[0];
+            std::vector<double> U;
+            std::vector<double> y;
+            U.reserve(ny + 2);
+            y.reserve(ny + 2);
+            // ================== 构造 y ==================
+            double hy = distance_to_wall / (double(num_sub_node_) - 0.5);
+            double y_p = 0.5 * hy;
+            // ===== 原有5个节点 =====
+            for (int i = 0; i < ny; ++i) {
+                y.push_back(y_p + i * hy);
+                U.push_back(node_val[i + 1]);
+            }
+            // ===== nodeO =====
+            double y_nodeO = y.back() + 0.0 * hy;
+            y.push_back(y_nodeO);
+            U.push_back(U_nodeO);
+            // ===== nodeUM =====
+            double y_nodeUM = y.back() + 1.0 * hy;  
+            y.push_back(y_nodeUM);
+            U.push_back(U_nodeUM);
+            int n_total = y.size(); // = 7
+            std::vector<double> K(n_total, 0.0);
+            std::vector<double> OMEGA(n_total, 0.0);
+            std::vector<double> NUT(n_total, 0.0);
+            std::string header_line = "ZONE T=\"SPH(1D)-NODE NF="
+                + std::to_string(NF)
+                + " ("
+                + std::to_string(index)
+                + ")\"";
+            std::string filename = "pipe_node_nf"
+                + std::to_string(NF) + "_"
+                + std::to_string(index) + ".dat";
+            std::ofstream fout(filename);
+            fout << "$VARIABLES = \"Y\", \"U\", \"K\", \"OMEGA\", \"NUT(k/omega)\"\n";
+            fout << "$friction velocity = " << utau << "\n";
+            fout << header_line << "\n";
+            fout << std::scientific << std::setprecision(8);
+            for (int i = 0; i < n_total; ++i) {
+                fout << y[i] << " "
+                    << U[i] << " "
+                    << K[i] << " "
+                    << OMEGA[i] << " "
+                    << NUT[i] << "\n";
+            }
+            fout.close();
+            std::cout << "Tecplot (with nodeO & nodeUM) created: " << filename << std::endl;
+        }
 
         void writeTecplotFromVec6d(
             const Vec6d& node_val,   // node_value_[index_i]
