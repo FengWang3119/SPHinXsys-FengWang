@@ -419,9 +419,10 @@ namespace udf
                 if (1) //** Whether probe iteration *
                 {
                     vel_nodeO_i_prior = u_outer;
-                    while (residue > 1.0e-6)
+                    Real velocity_gradient_nodeO_relaxed = dudn_outer;
+                    while (residue > 1.0e-3)
                     {
-                        flow_rate_local = get_loacal_flow_rate(averaged_vel_over_P * fluid_particle_spacing_, dudn_outer, vel_nodeO_i_prior, fluid_particle_spacing_); //** This is for better testing *
+                        flow_rate_local = get_loacal_flow_rate(averaged_vel_over_P * fluid_particle_spacing_, velocity_gradient_nodeO_relaxed, vel_nodeO_i_prior, fluid_particle_spacing_); //** This is for better testing *
 
                         U_nodeO = 0.0;
                         U_nodeUM = 0.0;
@@ -434,6 +435,7 @@ namespace udf
                         flow_rate_local_prior = flow_rate_local;
                         Real relax_factor = 0.3;
                         vel_nodeO_i_prior = (1.0 - relax_factor) * vel_nodeO_i_prior + relax_factor * U_nodeO;
+                        velocity_gradient_nodeO_relaxed = (1.0 - relax_factor) * velocity_gradient_nodeO_relaxed + relax_factor * velocity_gradient_nodeO;
                         num_iter_out++;
                         
                         int num_iter_out_limit = 100000;
@@ -445,8 +447,8 @@ namespace udf
                             std::cout << "flow_rate_local_prior = " << flow_rate_local_prior
                                 << ", flow_rate_local = " << flow_rate_local << std::endl;
                             std::cout << "vel_nodeO_i_prior = " << vel_nodeO_i_prior << std::endl;
+                            std::cout << "velocity_gradient_nodeO_relaxed = " << velocity_gradient_nodeO_relaxed << std::endl;
                             std::cout << "------------" << std::endl;
-                            std::cin.get();
                             if (num_iter_out > 1.5 * num_iter_out_limit)
                             {
                                 std::cout << "Too many iterations, stop here!" << std::endl;
