@@ -231,7 +231,7 @@ namespace udf
             //-------------------------¡ü If input fix analytical value ¡ü-------------------------
 
             //-------------------------¡ý If dynamic test ¡ý-------------------------
-            if (1)
+            if (0)
             {
                 std::cout << "Dynamic test starts." << std::endl;
                 //------¡ý Mimic SPH average value ¡ý------
@@ -331,6 +331,7 @@ namespace udf
             Real flow_rate_local_prior = 0.0;
             Real residue = 1.0e3;
             Real averaged_vel_over_P = u_outer;
+            int num_iter_out = 0;
             
             int type_sublayer_solver = 3; //** 1:Nuemann 2:Dirichlet 3:contantPG *
 
@@ -432,6 +433,25 @@ namespace udf
                         flow_rate_local_prior = flow_rate_local;
                         Real relax_factor = 0.3;
                         vel_nodeO_i_prior = (1.0 - relax_factor) * vel_nodeO_i_prior + relax_factor * U_nodeO;
+                        num_iter_out++;
+                        
+                        int num_iter_out_limit = 100000;
+                        if (num_iter_out > num_iter_out_limit)
+                        {
+                            std::cout << "num_iter_out = " << num_iter_out << std::endl;
+                            std::cout << "Hard to achieve convergence in probe iteration loop!" << std::endl;
+                            std::cout << "residue: " << residue << std::endl;
+                            std::cout << "flow_rate_local_prior = " << flow_rate_local_prior
+                                << ", flow_rate_local = " << flow_rate_local << std::endl;
+                            std::cout << "vel_nodeO_i_prior = " << vel_nodeO_i_prior << std::endl;
+                            std::cout << "------------" << std::endl;
+                            std::cin.get();
+                            if (num_iter_out > 1.5 * num_iter_out_limit)
+                            {
+                                std::cout << "Too many iterations, stop here!" << std::endl;
+                                std::cin.get();
+                            }
+                        }
                     }
                 }
                 else
