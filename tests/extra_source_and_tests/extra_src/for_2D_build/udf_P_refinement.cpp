@@ -494,7 +494,7 @@ namespace udf
             }
 
             //** Extract results *
-            friction_velocity_from_sublayer_[index_i] = node_value_[index_i][0];
+            friction_velocity_from_sublayer_[index_i] = 0.8 * node_value_[index_i][0];
             vel_nodeO_[index_i] = U_nodeO;
             vel_nodeUM_[index_i] = U_nodeUM;
 
