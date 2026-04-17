@@ -418,6 +418,7 @@ namespace udf
             {
                 if (1) //** Whether probe iteration *
                 {
+                    vel_nodeO_i_prior = u_outer;
                     while (residue > 1.0e-6)
                     {
                         flow_rate_local = get_loacal_flow_rate(averaged_vel_over_P * fluid_particle_spacing_, dudn_outer, vel_nodeO_i_prior, fluid_particle_spacing_); //** This is for better testing *
@@ -494,7 +495,7 @@ namespace udf
             }
 
             //** Extract results *
-            friction_velocity_from_sublayer_[index_i] = 0.8 * node_value_[index_i][0];
+            friction_velocity_from_sublayer_[index_i] = node_value_[index_i][0];
             vel_nodeO_[index_i] = U_nodeO;
             vel_nodeUM_[index_i] = U_nodeUM;
 
