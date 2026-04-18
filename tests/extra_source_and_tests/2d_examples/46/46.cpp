@@ -6,7 +6,7 @@ int main(int ac, char *av[])
     /**
      * @brief Build up -- a SPHSystem --
      */
-    SPHSystem sph_system(system_domain_bounds, resolution_ref, 1);
+    SPHSystem sph_system(system_domain_bounds, resolution_ref);
 
     /** Restart. */
     bool is_write_restart_file = false;

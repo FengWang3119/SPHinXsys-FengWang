@@ -76,6 +76,9 @@ namespace udf
         virtual ~P_refinement(){};
 
         void update(size_t index_i, Real dt = 0.0);
+        Vec6d solve_1D_sublayer_constantPG2(double kinematic_viscosity, double u_p_outer, double k_p_outer,
+            double w_p_outer, double vel_grad_p_outer, double nut_p_outer, double h_sublayer,
+            double utau_outer, double Q_target, double k_grad_p_outer, double w_grad_p_outer, double& vel_nodeO, double& vel_nodeUM, double& vel_grad_nodeO_);
         Vec6d solve_1D_sublayer_constantPG(double kinematic_viscosity, double u_p_outer, double k_p_outer,
             double w_p_outer, double vel_grad_p_outer, double nut_p_outer, double h_sublayer,
             double utau_outer, double Q_target, double k_grad_p_outer, double w_grad_p_outer, double& vel_nodeO, double& vel_nodeUM, double& vel_grad_nodeO_);
