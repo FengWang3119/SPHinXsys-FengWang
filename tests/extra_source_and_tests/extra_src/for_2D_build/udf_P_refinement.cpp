@@ -132,6 +132,7 @@ namespace udf
         Real sum_node_vel_difference = 0.0;
         Real vel_nodeO_i_prior = 0.0;
         Real dUdn_P_nodeU_prior = 0.0;
+        Real velocity_gradient_nodeO_relaxed = 0.0;
         if (is_near_wall_P1_[index_i] == 1)
         {
             Vec6d node_value_i_prior = node_value_[index_i];
@@ -231,7 +232,7 @@ namespace udf
             //-------------------------¡ü If input fix analytical value ¡ü-------------------------
 
             //-------------------------¡ý If dynamic test ¡ý-------------------------
-            if (0)
+            if (1)
             {
                 std::cout << "Dynamic test starts." << std::endl;
                 //------¡ý Mimic SPH average value ¡ý------
@@ -270,9 +271,10 @@ namespace udf
                 dkdn_outer = analytical_k_grad_P_inner;
                 dwdn_outer = analytical_w_grad_P_inner;
 
-                while (residue > 1.0e-6)
+                velocity_gradient_nodeO_relaxed = dudn_outer;
+                while (residue > 1.0e-3)
                 {
-                    flow_rate_local = get_loacal_flow_rate(analytical_flow_rate_whole_PS_to_Wall, dudn_outer, vel_nodeO_i_prior, fluid_particle_spacing_);
+                    flow_rate_local = get_loacal_flow_rate(analytical_flow_rate_whole_PS_to_Wall, velocity_gradient_nodeO_relaxed, vel_nodeO_i_prior, fluid_particle_spacing_);
 
                     U_nodeO = 0.0;
                     U_nodeUM = 0.0;
@@ -290,6 +292,7 @@ namespace udf
                     flow_rate_local_prior = flow_rate_local;
                     Real relax_factor = 0.3;
                     vel_nodeO_i_prior = (1.0 - relax_factor) * vel_nodeO_i_prior + relax_factor * U_nodeO;
+                    velocity_gradient_nodeO_relaxed = (1.0 - relax_factor) * velocity_gradient_nodeO_relaxed + relax_factor * velocity_gradient_nodeO;
 
                     //double hy = distance_to_wall / (double(num_sub_node_) + 0.5); // distance from node U to P_outer is hy, hence with a 0.5
                     //double y_p = 0.5 * hy;
@@ -315,7 +318,7 @@ namespace udf
                     distance_to_wall,
                     num_sub_node_,
                     40,
-                    158
+                    163
                 );
 
                 std::cout << "Dynamic test ends, stop here." << std::endl;
@@ -419,7 +422,7 @@ namespace udf
                 if (1) //** Whether probe iteration *
                 {
                     vel_nodeO_i_prior = u_outer;
-                    Real velocity_gradient_nodeO_relaxed = dudn_outer;
+                    velocity_gradient_nodeO_relaxed = dudn_outer;
                     while (residue > 1.0e-3)
                     {
                         flow_rate_local = get_loacal_flow_rate(averaged_vel_over_P * fluid_particle_spacing_, velocity_gradient_nodeO_relaxed, vel_nodeO_i_prior, fluid_particle_spacing_); //** This is for better testing *
