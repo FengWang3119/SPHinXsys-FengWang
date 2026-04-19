@@ -223,7 +223,7 @@ namespace udf
                 U_nodeUM = 0.0;
                 velocity_gradient_nodeO = 0.0;
                 //** Remember to activate output function inside if want to output K OMEGA NUT *
-                node_value_[index_i] = solve_1D_sublayer_constantPG(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
+                node_value_[index_i] = solve_1D_sublayer_constantPG2(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
                     nut_outer, distance_to_wall, friction_vel_magnitude_outer, std::abs(flow_rate_local), dkdn_outer, dwdn_outer, U_nodeO, U_nodeUM, velocity_gradient_nodeO);
 
                 std::cout << "Fixed input value test ends, stop here." << std::endl;
@@ -272,7 +272,7 @@ namespace udf
                 dwdn_outer = analytical_w_grad_P_inner;
 
                 velocity_gradient_nodeO_relaxed = dudn_outer;
-                while (residue > 1.0e-3)
+                while (residue > 1.0e-6)
                 {
                     flow_rate_local = get_loacal_flow_rate(analytical_flow_rate_whole_PS_to_Wall, velocity_gradient_nodeO_relaxed, vel_nodeO_i_prior, fluid_particle_spacing_);
 
@@ -284,7 +284,7 @@ namespace udf
                     //node_value_[index_i] = solve_1D_sublayer_Dirichlet(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
                     //    nut_outer, distance_to_wall, friction_vel_magnitude_outer, std::abs(flow_rate_local), dkdn_outer, dwdn_outer, U_nodeO, U_nodeUM);
                     velocity_gradient_nodeO = 0.0;
-                    node_value_[index_i] = solve_1D_sublayer_constantPG(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
+                    node_value_[index_i] = solve_1D_sublayer_constantPG2(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
                         nut_outer, distance_to_wall, friction_vel_magnitude_outer, std::abs(flow_rate_local), dkdn_outer, dwdn_outer, U_nodeO, U_nodeUM, velocity_gradient_nodeO);
 
                     residue = std::abs(flow_rate_local - flow_rate_local_prior);
@@ -311,14 +311,14 @@ namespace udf
                 std::cout << "U_nodeO=" << U_nodeO << std::endl;
                 std::cout << "U_nodeUM=" << U_nodeUM << std::endl;
 
-                writeTecplotFromVec6dConstantPG(
+                writeTecplotFromVec6dDirichlet(
                     node_value_[index_i],
                     U_nodeO,
                     U_nodeUM,
                     distance_to_wall,
                     num_sub_node_,
                     40,
-                    163
+                    164
                 );
 
                 std::cout << "Dynamic test ends, stop here." << std::endl;
@@ -430,7 +430,7 @@ namespace udf
                         U_nodeO = 0.0;
                         U_nodeUM = 0.0;
                         velocity_gradient_nodeO = 0.0;
-                        node_value_[index_i] = solve_1D_sublayer_constantPG(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
+                        node_value_[index_i] = solve_1D_sublayer_constantPG2(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
                             nut_outer, distance_to_wall, friction_vel_magnitude_outer, std::abs(flow_rate_local), dkdn_outer, dwdn_outer, U_nodeO, U_nodeUM, velocity_gradient_nodeO);
 
                         residue = std::abs(flow_rate_local - flow_rate_local_prior);
@@ -596,14 +596,14 @@ namespace udf
         //** For 1D verification *
         bool output_detailed_info = false;
         int NF = 40;
-        int index = 156;
+        int index = 164;
 
         double flow_rate_target = Q_target;
         double utau = utau_init;
         //------------------------------------------------¡ü Input parameters ¡ü------------------------------------------------
 
         //------------------------------------------------¡ý Node arrangement, for sublayer ¡ý------------------------------------------------
-        double hy = height_sublayer / (double(ny) - 0.5); // distance from node U to P_outer is hy/2
+        double hy = height_sublayer / (double(ny) + 0.5); // distance from node U to P_outer is hy/2
         double y_p = 0.5 * hy;
         double y[ny];  //computational nodes
         for (int i = 0; i < ny; ++i)
@@ -649,9 +649,9 @@ namespace udf
         double w_nodeUM = std::max((turbu_omega_init_value[ny - 1] + w_grad_p_outer * hy), tiny);
         double w_tilde_nodeUM = std::max(w_nodeUM, std_kw_C_lim_ * vel_grad_p_outer / std_kw_beta_star_5_); //** For calculating limiter of nut, assume vel_grad_p_outer = vel_grad_ndoeUM*
         double nut_nodeUM = k_nodeUM / (w_tilde_nodeUM + tiny);
-        double u_nodeO = std::max(u_init_value[ny - 1], tiny);
-        double k_nodeO = std::max(k_init_value[ny - 1], tiny);
-        double w_nodeO = std::max(turbu_omega_init_value[ny - 1], tiny);
+        double u_nodeO = std::max(u_nodeUM, tiny);
+        double k_nodeO = std::max(k_nodeUM, tiny);
+        double w_nodeO = std::max(w_nodeUM, tiny);
         double w_tilde_nodeO = std::max(w_nodeO, std_kw_C_lim_ * vel_grad_p_outer / std_kw_beta_star_5_);
         double nut_nodeO = k_nodeO / (w_tilde_nodeO + tiny);
         //------------------------------------------------¡ü Calculate nodeO and nodeUM ¡ü------------------------------------------------
@@ -698,11 +698,11 @@ namespace udf
                 k_nodeUM = std::max((k_star[ny - 1] + k_grad_p_outer * hy), tiny);
                 //k_nodeUM = 1.495287e-3;
                 w_nodeUM = std::max((turbu_omega_star[ny - 1] + w_grad_p_outer * hy), tiny);
-                w_tilde_nodeUM = std::max(w_nodeUM, std_kw_C_lim_ * vel_grad_nodeO / std_kw_beta_star_5_); //** For calculating limiter of nut, assume vel_grad_p_outer = vel_grad_ndoeUM*
+                w_tilde_nodeUM = std::max(w_nodeUM, std_kw_C_lim_ * vel_grad_nodeO / std_kw_beta_star_5_); 
                 nut_nodeUM = k_nodeUM / (w_tilde_nodeUM + tiny);
-                u_nodeO = std::max((u_star[ny - 1]), tiny);
-                k_nodeO = std::max((k_star[ny - 1]), tiny);
-                w_nodeO = std::max((turbu_omega_star[ny - 1]), tiny);
+                u_nodeO = std::max((u_nodeUM), tiny);
+                k_nodeO = std::max((k_nodeUM), tiny);
+                w_nodeO = std::max((w_nodeUM), tiny);
                 w_tilde_nodeO = std::max(w_nodeO, std_kw_C_lim_ * vel_grad_nodeO / std_kw_beta_star_5_);
                 nut_nodeO = k_nodeO / (w_tilde_nodeO + tiny);
                 //-------------------------¡ü Calculate nodeO and nodeUM ¡ü-------------------------
@@ -940,7 +940,7 @@ namespace udf
 
             //------------------------------------------------¡ý Check and update flow rate ¡ý------------------------------------------------
             flow_rate_current = std::accumulate(U_new, U_new + ny, 0.0) * hy;
-            flow_rate_current -= U_new[ny - 1] * hy * 0.5;
+            flow_rate_current += u_nodeUM * hy * 0.5;
 
             // flow control
             double ratio = flow_rate_target / (flow_rate_current + 1e-12);
