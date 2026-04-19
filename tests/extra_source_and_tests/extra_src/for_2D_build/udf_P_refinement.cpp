@@ -336,7 +336,7 @@ namespace udf
             Real averaged_vel_over_P = u_outer;
             int num_iter_out = 0;
             
-            int type_sublayer_solver = 3; //** 1:Nuemann 2:Dirichlet 3:contantPG *
+            int type_sublayer_solver = 4; //** 1:Nuemann 2:Dirichlet 3:contantPG 4:contantPG2 *
 
             if (type_sublayer_solver==1) //** If go Neumann Path *
             {
@@ -430,7 +430,7 @@ namespace udf
                         U_nodeO = 0.0;
                         U_nodeUM = 0.0;
                         velocity_gradient_nodeO = 0.0;
-                        node_value_[index_i] = solve_1D_sublayer_constantPG2(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
+                        node_value_[index_i] = solve_1D_sublayer_constantPG(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
                             nut_outer, distance_to_wall, friction_vel_magnitude_outer, std::abs(flow_rate_local), dkdn_outer, dwdn_outer, U_nodeO, U_nodeUM, velocity_gradient_nodeO);
 
                         residue = std::abs(flow_rate_local - flow_rate_local_prior);
@@ -470,6 +470,55 @@ namespace udf
                     node_value_[index_i] = solve_1D_sublayer_constantPG(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
                         nut_outer, distance_to_wall, friction_vel_magnitude_outer, std::abs(flow_rate_local), dkdn_outer, dwdn_outer, U_nodeO, U_nodeUM, velocity_gradient_nodeO);
                 }
+            }
+            else if (type_sublayer_solver == 4) //** If go ConstantPG2 Path *
+            {
+                if (1) //** Whether probe iteration *
+                {
+                    vel_nodeO_i_prior = u_outer;
+                    velocity_gradient_nodeO_relaxed = dudn_outer;
+                    while (residue > 1.0e-3)
+                    {
+                        flow_rate_local = get_loacal_flow_rate(averaged_vel_over_P * fluid_particle_spacing_, velocity_gradient_nodeO_relaxed, vel_nodeO_i_prior, fluid_particle_spacing_); //** This is for better testing *
+
+                        U_nodeO = 0.0;
+                        U_nodeUM = 0.0;
+                        velocity_gradient_nodeO = 0.0;
+                        node_value_[index_i] = solve_1D_sublayer_constantPG2(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
+                            nut_outer, distance_to_wall, friction_vel_magnitude_outer, std::abs(flow_rate_local), dkdn_outer, dwdn_outer, U_nodeO, U_nodeUM, velocity_gradient_nodeO);
+
+                        residue = std::abs(flow_rate_local - flow_rate_local_prior);
+                        //std::cout << "residue =" << residue << std::endl;
+                        flow_rate_local_prior = flow_rate_local;
+                        Real relax_factor = 0.3;
+                        vel_nodeO_i_prior = (1.0 - relax_factor) * vel_nodeO_i_prior + relax_factor * U_nodeO;
+                        velocity_gradient_nodeO_relaxed = (1.0 - relax_factor) * velocity_gradient_nodeO_relaxed + relax_factor * velocity_gradient_nodeO;
+                        num_iter_out++;
+
+                        int num_iter_out_limit = 100000;
+                        if (num_iter_out > num_iter_out_limit)
+                        {
+                            std::cout << "num_iter_out = " << num_iter_out << std::endl;
+                            std::cout << "Hard to achieve convergence in probe iteration loop!" << std::endl;
+                            std::cout << "residue: " << residue << std::endl;
+                            std::cout << "flow_rate_local_prior = " << flow_rate_local_prior
+                                << ", flow_rate_local = " << flow_rate_local << std::endl;
+                            std::cout << "vel_nodeO_i_prior = " << vel_nodeO_i_prior << std::endl;
+                            std::cout << "velocity_gradient_nodeO_relaxed = " << velocity_gradient_nodeO_relaxed << std::endl;
+                            std::cout << "------------" << std::endl;
+                            if (num_iter_out > 1.5 * num_iter_out_limit)
+                            {
+                                std::cout << "Too many iterations, stop here!" << std::endl;
+                                std::cin.get();
+                            }
+                        }
+                    }
+                }
+            }
+            else
+            {
+                std::cout << "type_sublayer_solver is not chosed, stop here!" << std::endl;
+                std::cin.get();
             }
 
             //** Check results *
@@ -534,16 +583,26 @@ namespace udf
                         uniform_dist_between_node = distance_to_wall / double(num_sub_node_);
                         dist_nodeU_P = uniform_dist_between_node / 2.0;
                     }
-                    else if (type_sublayer_solver == 2) //** If go Dirichlet Path *
+                    else if (type_sublayer_solver == 2 || type_sublayer_solver == 4) //** If go Dirichlet Path or constantPG2 Path*
                     {
                         uniform_dist_between_node = distance_to_wall / (double(num_sub_node_) + 0.5);
                         dist_nodeU_P = uniform_dist_between_node;
+                    }
+                    else
+                    {
+                        std::cout << "type_sublayer_solver is not chosed, stop here!" << std::endl;
+                        std::cin.get();
                     }
                     dUdn_P_sublayer_magnitude = std::abs(tangential_velocity_P_magnitude - tangential_velocity_node_U) / (dist_nodeU_P + TinyReal);
                 }
                 else if (type_sublayer_solver == 3)//** If go ConstantPG Path *
                 {
                     dUdn_P_sublayer_magnitude = velocity_gradient_nodeO;
+                }
+                else
+                {
+                    std::cout << "type_sublayer_solver is not chosed, stop here!" << std::endl;
+                    std::cin.get();
                 }
 
                 Matd dUdn_P_sublayer = dUdn_P_sublayer_magnitude * (tangential * normal.transpose());
