@@ -367,7 +367,8 @@ TurbuViscousForce<Contact<Wall>>::TurbuViscousForce(BaseContactRelation &wall_co
       is_blended_(particles_->getVariableDataByName<int>("TurbulentWallTreatmentType")),
       is_near_wall_P1_(particles_->getVariableDataByName<int>("IsNearWallP1")),
       friction_velocity_from_sublayer_(particles_->getVariableDataByName<Real>("FrictionVelocityFromSublayer")),
-      turbu_B_(particles_->getVariableDataByName<Matd>("TurbulentLinearGradientCorrectionMatrix")) {}
+      turbu_B_(particles_->getVariableDataByName<Matd>("TurbulentLinearGradientCorrectionMatrix")),
+      B_only_wall_(particles_->getVariableDataByName<Matd>("TurbulentLinearGradientCorrectionMatrixOnlyWall")) {}
 //=================================================================================================//
 void TurbuViscousForce<Contact<Wall>>::interaction(size_t index_i, Real dt)
 {
@@ -446,12 +447,29 @@ void TurbuViscousForce<Contact<Wall>>::interaction(size_t index_i, Real dt)
             //** Transform local wall shear stress to global   *
             WSS_j = Q.transpose() * WSS_j_tn * Q;
             
-            //Matd correction_matrix_average = (turbu_B_[index_i] + turbu_B_[index_j]) / 2.0;
-            //Vecd corrected_kernel_gradient = correction_matrix_average * (e_ij * contact_neighborhood.dW_ij_[n]);
-            //Vecd force_j = 2.0 * mass_[index_i] * (WSS_j * corrected_kernel_gradient) * this->Vol_[index_j] / rho_i;
+            bool is_add_B_only_wall_to_WSS_P1 = true;
+            Vecd force_j = Vecd::Zero();
+            if (is_add_B_only_wall_to_WSS_P1)
+            {
+                if (is_near_wall_P1_[index_i] == 1)
+                {
+                    Matd correction_matrix_average = B_only_wall_[index_i];
+                    //Matd correction_matrix_average = (turbu_B_[index_i]);
 
-            Vecd force_j = 2.0 * mass_[index_i] * WSS_j * e_ij * contact_neighborhood.dW_ij_[n] * this->Vol_[index_j] / rho_i;
+                    Vecd corrected_kernel_gradient = correction_matrix_average * (e_ij * contact_neighborhood.dW_ij_[n]);
+                    force_j = 2.0 * mass_[index_i] * (WSS_j * corrected_kernel_gradient) * this->Vol_[index_j] / rho_i;
+                }
+                else
+                {
+                    force_j = 2.0 * mass_[index_i] * WSS_j * e_ij * contact_neighborhood.dW_ij_[n] * this->Vol_[index_j] / rho_i;
+                }
+            }
+            else
+            {
+                force_j = 2.0 * mass_[index_i] * WSS_j * e_ij * contact_neighborhood.dW_ij_[n] * this->Vol_[index_j] / rho_i;
+            }
 
+            
             force += force_j;
         }
     }
