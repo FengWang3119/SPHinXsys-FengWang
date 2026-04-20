@@ -593,7 +593,7 @@ namespace udf
                         std::cout << "type_sublayer_solver is not chosed, stop here!" << std::endl;
                         std::cin.get();
                     }
-                    dUdn_P_sublayer_magnitude = std::abs(tangential_velocity_P_magnitude - tangential_velocity_node_U) / (dist_nodeU_P + TinyReal);
+                    dUdn_P_sublayer_magnitude = 0.5 * std::abs(tangential_velocity_P_magnitude - tangential_velocity_node_U) / (dist_nodeU_P + TinyReal);
                 }
                 else if (type_sublayer_solver == 3)//** If go ConstantPG Path *
                 {
