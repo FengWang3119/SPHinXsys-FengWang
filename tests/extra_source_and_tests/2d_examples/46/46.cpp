@@ -152,8 +152,12 @@ int main(int ac, char *av[])
 
     InteractionWithUpdate<LinearGradientCorrectionMatrixComplex> corrected_configuration_fluid(water_block_inner, water_wall_contact);
 
+    /** Turbulent.Note: When use wall function, K Epsilon calculation only consider inner */
+    InteractionWithUpdate<fluid_dynamics::udf::JudgeIsNearWall> update_near_wall_status(water_block_inner, water_wall_contact, y_p_constant);
+
     //InteractionWithUpdate<LinearGradientCorrectionMatrixInner> corrected_configuration_fluid(water_block_inner);
-    InteractionWithUpdate<fluid_dynamics::udf::TurbulentLinearGradientCorrectionMatrixInner> corrected_configuration_fluid_only_inner(water_block_inner);
+    //InteractionWithUpdate<fluid_dynamics::udf::TurbulentLinearGradientCorrectionMatrixInner> corrected_configuration_fluid_only_inner(water_block_inner);
+    InteractionWithUpdate<fluid_dynamics::udf::TurbulentLinearGradientCorrectionMatrixComplex> corrected_configuration_fluid_separated_inner_wall(water_block_inner, water_wall_contact);
 
     /** Pressure relaxation algorithm with Riemann solver for viscous flows. */
     //Dynamics1Level<fluid_dynamics::Integration1stHalfWithWallRiemann> pressure_relaxation(water_block_inner, water_wall_contact);
@@ -167,9 +171,6 @@ int main(int ac, char *av[])
     Dynamics1Level<fluid_dynamics::Integration2ndHalfInnerNoRiemann> density_relaxation(water_block_inner);
     InteractionDynamics<fluid_dynamics::udf::Integration2ndHalfOnlyWallAcousticRiemannAdjusted> density_relaxation_wall(water_wall_contact);
     density_relaxation.post_processes_.push_back(&density_relaxation_wall);
-
-    /** Turbulent.Note: When use wall function, K Epsilon calculation only consider inner */
-    InteractionWithUpdate<fluid_dynamics::udf::JudgeIsNearWall> update_near_wall_status(water_block_inner, water_wall_contact, y_p_constant);
 
     InteractionWithUpdate<fluid_dynamics::udf::kOmega_GetVelocityGradientComplex> get_velocity_gradient(water_block_inner, water_wall_contact);
 
@@ -262,6 +263,8 @@ int main(int ac, char *av[])
     //BodyStatesRecordingToVtp body_states_recording(sph_system);
     fluid_dynamics::udf::BodyStatesRecordingToVtpIncludeNode body_states_recording(sph_system);
     
+    body_states_recording.addToWrite<Matd>(water_block, "TurbulentLinearGradientCorrectionMatrix");            // output for debug
+    body_states_recording.addToWrite<Matd>(water_block, "TurbulentLinearGradientCorrectionMatrixOnlyWall");            // output for debug
     body_states_recording.addToWrite<Real>(water_block, "Pressure");            // output for debug
     body_states_recording.addToWrite<int>(water_block, "Indicator");            // output for debug
     body_states_recording.addToWrite<Real>(water_block, "Density");             // output for debug
@@ -338,7 +341,10 @@ int main(int ac, char *av[])
     right_bidirection_buffer.tag_buffer_particles.exec();
     update_near_wall_status.exec();
     corrected_configuration_fluid.exec();
-    corrected_configuration_fluid_only_inner.exec();
+
+    //corrected_configuration_fluid_only_inner.exec();
+    corrected_configuration_fluid_separated_inner_wall.exec();
+
     get_velocity_gradient.exec();
     get_velocity_gradient_inner_only_for_P.exec();
     update_eddy_viscosity.exec();
@@ -371,7 +377,8 @@ int main(int ac, char *av[])
             update_volume.exec();
 
             corrected_configuration_fluid.exec();
-            corrected_configuration_fluid_only_inner.exec();
+            //corrected_configuration_fluid_only_inner.exec();
+            corrected_configuration_fluid_separated_inner_wall.exec();
 
             if (physical_time > turbulent_module_activate_time) //** A temporary treatment *
             {

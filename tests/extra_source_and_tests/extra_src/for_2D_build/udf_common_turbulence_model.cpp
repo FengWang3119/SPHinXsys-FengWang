@@ -677,6 +677,46 @@ void TurbulentLinearGradientCorrectionMatrix<Inner<>>::update(size_t index_i, Re
     Real weight1_ = turbu_B_[index_i].determinant() / (turbu_B_[index_i].determinant() + det_sqr);
     Real weight2_ = det_sqr / (turbu_B_[index_i].determinant() + det_sqr);
     turbu_B_[index_i] = weight1_ * inverse + weight2_ * Matd::Identity();
+
+    if (is_near_wall_P1_[index_i] == 1)
+    {
+        det_sqr = SMAX(turbu_alpha_ - B_only_wall_[index_i].determinant(), Real(0));
+        inverse = B_only_wall_[index_i].inverse();
+        weight1_ = B_only_wall_[index_i].determinant() / (B_only_wall_[index_i].determinant() + det_sqr);
+        weight2_ = det_sqr / (B_only_wall_[index_i].determinant() + det_sqr);
+        B_only_wall_[index_i] = weight1_ * inverse + weight2_ * Matd::Identity();
+    }
+    
+}
+//=================================================================================================//
+TurbulentLinearGradientCorrectionMatrix<Contact<>>::
+TurbulentLinearGradientCorrectionMatrix(BaseContactRelation& contact_relation)
+    : TurbulentLinearGradientCorrectionMatrix<DataDelegateContact>(contact_relation)
+{
+    for (size_t k = 0; k != contact_particles_.size(); ++k)
+    {
+        contact_mass_.push_back(contact_particles_[k]->getVariableDataByName<Real>("Mass"));
+        contact_Vol_.push_back(contact_particles_[k]->getVariableDataByName<Real>("VolumetricMeasure"));
+    }
+}
+//=================================================================================================//
+void TurbulentLinearGradientCorrectionMatrix<Contact<>>::interaction(size_t index_i, Real dt)
+{
+    B_only_wall_[index_i] = ZeroData<Matd>::value;
+    Matd local_configuration = Eps * Matd::Identity();
+    for (size_t k = 0; k < contact_configuration_.size(); ++k)
+    {
+        Real* Vol_k = contact_Vol_[k];
+        Neighborhood& contact_neighborhood = (*contact_configuration_[k])[index_i];
+        for (size_t n = 0; n != contact_neighborhood.current_size_; ++n)
+        {
+            size_t index_j = contact_neighborhood.j_[n];
+            Vecd gradW_ij = contact_neighborhood.dW_ij_[n] * Vol_k[index_j] * contact_neighborhood.e_ij_[n];
+            Vecd r_ji = contact_neighborhood.r_ij_[n] * contact_neighborhood.e_ij_[n];
+            local_configuration -= r_ji * gradW_ij.transpose();
+        }
+    }
+    B_only_wall_[index_i] += local_configuration;
 }
 //=================================================================================================//
 GetLimiterOfTransportVelocityCorrection::

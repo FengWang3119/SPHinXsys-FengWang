@@ -61,7 +61,8 @@ TurbulentLinearGradientCorrectionMatrix<DataDelegationType>::
       Vol_(this->particles_->template getVariableDataByName<Real>("VolumetricMeasure")),
       turbu_B_(this->particles_->template registerStateVariableData<Matd>(
           "TurbulentLinearGradientCorrectionMatrix", IdentityMatrix<Matd>::value)),
-      B_(this->particles_->template getVariableDataByName<Matd>("LinearGradientCorrectionMatrix"))
+      B_only_wall_(this->particles_->template registerStateVariableData<Matd>(
+          "TurbulentLinearGradientCorrectionMatrixOnlyWall", IdentityMatrix<Matd>::value))
 {
     //this->particles_->template addVariableToWrite<Matd>("TurbulentLinearGradientCorrectionMatrix");
     //this->particles_->template addEvolvingVariable<Matd>("TurbulentLinearGradientCorrectionMatrix");

@@ -279,7 +279,7 @@ class TurbulentLinearGradientCorrectionMatrix<DataDelegationType>
   protected:
     Real *Vol_;
     Matd *turbu_B_;
-    Matd *B_;
+    Matd *B_only_wall_;
 };
 
 template <>
@@ -287,10 +287,12 @@ class TurbulentLinearGradientCorrectionMatrix<Inner<>>
     : public TurbulentLinearGradientCorrectionMatrix<DataDelegateInner>
 {
     Real turbu_alpha_;
+    int *is_near_wall_P1_;
 
   public:
     explicit TurbulentLinearGradientCorrectionMatrix(BaseInnerRelation &inner_relation, Real alpha = Real(0))
-        : TurbulentLinearGradientCorrectionMatrix<DataDelegateInner>(inner_relation), turbu_alpha_(alpha){};
+        : TurbulentLinearGradientCorrectionMatrix<DataDelegateInner>(inner_relation), turbu_alpha_(alpha),
+        is_near_wall_P1_(particles_->getVariableDataByName<int>("IsNearWallP1")) {};
     template <typename BodyRelationType, typename FirstArg>
     explicit TurbulentLinearGradientCorrectionMatrix(DynamicsArgs<BodyRelationType, FirstArg> parameters)
         : TurbulentLinearGradientCorrectionMatrix(parameters.body_relation_, std::get<0>(parameters.others_)){};
@@ -299,6 +301,22 @@ class TurbulentLinearGradientCorrectionMatrix<Inner<>>
     void update(size_t index_i, Real dt = 0.0);
 };
 using TurbulentLinearGradientCorrectionMatrixInner = TurbulentLinearGradientCorrectionMatrix<Inner<>>;
+
+template <>
+class TurbulentLinearGradientCorrectionMatrix<Contact<>>
+    : public TurbulentLinearGradientCorrectionMatrix<DataDelegateContact>
+{
+public:
+    explicit TurbulentLinearGradientCorrectionMatrix(BaseContactRelation& contact_relation);
+    virtual ~TurbulentLinearGradientCorrectionMatrix() {};
+    void interaction(size_t index_i, Real dt = 0.0);
+
+protected:
+    StdVec<Real*> contact_Vol_;
+    StdVec<Real*> contact_mass_;
+};
+
+using TurbulentLinearGradientCorrectionMatrixComplex = ComplexInteraction<TurbulentLinearGradientCorrectionMatrix<Inner<>, Contact<>>>;
 
 //=================================================================================================//
 class GetLimiterOfTransportVelocityCorrection : public LocalDynamics
