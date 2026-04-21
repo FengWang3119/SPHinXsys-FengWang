@@ -175,6 +175,7 @@ class TurbuViscousForce<Inner<>> : public TurbuViscousForce<DataDelegateInner>
     int *turbu_indicator_;
     int *is_extra_viscous_dissipation_;
     Matd *B_;
+    Matd *turbu_B_;
     int* is_near_wall_P1_;
     Matd* dUdn_P_sublayer_;
     Real* physical_time_;
