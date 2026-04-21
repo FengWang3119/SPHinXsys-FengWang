@@ -492,7 +492,7 @@ namespace udf
                         flow_rate_local_prior = flow_rate_local;
                         Real relax_factor = 0.3;
                         vel_nodeO_i_prior = (1.0 - relax_factor) * vel_nodeO_i_prior + relax_factor * U_nodeO;
-                        velocity_gradient_nodeO_relaxed = dudn_outer;
+                        velocity_gradient_nodeO_relaxed = (velocity_gradient_nodeO + dudn_outer) / 2.0;
                         num_iter_out++;
 
                         int num_iter_out_limit = 100000;
