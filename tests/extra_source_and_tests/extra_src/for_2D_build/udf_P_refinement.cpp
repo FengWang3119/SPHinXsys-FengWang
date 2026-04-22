@@ -336,7 +336,8 @@ namespace udf
             Real averaged_vel_over_P = u_outer;
             int num_iter_out = 0;
             
-            int type_sublayer_solver = 4; //** 1:Nuemann 2:Dirichlet 3:contantPG 4:contantPG2 *
+            int type_sublayer_solver = 2; //** 1:Nuemann 2:Dirichlet 3:contantPG 4:contantPG2 *
+            bool is_probe_iteration_method = false; 
 
             if (type_sublayer_solver==1) //** If go Neumann Path *
             {
@@ -383,7 +384,7 @@ namespace udf
             }
             else if(type_sublayer_solver == 2) //** If go Dirichlet Path *
             {
-                if (0)//** If probe iteration method *
+                if (is_probe_iteration_method)//** If probe iteration method *
                 {
                     double hy = distance_to_wall / (double(num_sub_node_) + 0.5); // distance from node U to P_outer is hy, hence with a 0.5
                     double y_p = 0.5 * hy;
@@ -2433,14 +2434,12 @@ namespace udf
             double dudy_discretized_central[ny]{};
             double dkdy[ny]{};
             double dwdy[ny]{};
-            double dudy_discretized_forward[ny]{};
             // central diff£¨from i=1 to i=ny-2 £©
             for (int i = 1; i < ny - 1; ++i)
             {
                 dudy_discretized_central[i] = (u_star[i + 1] - u_star[i - 1]) / (2.0 * hy);
                 dkdy[i] = (k_star[i + 1] - k_star[i - 1]) / (2.0 * hy);
                 dwdy[i] = (turbu_omega_star[i + 1] - turbu_omega_star[i - 1]) / (2.0 * hy);
-                dudy_discretized_forward[i] = (u_star[i + 1] - u_star[i]) / (hy);
             }
             // B.C. near wall (i=0, central difference)
             dudy_discretized_central[0] = (u_star[1] + u_star[0]) / (2.0 * hy); // mirror B.C. u_star[-1] = -u_star[0]
@@ -2450,7 +2449,6 @@ namespace udf
             dudy_discretized_central[ny - 1] = (u_nodeUM - u_star[ny - 2]) / (2.0 * hy);
             dkdy[ny - 1] = (k_nodeUM - k_star[ny - 2]) / (2.0 * hy);
             dwdy[ny - 1] = (w_nodeUM - turbu_omega_star[ny - 2]) / (2.0 * hy);
-            dudy_discretized_forward[ny - 1] = (u_nodeUM - u_star[ny - 1]) / (hy);
             //------------------------------------------------¡ü Calculate gradients of u, k, omega, Dk, Dw ¡ü------------------------------------------------
 
             //------------------------------------------------¡ý Calculate Dk, Dw, C_su ¡ý------------------------------------------------
