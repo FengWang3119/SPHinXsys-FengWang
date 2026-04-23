@@ -258,6 +258,8 @@ TurbuViscousForce<Inner<>>::TurbuViscousForce(BaseInnerRelation &inner_relation)
 //=================================================================================================//
 void TurbuViscousForce<Inner<>>::interaction(size_t index_i, Real dt)
 {
+    KGI_separated_B_[index_i] = Vecd::Zero();
+
     turbu_indicator_[index_i] = 0;
 
     Real mu_eff_i = turbu_mu_[index_i] + molecular_viscosity_;
@@ -330,6 +332,10 @@ void TurbuViscousForce<Inner<>>::interaction(size_t index_i, Real dt)
 
                 //Matd shear_stress_sublayer = mu_eff_i * (dUdn_P_sublayer_[index_i] + dUdn_P_sublayer_[index_i].transpose());
                 //force_j = 2.0 * mass_[index_i] * shear_stress_sublayer * e_ij * inner_neighborhood.dW_ij_[n] * this->Vol_[index_j];
+
+                KGI_separated_B_[index_i] -= (turbu_B_[index_i] + turbu_B_[index_j]) *
+                    inner_neighborhood.dW_ij_[n] * Vol_[index_j] * inner_neighborhood.e_ij_[n];
+
             }
 
             //** P-refinement for S particle, when pairing with P particle, use SS from sublayer *
@@ -459,6 +465,9 @@ void TurbuViscousForce<Contact<Wall>>::interaction(size_t index_i, Real dt)
 
                     Vecd corrected_kernel_gradient = correction_matrix_average * (e_ij * contact_neighborhood.dW_ij_[n]);
                     force_j = 2.0 * mass_[index_i] * (WSS_j * corrected_kernel_gradient) * this->Vol_[index_j] / rho_i;
+
+                    KGI_separated_B_[index_i] -= 2.0 * B_only_wall_[index_i] * contact_neighborhood.dW_ij_[n] *
+                        this->Vol_[index_j] * contact_neighborhood.e_ij_[n];
                 }
                 else
                 {

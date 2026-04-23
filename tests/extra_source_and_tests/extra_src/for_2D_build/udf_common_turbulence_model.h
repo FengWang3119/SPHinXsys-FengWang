@@ -150,6 +150,8 @@ class TurbuViscousForce<DataDelegationType> : public ViscousForce<DataDelegation
     virtual ~TurbuViscousForce(){};
 
   protected:
+    Vecd *KGI_separated_B_;
+
     Real *turbu_k_;
     Real *turbu_mu_;
     Real *wall_Y_plus_;
