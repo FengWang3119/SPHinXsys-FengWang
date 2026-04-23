@@ -41,7 +41,7 @@ template <class DataDelegationType>
 template <class BaseRelationType>
 TurbuViscousForce<DataDelegationType>::TurbuViscousForce(BaseRelationType &base_relation)
     : ViscousForce<DataDelegationType>(base_relation),
-      KGI_separated_B_(this->particles_->template registerStateVariableData<Vecd>("KGI_separated_B")),
+      //KGI_separated_B_(this->particles_->template registerStateVariableData<Vecd>("KGI_separated_B")),
       turbu_k_(this->particles_->template getVariableDataByName<Real>("TurbulenceKineticEnergy")),
       turbu_mu_(this->particles_->template getVariableDataByName<Real>("TurbulentViscosity")),
       wall_Y_plus_(this->particles_->template getVariableDataByName<Real>("WallYplus")),
