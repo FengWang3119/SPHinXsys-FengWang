@@ -77,7 +77,7 @@ namespace udf
     P_refinement::
         P_refinement(SPHBody& sph_body)
         : LocalDynamics(sph_body),
-        num_sub_node_(5), // ** Needs tobe modified in sublayer function, as well *
+        num_sub_node_(ny), // ** Needs tobe modified in sublayer function, as well *
         friction_velocity_from_sublayer_(particles_->registerStateVariableData<Real>("FrictionVelocityFromSublayer")),
         target_flow_rate_in_sublayer_(particles_->registerStateVariableData<Real>("TargetFlowRateInSublayer")),
         vel_ps_magnitude_(particles_->registerStateVariableData<Real>("VelPS")),
@@ -2287,7 +2287,7 @@ namespace udf
         double Q_target, double k_grad_p_outer, double w_grad_p_outer, double& vel_nodeO, double& vel_nodeUM)
     {
         //------------------------------------------------¡ý Input parameters ¡ý------------------------------------------------
-        constexpr int ny = 5; // Manually determine
+        //constexpr int ny = 5; // Manually determine
 
         if (num_sub_node_ != ny)
         {

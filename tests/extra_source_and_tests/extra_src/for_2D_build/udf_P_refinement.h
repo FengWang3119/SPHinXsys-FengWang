@@ -77,11 +77,13 @@ namespace udf
 
         void update(size_t index_i, Real dt = 0.0);
         
+        static constexpr int ny = 5;
+        using Vec_ny_d = Eigen::Matrix<Real, ny, 1>;
         struct SublayerResult {
             double sublayer_utau;
-            Eigen::Matrix<double, 5, 1> sublayer_vel;
-            Eigen::Matrix<double, 5, 1> sublayer_k;
-            Eigen::Matrix<double, 5, 1> sublayer_omega;
+            Vec_ny_d sublayer_vel;
+            Vec_ny_d sublayer_k;
+            Vec_ny_d sublayer_omega;
         };
 
         Vec6d solve_1D_sublayer_constantPG2(double kinematic_viscosity, double u_p_outer, double k_p_outer,
