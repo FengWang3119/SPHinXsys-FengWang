@@ -335,6 +335,7 @@ namespace udf
             Real residue = 1.0e3;
             Real averaged_vel_over_P = u_outer;
             int num_iter_out = 0;
+            SublayerResult sublayer_result{};  //** Initialisation *
             
             int type_sublayer_solver = 2; //** 1:Nuemann 2:Dirichlet 3:contantPG 4:contantPG2 *
             bool is_probe_iteration_method = false; 
@@ -394,7 +395,7 @@ namespace udf
 
                         U_nodeO = 0.0;
                         U_nodeUM = 0.0;
-                        node_value_[index_i] = solve_1D_sublayer_Dirichlet(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
+                        sublayer_result = solve_1D_sublayer_Dirichlet(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
                             nut_outer, distance_to_wall, friction_vel_magnitude_outer, std::abs(flow_rate_local), dkdn_outer, dwdn_outer, U_nodeO, U_nodeUM);
 
                         residue = std::abs(flow_rate_local - flow_rate_local_prior);
@@ -414,7 +415,7 @@ namespace udf
 
                     U_nodeO = 0.0;
                     U_nodeUM = 0.0;
-                    node_value_[index_i] = solve_1D_sublayer_Dirichlet(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
+                    sublayer_result = solve_1D_sublayer_Dirichlet(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
                         nut_outer, distance_to_wall, friction_vel_magnitude_outer, std::abs(flow_rate_local), dkdn_outer, dwdn_outer, U_nodeO, U_nodeUM);
                 }
             }
@@ -523,7 +524,7 @@ namespace udf
             }
 
             //** Check results *
-            if (!std::isfinite(node_value_[index_i][0]))
+            if (!std::isfinite(sublayer_result.node_utau_))
             {
                 if (*physical_time_ < start_time_laminar_)
                 {
@@ -550,6 +551,11 @@ namespace udf
             }
 
             //** Extract results *
+            node_value_[index_i][0] = sublayer_result.node_utau_;
+            for (int i = 0; i < num_sub_node_; ++i) {
+                node_value_[index_i][i+1] = sublayer_result.node_vel_[i];
+            }
+
             friction_velocity_from_sublayer_[index_i] = node_value_[index_i][0];
             vel_nodeO_[index_i] = U_nodeO;
             vel_nodeUM_[index_i] = U_nodeUM;
@@ -2276,7 +2282,7 @@ namespace udf
         std::cin.get();
     }
     //=================================================================================================//
-    Vec6d P_refinement::solve_1D_sublayer_Dirichlet(double kinematic_viscosity, double u_p_outer, double k_p_outer,
+    P_refinement::SublayerResult P_refinement::solve_1D_sublayer_Dirichlet(double kinematic_viscosity, double u_p_outer, double k_p_outer,
         double w_p_outer, double vel_grad_p_outer, double nut_p_outer, double h_sublayer, double utau_outer,
         double Q_target, double k_grad_p_outer, double w_grad_p_outer, double& vel_nodeO, double& vel_nodeUM)
     {
@@ -2851,14 +2857,24 @@ namespace udf
             std::cout << "ny is not 5, currently not allowed! Stop here." << std::endl;
             std::cin.get();
         }
-        Vec6d results = Vec6d::Zero();
-        results[0] = utau;
+        //Vec6d results = Vec6d::Zero();
+        //results[0] = utau;
+        //for (int i = 0; i < ny; ++i) {
+        //    results[i + 1] = phi_solved[i];
+        //}
+
+        SublayerResult res;
+        res.node_utau_ = utau;
+
         for (int i = 0; i < ny; ++i) {
-            results[i + 1] = phi_solved[i];
+            res.node_vel_[i] = phi_solved[i];
+            res.node_k_[i] = phi_solved[i + ny];
+            res.node_omega_[i] = phi_solved[i + 2 * ny];
         }
+
         vel_nodeO = u_nodeO;
         vel_nodeUM = u_nodeUM;
-        return results;
+        return res;
         //*/
     }
     //=================================================================================================//
