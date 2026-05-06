@@ -83,7 +83,7 @@ namespace udf
         vel_ps_magnitude_(particles_->registerStateVariableData<Real>("VelPS")),
         dudn_for_local_flow_rate_(particles_->registerStateVariableData<Real>("dudnForLocalFlowRate")),
         utau_node_(particles_->registerStateVariableData<Real>("utauNode")),
-        node_value_vel_(particles_->registerStateVariableData<Vec6d>("NodeValue")),
+        node_value_vel_(particles_->registerStateVariableData<Vec_ny_plus1_d>("NodeValue")),
         dUdn_P_sublayer_magnitude_(particles_->registerStateVariableData<Real>("dUdnFromSublayerMagnitude")),
         dUdn_P_sublayer_(particles_->registerStateVariableData<Matd>("dUdnFromSublayer")),
         vel_nodeO_(particles_->registerStateVariableData<Real>("VelNodeO")),
@@ -117,7 +117,7 @@ namespace udf
         particles_->addVariableToWrite<Real>("dudnForLocalFlowRate");
         particles_->addVariableToWrite<Real>("utauNode");
         particles_->addVariableToWrite<Real>("DistanceToDummyInterface");
-        particles_->addVariableToWrite<Vec6d>("NodeValue");
+        particles_->addVariableToWrite<Vec_ny_plus1_d>("NodeValue");
         particles_->addVariableToWrite<Real>("dUdnFromSublayerMagnitude");
         particles_->addVariableToWrite<Matd>("dUdnFromSublayer");
         particles_->addVariableToWrite<Real>("VelNodeO");
@@ -135,7 +135,7 @@ namespace udf
         Real velocity_gradient_nodeO_relaxed = 0.0;
         if (is_near_wall_P1_[index_i] == 1)
         {
-            Vec6d node_value_i_prior = node_value_vel_[index_i];
+            Vec_ny_plus1_d node_value_i_prior = node_value_vel_[index_i];
             for (int j = 0; j < num_sub_node_; ++j)
             {
                 Real vel_difference = node_value_i_prior[j + 1] - node_value_i_prior[j];
@@ -152,7 +152,7 @@ namespace udf
         vel_ps_magnitude_[index_i] = 0.0;
         dudn_for_local_flow_rate_[index_i] = 0.0;
         utau_node_[index_i] = 0.0;
-        node_value_vel_[index_i] = Vec6d::Zero();
+        node_value_vel_[index_i] = Vec_ny_plus1_d::Zero();
         dUdn_P_sublayer_magnitude_[index_i] = 0.0;
         dUdn_P_sublayer_[index_i] = Matd::Zero();
         vel_nodeO_[index_i] = 0.0;
@@ -1064,7 +1064,7 @@ namespace udf
             std::cout << "ny is not 5, currently not allowed! Stop here." << std::endl;
             std::cin.get();
         }
-        //Vec6d results = Vec6d::Zero();
+        //Vec_ny_plus1_d results = Vec_ny_plus1_d::Zero();
         //results[0] = utau;
         //for (int i = 0; i < ny; ++i) {
         //    results[i + 1] = phi_solved[i];
