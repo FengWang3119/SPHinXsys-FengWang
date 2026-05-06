@@ -83,7 +83,7 @@ namespace udf
         vel_ps_magnitude_(particles_->registerStateVariableData<Real>("VelPS")),
         dudn_for_local_flow_rate_(particles_->registerStateVariableData<Real>("dudnForLocalFlowRate")),
         utau_node_(particles_->registerStateVariableData<Real>("utauNode")),
-        node_value_(particles_->registerStateVariableData<Vec6d>("NodeValue")),
+        node_value_vel_(particles_->registerStateVariableData<Vec6d>("NodeValue")),
         dUdn_P_sublayer_magnitude_(particles_->registerStateVariableData<Real>("dUdnFromSublayerMagnitude")),
         dUdn_P_sublayer_(particles_->registerStateVariableData<Matd>("dUdnFromSublayer")),
         vel_nodeO_(particles_->registerStateVariableData<Real>("VelNodeO")),
@@ -135,7 +135,7 @@ namespace udf
         Real velocity_gradient_nodeO_relaxed = 0.0;
         if (is_near_wall_P1_[index_i] == 1)
         {
-            Vec6d node_value_i_prior = node_value_[index_i];
+            Vec6d node_value_i_prior = node_value_vel_[index_i];
             for (int j = 0; j < num_sub_node_; ++j)
             {
                 Real vel_difference = node_value_i_prior[j + 1] - node_value_i_prior[j];
@@ -152,7 +152,7 @@ namespace udf
         vel_ps_magnitude_[index_i] = 0.0;
         dudn_for_local_flow_rate_[index_i] = 0.0;
         utau_node_[index_i] = 0.0;
-        node_value_[index_i] = Vec6d::Zero();
+        node_value_vel_[index_i] = Vec6d::Zero();
         dUdn_P_sublayer_magnitude_[index_i] = 0.0;
         dUdn_P_sublayer_[index_i] = Matd::Zero();
         vel_nodeO_[index_i] = 0.0;
@@ -223,7 +223,7 @@ namespace udf
                 U_nodeUM = 0.0;
                 velocity_gradient_nodeO = 0.0;
                 //** Remember to activate output function inside if want to output K OMEGA NUT *
-                node_value_[index_i] = solve_1D_sublayer_constantPG2(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
+                node_value_vel_[index_i] = solve_1D_sublayer_constantPG2(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
                     nut_outer, distance_to_wall, friction_vel_magnitude_outer, std::abs(flow_rate_local), dkdn_outer, dwdn_outer, U_nodeO, U_nodeUM, velocity_gradient_nodeO);
 
                 std::cout << "Fixed input value test ends, stop here." << std::endl;
@@ -279,12 +279,12 @@ namespace udf
                     U_nodeO = 0.0;
                     U_nodeUM = 0.0;
                     
-                    /*node_value_[index_i] = solve_1D_sublayer_Neumann(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
+                    /*node_value_vel_[index_i] = solve_1D_sublayer_Neumann(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
                         nut_outer, distance_to_wall, friction_vel_magnitude_outer, std::abs(flow_rate_local), dkdn_outer, dwdn_outer, U_nodeO, U_nodeUM);*/
-                    //node_value_[index_i] = solve_1D_sublayer_Dirichlet(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
+                    //node_value_vel_[index_i] = solve_1D_sublayer_Dirichlet(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
                     //    nut_outer, distance_to_wall, friction_vel_magnitude_outer, std::abs(flow_rate_local), dkdn_outer, dwdn_outer, U_nodeO, U_nodeUM);
                     velocity_gradient_nodeO = 0.0;
-                    node_value_[index_i] = solve_1D_sublayer_constantPG2(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
+                    node_value_vel_[index_i] = solve_1D_sublayer_constantPG2(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
                         nut_outer, distance_to_wall, friction_vel_magnitude_outer, std::abs(flow_rate_local), dkdn_outer, dwdn_outer, U_nodeO, U_nodeUM, velocity_gradient_nodeO);
 
                     residue = std::abs(flow_rate_local - flow_rate_local_prior);
@@ -296,23 +296,23 @@ namespace udf
 
                     //double hy = distance_to_wall / (double(num_sub_node_) + 0.5); // distance from node U to P_outer is hy, hence with a 0.5
                     //double y_p = 0.5 * hy;
-                    //Real vel_grad_nodeP = node_value_[index_i][1] / y_p;
+                    //Real vel_grad_nodeP = node_value_vel_[index_i][1] / y_p;
                     //dudn_outer = (1.0 - relax_factor) * dudn_outer + relax_factor * vel_grad_nodeP;
 
                 }
 
                 std::cout << "flow rate local converge!." << std::endl;
-                std::cout << "node_value_[index_i][0]=" << node_value_[index_i][0] << std::endl;
-                std::cout << "node_value_[index_i][1]=" << node_value_[index_i][1] << std::endl;
-                std::cout << "node_value_[index_i][2]=" << node_value_[index_i][2] << std::endl;
-                std::cout << "node_value_[index_i][3]=" << node_value_[index_i][3] << std::endl;
-                std::cout << "node_value_[index_i][4]=" << node_value_[index_i][4] << std::endl;
-                std::cout << "node_value_[index_i][5]=" << node_value_[index_i][5] << std::endl;
+                std::cout << "node_value_vel_[index_i][0]=" << node_value_vel_[index_i][0] << std::endl;
+                std::cout << "node_value_vel_[index_i][1]=" << node_value_vel_[index_i][1] << std::endl;
+                std::cout << "node_value_vel_[index_i][2]=" << node_value_vel_[index_i][2] << std::endl;
+                std::cout << "node_value_vel_[index_i][3]=" << node_value_vel_[index_i][3] << std::endl;
+                std::cout << "node_value_vel_[index_i][4]=" << node_value_vel_[index_i][4] << std::endl;
+                std::cout << "node_value_vel_[index_i][5]=" << node_value_vel_[index_i][5] << std::endl;
                 std::cout << "U_nodeO=" << U_nodeO << std::endl;
                 std::cout << "U_nodeUM=" << U_nodeUM << std::endl;
 
                 writeTecplotFromVec6dDirichlet(
-                    node_value_[index_i],
+                    node_value_vel_[index_i],
                     U_nodeO,
                     U_nodeUM,
                     distance_to_wall,
@@ -355,7 +355,7 @@ namespace udf
 
                         U_nodeO = 0.0;
                         U_nodeUM = 0.0;
-                        node_value_[index_i] = solve_1D_sublayer_Neumann(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
+                        node_value_vel_[index_i] = solve_1D_sublayer_Neumann(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
                             nut_outer, distance_to_wall, friction_vel_magnitude_outer, std::abs(flow_rate_local), dkdn_outer, dwdn_outer, U_nodeO, U_nodeUM);
 
                         residue = std::abs(flow_rate_local - flow_rate_local_prior);
@@ -379,7 +379,7 @@ namespace udf
 
                     U_nodeO = 0.0;
                     U_nodeUM = 0.0;
-                    node_value_[index_i] = solve_1D_sublayer_Neumann(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
+                    node_value_vel_[index_i] = solve_1D_sublayer_Neumann(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
                         nut_outer, distance_to_wall, friction_vel_magnitude_outer, std::abs(flow_rate_local), dkdn_outer, dwdn_outer, U_nodeO, U_nodeUM);
                 }
             }
@@ -404,7 +404,7 @@ namespace udf
                         Real relax_factor = 0.3;
                         //vel_nodeO_i_prior = (1.0 - relax_factor) * vel_nodeO_i_prior + relax_factor * U_nodeO;
 
-                        Real vel_grad_nodeP = node_value_[index_i][1] / y_p;
+                        Real vel_grad_nodeP = node_value_vel_[index_i][1] / y_p;
                         dudn_outer = (1.0 - relax_factor) * dudn_outer + relax_factor * vel_grad_nodeP;
                     }
                 }
@@ -432,7 +432,7 @@ namespace udf
                         U_nodeO = 0.0;
                         U_nodeUM = 0.0;
                         velocity_gradient_nodeO = 0.0;
-                        node_value_[index_i] = solve_1D_sublayer_constantPG(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
+                        node_value_vel_[index_i] = solve_1D_sublayer_constantPG(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
                             nut_outer, distance_to_wall, friction_vel_magnitude_outer, std::abs(flow_rate_local), dkdn_outer, dwdn_outer, U_nodeO, U_nodeUM, velocity_gradient_nodeO);
 
                         residue = std::abs(flow_rate_local - flow_rate_local_prior);
@@ -469,7 +469,7 @@ namespace udf
                     U_nodeO = 0.0;
                     U_nodeUM = 0.0;
                     velocity_gradient_nodeO = 0.0;
-                    node_value_[index_i] = solve_1D_sublayer_constantPG(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
+                    node_value_vel_[index_i] = solve_1D_sublayer_constantPG(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
                         nut_outer, distance_to_wall, friction_vel_magnitude_outer, std::abs(flow_rate_local), dkdn_outer, dwdn_outer, U_nodeO, U_nodeUM, velocity_gradient_nodeO);
                 }
             }
@@ -486,7 +486,7 @@ namespace udf
                         U_nodeO = 0.0;
                         U_nodeUM = 0.0;
                         velocity_gradient_nodeO = 0.0;
-                        node_value_[index_i] = solve_1D_sublayer_constantPG2(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
+                        node_value_vel_[index_i] = solve_1D_sublayer_constantPG2(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
                             nut_outer, distance_to_wall, friction_vel_magnitude_outer, std::abs(flow_rate_local), dkdn_outer, dwdn_outer, U_nodeO, U_nodeUM, velocity_gradient_nodeO);
 
                         residue = std::abs(flow_rate_local - flow_rate_local_prior);
@@ -524,12 +524,12 @@ namespace udf
             }
 
             //** Check results *
-            if (!std::isfinite(sublayer_result.node_utau_))
+            if (!std::isfinite(sublayer_result.sublayer_utau))
             {
                 if (*physical_time_ < start_time_laminar_)
                 {
                     std::cout << "Warning: initial NaN in sublayer solver\n";
-                    node_value_[index_i][0] = 0.0;
+                    node_value_vel_[index_i][0] = 0.0;
                 }
                 else
                 {
@@ -544,19 +544,19 @@ namespace udf
                     std::cout << "distance_to_wall=" << distance_to_wall << std::endl;
                     std::cout << "friction_vel_magnitude_outer=" << friction_vel_magnitude_outer << std::endl;
                     std::cout << "flow_rate_local=" << flow_rate_local << std::endl;
-                    std::cout << "node_value_[index_i][0] = " << node_value_[index_i][0] << std::endl;
+                    std::cout << "node_value_vel_[index_i][0] = " << node_value_vel_[index_i][0] << std::endl;
 
-                    node_value_[index_i][0] = 0.0;
+                    node_value_vel_[index_i][0] = 0.0;
                 }
             }
 
             //** Extract results *
-            node_value_[index_i][0] = sublayer_result.node_utau_;
+            node_value_vel_[index_i][0] = sublayer_result.sublayer_utau;
             for (int i = 0; i < num_sub_node_; ++i) {
-                node_value_[index_i][i+1] = sublayer_result.node_vel_[i];
+                node_value_vel_[index_i][i+1] = sublayer_result.sublayer_vel[i];
             }
 
-            friction_velocity_from_sublayer_[index_i] = node_value_[index_i][0];
+            friction_velocity_from_sublayer_[index_i] = node_value_vel_[index_i][0];
             vel_nodeO_[index_i] = U_nodeO;
             vel_nodeUM_[index_i] = U_nodeUM;
 
@@ -582,7 +582,7 @@ namespace udf
                 Real dUdn_P_sublayer_magnitude = 0.0;
                 if (type_sublayer_solver != 3) //** If NOT go ConstantPG Path *
                 {
-                    Real tangential_velocity_node_U = node_value_[index_i][5]; //** Temporary treatment *
+                    Real tangential_velocity_node_U = node_value_vel_[index_i][5]; //** Temporary treatment *
                     Real dist_nodeU_P = TinyReal;
                     Real uniform_dist_between_node = TinyReal;
                     if (type_sublayer_solver == 1) //** If go Neumann Path * 
@@ -623,7 +623,7 @@ namespace udf
                 Vecd vel_tangential = vel_[index_i] - vel_[index_i].dot(normal) * normal;
                 Real tangential_velocity_P_magnitude = vel_tangential.norm();
                 Vecd tangential = vel_tangential / (tangential_velocity_P_magnitude + TinyReal);
-                Real tangential_velocity_node_U = node_value_[index_i][5]; //** Temporary treatment *
+                Real tangential_velocity_node_U = node_value_vel_[index_i][5]; //** Temporary treatment *
                 Real dist_nodeU_P = (distance_to_wall / double(num_sub_node_)) / 2.0;
                 dUdn_P_nodeU_[index_i] = (tangential_velocity_P_magnitude - tangential_velocity_node_U) / (dist_nodeU_P + TinyReal);
             }
@@ -2864,12 +2864,12 @@ namespace udf
         //}
 
         SublayerResult res;
-        res.node_utau_ = utau;
+        res.sublayer_utau = utau;
 
         for (int i = 0; i < ny; ++i) {
-            res.node_vel_[i] = phi_solved[i];
-            res.node_k_[i] = phi_solved[i + ny];
-            res.node_omega_[i] = phi_solved[i + 2 * ny];
+            res.sublayer_vel[i] = phi_solved[i];
+            res.sublayer_k[i] = phi_solved[i + ny];
+            res.sublayer_omega[i] = phi_solved[i + 2 * ny];
         }
 
         vel_nodeO = u_nodeO;

@@ -78,10 +78,10 @@ namespace udf
         void update(size_t index_i, Real dt = 0.0);
         
         struct SublayerResult {
-            double node_utau_;
-            Eigen::Matrix<double, 5, 1> node_vel_;
-            Eigen::Matrix<double, 5, 1> node_k_;
-            Eigen::Matrix<double, 5, 1> node_omega_;
+            double sublayer_utau;
+            Eigen::Matrix<double, 5, 1> sublayer_vel;
+            Eigen::Matrix<double, 5, 1> sublayer_k;
+            Eigen::Matrix<double, 5, 1> sublayer_omega;
         };
 
         Vec6d solve_1D_sublayer_constantPG2(double kinematic_viscosity, double u_p_outer, double k_p_outer,
@@ -118,7 +118,7 @@ namespace udf
             return std::sqrt(std::max(0.0, norm_sqr));          
         }
         void writeTecplotFromVec6dConstantPG(
-            const Vec6d& node_val,   // node_value_[index_i]
+            const Vec6d& node_val,   // node_value_vel_[index_i]
             double U_nodeO,
             double U_nodeUM,
             double distance_to_wall,
@@ -179,7 +179,7 @@ namespace udf
         }
 
         void writeTecplotFromVec6d(
-            const Vec6d& node_val,   // node_value_[index_i]
+            const Vec6d& node_val,   // node_value_vel_[index_i]
             double U_nodeO,
             double U_nodeUM,
             double distance_to_wall,
@@ -239,7 +239,7 @@ namespace udf
             std::cout << "Tecplot (with nodeO & nodeUM) created: " << filename << std::endl;
         }
         void writeTecplotFromVec6dDirichlet(
-            const Vec6d& node_val,   // node_value_[index_i]
+            const Vec6d& node_val,   // node_value_vel_[index_i]
             double U_nodeO,
             double U_nodeUM,
             double distance_to_wall,
@@ -306,7 +306,7 @@ namespace udf
         Real* vel_ps_magnitude_;
         Real* dudn_for_local_flow_rate_;
         Real* utau_node_;
-        Vec6d* node_value_; // ** Temporary treatment only valid for 5-node configuration, first is utau, then velocity *
+        Vec6d* node_value_vel_; // ** Temporary treatment only valid for 5-node configuration, first is utau, then velocity *
         Real* dUdn_P_sublayer_magnitude_;
         Matd* dUdn_P_sublayer_;
         Real* vel_nodeO_;
