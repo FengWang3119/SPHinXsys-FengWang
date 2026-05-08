@@ -69,11 +69,6 @@ namespace udf
     //** Interface part *
     using P_refinement_GetVelocityGradientComplex = ComplexInteraction<P_refinement_GetVelocityGradient<Inner<>, Contact<Wall>>>;
 //=================================================================================================//
-    //** Globally effective, mannually set number of node *
-    static constexpr int ny = 5;
-    using Vec_ny_d = Eigen::Matrix<Real, ny, 1>;
-    using Vec_ny_plus1_d = Eigen::Matrix<Real, ny + 1, 1>;
-
     class P_refinement : public LocalDynamics, public kOmega_BaseTurbuClosureCoeff, public WallFunctionCoefficient
     {
     public:
@@ -82,6 +77,19 @@ namespace udf
 
         void update(size_t index_i, Real dt = 0.0);
         
+        //** Locally effective, mannually set number of node *
+        static constexpr int ny = 4; //** Currently only Vec6d can be used, so ny should <=5, other space will be zero *
+        using Vec_ny_d = Eigen::Matrix<Real, ny, 1>;
+        using Vec_ny_plus1_d = Eigen::Matrix<Real, ny + 1, 1>;
+        inline void check_num_node_consistency()
+        {
+            if (ny > 5)
+            {
+                std::cout << "Node number larger than 5! Stop here." << std::endl;
+                std::cin.get();
+            }
+        }
+
         struct SublayerResult {
             double sublayer_utau;
             Vec_ny_d sublayer_vel;
@@ -115,7 +123,7 @@ namespace udf
         }
 
         void writeTecplotFromVec6d(
-            const Vec_ny_plus1_d& node_val,   // node_value_vel_[index_i]
+            const Vec6d& node_val,   // node_value_vel_[index_i]
             double U_nodeO,
             double U_nodeUM,
             double distance_to_wall,
@@ -175,7 +183,7 @@ namespace udf
             std::cout << "Tecplot (with nodeO & nodeUM) created: " << filename << std::endl;
         }
         void writeTecplotFromVec6dDirichlet(
-            const Vec_ny_plus1_d& node_val,   // node_value_vel_[index_i]
+            const Vec6d& node_val,   // node_value_vel_[index_i]
             double U_nodeO,
             double U_nodeUM,
             double distance_to_wall,
@@ -242,7 +250,11 @@ namespace udf
         Real* vel_ps_magnitude_;
         Real* dudn_for_local_flow_rate_;
         Real* utau_node_;
-        Vec_ny_plus1_d* node_value_vel_; // ** Temporary treatment only valid for 5-node configuration, first is utau, then velocity *
+        
+        // ** Temporary treatment, only valid for 5-node configuration, first is utau, then 5 velocity *
+        // ** This variable only communicates with SPH system, and should no participate sublayer calculation 
+        Vec6d* node_value_vel_; 
+        
         Real* dUdn_P_sublayer_magnitude_;
         Matd* dUdn_P_sublayer_;
         Real* vel_nodeO_;
@@ -360,7 +372,7 @@ namespace udf
             }
 
             //** P refinement *
-            writeNodeValueToVtk_ny_plus1_d(output_stream, particles);
+            writeNodeValueToVtk_Vec6d(output_stream, particles);
 
             // write matrices
             constexpr int type_index_Matd = DataTypeIndex<Matd>::value;
@@ -383,22 +395,21 @@ namespace udf
             }
         };
         template <typename OutStreamType>
-        void writeNodeValueToVtk_ny_plus1_d(OutStreamType& output_stream, BaseParticles& particles)
+        void writeNodeValueToVtk_Vec6d(OutStreamType& output_stream, BaseParticles& particles)
         {
-
             size_t total_real_particles = particles.TotalRealParticles();
             ParticleVariables& variables_to_write = particles.VariablesToWrite();
 
             // write vectors
-            constexpr int type_index_Vecd = DataTypeIndex<Vec_ny_plus1_d>::value;
-            for (DiscreteVariable<Vec_ny_plus1_d>* variable : std::get<type_index_Vecd>(variables_to_write))
+            constexpr int type_index_Vecd = DataTypeIndex<Vec6d>::value;
+            for (DiscreteVariable<Vec6d>* variable : std::get<type_index_Vecd>(variables_to_write))
             {
-                Vec_ny_plus1_d* data_field = variable->Data();
+                Vec6d* data_field = variable->Data();
                 output_stream << "    <DataArray Name=\"" << variable->Name() << "\" type=\"Float32\"  NumberOfComponents=\"6\" Format=\"ascii\">\n";
                 output_stream << "    ";
                 for (size_t i = 0; i != total_real_particles; ++i)
                 {
-                    Vec_ny_plus1_d vector_value = upgradeToVec_ny_plus1_d(data_field[i]);
+                    Vec6d vector_value = upgradeToVec_Vec6d(data_field[i]);
                     output_stream << std::fixed << std::setprecision(9) << vector_value[0] << " " << vector_value[1] << " " << vector_value[2]
                         << " " << vector_value[3] << " " << vector_value[4] << " " << vector_value[5] << " ";
                 }
@@ -406,7 +417,7 @@ namespace udf
                 output_stream << "    </DataArray>\n";
             }
         };
-        inline Vec_ny_plus1_d upgradeToVec_ny_plus1_d(const Vec_ny_plus1_d& input)
+        inline Vec6d upgradeToVec_Vec6d(const Vec6d& input)
         {
             return input;
         };
