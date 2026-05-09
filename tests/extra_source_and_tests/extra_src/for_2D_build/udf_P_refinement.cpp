@@ -89,7 +89,6 @@ namespace udf
         dUdn_P_sublayer_(particles_->registerStateVariableData<Matd>("dUdnFromSublayer")),
         vel_nodeO_(particles_->registerStateVariableData<Real>("VelNodeO")),
         vel_nodeUM_(particles_->registerStateVariableData<Real>("VelNodeUM")),
-        dUdn_P_nodeU_(particles_->registerStateVariableData<Real>("dUdnP_NodeU")),
         global_flow_rate_over_P_(particles_->registerStateVariableData<Real>("global_flow_rate_over_P_")),
         half_flow_rate_over_P_(particles_->registerStateVariableData<Real>("half_flow_rate_over_P_")),
         //
@@ -127,25 +126,14 @@ namespace udf
         particles_->addVariableToWrite<Real>("VelNodeUM");
         particles_->addVariableToWrite<Real>("global_flow_rate_over_P_");
         particles_->addVariableToWrite<Real>("half_flow_rate_over_P_");
-        particles_->addVariableToWrite<Real>("dUdnP_NodeU");
     }
     //=================================================================================================//
     void P_refinement::update(size_t index_i, Real dt)
     {
-        Real sum_node_vel_difference = 0.0;
         Real vel_nodeO_i_prior = 0.0;
-        Real dUdn_P_nodeU_prior = 0.0;
-        Real velocity_gradient_nodeO_relaxed = 0.0;
         if (is_near_wall_P1_[index_i] == 1)
         {
-            Vec6d node_value_i_prior = node_value_vel_[index_i];
-            for (int j = 0; j < num_sub_node_; ++j)
-            {
-                Real vel_difference = node_value_i_prior[j + 1] - node_value_i_prior[j];
-                sum_node_vel_difference += vel_difference;
-            }
             vel_nodeO_i_prior = vel_nodeO_[index_i];
-            dUdn_P_nodeU_prior = dUdn_P_nodeU_[index_i];
         }
 
         friction_velocity_from_sublayer_[index_i] = 0.0;
@@ -161,7 +149,6 @@ namespace udf
         dUdn_P_sublayer_[index_i] = Matd::Zero();
         vel_nodeO_[index_i] = 0.0;
         vel_nodeUM_[index_i] = 0.0;
-        dUdn_P_nodeU_[index_i] = 0.0;
         double U_nodeO = 0.0;
         double U_nodeUM = 0.0;
         double velocity_gradient_nodeO = 0.0;
@@ -193,6 +180,7 @@ namespace udf
             
             Vecd velocity_gradient_only_P_normal = velocity_gradient_only_P_[index_i] * normal;
             Real dudn_from_SPH = obtainTangentialComponent(velocity_gradient_only_P_normal, normal);
+            
             //** Different ways to determine dudn_outer *
             //** If use full from SPH *
             dudn_outer = dudn_from_SPH;
@@ -238,147 +226,108 @@ namespace udf
             //-------------------------¡ý If dynamic test ¡ý-------------------------
             if (0)
             {
-                std::cout << "Dynamic test starts." << std::endl;
-                //------¡ý Mimic SPH average value ¡ý------
-                Real analytical_k_S = 8.260674e-03;
-                Real analytical_k_P = 1.118813e-3;
-                Real analytical_k_grad_P_inner = (analytical_k_S - analytical_k_P) / fluid_particle_spacing_;
+            //    std::cout << "Dynamic test starts." << std::endl;
+            //    //------¡ý Mimic SPH average value ¡ý------
+            //    Real analytical_k_S = 8.260674e-03;
+            //    Real analytical_k_P = 1.118813e-3;
+            //    Real analytical_k_grad_P_inner = (analytical_k_S - analytical_k_P) / fluid_particle_spacing_;
 
-                Real analytical_w_S = 1.242432e+01;
-                Real analytical_w_P = 5.998469e+1;
-                Real analytical_w_grad_P_inner = (analytical_w_S - analytical_w_P) / fluid_particle_spacing_;
+            //    Real analytical_w_S = 1.242432e+01;
+            //    Real analytical_w_P = 5.998469e+1;
+            //    Real analytical_w_grad_P_inner = (analytical_w_S - analytical_w_P) / fluid_particle_spacing_;
 
-                Real analytical_vel_S = 6.487377e-01;
-                Real analytical_vel_P = 3.000607e-1;
-                Real analytical_vel_grad_P_inner = (analytical_vel_S - analytical_vel_P) / fluid_particle_spacing_;
+            //    Real analytical_vel_S = 6.487377e-01;
+            //    Real analytical_vel_P = 3.000607e-1;
+            //    Real analytical_vel_grad_P_inner = (analytical_vel_S - analytical_vel_P) / fluid_particle_spacing_;
 
-                //analytical_vel_grad_P_inner = 1.127180e+1; //** Overwrite *
+            //    //analytical_vel_grad_P_inner = 1.127180e+1; //** Overwrite *
 
-                Real analytical_flow_rate_whole_PS_to_Wall = 1.433123e-2;
-                //------¡ü Mimic SPH average value ¡ü------
-                // 
-                //------¡ý Start testing ¡ý------
-                Real flow_rate_local_prior = 0.0;
-                Real residue = 1.0e3;
-                vel_nodeO_i_prior = analytical_vel_P;
-                
-                //** Fix 5+1 initial values *
-                k_outer = 1.118813e-3;
-                omega_outer = 5.998469e+1;
-                nut_outer = 1.885024e-5;
-                u_outer = 3.000607e-1;
-                nu = 3.5e-4;
-                friction_vel_magnitude_outer = 6.37309e-02;
+            //    Real analytical_flow_rate_whole_PS_to_Wall = 1.433123e-2;
+            //    //------¡ü Mimic SPH average value ¡ü------
+            //    // 
+            //    //------¡ý Start testing ¡ý------
+            //    Real flow_rate_local_prior = 0.0;
+            //    Real residue = 1.0e3;
+            //    vel_nodeO_i_prior = analytical_vel_P;
+            //    
+            //    //** Fix 5+1 initial values *
+            //    k_outer = 1.118813e-3;
+            //    omega_outer = 5.998469e+1;
+            //    nut_outer = 1.885024e-5;
+            //    u_outer = 3.000607e-1;
+            //    nu = 3.5e-4;
+            //    friction_vel_magnitude_outer = 6.37309e-02;
 
-                //** Transfer 3 gradient values *
-                dudn_outer = analytical_vel_grad_P_inner;
-                dkdn_outer = analytical_k_grad_P_inner;
-                dwdn_outer = analytical_w_grad_P_inner;
+            //    //** Transfer 3 gradient values *
+            //    dudn_outer = analytical_vel_grad_P_inner;
+            //    dkdn_outer = analytical_k_grad_P_inner;
+            //    dwdn_outer = analytical_w_grad_P_inner;
 
-                velocity_gradient_nodeO_relaxed = dudn_outer;
-                while (residue > 1.0e-6)
-                {
-                    flow_rate_local = get_loacal_flow_rate(analytical_flow_rate_whole_PS_to_Wall, velocity_gradient_nodeO_relaxed, vel_nodeO_i_prior, fluid_particle_spacing_);
+            //    velocity_gradient_nodeO_relaxed = dudn_outer;
+            //    while (residue > 1.0e-6)
+            //    {
+            //        flow_rate_local = get_loacal_flow_rate(analytical_flow_rate_whole_PS_to_Wall, velocity_gradient_nodeO_relaxed, vel_nodeO_i_prior, fluid_particle_spacing_);
 
-                    U_nodeO = 0.0;
-                    U_nodeUM = 0.0;
-                    
-                    /* = solve_1D_sublayer_Neumann(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
-                        nut_outer, distance_to_wall, friction_vel_magnitude_outer, std::abs(flow_rate_local), dkdn_outer, dwdn_outer, U_nodeO, U_nodeUM);*/
-                    // = solve_1D_sublayer_Dirichlet(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
-                    //    nut_outer, distance_to_wall, friction_vel_magnitude_outer, std::abs(flow_rate_local), dkdn_outer, dwdn_outer, U_nodeO, U_nodeUM);
-                    velocity_gradient_nodeO = 0.0;
-                    // = solve_1D_sublayer_constantPG2(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
-                    //    nut_outer, distance_to_wall, friction_vel_magnitude_outer, std::abs(flow_rate_local), dkdn_outer, dwdn_outer, U_nodeO, U_nodeUM, velocity_gradient_nodeO);
+            //        U_nodeO = 0.0;
+            //        U_nodeUM = 0.0;
+            //        
+            //        /* = solve_1D_sublayer_Neumann(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
+            //            nut_outer, distance_to_wall, friction_vel_magnitude_outer, std::abs(flow_rate_local), dkdn_outer, dwdn_outer, U_nodeO, U_nodeUM);*/
+            //        // = solve_1D_sublayer_Dirichlet(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
+            //        //    nut_outer, distance_to_wall, friction_vel_magnitude_outer, std::abs(flow_rate_local), dkdn_outer, dwdn_outer, U_nodeO, U_nodeUM);
+            //        velocity_gradient_nodeO = 0.0;
+            //        // = solve_1D_sublayer_constantPG2(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
+            //        //    nut_outer, distance_to_wall, friction_vel_magnitude_outer, std::abs(flow_rate_local), dkdn_outer, dwdn_outer, U_nodeO, U_nodeUM, velocity_gradient_nodeO);
 
-                    residue = std::abs(flow_rate_local - flow_rate_local_prior);
-                    std::cout << "residue =" << residue << std::endl;
-                    flow_rate_local_prior = flow_rate_local;
-                    Real relax_factor = 0.3;
-                    vel_nodeO_i_prior = (1.0 - relax_factor) * vel_nodeO_i_prior + relax_factor * U_nodeO;
-                    velocity_gradient_nodeO_relaxed = (1.0 - relax_factor) * velocity_gradient_nodeO_relaxed + relax_factor * velocity_gradient_nodeO;
+            //        residue = std::abs(flow_rate_local - flow_rate_local_prior);
+            //        std::cout << "residue =" << residue << std::endl;
+            //        flow_rate_local_prior = flow_rate_local;
+            //        Real relax_factor = 0.3;
+            //        vel_nodeO_i_prior = (1.0 - relax_factor) * vel_nodeO_i_prior + relax_factor * U_nodeO;
+            //        velocity_gradient_nodeO_relaxed = (1.0 - relax_factor) * velocity_gradient_nodeO_relaxed + relax_factor * velocity_gradient_nodeO;
 
-                    //double hy = distance_to_wall / (double(num_sub_node_) + 0.5); // distance from node U to P_outer is hy, hence with a 0.5
-                    //double y_p = 0.5 * hy;
-                    //Real vel_grad_nodeP = sublayer_result.sublayer_vel[0] / y_p;
-                    //dudn_outer = (1.0 - relax_factor) * dudn_outer + relax_factor * vel_grad_nodeP;
+            //        //double hy = distance_to_wall / (double(num_sub_node_) + 0.5); // distance from node U to P_outer is hy, hence with a 0.5
+            //        //double y_p = 0.5 * hy;
+            //        //Real vel_grad_nodeP = sublayer_result.sublayer_vel[0] / y_p;
+            //        //dudn_outer = (1.0 - relax_factor) * dudn_outer + relax_factor * vel_grad_nodeP;
 
-                }
+            //    }
 
-                std::cout << "flow rate local converge!." << std::endl;
-                std::cout << "U_nodeO=" << U_nodeO << std::endl;
-                std::cout << "U_nodeUM=" << U_nodeUM << std::endl;
+            //    std::cout << "flow rate local converge!." << std::endl;
+            //    std::cout << "U_nodeO=" << U_nodeO << std::endl;
+            //    std::cout << "U_nodeUM=" << U_nodeUM << std::endl;
 
-                writeTecplotFromVec6dDirichlet(
-                    node_value_vel_[index_i],
-                    U_nodeO,
-                    U_nodeUM,
-                    distance_to_wall,
-                    num_sub_node_,
-                    40,
-                    164
-                );
+            //    writeTecplotFromVec6dDirichlet(
+            //        node_value_vel_[index_i],
+            //        U_nodeO,
+            //        U_nodeUM,
+            //        distance_to_wall,
+            //        num_sub_node_,
+            //        40,
+            //        164
+            //    );
 
-                std::cout << "Dynamic test ends, stop here." << std::endl;
-                std::cin.get();
-                //------¡ü Start testing ¡ü------
+            //    std::cout << "Dynamic test ends, stop here." << std::endl;
+            //    std::cin.get();
+            //    //------¡ü Start testing ¡ü------
             }
             //-------------------------¡ü If dynamic test ¡ü-------------------------
             // 
             //------------------------------------------------¡ü For test 1D analytical ¡ü------------------------------------------------
-            
-            
             
             Real flow_rate_local_prior = 0.0;
             Real residue = 1.0e3;
             Real averaged_vel_over_P = u_outer;
             int num_iter_out = 0;
             SublayerResult sublayer_result{};  //** Initialisation *
-            
-            int type_sublayer_solver = 2; //** 1:Nuemann 2:Dirichlet 3:contantPG 4:contantPG2 *
-            bool is_probe_iteration_method = false; 
 
-            if(type_sublayer_solver == 2) //** If go Dirichlet Path *
-            {
-                if (is_probe_iteration_method)//** If probe iteration method *
-                {
-                    double hy = distance_to_wall / (double(num_sub_node_) + 0.5); // distance from node U to P_outer is hy, hence with a 0.5
-                    double y_p = 0.5 * hy;
-                    while (residue > 1.0e-6)
-                    {
-                        flow_rate_local = get_loacal_flow_rate(u_outer * fluid_particle_spacing_, dudn_outer, vel_nodeO_i_prior, fluid_particle_spacing_); //** This is for better testing *
+            vel_nodeO_i_prior = u_outer; //** Overwrite *
+            flow_rate_local = get_loacal_flow_rate(averaged_vel_over_P * fluid_particle_spacing_, dudn_outer, vel_nodeO_i_prior, fluid_particle_spacing_); //** This is for better testing *
 
-                        U_nodeO = 0.0;
-                        U_nodeUM = 0.0;
-                        sublayer_result = solve_1D_sublayer_Dirichlet(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
-                            nut_outer, distance_to_wall, friction_vel_magnitude_outer, std::abs(flow_rate_local), dkdn_outer, dwdn_outer, U_nodeO, U_nodeUM);
-
-                        residue = std::abs(flow_rate_local - flow_rate_local_prior);
-                        //std::cout << "residue =" << residue << std::endl;
-                        flow_rate_local_prior = flow_rate_local;
-                        Real relax_factor = 0.3;
-                        //vel_nodeO_i_prior = (1.0 - relax_factor) * vel_nodeO_i_prior + relax_factor * U_nodeO;
-
-                        Real vel_grad_nodeP = sublayer_result.sublayer_vel[0] / y_p;
-                        dudn_outer = (1.0 - relax_factor) * dudn_outer + relax_factor * vel_grad_nodeP;
-                    }
-                }
-                else
-                {
-                    vel_nodeO_i_prior = u_outer; //** Overwrite *
-                    flow_rate_local = get_loacal_flow_rate(u_outer * fluid_particle_spacing_, dudn_outer, vel_nodeO_i_prior, fluid_particle_spacing_); //** This is for better testing *
-
-                    U_nodeO = 0.0;
-                    U_nodeUM = 0.0;
-                    sublayer_result = solve_1D_sublayer_Dirichlet(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
-                        nut_outer, distance_to_wall, friction_vel_magnitude_outer, std::abs(flow_rate_local), dkdn_outer, dwdn_outer, U_nodeO, U_nodeUM);
-                }
-            }
-            else
-            {
-                std::cout << "type_sublayer_solver is not chosed, stop here!" << std::endl;
-                std::cin.get();
-            }
+            U_nodeO = 0.0;
+            U_nodeUM = 0.0;
+            sublayer_result = solve_1D_sublayer_Dirichlet(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
+                nut_outer, distance_to_wall, friction_vel_magnitude_outer, std::abs(flow_rate_local), dkdn_outer, dwdn_outer, U_nodeO, U_nodeUM);
 
             //** Check results *
             if (!std::isfinite(sublayer_result.sublayer_utau))
@@ -419,70 +368,36 @@ namespace udf
 
             //** For testing *
             target_flow_rate_in_sublayer_[index_i] = flow_rate_local;
-            
-            //global_flow_rate_over_P_[index_i] = u_outer * fluid_particle_spacing_;
             global_flow_rate_over_P_[index_i] = averaged_vel_over_P * fluid_particle_spacing_;
-            
             half_flow_rate_over_P_[index_i] = (U_nodeO + (U_nodeO + dudn_outer * 0.5 * fluid_particle_spacing_)) * (0.5 * fluid_particle_spacing_) / 2.0;
             vel_ps_magnitude_[index_i] = U_nodeO + dudn_outer * 0.5 * fluid_particle_spacing_;
             dudn_for_local_flow_rate_[index_i] = dudn_outer;
             utau_node_[index_i] = friction_vel_magnitude_outer;
 
 
-            //** If calculate local gradient for correcting SPH solver *
+            //** If calculate local gradient for correcting Inner shear stress of the SPH solver *
             if(1)
             { 
+                //** Preparation from outer *
                 Vecd vel_tangential = vel_[index_i] - vel_[index_i].dot(normal) * normal;
                 Real tangential_velocity_P_magnitude = vel_tangential.norm();
                 Vecd tangential = vel_tangential / (tangential_velocity_P_magnitude + TinyReal);
                 
+                //** Preparation *
                 Real dUdn_P_sublayer_magnitude = 0.0;
-                if (type_sublayer_solver != 3) //** If NOT go ConstantPG Path *
-                {
-                    Real tangential_velocity_node_U = sublayer_result.sublayer_vel[num_sub_node_-1];
-                    Real dist_nodeU_P = TinyReal;
-                    Real uniform_dist_between_node = TinyReal;
-                    if (type_sublayer_solver == 1) //** If go Neumann Path * 
-                    {
-                        uniform_dist_between_node = distance_to_wall / double(num_sub_node_);
-                        dist_nodeU_P = uniform_dist_between_node / 2.0;
-                    }
-                    else if (type_sublayer_solver == 2 || type_sublayer_solver == 4) //** If go Dirichlet Path or constantPG2 Path*
-                    {
-                        uniform_dist_between_node = distance_to_wall / (double(num_sub_node_) + 0.5);
-                        dist_nodeU_P = uniform_dist_between_node;
-                    }
-                    else
-                    {
-                        std::cout << "type_sublayer_solver is not chosed, stop here!" << std::endl;
-                        std::cin.get();
-                    }
-                    dUdn_P_sublayer_magnitude = std::abs(tangential_velocity_P_magnitude - tangential_velocity_node_U) / (dist_nodeU_P + TinyReal);
-                }
-                else if (type_sublayer_solver == 3)//** If go ConstantPG Path *
-                {
-                    dUdn_P_sublayer_magnitude = velocity_gradient_nodeO;
-                }
-                else
-                {
-                    std::cout << "type_sublayer_solver is not chosed, stop here!" << std::endl;
-                    std::cin.get();
-                }
-
+                Real tangential_velocity_node_U = sublayer_result.sublayer_vel[num_sub_node_ - 1];
+                Real dist_nodeU_P = TinyReal;
+                Real uniform_dist_between_node = TinyReal;
+                uniform_dist_between_node = distance_to_wall / (double(num_sub_node_) + 0.5);
+                dist_nodeU_P = uniform_dist_between_node;
+                
+                //** Calculation *
+                dUdn_P_sublayer_magnitude = std::abs(tangential_velocity_P_magnitude - tangential_velocity_node_U) / (dist_nodeU_P + TinyReal);
                 Matd dUdn_P_sublayer = dUdn_P_sublayer_magnitude * (tangential * normal.transpose());
+
+                //** Store *
                 dUdn_P_sublayer_magnitude_[index_i] = dUdn_P_sublayer_magnitude;
                 dUdn_P_sublayer_[index_i] = dUdn_P_sublayer;
-            }
-
-            //** If calculate dUdn_P_nodeU_ *
-            if (0)
-            {
-                Vecd vel_tangential = vel_[index_i] - vel_[index_i].dot(normal) * normal;
-                Real tangential_velocity_P_magnitude = vel_tangential.norm();
-                Vecd tangential = vel_tangential / (tangential_velocity_P_magnitude + TinyReal);
-                Real tangential_velocity_node_U = sublayer_result.sublayer_vel[num_sub_node_ - 1]; //** Temporary treatment *
-                Real dist_nodeU_P = (distance_to_wall / double(num_sub_node_)) / 2.0;
-                dUdn_P_nodeU_[index_i] = (tangential_velocity_P_magnitude - tangential_velocity_node_U) / (dist_nodeU_P + TinyReal);
             }
         }
     }
@@ -492,14 +407,6 @@ namespace udf
         double Q_target, double k_grad_p_outer, double w_grad_p_outer, double& vel_nodeO, double& vel_nodeUM)
     {
         //------------------------------------------------¡ý Input parameters ¡ý------------------------------------------------
-        //constexpr int ny = 5; // Manually determine
-
-        if (num_sub_node_ != ny)
-        {
-            std::cout << "Node number mismatch! Stop here." << std::endl;
-            std::cin.get();
-        }
-
         double utau_init = utau_outer;
         double height_sublayer = h_sublayer;
         double nu = kinematic_viscosity;
@@ -1055,19 +962,6 @@ namespace udf
 
         }
 
-        ///*
-        //** This is a temporary treatment *
-        //if (ny != 5)
-        //{
-        //    std::cout << "ny is not 5, currently not allowed! Stop here." << std::endl;
-        //    std::cin.get();
-        //}
-        //Vec_ny_plus1_d results = Vec_ny_plus1_d::Zero();
-        //results[0] = utau;
-        //for (int i = 0; i < ny; ++i) {
-        //    results[i + 1] = phi_solved[i];
-        //}
-
         SublayerResult res;
         res.sublayer_utau = utau;
 
@@ -1080,7 +974,6 @@ namespace udf
         vel_nodeO = u_nodeO;
         vel_nodeUM = u_nodeUM;
         return res;
-        //*/
     }
     //=================================================================================================//
     // ================= TDMA =================
