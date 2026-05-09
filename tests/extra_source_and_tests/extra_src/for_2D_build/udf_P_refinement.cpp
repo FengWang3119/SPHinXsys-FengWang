@@ -84,6 +84,7 @@ namespace udf
         dudn_for_local_flow_rate_(particles_->registerStateVariableData<Real>("dudnForLocalFlowRate")),
         utau_node_(particles_->registerStateVariableData<Real>("utauNode")),
         node_value_vel_(particles_->registerStateVariableData<Vec6d>("NodeValue")), //** Note that only Vec6d is in SPH system *
+        node_value_k_(particles_->registerStateVariableData<Vec6d>("NodeValueTKE")), //** Note that only Vec6d is in SPH system *
         dUdn_P_sublayer_magnitude_(particles_->registerStateVariableData<Real>("dUdnFromSublayerMagnitude")),
         dUdn_P_sublayer_(particles_->registerStateVariableData<Matd>("dUdnFromSublayer")),
         vel_nodeO_(particles_->registerStateVariableData<Real>("VelNodeO")),
@@ -118,6 +119,7 @@ namespace udf
         particles_->addVariableToWrite<Real>("utauNode");
         particles_->addVariableToWrite<Real>("DistanceToDummyInterface");
         particles_->addVariableToWrite<Vec6d>("NodeValue");
+        particles_->addVariableToWrite<Vec6d>("NodeValueTKE");
         check_num_node_consistency();
         particles_->addVariableToWrite<Real>("dUdnFromSublayerMagnitude");
         particles_->addVariableToWrite<Matd>("dUdnFromSublayer");
@@ -154,6 +156,7 @@ namespace udf
         dudn_for_local_flow_rate_[index_i] = 0.0;
         utau_node_[index_i] = 0.0;
         node_value_vel_[index_i] = Vec6d::Zero();
+        node_value_k_[index_i] = Vec6d::Zero();
         dUdn_P_sublayer_magnitude_[index_i] = 0.0;
         dUdn_P_sublayer_[index_i] = Matd::Zero();
         vel_nodeO_[index_i] = 0.0;
@@ -406,7 +409,8 @@ namespace udf
             //** Extract results *
             node_value_vel_[index_i][0] = sublayer_result.sublayer_utau;
             for (int i = 0; i < num_sub_node_; ++i) {
-                node_value_vel_[index_i][i+1] = sublayer_result.sublayer_vel[i];
+                node_value_vel_[index_i][i + 1] = sublayer_result.sublayer_vel[i];
+                node_value_k_[index_i][i] = sublayer_result.sublayer_k[i];
             }
 
             friction_velocity_from_sublayer_[index_i] = sublayer_result.sublayer_utau;

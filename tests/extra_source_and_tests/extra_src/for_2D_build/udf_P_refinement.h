@@ -80,7 +80,6 @@ namespace udf
         //** Locally effective, mannually set number of node *
         static constexpr int ny = 4; //** Currently only Vec6d can be used, so ny should <=5, other space will be zero *
         using Vec_ny_d = Eigen::Matrix<Real, ny, 1>;
-        using Vec_ny_plus1_d = Eigen::Matrix<Real, ny + 1, 1>;
         inline void check_num_node_consistency()
         {
             if (ny > 5)
@@ -253,7 +252,8 @@ namespace udf
         
         // ** Temporary treatment, only valid for 5-node configuration, first is utau, then 5 velocity *
         // ** This variable only communicates with SPH system, and should no participate sublayer calculation 
-        Vec6d* node_value_vel_; 
+        Vec6d* node_value_vel_;
+        Vec6d* node_value_k_;
         
         Real* dUdn_P_sublayer_magnitude_;
         Matd* dUdn_P_sublayer_;
