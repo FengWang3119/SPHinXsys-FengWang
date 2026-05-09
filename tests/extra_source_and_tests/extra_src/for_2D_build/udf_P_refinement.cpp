@@ -427,6 +427,8 @@ namespace udf
 
         double flow_rate_target = Q_target;
         double utau = utau_init;
+
+        int type_tdma = 5; //** 0: general TMDA, other numbers refer to corresponding unrolled version  *
         //------------------------------------------------¡ü Input parameters ¡ü------------------------------------------------
 
         //------------------------------------------------¡ý Node arrangement, for sublayer ¡ý------------------------------------------------
@@ -733,7 +735,21 @@ namespace udf
             double U_new[ny]{};
             //solve5_eigen(a_u, b_u, c_u, d_u, U_new);
             //solve5_eigen_with_additonal_coefficient(a_u, b_u, c_u, e_u, d_u, U_new);
-            tdma(ny ,a_u, b_u, c_u, d_u, U_new);
+            
+            if (type_tdma == 0)
+            {
+                tdma(ny, a_u, b_u, c_u, d_u, U_new);
+            }
+            else if (type_tdma == 5)
+            {
+                tdma5(a_u, b_u, c_u, d_u, U_new);
+            }
+            else
+            {
+                std::cout << "TDMA: Type not define! Stop here." << std::endl;
+                std::cin.get();
+            }
+            
             //-------------------------------------¡ü For velocity ¡ü-------------------------------------
 
             //-------------------------------------¡ý For turbulent kinetic energy ¡ý-------------------------------------
@@ -774,7 +790,19 @@ namespace udf
             d_k[last] = hy * hy * nut_star[last] * dudy_star[last] * dudy_star[last] + Dk_last_plus_half * k_nodeUM;
             // solving
             double K_new[ny]{};
-            tdma(ny, a_k, b_k, c_k, d_k, K_new);
+            if (type_tdma == 0)
+            {
+                tdma(ny, a_k, b_k, c_k, d_k, K_new);
+            }
+            else if (type_tdma == 5)
+            {
+                tdma5(a_k, b_k, c_k, d_k, K_new);
+            }
+            else
+            {
+                std::cout << "TDMA: Type not define! Stop here." << std::endl;
+                std::cin.get();
+            }
             // avoid negative value, K_new = max(K_new, k_min)
             double k_min = 1e-10;
             for (int i = 0; i < ny; ++i) {
@@ -819,7 +847,19 @@ namespace udf
             d_w[last] = hy * hy * (part_production_last + part_cross_diffusion[last]) + Dw_last_plus_half * w_nodeUM;
             // solving
             double Turbu_omega_new[ny]{};
-            tdma(ny, a_w, b_w, c_w, d_w, Turbu_omega_new);
+            if (type_tdma == 0)
+            {
+                tdma(ny, a_w, b_w, c_w, d_w, Turbu_omega_new);
+            }
+            else if (type_tdma == 5)
+            {
+                tdma5(a_w, b_w, c_w, d_w, Turbu_omega_new);
+            }
+            else
+            {
+                std::cout << "TDMA: Type not define! Stop here." << std::endl;
+                std::cin.get();
+            }
             // avoid negative value, Turbu_omega_new = max(Turbu_omega_new, omega_min)
             double omega_min = 1e-10;
             for (int i = 0; i < ny; ++i) {
