@@ -267,12 +267,12 @@ class kOmega_InflowTurbulentCondition : public BaseFlowBoundaryCondition,
 {
   public:
     explicit kOmega_InflowTurbulentCondition(BodyPartByCell &body_part,
-                                             Real CharacteristicLength, Real relaxation_rate, int type_turbu_inlet);
+                                             Real CharacteristicLength, Real relaxation_rate, int type_turbu_inlet_omega, int type_turbu_inlet_k);
     virtual ~kOmega_InflowTurbulentCondition(){};
     void update(size_t index_i, Real dt = 0.0);
 
   protected:
-    int type_turbu_inlet_;
+    int type_turbu_inlet_omega_, type_turbu_inlet_k_;
     Real relaxation_rate_;
     Real CharacteristicLength_;
     Real *turbu_k_;

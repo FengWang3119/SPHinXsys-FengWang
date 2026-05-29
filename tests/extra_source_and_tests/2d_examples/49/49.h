@@ -22,23 +22,25 @@ Real time_gradually_increase_vel = 2.0;
 //	Unique parameters for turbulence.
 //----------------------------------------------------------------------
 Real characteristic_length = DH; /**<It needs characteristic Length to calculate turbulent length and the inflow turbulent epsilon>*/
-//** For K and Epsilon/Omega, type of the turbulent inlet, 0 is freestream, 1 is from interpolation from PY21, 2 is from OF6-28(currently not OK) *
-int type_turbulent_inlet = 1;
-// ** 0 is freestream, 1 is from interpolation from PY21, 2 is from OF6-28 *
-int type_velocity_inlet = 2;
+//** For K and Epsilon/Omega, type of the turbulent inlet, 0 is freestream, 1 is from interpolation from PY21, 2 is from PY2-11 *
+int type_turbulent_inlet_omega = 2;
+//** For K and Epsilon/Omega, type of the turbulent inlet, 0 is freestream, 1 is from interpolation from PY21, 2 is from PY2-11*
+int type_turbulent_inlet_k = 2;
+// ** 0 is freestream, 1 is from interpolation from PY21, 2 is from OF6-28, 3 is from PY2-11 *
+int type_velocity_inlet = 3;
 
 Real relaxation_rate_turbulent_inlet = 0.8;
 //** Tag for wall treatment *
-int is_blended = 1;
+int is_blended = 0;
 //** Tag for AMRD *
-int is_AMRD = 0;
+int is_AMRD = 1;
 bool is_constrain_normal_velocity_in_P_region = false;
 //** Weight for correcting the velocity  gradient in the sub near wall region  *
 //Real weight_vel_grad_sub_nearwall = 0.1;
 //** Tag for Source Term Linearisation *
 bool is_source_term_linearisation = false;
 //** Empirical parameter for initial stability*
-Real turbulent_module_activate_time = 0.0;
+Real turbulent_module_activate_time = 2.0;
 //** Initial values for K, Omega and Mu_t *
 StdVec<Real> initial_turbu_values = {0.01, 2.056, 0.02};
 
@@ -68,7 +70,9 @@ Real U_f = U_inlet;         //*Characteristic velocity
 Real U_max = 1.5 * U_inlet; //** An estimated value, generally 1.5 U_inlet *
 Real c_f = 10.0 * U_max;
 Real rho0_f = 1.0; /**< Density. */
-Real Re = 5714.0;
+
+//Real Re = 5714.0;
+Real Re = 8.0e7;
 
 Real Outlet_pressure = 0.0;
 
@@ -444,6 +448,57 @@ struct InflowVelocity
             target_velocity[0] = current_time < t_ref_ ? 0.5 * polynomial_value * (1.0 - cos(Pi * current_time / t_ref_)) : polynomial_value;
             //target_velocity[0] = polynomial_value;
         }
+        if (type_velocity_inlet == 3)
+        {
+            //** Impose fully-developed velocity from PY2-11 result */
+            //** Calculate the distance to wall, Y. position[1] is the distance to the centerline */
+            Real Y = half_channel_height - std::abs(position[1]);
+
+            //** 2 segments *
+            const Real y1 = 0.2;
+
+            Real polynomial_value = 0.0;
+            if (Y > 0.0 && Y <= y1)
+            {
+                static const std::vector<Real> coeff1 = {
+                6.151731e-01, 2.554518e+01, -1.769479e+03,
+                8.257645e+04, -2.526785e+06, 5.203395e+07,
+                -7.370660e+08, 7.258405e+09, -4.955222e+10,
+                2.298271e+11, -6.905470e+11, 1.211757e+12,
+                -9.425140e+11,
+                };
+                polynomial_value = polyEval(coeff1, Y);
+                //std::cout << "polynomial_value=" << polynomial_value << " Y=" << Y << "========1=========\n";
+            }
+            else
+            {
+                static const std::vector<Real> coeff2 = {
+                8.114355e-01, 1.550640e+00, -7.518220e+00,
+                2.802058e+01, -7.392573e+01, 1.335115e+02,
+                -1.542023e+02, 8.654682e+01, 3.406429e+01,
+                -1.058110e+02, 8.703786e+01, -3.473313e+01,
+                5.702176e+00,
+                };
+                polynomial_value = polyEval(coeff2, Y);
+                //std::cout << "polynomial_value=" << polynomial_value << " Y=" << Y << "========3=========\n";
+            }
+
+            if (Y > half_channel_height || Y < 0.0)
+            {
+                std::cout << "position[1]=" << position[1] << std::endl;
+                std::cout << "Y=" << Y << std::endl;
+                std::cout << "polynomial_value=" << polynomial_value << std::endl;
+                std::cout << "Stop" << std::endl;
+                std::cout << "=================" << std::endl;
+                std::cin.get();
+            }
+
+            //** Impose inlet velocity gradually */
+            target_velocity[0] = current_time < t_ref_ ? 0.5 * polynomial_value * (1.0 - cos(Pi * current_time / t_ref_)) : polynomial_value;
+            //target_velocity[0] = polynomial_value;
+        }
+
+
         if (position[1] > half_channel_height)
         {
             std::cout << "Particles out of domain, wrong inlet velocity." << std::endl;

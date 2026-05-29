@@ -429,11 +429,21 @@ namespace udf
         double utau = utau_init;
 
         int type_tdma = 5; //** 0: general TMDA, other numbers refer to corresponding unrolled version  *
+        
+        bool is_y_p_input = true;
+        double y_p_input = 2.0e-6;
         //------------------------------------------------¡ü Input parameters ¡ü------------------------------------------------
 
         //------------------------------------------------¡ý Node arrangement, for sublayer ¡ý------------------------------------------------
         double hy = height_sublayer / (double(ny) + 0.5); // distance from node U to P_outer is hy, hence with a 0.5
         double y_p = 0.5 * hy;
+        
+        if (is_y_p_input)
+        {
+            y_p = y_p_input;
+            hy = (height_sublayer - y_p_input) / double(ny);
+        }
+
         double y[ny];  //computational nodes
         double dist_node_i_to_wall[ny]{};
         for (int i = 0; i < ny; ++i)

@@ -622,8 +622,8 @@ void kOmega_TSDR_Diffusion_and_Gradient_Dot_Inner::interaction(size_t index_i, R
     gradient_dot_k_omega_[index_i] = k_gradient.dot(omega_gradient);
 }
 //=================================================================================================//
-kOmega_InflowTurbulentCondition::kOmega_InflowTurbulentCondition(BodyPartByCell &body_part, Real CharacteristicLength, Real relaxation_rate, int type_turbu_inlet)
-    : BaseFlowBoundaryCondition(body_part), type_turbu_inlet_(type_turbu_inlet),
+kOmega_InflowTurbulentCondition::kOmega_InflowTurbulentCondition(BodyPartByCell &body_part, Real CharacteristicLength, Real relaxation_rate, int type_turbu_inlet_omega, int type_turbu_inlet_k)
+    : BaseFlowBoundaryCondition(body_part), type_turbu_inlet_omega_(type_turbu_inlet_omega), type_turbu_inlet_k_(type_turbu_inlet_k),
       relaxation_rate_(relaxation_rate),
       CharacteristicLength_(CharacteristicLength),
       turbu_k_(particles_->getVariableDataByName<Real>("TurbulenceKineticEnergy")),
@@ -637,7 +637,7 @@ void kOmega_InflowTurbulentCondition::update(size_t index_i, Real dt)
     Real target_inflow_turbu_k = getTurbulentInflowK(pos_[index_i], vel_[index_i], turbu_k_[index_i]);
     turbu_k_[index_i] += relaxation_rate_ * (target_inflow_turbu_k - turbu_k_[index_i]);
 
-    if (type_turbu_inlet_ == 1 || type_turbu_inlet_ == 0)
+    if (type_turbu_inlet_omega_ == 1 || type_turbu_inlet_omega_ == 0)
     {
         Real target_inflow_temp_turbu_E = getTurbulentInflowTemporaryEpsilon(pos_[index_i], turbu_k_[index_i], 0.0);
         //** Calculate inlet omega from k and epsilon */
@@ -646,7 +646,7 @@ void kOmega_InflowTurbulentCondition::update(size_t index_i, Real dt)
         Real target_inflow_turbu_omega = (pos_[index_i][0] < 0.0) ? inflow_turbu_omega_temp : turbu_omega_[index_i];
         turbu_omega_[index_i] += relaxation_rate_ * (target_inflow_turbu_omega - turbu_omega_[index_i]);
     }
-    else if (type_turbu_inlet_ == 2)
+    else if (type_turbu_inlet_omega_ == 2)
     {
         //** Calculate inlet omega from its function */
         Real target_inflow_turbu_omega = getTurbulentInflowOmega(pos_[index_i], vel_[index_i], turbu_k_[index_i]);;
@@ -659,7 +659,7 @@ Real kOmega_InflowTurbulentCondition::getTurbulentInflowK(Vecd &position, Vecd &
     Real u = velocity[0];
     Real temp_in_turbu_k = 1.5 * pow((turbulent_intensity_for_k_inlet_ * u), 2);
     Real turbu_k_original = turbu_k;
-    if (type_turbu_inlet_ == 1)
+    if (type_turbu_inlet_k_ == 1)
     {
         Real channel_height = CharacteristicLength_; //** Temporarily treatment *
 
@@ -692,7 +692,7 @@ Real kOmega_InflowTurbulentCondition::getTurbulentInflowK(Vecd &position, Vecd &
 
         temp_in_turbu_k = polynomial_value;
     }
-    if (type_turbu_inlet_ == 2)// %From OF6-28
+    if (type_turbu_inlet_k_ == 2)// %From PY2-11
     {
         const Real channel_height = CharacteristicLength_; //** Temporarily treatment *
 
@@ -701,29 +701,31 @@ Real kOmega_InflowTurbulentCondition::getTurbulentInflowK(Vecd &position, Vecd &
         Real Y = (position[1] < channel_height / 2.0) ? position[1] : channel_height - position[1];
 
         //** 2 segments *
-        const Real y1 = 0.16;
+        const Real y1 = 0.2;
 
         Real polynomial_value = 0.0;
         if (Y > 0.0 && Y <= y1)
         {
             static const std::vector<Real> coeff1 = {
-                2.635746e-05, -5.806824e-03, 2.631359e+00,
-                -2.224117e+02, 1.220206e+04, -3.088909e+05,
-                4.268938e+06, -3.481744e+07, 1.682721e+08,
-                -4.473615e+08, 5.054524e+08, -8.600097e+02,
-                7.539292e+01,
+            2.372066e-03, -2.184474e-03, -5.428215e-02,
+            2.932582e+00, -9.519733e+01, 2.027762e+03,
+            -2.936207e+04, 2.936498e+05, -2.027765e+06,
+            9.488074e+06, -2.870793e+07, 5.066263e+07,
+            -3.959145e+07,
             };
             polynomial_value = polyEval(coeff1, Y);
-            //std::cout << "polynomial_value=" << polynomial_value << " Y=" << Y << "========1=========\n";
+            //if (Y < 0.05)
+            //    std::cout << "polynomial_value=" << polynomial_value << " Y=" << Y << "========1=========\n";
+            
         }
         else
         {
             static const std::vector<Real> coeff2 = {
-                3.681529e-04, 1.650545e-01, -1.387815e+00,
-                6.702511e+00, -2.129245e+01, 4.503753e+01,
-                -6.069806e+01, 4.192718e+01, 9.838463e+00,
-                -5.149433e+01, 4.939631e+01, -2.224766e+01,
-                4.057173e+00,
+            2.373419e-03, -2.741400e-03, 1.415229e-03,
+            -3.237809e-03, 7.040568e-03, -9.918119e-03,
+            8.545716e-03, -1.622058e-05, -8.788399e-03,
+            9.634837e-03, -4.033092e-03, -2.133763e-05,
+            3.376056e-04,
             };
             polynomial_value = polyEval(coeff2, Y);
             //std::cout << "polynomial_value=" << polynomial_value << " Y=" << Y << "========3=========\n";
@@ -748,7 +750,7 @@ Real kOmega_InflowTurbulentCondition::getTurbulentInflowTemporaryEpsilon(Vecd &p
 {
     Real temp_in_turbu_E = C_mu_75_for_omega_inlet_ * pow(turbu_k, 1.5) / TurbulentLength_;
     Real turbu_E_original = turbu_E;
-    if (type_turbu_inlet_ == 1)
+    if (type_turbu_inlet_omega_ == 1)
     {
         Real channel_height = CharacteristicLength_; //** Temporarily treatment *
 
@@ -779,7 +781,7 @@ Real kOmega_InflowTurbulentCondition::getTurbulentInflowOmega(Vecd& position, Ve
 {
     Real temp_in_turbu_omega = 0.0;
     Real turbu_omega_original = turbu_omega;
-    if (type_turbu_inlet_ == 2) // %From OF6-28
+    if (type_turbu_inlet_omega_ == 2) // %From PY2-11
     {
         const Real channel_height = CharacteristicLength_; //** Temporarily treatment *
 
@@ -788,39 +790,34 @@ Real kOmega_InflowTurbulentCondition::getTurbulentInflowOmega(Vecd& position, Ve
             ? position[1]
             : channel_height - position[1];
 
-        //** 3 segments *
-        const Real y1 = 0.03;
-        const Real y2 = 0.2;
+        //** 2 segments *
+        const Real y1 = 0.2;
 
         Real polynomial_value = 0.0;
         if (Y > 0.0 && Y <= y1)
         {
-            static const std::vector<Real> coeff1 = {
-                4.363393e+02,
-               -1.047956e+04,
-               -4.364058e+04
-            };
-            polynomial_value = polyEval(coeff1, Y);
-            //std::cout << "polynomial_value=" << polynomial_value << " Y=" << Y << "========1=========\n";
-        }
-        else if (Y > y1 && Y <= y2)
-        {
-            static const std::vector<Real> coeff2 = {
-                2.715982e+02, -1.237141e+04, 2.548021e+05,
-               -2.891082e+06, 1.910128e+07, -7.257068e+07,
-                1.449985e+08, -1.153286e+08
-            };
-            polynomial_value = polyEval(coeff2, Y);
-            //std::cout << "polynomial_value=" << polynomial_value << " Y=" << Y << "========2=========\n";
+            //static const std::vector<Real> coeff1 = {
+            // 1.169192e+02, -2.150606e+04, 1.940452e+06,
+            // -1.000778e+08, 3.223235e+09, -6.843456e+10,
+            // 9.889939e+11, -9.876862e+12, 6.812652e+13,
+            //-3.184688e+14, 9.628054e+14, -1.697913e+15,
+            // 1.326035e+15,
+            //};
+            //polynomial_value = polyEval(coeff1, Y);
+            polynomial_value = 2.2337739892e-01 / (Y + -9.5734226803e-07) + 4.9871467182e-02;
+            //if (Y < 0.180 && Y > 0.177)
+            //    std::cout << "polynomial_value=" << polynomial_value << " Y=" << Y << "========1=========\n";
         }
         else
         {
-            static const std::vector<Real> coeff3 = {
-                1.635845e+01, -1.405561e+02, 6.298030e+02,
-               -1.634994e+03, 2.532157e+03, -2.318976e+03,
-                1.163535e+03, -2.470773e+02
+            static const std::vector<Real> coeff2 = {
+    5.610110e+00, -5.994682e+01, 3.670464e+02,
+    -1.398382e+03, 3.311412e+03, -4.223060e+03,
+    -9.007083e+01, 1.109756e+04, -2.188842e+04,
+    2.287992e+04, -1.420357e+04, 4.953297e+03,
+    -7.511954e+02,
             };
-            polynomial_value = polyEval(coeff3, Y);
+            polynomial_value = polyEval(coeff2, Y);
             //std::cout << "polynomial_value=" << polynomial_value << " Y=" << Y << "========3=========\n";
         }
 
