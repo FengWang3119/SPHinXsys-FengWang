@@ -454,48 +454,21 @@ struct InflowVelocity
             //** Calculate the distance to wall, Y. position[1] is the distance to the centerline */
             Real Y = half_channel_height - std::abs(position[1]);
 
-            //** 2 segments *
-            const Real y1 = 0.2;
-
-            Real polynomial_value = 0.0;
-            if (Y > 0.0 && Y <= y1)
-            {
-                static const std::vector<Real> coeff1 = {
-                6.151731e-01, 2.554518e+01, -1.769479e+03,
-                8.257645e+04, -2.526785e+06, 5.203395e+07,
-                -7.370660e+08, 7.258405e+09, -4.955222e+10,
-                2.298271e+11, -6.905470e+11, 1.211757e+12,
-                -9.425140e+11,
-                };
-                polynomial_value = polyEval(coeff1, Y);
-                //std::cout << "polynomial_value=" << polynomial_value << " Y=" << Y << "========1=========\n";
-            }
-            else
-            {
-                static const std::vector<Real> coeff2 = {
-                8.114355e-01, 1.550640e+00, -7.518220e+00,
-                2.802058e+01, -7.392573e+01, 1.335115e+02,
-                -1.542023e+02, 8.654682e+01, 3.406429e+01,
-                -1.058110e+02, 8.703786e+01, -3.473313e+01,
-                5.702176e+00,
-                };
-                polynomial_value = polyEval(coeff2, Y);
-                //std::cout << "polynomial_value=" << polynomial_value << " Y=" << Y << "========3=========\n";
-            }
+            Real profile_value = inletProfileTable(Y);
 
             if (Y > half_channel_height || Y < 0.0)
             {
                 std::cout << "position[1]=" << position[1] << std::endl;
                 std::cout << "Y=" << Y << std::endl;
-                std::cout << "polynomial_value=" << polynomial_value << std::endl;
+                std::cout << "profile_value=" << profile_value << std::endl;
                 std::cout << "Stop" << std::endl;
                 std::cout << "=================" << std::endl;
                 std::cin.get();
             }
 
             //** Impose inlet velocity gradually */
-            target_velocity[0] = current_time < t_ref_ ? 0.5 * polynomial_value * (1.0 - cos(Pi * current_time / t_ref_)) : polynomial_value;
-            //target_velocity[0] = polynomial_value;
+            target_velocity[0] = current_time < t_ref_ ? 0.5 * profile_value * (1.0 - cos(Pi * current_time / t_ref_)) : profile_value;
+            //target_velocity[0] = profile_value;
         }
 
 
@@ -523,6 +496,81 @@ struct InflowVelocity
             result = result * x + a[i];
         }
         return result;
+    }
+    Real inletProfileChebyshev(Real Y)
+    {
+        const Real Y_min = 3.81517410e-03;
+        const Real Y_max = 9.99451160e-01;
+
+        Y = SMAX(Y_min, SMIN(Y, Y_max));
+
+        //** X_min = std::log(Y_min), X_max = std::log(Y_max) *
+        const Real xmin = -5.5687689796382367e+00;
+        const Real xmax = -5.4899066780366194e-04;
+        const Real inv_range = 1.0 / (xmax - xmin);
+
+        const Real X = std::log(Y);
+        const Real x = (2.0 * X - xmin - xmax) * inv_range;
+
+        const Real c[] = {
+            8.7874536325444819e-01,
+            1.8682245615059126e-01,
+            -1.8117146154221684e-03,
+            -3.1827710521799830e-03,
+            -2.5781840831446594e-03,
+            -9.6544247521810548e-04,
+            -1.2917847312668713e-03,
+        };
+
+        const int n = sizeof(c) / sizeof(c[0]);
+
+        Real b1 = 0.0;
+        Real b2 = 0.0;
+
+        for (int k = n - 1; k >= 1; --k)
+        {
+            Real b0 = 2.0 * x * b1 - b2 + c[k];
+            b2 = b1;
+            b1 = b0;
+        }
+
+        return x * b1 - b2 + c[0];
+    }
+    Real inletProfileTable(Real Y)
+    {
+        const Real Y_min = 3.81517410e-03;
+        const Real Y_max = 9.99451160e-01;
+
+        constexpr int N = 2000;
+        const Real inv_dY = Real(N - 1) / (Y_max - Y_min);
+
+        static bool initialized = false;
+        static std::array<Real, N> table;
+
+        if (!initialized)
+        {
+            for (int i = 0; i < N; ++i)
+            {
+                Real Yi = Y_min + Real(i) / inv_dY;
+                table[i] = inletProfileChebyshev(Yi);
+            }
+
+            initialized = true;
+        }
+
+        Y = SMAX(Y_min, SMIN(Y, Y_max));
+
+        Real s = (Y - Y_min) * inv_dY;
+        int i = static_cast<int>(s);
+
+        if (i >= N - 1)
+            i = N - 2;
+        if (i < 0)
+            i = 0;
+
+        Real w = s - Real(i);
+
+        return (1.0 - w) * table[i] + w * table[i + 1];
     }
 };
 
