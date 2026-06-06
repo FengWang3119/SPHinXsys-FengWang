@@ -285,6 +285,7 @@ int main(int ac, char *av[])
     //** Temporary treatment *
     ObservedQuantityRecording<Vec6d> write_recorded_water_node_velocity("NodeValue", node_observer_contact);
     ObservedQuantityRecording<Vec6d> write_recorded_water_node_k("NodeValueTKE", node_observer_contact);
+    ObservedQuantityRecording<Real> write_recorded_water_node_utau("FrictionVelocityFromSublayer", node_observer_contact);
     /**
      * @brief Setup geometry and initial conditions.
      */
@@ -486,6 +487,7 @@ int main(int ac, char *av[])
                 //** Temporary treatment *
                 write_recorded_water_node_velocity.writeToFile(number_of_iterations);
                 write_recorded_water_node_k.writeToFile(number_of_iterations);
+                write_recorded_water_node_utau.writeToFile(number_of_iterations);
             }
 
             /** Update cell linked list and configuration. */

@@ -358,7 +358,7 @@ namespace udf
             //** Extract results *
             node_value_vel_[index_i][0] = sublayer_result.sublayer_utau;
             for (int i = 0; i < num_sub_node_; ++i) {
-                node_value_vel_[index_i][i + 1] = sublayer_result.sublayer_vel[i];
+                node_value_vel_[index_i][i] = sublayer_result.sublayer_vel[i];
                 node_value_k_[index_i][i] = sublayer_result.sublayer_k[i];
             }
 
