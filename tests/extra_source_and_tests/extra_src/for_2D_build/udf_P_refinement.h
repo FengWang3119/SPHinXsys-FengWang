@@ -78,7 +78,7 @@ namespace udf
         void update(size_t index_i, Real dt = 0.0);
         
         //** Locally effective, mannually set number of node *
-        static constexpr int ny = 5; //** Currently only Vec6d can be used, so ny should <=5, other space will be zero *
+        static constexpr int ny = 10; //** Currently only Vec6d can be used, so ny should <=5, other space will be zero *
         using Vec_ny_d = Eigen::Matrix<Real, ny, 1>;
         inline void check_num_node_consistency()
         {
@@ -133,7 +133,7 @@ namespace udf
                 outfile << sublayer_y_[1] << "\n";
                 //** left, inner nodes are skipped until the node U can be output *
                 for (int i = 2; i < node_dim_output_limit_; ++i) {
-                    outfile << sublayer_y_[i] << "\n";
+                    outfile << sublayer_y_[i + num_skip_output_] << "\n";
                 }
             }
             else
