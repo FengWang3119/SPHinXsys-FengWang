@@ -75,7 +75,7 @@ namespace udf
     }
 //=================================================================================================//
     P_refinement::
-        P_refinement(SPHBody& sph_body)
+        P_refinement(SPHBody& sph_body, Real constant_y_p)
         : LocalDynamics(sph_body),
         num_sub_node_(ny), // ** Needs tobe modified in sublayer function, as well *
         friction_velocity_from_sublayer_(particles_->registerStateVariableData<Real>("FrictionVelocityFromSublayer")),
@@ -93,7 +93,6 @@ namespace udf
         half_flow_rate_over_P_(particles_->registerStateVariableData<Real>("half_flow_rate_over_P_")),
         //
         is_near_wall_P1_(particles_->getVariableDataByName<int>("IsNearWallP1")),
-        y_p_(particles_->getVariableDataByName<Real>("Y_P")),
         vel_(particles_->getVariableDataByName<Vecd>("Velocity")),
         turbu_k_(particles_->getVariableDataByName<Real>("TurbulenceKineticEnergy")),
         turbu_omega_(particles_->getVariableDataByName<Real>("TurbulentSpecificDissipation")),
@@ -120,6 +119,8 @@ namespace udf
         particles_->addVariableToWrite<Vec6d>("NodeValue");
         particles_->addVariableToWrite<Vec6d>("NodeValueTKE");
         check_num_node_consistency();
+        construct_node_distribution(constant_y_p);
+        output_node_distribution();
         particles_->addVariableToWrite<Real>("dUdnFromSublayerMagnitude");
         particles_->addVariableToWrite<Matd>("dUdnFromSublayer");
         particles_->addVariableToWrite<Real>("VelNodeO");
@@ -175,7 +176,7 @@ namespace udf
             friction_vel_magnitude_outer = std::sqrt(wall_shear_stress_[index_i] / rho_[index_i]);
 
             //** Two ways to determine distance to wall *
-            Real distance_to_wall = y_p_[index_i];
+            Real distance_to_wall = sublayer_height_contant_;
             //Real distance_to_wall = distance_to_dummy_interface_[index_i];
             
             Vecd velocity_gradient_only_P_normal = velocity_gradient_only_P_[index_i] * normal;
@@ -356,15 +357,30 @@ namespace udf
             }
 
             //** Extract results *
-            node_value_vel_[index_i][0] = sublayer_result.sublayer_utau;
-            for (int i = 0; i < num_sub_node_; ++i) {
-                node_value_vel_[index_i][i] = sublayer_result.sublayer_vel[i];
-                node_value_k_[index_i][i] = sublayer_result.sublayer_k[i];
-            }
-
             friction_velocity_from_sublayer_[index_i] = sublayer_result.sublayer_utau;
             vel_nodeO_[index_i] = U_nodeO;
             vel_nodeUM_[index_i] = U_nodeUM;
+            if (is_truncated_output_)
+            {
+                //** wall adjacent *
+                node_value_vel_[index_i][0] = sublayer_result.sublayer_vel[0];
+                node_value_k_[index_i][0] = sublayer_result.sublayer_k[0];
+                //** sub wall adjacent *
+                node_value_vel_[index_i][1] = sublayer_result.sublayer_vel[1];
+                node_value_k_[index_i][1] = sublayer_result.sublayer_k[1];
+                //** left, inner nodes are skipped until the node U can be output *
+                for (int i = 2; i < node_dim_output_limit_; ++i) {
+                    node_value_vel_[index_i][i] = sublayer_result.sublayer_vel[i + num_skip_output_];
+                    node_value_k_[index_i][i] = sublayer_result.sublayer_k[i + num_skip_output_];
+                }
+            }
+            else
+            {
+                for (int i = 0; i < num_sub_node_; ++i) {
+                    node_value_vel_[index_i][i] = sublayer_result.sublayer_vel[i];
+                    node_value_k_[index_i][i] = sublayer_result.sublayer_k[i];
+                }
+            }
 
             //** For testing *
             target_flow_rate_in_sublayer_[index_i] = flow_rate_local;
@@ -428,29 +444,40 @@ namespace udf
         double flow_rate_target = Q_target;
         double utau = utau_init;
 
-        int type_tdma = 5; //** 0: general TMDA, other numbers refer to corresponding unrolled version  *
+        int type_tdma = 0; //** 0: general TMDA, other numbers refer to corresponding unrolled version  *
         
-        bool is_y_p_input = true;
-        double y_p_input = 2.0e-6;
-        //------------------------------------------------¡ü Input parameters ¡ü------------------------------------------------
-
-        //------------------------------------------------¡ý Node arrangement, for sublayer ¡ý------------------------------------------------
-        double hy = height_sublayer / (double(ny) + 0.5); // distance from node U to P_outer is hy, hence with a 0.5
-        double y_p = 0.5 * hy;
+        //bool is_y_p_input = true;
+        //double y_p_input = 2.0e-6;
         
-        if (is_y_p_input)
-        {
-            y_p = y_p_input;
-            hy = (height_sublayer - y_p_input) / double(ny);
-        }
-
         double y[ny];  //computational nodes
         double dist_node_i_to_wall[ny]{};
         for (int i = 0; i < ny; ++i)
         {
-            y[i] = y_p + i * hy;
+            y[i] = sublayer_y_[i];
             dist_node_i_to_wall[i] = y[i];
         }
+        
+        double hy = sublayer_node_uniform_distance_;
+        double y_p = sublayer_y_p_constant_;
+        //------------------------------------------------¡ü Input parameters ¡ü------------------------------------------------
+
+        //------------------------------------------------¡ý Node arrangement, for sublayer ¡ý------------------------------------------------
+        //double hy = sublayer_node_uniform_distance_;
+        //double y_p = sublayer_y_p_constant_;
+        
+        //if (is_y_p_input)
+        //{
+        //    y_p = y_p_input;
+        //    hy = (height_sublayer - y_p_input) / double(ny);
+        //}
+
+        //double y[ny];  //computational nodes
+        //double dist_node_i_to_wall[ny]{};
+        //for (int i = 0; i < ny; ++i)
+        //{
+        //    y[i] = y_p + i * hy;
+        //    dist_node_i_to_wall[i] = y[i];
+        //}
         double distance_from_P_to_nodeU = hy;
         double utau_min = yplus_min * nu / y_p;
         //------------------------------------------------¡ü Node arrangement, for sublayer ¡ü------------------------------------------------

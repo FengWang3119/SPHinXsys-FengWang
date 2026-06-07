@@ -72,7 +72,7 @@ namespace udf
     class P_refinement : public LocalDynamics, public kOmega_BaseTurbuClosureCoeff, public WallFunctionCoefficient
     {
     public:
-        explicit P_refinement(SPHBody& sph_body);
+        explicit P_refinement(SPHBody& sph_body, Real constant_y_p);
         virtual ~P_refinement(){};
 
         void update(size_t index_i, Real dt = 0.0);
@@ -82,11 +82,68 @@ namespace udf
         using Vec_ny_d = Eigen::Matrix<Real, ny, 1>;
         inline void check_num_node_consistency()
         {
-            if (ny > 5)
+            node_dim_output_limit_ = std::remove_pointer_t<decltype(node_value_vel_)>::RowsAtCompileTime;
+            if (ny > node_dim_output_limit_)
             {
-                std::cout << "Node number larger than 5! Stop here." << std::endl;
-                std::cin.get();
+                std::cout << "**** The number of sublayer nodes is "
+                    << num_sub_node_ << ". ****" << std::endl;
+                std::cout << "**** Node number is larger than the output limit. "
+                    << "Only the two wall-nearest nodes and the last "
+                    << node_dim_output_limit_ - 2
+                    << "nodes toward U will be output. ****"
+                    << std::endl;
+                is_truncated_output_ = true;
+                num_skip_output_ = num_sub_node_ - node_dim_output_limit_;
             }
+            else
+            {
+                is_truncated_output_ = false;
+                num_skip_output_ = 0;
+            }
+        }
+        inline void construct_node_distribution(Real constant_y_p)
+        {
+            sublayer_height_contant_ = constant_y_p;
+            //sublayer_y_p_constant_ = sublayer_height_contant_ / (Real(ny) + 0.5) / 2.0;  //** Initial TRY *
+            sublayer_y_p_constant_ = 2.0e-6; //** Locally effective, mannually set y_p_constant in sublayer *
+            
+            sublayer_node_uniform_distance_ = (sublayer_height_contant_ - sublayer_y_p_constant_) / Real(ny);
+            
+            for (int i = 0; i < ny; ++i)
+            {
+                sublayer_y_[i] = sublayer_y_p_constant_ + i * sublayer_node_uniform_distance_;
+                std::cout << "**** sublayer_y_[" << i << "]= " << sublayer_y_[i] << ". ****" << std::endl;
+            }
+            std::cout << "**** sublayer_height_contant_= " << sublayer_height_contant_ << ". ****" << std::endl;
+        }
+        inline void output_node_distribution()
+        {
+            std::string filename = "../bin/output/Node_sublayer_y.dat";
+            std::ofstream outfile(filename);
+            if (!outfile.is_open())
+            {
+                std::cerr << "Error: Unable to open file " << filename << " for writing." << std::endl;
+                return;
+            }
+            if (is_truncated_output_)
+            {
+                //** wall adjacent *
+                outfile << sublayer_y_[0] << "\n";
+                //** sub wall adjacent *
+                outfile << sublayer_y_[1] << "\n";
+                //** left, inner nodes are skipped until the node U can be output *
+                for (int i = 2; i < node_dim_output_limit_; ++i) {
+                    outfile << sublayer_y_[i] << "\n";
+                }
+            }
+            else
+            {
+                for (int i = 0; i < ny; ++i)
+                {
+                    outfile << sublayer_y_[i] << "\n";
+                }
+            }
+            outfile.close();
         }
 
         struct SublayerResult {
@@ -243,7 +300,13 @@ namespace udf
         }
 
     protected:
-        int num_sub_node_;
+        int num_sub_node_, node_dim_output_limit_, num_skip_output_;
+        //bool is_node_distribution_constructed_ = false;
+        Real sublayer_height_contant_;
+        Vec_ny_d sublayer_y_;
+        Real sublayer_y_p_constant_;
+        Real sublayer_node_uniform_distance_;
+        bool is_truncated_output_;
         Real* friction_velocity_from_sublayer_;
         Real* target_flow_rate_in_sublayer_;
         Real* vel_ps_magnitude_;
@@ -263,7 +326,6 @@ namespace udf
         Real* half_flow_rate_over_P_;
         //
         int* is_near_wall_P1_;
-        Real* y_p_;
         Vecd* vel_;
         Real* turbu_k_;
         Real* turbu_omega_;
