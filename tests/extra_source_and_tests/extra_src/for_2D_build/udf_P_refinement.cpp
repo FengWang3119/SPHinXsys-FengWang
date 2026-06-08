@@ -444,7 +444,7 @@ namespace udf
         double flow_rate_target = Q_target;
         double utau = utau_init;
 
-        int type_tdma = 0; //** 0: general TMDA, other numbers refer to corresponding unrolled version  *
+        int type_tdma = 10; //** 0: general TMDA, other numbers refer to corresponding unrolled version  *
         
         //bool is_y_p_input = true;
         //double y_p_input = 2.0e-6;
@@ -781,6 +781,10 @@ namespace udf
             {
                 tdma5(a_u, b_u, c_u, d_u, U_new);
             }
+            else if (type_tdma == 10)
+            {
+                tdma10(a_u, b_u, c_u, d_u, U_new);
+            }
             else
             {
                 std::cout << "TDMA: Type not define! Stop here." << std::endl;
@@ -834,6 +838,10 @@ namespace udf
             else if (type_tdma == 5)
             {
                 tdma5(a_k, b_k, c_k, d_k, K_new);
+            }
+            else if (type_tdma == 10)
+            {
+                tdma10(a_k, b_k, c_k, d_k, K_new);
             }
             else
             {
@@ -891,6 +899,10 @@ namespace udf
             else if (type_tdma == 5)
             {
                 tdma5(a_w, b_w, c_w, d_w, Turbu_omega_new);
+            }
+            else if (type_tdma == 10)
+            {
+                tdma10(a_w, b_w, c_w, d_w, Turbu_omega_new);
             }
             else
             {
