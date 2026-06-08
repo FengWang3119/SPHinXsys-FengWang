@@ -401,11 +401,9 @@ namespace udf
                 
                 //** Preparation *
                 Real dUdn_P_sublayer_magnitude = 0.0;
-                Real tangential_velocity_node_U = sublayer_result.sublayer_vel[num_sub_node_ - 1];
-                Real dist_nodeU_P = TinyReal;
-                Real uniform_dist_between_node = TinyReal;
-                uniform_dist_between_node = distance_to_wall / (double(num_sub_node_) + 0.5);
-                dist_nodeU_P = uniform_dist_between_node;
+                int index_nodeU = num_sub_node_ - 1;
+                Real tangential_velocity_node_U = sublayer_result.sublayer_vel[index_nodeU];
+                Real dist_nodeU_P = sublayer_height_contant_ - sublayer_y_[index_nodeU];
                 
                 //** Calculation *
                 dUdn_P_sublayer_magnitude = std::abs(tangential_velocity_P_magnitude - tangential_velocity_node_U) / (dist_nodeU_P + TinyReal);
