@@ -76,6 +76,8 @@ namespace udf
         virtual ~P_refinement(){};
 
         void update(size_t index_i, Real dt = 0.0);
+
+        void test_sublayer_model_half_channel_height();
         
         //** Locally effective, mannually set number of node *
         static constexpr int ny = 4; //** Currently only Vec6d can be used, so ny should <=5, other space will be zero *
@@ -298,6 +300,51 @@ namespace udf
             fout.close();
             std::cout << "Tecplot (with nodeO & nodeUM) created: " << filename << std::endl;
         }
+        void writeSublayerResultToTecplot(
+            const SublayerResult& result,
+            const std::string& filename,
+            const std::string& header_line,
+            double u_nodeUM
+        )
+        {
+            const int ny_local = static_cast<int>(sublayer_y_.size());
+            const double eps = 1.0e-12;
+
+            std::ofstream fout(filename);
+
+            if (!fout.is_open())
+            {
+                std::cout << "Failed to create Tecplot file: " << filename << std::endl;
+                return;
+            }
+
+            fout << "$VARIABLES = \"Y\", \"U\", \"K\", \"OMEGA\", \"NUT(k/omega)\"\n";
+            fout << "$friction velocity = " << result.sublayer_utau << "\n";
+            fout << "$u_nodeUM = " << u_nodeUM << "\n";
+            fout << "$y_nodeUM = "
+                << (sublayer_y_[ny_local - 1] + sublayer_node_uniform_distance_)
+                << "\n";
+
+            fout << header_line << "\n";
+
+            fout << std::scientific << std::setprecision(8);
+
+            for (int i = 0; i < ny_local; ++i)
+            {
+                const double nut_i =
+                    result.sublayer_k[i] / (result.sublayer_omega[i] + eps);
+
+                fout << sublayer_y_[i] << " "
+                    << result.sublayer_vel[i] << " "
+                    << result.sublayer_k[i] << " "
+                    << result.sublayer_omega[i] << " "
+                    << nut_i << "\n";
+            }
+
+            fout.close();
+
+            std::cout << "Tecplot has been created: " << filename << std::endl;
+        }
 
     protected:
         int num_sub_node_, node_dim_output_limit_, num_skip_output_;
@@ -307,6 +354,7 @@ namespace udf
         Real sublayer_y_p_constant_;
         Real sublayer_node_uniform_distance_;
         bool is_truncated_output_;
+        bool output_detailed_info_sublayer_ = false;
         Real* friction_velocity_from_sublayer_;
         Real* target_flow_rate_in_sublayer_;
         Real* vel_ps_magnitude_;
