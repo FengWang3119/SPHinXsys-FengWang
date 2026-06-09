@@ -107,7 +107,7 @@ namespace udf
         {
             sublayer_height_contant_ = constant_y_p;
             //sublayer_y_p_constant_ = sublayer_height_contant_ / (Real(ny) + 0.5) / 2.0;  //** Initial TRY *
-            sublayer_y_p_constant_ = 4.0e-6; //** Locally effective, mannually set y_p_constant in sublayer *
+            sublayer_y_p_constant_ = 8.0e-6; //** Locally effective, mannually set y_p_constant in sublayer *
             
             sublayer_node_uniform_distance_ = (sublayer_height_contant_ - sublayer_y_p_constant_) / Real(ny);
             
