@@ -431,10 +431,10 @@ namespace udf
 
         double convergence_criteria_outer = 1.0e-3;
         double tiny = 1.0e-6;
-        double relax_u = 0.9;
-        double relax_k = 0.9;
-        double relax_w = 0.6;
-        double relax_utau = 0.4; 
+        double relax_u = 0.01;
+        double relax_k = 0.01;
+        double relax_w = 0.01;
+        double relax_utau = 0.01;
         double relax_dudn_P_nodeU = 0.9; //** For the tau_p in u equation *
         double yplus_min = 0.01; //** To constrain min utau *
 
