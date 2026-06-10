@@ -441,7 +441,7 @@ namespace udf
         double flow_rate_target = Q_target;
         double utau = utau_init;
 
-        int type_tdma = 0; //** 0: general TMDA, other numbers refer to corresponding unrolled version  *
+        int type_tdma = 10; //** 0: general TMDA, other numbers refer to corresponding unrolled version  *
         
         //bool is_y_p_input = true;
         //double y_p_input = 2.0e-6;
