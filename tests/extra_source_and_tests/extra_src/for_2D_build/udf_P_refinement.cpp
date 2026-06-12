@@ -1464,6 +1464,78 @@ namespace udf
         std::cout << "** Finish testing Sublayer model! Stop here. * " << std::endl;
         std::cin.get();
     }
+    void P_refinement::test_sublayer_model_specific_channel_height()
+    {
+        std::cout << "** Start testing Sublayer model! * " << std::endl;
+
+        output_detailed_info_sublayer_ = true;
+        SublayerResult sublayer_result{};  //** Initialisation *
+
+        sublayer_height_contant_ = 2.500000e-02;
+        std::cout << "**** Overwrite: sublayer_height_contant_= " << sublayer_height_contant_ << ". ****" << std::endl;
+
+        //sublayer_y_p_constant_ = sublayer_height_contant_ / (Real(ny) + 0.5) / 2.0;  //** Initial TRY *
+        sublayer_y_p_constant_ = 2.0e-6; //** Locally effective, mannually set y_p_constant in sublayer *
+        std::cout << "**** Overwrite: sublayer_y_p_constant_ = " << sublayer_y_p_constant_ << ". ****" << std::endl;
+
+        sublayer_node_uniform_distance_ = (sublayer_height_contant_ - sublayer_y_p_constant_) / Real(ny);
+        std::cout << "**** Overwrite: sublayer_node_uniform_distance_= " << sublayer_node_uniform_distance_ << ". ****" << std::endl;
+
+        for (int i = 0; i < ny; ++i)
+        {
+            sublayer_y_[i] = sublayer_y_p_constant_ + i * sublayer_node_uniform_distance_;
+            std::cout << "**** Overwrite: sublayer_y_[" << i << "]= " << sublayer_y_[i] << ". ****" << std::endl;
+        }
+
+        Real nu = 2.5e-8; //** Re=80million *
+
+        //** Probe at y=0.999 from PY2-11 *
+        Real flow_rate_local = 1.874295e-02;
+
+        Real u_outer = 8.172100e-01;
+        Real k_outer = 2.306330e-03;
+        Real omega_outer = 8.991439e+00;
+        Real nut_outer = 2.565029e-04;
+
+        Real dudn_outer = 2.708579e+00;
+        Real dkdn_outer = -2.694895e-03;
+        Real dwdn_outer = -3.568455e+02;
+        Real friction_vel_magnitude_outer = 0.0255;
+        
+        std::cout << "** Press any key to continue. * " << std::endl;
+        std::cin.get();
+        Real U_nodeO = 0.0;
+        Real U_nodeUM = 0.0;
+        sublayer_result = solve_1D_sublayer_Dirichlet(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
+            nut_outer, sublayer_height_contant_, friction_vel_magnitude_outer, std::abs(flow_rate_local), dkdn_outer, dwdn_outer, U_nodeO, U_nodeUM);
+
+        int SPH_index = 22;
+        std::string header_line =
+            "ZONE T=\"SpecificHeight(1D)="
+            + std::to_string(sublayer_height_contant_)
+            +", NodeNum="
+            + std::to_string(ny)
+            + " (Base SPH49-"
+            + std::to_string(SPH_index)
+            + ")\"";
+
+        std::string filename =
+            "channel_specific_height_kw_ny"
+            + std::to_string(ny)
+            + "_SPH49-"
+            + std::to_string(SPH_index)
+            + ".dat";
+
+        writeSublayerResultToTecplot(
+            sublayer_result,
+            filename,
+            header_line,
+            U_nodeUM
+        );
+
+        std::cout << "** Finish testing Sublayer model! Stop here. * " << std::endl;
+        std::cin.get();
+    }
 } // namespace udf
 //=================================================================================================//
 } // namespace fluid_dynamics

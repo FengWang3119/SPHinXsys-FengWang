@@ -190,6 +190,7 @@ int main(int ac, char *av[])
 
     SimpleDynamics<fluid_dynamics::udf::P_refinement> get_friction_velocity_from_sublayer(water_block, y_p_constant);
     //get_friction_velocity_from_sublayer.test_sublayer_model_half_channel_height();
+    get_friction_velocity_from_sublayer.test_sublayer_model_specific_channel_height();
 
     /** Choose one, ordinary or turbulent. Computing viscous force, */
     InteractionWithUpdate<fluid_dynamics::udf::TurbulentViscousForceWithWall> turbulent_viscous_force(water_block_inner, water_wall_contact);

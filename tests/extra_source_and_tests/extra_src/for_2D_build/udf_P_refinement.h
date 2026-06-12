@@ -78,6 +78,7 @@ namespace udf
         void update(size_t index_i, Real dt = 0.0);
 
         void test_sublayer_model_half_channel_height();
+        void test_sublayer_model_specific_channel_height();
         
         //** Locally effective, mannually set number of node *
         static constexpr int ny = 10; //** Currently only Vec6d can be used, so ny should <=5, other space will be zero *
