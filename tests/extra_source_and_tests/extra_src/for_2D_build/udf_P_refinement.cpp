@@ -435,16 +435,12 @@ namespace udf
         double relax_k = 0.9;
         double relax_w = 0.6;
         double relax_utau = 0.4;
-        double relax_dudn_P_nodeU = 0.9; //** For the tau_p in u equation *
         double yplus_min = 0.01; //** To constrain min utau *
 
         double flow_rate_target = Q_target;
         double utau = utau_init;
 
         int type_tdma = 10; //** 0: general TMDA, other numbers refer to corresponding unrolled version  *
-        
-        //bool is_y_p_input = true;
-        //double y_p_input = 2.0e-6;
         
         double y[ny];  //computational nodes
         double dist_node_i_to_wall[ny]{};
@@ -459,22 +455,6 @@ namespace udf
         //------------------------------------------------¡ü Input parameters ¡ü------------------------------------------------
 
         //------------------------------------------------¡ý Node arrangement, for sublayer ¡ý------------------------------------------------
-        //double hy = sublayer_node_uniform_distance_;
-        //double y_p = sublayer_y_p_constant_;
-        
-        //if (is_y_p_input)
-        //{
-        //    y_p = y_p_input;
-        //    hy = (height_sublayer - y_p_input) / double(ny);
-        //}
-
-        //double y[ny];  //computational nodes
-        //double dist_node_i_to_wall[ny]{};
-        //for (int i = 0; i < ny; ++i)
-        //{
-        //    y[i] = y_p + i * hy;
-        //    dist_node_i_to_wall[i] = y[i];
-        //}
         double distance_from_P_to_nodeU = hy;
         double utau_min = yplus_min * nu / y_p;
         //------------------------------------------------¡ü Node arrangement, for sublayer ¡ü------------------------------------------------
@@ -485,20 +465,6 @@ namespace udf
         double u_p = utau * yplus;
         double turbu_omega_p = 6.0 * nu / (std_kw_beta_i_ * y_p * y_p);
         //------------------------------------------------¡ü Calculate nodeP value ¡ü------------------------------------------------
-
-        //printf("hy=%f\n", hy);
-        //printf("yp=%f\n", y_p);
-        //printf("yplus=%f\n", yplus);
-        //printf("u_p=%f\n", u_p);
-        //printf("utau_min=%f\n", utau_min);
-        //std::cout << "ny= " << ny << std::endl;
-        //std::cout << "y = ";
-        //for (const auto& v : y) {
-        //    std::cout << v << " ";
-        //}
-        //std::cout << std::endl;
-        //std::cout << "press to continue" << std::endl;
-        //std::cin.get();
 
         //------------------------------------------------¡ý Construct initial value ¡ý------------------------------------------------
         double u_init_value[ny];
@@ -514,19 +480,12 @@ namespace udf
         double u_nodeUM = u_p_outer;
         double k_nodeUM = k_p_outer;
         double w_nodeUM = w_p_outer;
-        //double w_tilde_nodeUM = std::max(w_nodeUM, std_kw_C_lim_ * vel_grad_p_outer / std_kw_beta_star_5_); //** For calculating limiter of nut, assume vel_grad_p_outer = vel_grad_ndoeUM*
         double nut_nodeUM = nut_p_outer;
         double u_nodeO = u_nodeUM;
         double k_nodeO = k_nodeUM;
         double w_nodeO = w_nodeUM;
-        //double w_tilde_nodeO = std::max(w_nodeO, std_kw_C_lim_ * vel_grad_p_outer / std_kw_beta_star_5_);
         double nut_nodeO = nut_nodeUM;
         //------------------------------------------------¡ü Calculate nodeO and nodeUM ¡ü------------------------------------------------
-
-        //------------------------------------------------¡ý Calculate P value ¡ý------------------------------------------------
-        //** These values need tobe updated in each iteration *
-        double vel_grad_p_from_nodeU_side_prior = vel_grad_p_outer; // ** Initial guess *
-        //------------------------------------------------¡ü Calculate P value ¡ü------------------------------------------------
 
         //------------------------------------------------¡ý Construct solution vector ¡ý------------------------------------------------
         double phi_current[3 * ny];
@@ -582,9 +541,6 @@ namespace udf
             //------------------------------------------------¡ü Update boundary values ¡ü------------------------------------------------
 
             //------------------------------------------------¡ý Calculate gradients of u, k, omega, Dk, Dw ¡ý------------------------------------------------
-            double vel_grad_p_from_nodeU_side = (u_nodeO - u_star[ny - 1]) / distance_from_P_to_nodeU;
-            double vel_grad_p_from_nodeU_side_relaxed = (1.0 - relax_dudn_P_nodeU) * vel_grad_p_from_nodeU_side_prior + relax_dudn_P_nodeU * vel_grad_p_from_nodeU_side;
-
             double dudy_discretized_central[ny]{};
             double dkdy[ny]{};
             double dwdy[ny]{};
@@ -608,12 +564,9 @@ namespace udf
             //------------------------------------------------¡ý Calculate Dk, Dw, C_su ¡ý------------------------------------------------
             double diffusion_coefficient_k[ny]{};
             double diffusion_coefficient_turbu_omega[ny]{};
-            //double C_su[ny]{};
-            double tau_p_over_rho_for_transport_equ = (nu + nut_nodeO) * vel_grad_p_from_nodeU_side_relaxed;  //** Here, nodeO value is used not nodeUM, but for dirichlet path, nodeO and nodeUM same *
             for (int i = 0; i < ny; ++i) {
                 diffusion_coefficient_k[i] = nu + std_kw_sigma_star_ * k_star[i] / (turbu_omega_star[i] + tiny);
                 diffusion_coefficient_turbu_omega[i] = nu + std_kw_sigma_ * k_star[i] / (turbu_omega_star[i] + tiny);
-                //C_su[i] = (utau * utau - tau_p_over_rho_for_transport_equ) * (1.0 - y[i] / height_sublayer) + tau_p_over_rho_for_transport_equ;
             }
             //------------------------------------------------¡ü Calculate Dk, Dw  ¡ü------------------------------------------------
 
@@ -634,8 +587,6 @@ namespace udf
             double dudy_star[ny]{};
             for (int i = 0; i < ny; ++i)
             {
-                //dudy_star[i] = C_su[i] / (nu + nut_star[i]);
-                //** IF (inner node explicit, P adjacent node implicit), dpdx can be diffrent *
                 dudy_star[i] = dudy_discretized_central[i];
             }
             //------------------------------------------------¡ü Calculate analytical gradient of u ¡ü------------------------------------------------
@@ -1009,11 +960,6 @@ namespace udf
             {
                 std::cout << "differ: " << differ << std::endl;
             }
-
-            //------------------------------------------------¡ý Calculate P value ¡ý------------------------------------------------
-            //** These values need tobe updated in each iteration *
-            vel_grad_p_from_nodeU_side_prior = (u_nodeO - u_star[ny - 1]) / hy; //** Current u_star is still the old value *
-            //------------------------------------------------¡ü Calculate P value ¡ü------------------------------------------------
 
             //------------------------------------------------¡ý Update ¡ý------------------------------------------------
             for (int i = 0; i < 3 * ny; ++i) {
