@@ -320,7 +320,7 @@ namespace udf
         double flow_rate_target = Q_target;
         double utau = utau_init;
 
-        int type_tdma = 10; //** 0: general TMDA, other numbers refer to corresponding unrolled version  *
+        int type_tdma = type_tdma_;
         
         double y[ny];  //computational nodes
         double dist_node_i_to_wall[ny]{};
