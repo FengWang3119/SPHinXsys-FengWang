@@ -81,7 +81,7 @@ namespace udf
         void test_sublayer_model_specific_channel_height();
         
         //** Locally effective, mannually set number of node *
-        static constexpr int ny = 20; //** Currently only Vec6d can be used, so ny should <=5, other space will be zero *
+        static constexpr int ny = 25; //** Currently only Vec6d can be used, so ny should <=5, other space will be zero *
         static constexpr int type_tdma_ = 0; //** 0: general TMDA, other numbers refer to corresponding unrolled version  *
 
         using Vec_ny_d = Eigen::Matrix<Real, ny, 1>;
