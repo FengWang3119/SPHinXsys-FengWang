@@ -195,126 +195,6 @@ namespace udf
 
             dkdn_outer = k_gradient_only_P_[index_i].dot(normal); //** Currently, only inner contribution is considered *
             dwdn_outer = omega_gradient_only_P_[index_i].dot(normal);
-            //------------------------------------------------¡ý For test 1D analytical ¡ý------------------------------------------------
-            //
-            //-------------------------¡ý If input fix analytical value ¡ý-------------------------
-            if(0)
-            {
-                std::cout << "Fixed input value test starts." << std::endl;
-                //** Define outside values *
-                flow_rate_local = 3.781607e-3;
-                dudn_outer = 1.127180e+1;
-                k_outer = 1.118813e-3;
-                omega_outer = 5.998469e+1;
-                nut_outer = 1.885024e-5;
-                u_outer = 3.000607e-1;
-                friction_vel_magnitude_outer = 6.37309e-02;
-                dkdn_outer = 1.391004e-01;
-                dwdn_outer = -4.190042e+03;
-                nu = 3.5e-4;
-                U_nodeO = 0.0;
-                U_nodeUM = 0.0;
-                velocity_gradient_nodeO = 0.0;
-                //** Remember to activate output function inside if want to output K OMEGA NUT *
-                // = solve_1D_sublayer_constantPG2(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
-                //    nut_outer, distance_to_wall, friction_vel_magnitude_outer, std::abs(flow_rate_local), dkdn_outer, dwdn_outer, U_nodeO, U_nodeUM, velocity_gradient_nodeO);
-
-                std::cout << "Fixed input value test ends, stop here." << std::endl;
-                std::cin.get();
-            }
-            //-------------------------¡ü If input fix analytical value ¡ü-------------------------
-
-            //-------------------------¡ý If dynamic test ¡ý-------------------------
-            if (0)
-            {
-            //    std::cout << "Dynamic test starts." << std::endl;
-            //    //------¡ý Mimic SPH average value ¡ý------
-            //    Real analytical_k_S = 8.260674e-03;
-            //    Real analytical_k_P = 1.118813e-3;
-            //    Real analytical_k_grad_P_inner = (analytical_k_S - analytical_k_P) / fluid_particle_spacing_;
-
-            //    Real analytical_w_S = 1.242432e+01;
-            //    Real analytical_w_P = 5.998469e+1;
-            //    Real analytical_w_grad_P_inner = (analytical_w_S - analytical_w_P) / fluid_particle_spacing_;
-
-            //    Real analytical_vel_S = 6.487377e-01;
-            //    Real analytical_vel_P = 3.000607e-1;
-            //    Real analytical_vel_grad_P_inner = (analytical_vel_S - analytical_vel_P) / fluid_particle_spacing_;
-
-            //    //analytical_vel_grad_P_inner = 1.127180e+1; //** Overwrite *
-
-            //    Real analytical_flow_rate_whole_PS_to_Wall = 1.433123e-2;
-            //    //------¡ü Mimic SPH average value ¡ü------
-            //    // 
-            //    //------¡ý Start testing ¡ý------
-            //    Real flow_rate_local_prior = 0.0;
-            //    Real residue = 1.0e3;
-            //    vel_nodeO_i_prior = analytical_vel_P;
-            //    
-            //    //** Fix 5+1 initial values *
-            //    k_outer = 1.118813e-3;
-            //    omega_outer = 5.998469e+1;
-            //    nut_outer = 1.885024e-5;
-            //    u_outer = 3.000607e-1;
-            //    nu = 3.5e-4;
-            //    friction_vel_magnitude_outer = 6.37309e-02;
-
-            //    //** Transfer 3 gradient values *
-            //    dudn_outer = analytical_vel_grad_P_inner;
-            //    dkdn_outer = analytical_k_grad_P_inner;
-            //    dwdn_outer = analytical_w_grad_P_inner;
-
-            //    velocity_gradient_nodeO_relaxed = dudn_outer;
-            //    while (residue > 1.0e-6)
-            //    {
-            //        flow_rate_local = get_loacal_flow_rate(analytical_flow_rate_whole_PS_to_Wall, velocity_gradient_nodeO_relaxed, vel_nodeO_i_prior, fluid_particle_spacing_);
-
-            //        U_nodeO = 0.0;
-            //        U_nodeUM = 0.0;
-            //        
-            //        /* = solve_1D_sublayer_Neumann(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
-            //            nut_outer, distance_to_wall, friction_vel_magnitude_outer, std::abs(flow_rate_local), dkdn_outer, dwdn_outer, U_nodeO, U_nodeUM);*/
-            //        // = solve_1D_sublayer_Dirichlet(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
-            //        //    nut_outer, distance_to_wall, friction_vel_magnitude_outer, std::abs(flow_rate_local), dkdn_outer, dwdn_outer, U_nodeO, U_nodeUM);
-            //        velocity_gradient_nodeO = 0.0;
-            //        // = solve_1D_sublayer_constantPG2(nu, u_outer, k_outer, omega_outer, std::abs(dudn_outer),
-            //        //    nut_outer, distance_to_wall, friction_vel_magnitude_outer, std::abs(flow_rate_local), dkdn_outer, dwdn_outer, U_nodeO, U_nodeUM, velocity_gradient_nodeO);
-
-            //        residue = std::abs(flow_rate_local - flow_rate_local_prior);
-            //        std::cout << "residue =" << residue << std::endl;
-            //        flow_rate_local_prior = flow_rate_local;
-            //        Real relax_factor = 0.3;
-            //        vel_nodeO_i_prior = (1.0 - relax_factor) * vel_nodeO_i_prior + relax_factor * U_nodeO;
-            //        velocity_gradient_nodeO_relaxed = (1.0 - relax_factor) * velocity_gradient_nodeO_relaxed + relax_factor * velocity_gradient_nodeO;
-
-            //        //double hy = distance_to_wall / (double(num_sub_node_) + 0.5); // distance from node U to P_outer is hy, hence with a 0.5
-            //        //double y_p = 0.5 * hy;
-            //        //Real vel_grad_nodeP = sublayer_result.sublayer_vel[0] / y_p;
-            //        //dudn_outer = (1.0 - relax_factor) * dudn_outer + relax_factor * vel_grad_nodeP;
-
-            //    }
-
-            //    std::cout << "flow rate local converge!." << std::endl;
-            //    std::cout << "U_nodeO=" << U_nodeO << std::endl;
-            //    std::cout << "U_nodeUM=" << U_nodeUM << std::endl;
-
-            //    writeTecplotFromVec6dDirichlet(
-            //        node_value_vel_[index_i],
-            //        U_nodeO,
-            //        U_nodeUM,
-            //        distance_to_wall,
-            //        num_sub_node_,
-            //        40,
-            //        164
-            //    );
-
-            //    std::cout << "Dynamic test ends, stop here." << std::endl;
-            //    std::cin.get();
-            //    //------¡ü Start testing ¡ü------
-            }
-            //-------------------------¡ü If dynamic test ¡ü-------------------------
-            // 
-            //------------------------------------------------¡ü For test 1D analytical ¡ü------------------------------------------------
             
             Real flow_rate_local_prior = 0.0;
             Real residue = 1.0e3;
@@ -525,16 +405,12 @@ namespace udf
                 //-------------------------¡ý Calculate nodeO and nodeUM ¡ý-------------------------
                 //** Note that multi-physics is achieved here by assume the node value is equal to average value from P *
                 u_nodeUM = u_p_outer;
-                //u_nodeUM = 3.277959e-1;
                 k_nodeUM = k_p_outer;
-                //k_nodeUM = 1.495287e-3;
                 w_nodeUM = w_p_outer;
-                //w_tilde_nodeUM = std::max(w_nodeUM, std_kw_C_lim_ * vel_grad_p_outer / std_kw_beta_star_5_); //** For calculating limiter of nut, assume vel_grad_p_outer = vel_grad_ndoeUM*
                 nut_nodeUM = nut_p_outer;
                 u_nodeO = u_nodeUM;
                 k_nodeO = k_nodeUM;
                 w_nodeO = w_nodeUM;
-                //w_tilde_nodeO = std::max(w_nodeO, std_kw_C_lim_ * vel_grad_p_outer / std_kw_beta_star_5_);
                 nut_nodeO = nut_nodeUM;
                 //-------------------------¡ü Calculate nodeO and nodeUM ¡ü-------------------------
             }
@@ -613,47 +489,8 @@ namespace udf
             double b_u[ny]{};
             double c_u[ny]{};
             double d_u[ny]{};
-            //** 1: IF (inner node explicit, P adjacent node implicit), dpdx can be diffrent *
-            //** 2: IF fully implicit, dpdx can be diffrent *
+
             int type_u_discretization = 2;
-            //-------------------------------------¡ý IF fully implicit ¡ý-------------------------------------
-            //double tau_p_over_rho_constant_part = (nu + nut_nodeO) * u_nodeO / distance_from_P_to_nodeU;
-            //double pressure_gradient_approximated_constant_part = (utau * utau - tau_p_over_rho_constant_part) / height_sublayer;
-            //double additional_coefficient_for_nodeU = -hy * hy * (nu + nut_nodeO) / height_sublayer / distance_from_P_to_nodeU;
-            //double e_u[ny]{};
-            //std::fill_n(e_u, ny, additional_coefficient_for_nodeU);
-            //-------------------------------------¡ü IF fully implicit ¡ü-------------------------------------
-
-            //-------------------------------------¡ý IF inner node explicit, P adjacent node implicit, constant dpdx assumption ¡ý-------------------------------------
-            ////** explicity part *
-            //double tau_p_over_rho_relaxed = (nu + nut_nodeO) * (vel_grad_p_from_nodeU_side_relaxed);
-            //double pressure_gradient = (utau * utau - tau_p_over_rho_relaxed) / height_sublayer;
-            ////** implicity part *
-            //double tau_p_over_rho_constant_part = (nu + nut_nodeO) * u_nodeO / distance_from_P_to_nodeU;
-            //double pressure_gradient_approximated_constant_part = (utau * utau - tau_p_over_rho_constant_part) / height_sublayer;
-            //double e_u[ny]{};
-            //std::fill_n(e_u, ny, 0.0);
-            //double additional_coefficient_for_nodeU = -hy * hy * (nu + nut_nodeO) / height_sublayer / distance_from_P_to_nodeU;
-            //e_u[ny-1] = additional_coefficient_for_nodeU; //** Only for the last node *
-            //-------------------------------------¡ü IF inner node explicit, P adjacent node implicit, constant dpdx assumption ¡ü-------------------------------------
-
-            //-------------------------------------¡ý IF inner node explicit, P adjacent node implicit, dpdx can be diffrent ¡ý-------------------------------------
-            ////** explicity part *
-            //double tau_i_over_rho[ny]{};
-            //double pressure_gradient[ny]{};
-            //for (int i = 0; i < ny; ++i) {
-            //    tau_i_over_rho[i] = (nu + nut_star[i]) * (dudy_discretized_central[i]);
-            //    pressure_gradient[i]= (utau * utau - tau_i_over_rho[i]) / dist_node_i_to_wall[i];
-            //}
-            ////** implicity part *
-            //double tau_p_over_rho_constant_part = (nu + nut_star[ny - 1]) * u_nodeO / (2.0 * hy);
-            //double pressure_gradient_approximated_constant_part = (utau * utau - tau_p_over_rho_constant_part) / dist_node_i_to_wall[ny-1];
-            ////double e_u[ny]{};
-            ////std::fill_n(e_u, ny, 0.0);
-            ////double additional_coefficient_for_nodeU = -hy * hy * (nu + nut_star[ny - 1]) / dist_node_i_to_wall[ny - 1] / distance_from_P_to_nodeU;
-            ////e_u[ny - 1] = additional_coefficient_for_nodeU; //** Only for the last node *
-            //double additional_coefficient = -hy * hy * (nu + nut_star[ny - 1]) / dist_node_i_to_wall[ny - 1] / (2.0 * hy); // ** add on ny-2 *
-            //-------------------------------------¡ü IF inner node explicit, P adjacent node implicit, dpdx can be diffrent ¡ü-------------------------------------
 
             //-------------------------------------¡ý IF fully implicity, dpdx can be diffrent ¡ý-------------------------------------
             double pressure_gradient_constant_part[ny]{};
@@ -674,19 +511,17 @@ namespace udf
                 double nu_eff_i_minus = nu + nut_star[i - 1];
                 double nu_eff_i_plus_half = 2.0 * nu_eff_i_plus * nu_eff_i / std::max((nu_eff_i_plus + nu_eff_i), tiny);
                 double nu_eff_i_minus_half = 2.0 * nu_eff_i_minus * nu_eff_i / std::max((nu_eff_i_minus + nu_eff_i), tiny);
-                if (type_u_discretization == 1)
-                {
-                    //a_u[i] = -nu_eff_i_minus_half;
-                    //b_u[i] = std::max((nu_eff_i_plus_half + nu_eff_i_minus_half), tiny);
-                    //c_u[i] = -nu_eff_i_plus_half;
-                    //d_u[i] = pressure_gradient[i] * hy * hy;
-                }
                 if (type_u_discretization == 2)
                 {
                     a_u[i] = -nu_eff_i_minus_half + additional_coefficient_iminus1[i];
                     b_u[i] = std::max((nu_eff_i_plus_half + nu_eff_i_minus_half), tiny);
                     c_u[i] = -nu_eff_i_plus_half + additional_coefficient_iplus1[i];
                     d_u[i] = pressure_gradient_constant_part[i] * hy * hy;
+                }
+                else
+                {
+                    std::cout << "type_u_discretization: Type not define! Stop here." << std::endl;
+                    std::cin.get();
                 }
             }
             // first node
@@ -701,13 +536,6 @@ namespace udf
             double nu_eff_last_minus = nu + nut_star[last - 1];
             double nu_eff_last_plus_half = 2.0 * nu_eff_last_plus * nu_eff_last / std::max((nu_eff_last_plus + nu_eff_last), tiny);
             double nu_eff_last_minus_half = 2.0 * nu_eff_last_minus * nu_eff_last / std::max((nu_eff_last_minus + nu_eff_last), tiny);
-            if (type_u_discretization == 1)
-            {
-                //a_u[last] = -nu_eff_last_minus_half + additional_coefficient;
-                //b_u[last] = std::max((nu_eff_last_plus_half + nu_eff_last_minus_half), tiny);
-                //c_u[last] = 0.0;
-                //d_u[last] = pressure_gradient_approximated_constant_part * hy * hy + nu_eff_last_plus_half * u_nodeUM;
-            }
             if (type_u_discretization == 2)
             {
                 a_u[last] = -nu_eff_last_minus_half + additional_coefficient_iminus1[last];
@@ -715,11 +543,14 @@ namespace udf
                 c_u[last] = 0.0;
                 d_u[last] = pressure_gradient_constant_part[last] * hy * hy + (nu_eff_last_plus_half - additional_coefficient_iplus1[last]) * u_nodeUM;
             }
+            else
+            {
+                std::cout << "type_u_discretization: Type not define! Stop here." << std::endl;
+                std::cin.get();
+            }
 
             // solving
             double U_new[ny]{};
-            //solve5_eigen(a_u, b_u, c_u, d_u, U_new);
-            //solve5_eigen_with_additonal_coefficient(a_u, b_u, c_u, e_u, d_u, U_new);
             
             if (type_tdma == 0)
             {
@@ -875,10 +706,6 @@ namespace udf
             for (int i = 0; i < ny; ++i) phi_solved[n_start + i] = (1.0 - relax_w) * turbu_omega_star[i] + relax_w * Turbu_omega_new[i];
             //------------------------------------------------¡ü update phi_solved with under-relaxation ¡ü------------------------------------------------
 
-            //std::cout << "phi_solved = ";
-            //for (const auto& v : phi_solved) std::cout << v << " ";
-            //std::cout << std::endl;
-
             //------------------------------------------------¡ý Check and update flow rate ¡ý------------------------------------------------
             // --- compute flow rate ---
             flow_rate_current = std::accumulate(U_new, U_new + ny, 0.0) * hy;
@@ -904,33 +731,6 @@ namespace udf
                 }
                 utau = std::max(utau, utau_min);
             }
-            if (0)
-            {
-                // --- low-pass filter ---
-                static double Q_avg = flow_rate_current;
-                double beta = 0.1;
-                Q_avg = (1.0 - beta) * Q_avg + beta * flow_rate_current;
-
-                // --- only update occasionally ---
-                //if (num_iter_out % 10 == 0)
-                //{
-                    // --- gentle correction ---
-                    double correction = pow(flow_rate_target / (Q_avg + 1e-12), 0.25);
-
-                    // --- candidate ---
-                    double utau_candidate = utau * correction;
-
-                    // --- rate limiter ---
-                    double max_change = 0.05 * utau;
-                    double delta = utau_candidate - utau;
-                    delta = std::clamp(delta, -max_change, max_change);
-
-                    // --- relaxation ---
-                    double alpha = 0.2;
-                    utau = utau + alpha * delta;
-                //}
-            }
-            
 
             // --- safety ---
             if (!std::isfinite(utau))
