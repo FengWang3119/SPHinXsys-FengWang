@@ -279,6 +279,7 @@ int main(int ac, char *av[])
     body_states_recording.addToWrite<int>(water_block, "BufferIndicator");
     //RegressionTestDynamicTimeWarping<ObservedQuantityRecording<Real>> write_centerpoint_quantity("TurbulentViscosity", observer_centerpoint_contact);
     ObservedQuantityRecording<Real> write_nearwall_friction_velocity("WallShearStress", friction_velocity_observer_contact);
+    ObservedQuantityRecording<Real> write_nearwall_friction_velocity_sublayer("FrictionVelocityFromSublayer", friction_velocity_observer_contact);
     body_states_recording.addToWrite<Vecd>(wall_boundary, "NormalDirection");
 
     BodyStatesRecordingToVtp write_observation_states_pressure_contour(observer_body_pressure_contour);     //% Average
@@ -516,6 +517,7 @@ int main(int ac, char *av[])
                 write_recorded_water_mut.writeToFile(number_of_iterations);
                 write_recorded_water_omega.writeToFile(number_of_iterations);
                 write_nearwall_friction_velocity.writeToFile(number_of_iterations);
+                write_nearwall_friction_velocity_sublayer.writeToFile(number_of_iterations);
             }
             //if (GlobalStaticVariables::physical_time_ > end_time * 0.5)
             //body_states_recording.writeToFile();
