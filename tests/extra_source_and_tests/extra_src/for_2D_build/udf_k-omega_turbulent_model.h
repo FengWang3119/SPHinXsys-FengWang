@@ -291,10 +291,9 @@ class kOmega_InflowTurbulentCondition_TKE : public BaseFlowBoundaryCondition,
     public kOmega_BaseTurbuClosureCoeff
 {
 public:
-    explicit kOmega_InflowTurbulentCondition_TKE(AlignedBoxByCell& aligned_box_part, Real CharacteristicLength, Real relaxation_rate, int type_turbu_inlet_omega, int type_turbu_inlet_k)
-        : BaseFlowBoundaryCondition(aligned_box_part), type_turbu_inlet_omega_(type_turbu_inlet_omega), type_turbu_inlet_k_(type_turbu_inlet_k),
+    explicit kOmega_InflowTurbulentCondition_TKE(AlignedBoxByCell& aligned_box_part, Real relaxation_rate)
+        : BaseFlowBoundaryCondition(aligned_box_part), 
         relaxation_rate_(relaxation_rate),
-        CharacteristicLength_(CharacteristicLength),
         turbu_k_(particles_->getVariableDataByName<Real>("TurbulenceKineticEnergy")),
         aligned_box_(aligned_box_part.getAlignedBox()),
         transform_(aligned_box_.getTransform()), halfsize_(aligned_box_.HalfSize()),
@@ -316,9 +315,7 @@ public:
     };
 
 protected:
-    int type_turbu_inlet_omega_, type_turbu_inlet_k_;
     Real relaxation_rate_;
-    Real CharacteristicLength_;
     Real* turbu_k_;
     AlignedBox& aligned_box_;
     Transform& transform_;
@@ -332,10 +329,9 @@ class kOmega_InflowTurbulentCondition_TSDR : public BaseFlowBoundaryCondition,
     public kOmega_BaseTurbuClosureCoeff
 {
 public:
-    explicit kOmega_InflowTurbulentCondition_TSDR(AlignedBoxByCell& aligned_box_part, Real CharacteristicLength, Real relaxation_rate, int type_turbu_inlet_omega, int type_turbu_inlet_k)
-        : BaseFlowBoundaryCondition(aligned_box_part), type_turbu_inlet_omega_(type_turbu_inlet_omega), type_turbu_inlet_k_(type_turbu_inlet_k),
+    explicit kOmega_InflowTurbulentCondition_TSDR(AlignedBoxByCell& aligned_box_part, Real relaxation_rate)
+        : BaseFlowBoundaryCondition(aligned_box_part),
         relaxation_rate_(relaxation_rate),
-        CharacteristicLength_(CharacteristicLength),
         turbu_omega_(particles_->getVariableDataByName<Real>("TurbulentSpecificDissipation")),
         aligned_box_(aligned_box_part.getAlignedBox()),
         transform_(aligned_box_.getTransform()), halfsize_(aligned_box_.HalfSize()),
@@ -358,9 +354,7 @@ public:
     };
 
 protected:
-    int type_turbu_inlet_omega_, type_turbu_inlet_k_;
     Real relaxation_rate_;
-    Real CharacteristicLength_;
     Real* turbu_omega_;
     AlignedBox& aligned_box_;
     Transform& transform_;

@@ -224,8 +224,8 @@ int main(int ac, char *av[])
 
     /** Turbulent kEpsilon_InflowTurbulentCondition.It needs characteristic Length to calculate turbulent length  */
     //SimpleDynamics<fluid_dynamics::udf::kOmega_InflowTurbulentCondition> impose_turbulent_inflow_condition(left_emitter, characteristic_length, relaxation_rate_turbulent_inlet, type_turbulent_inlet_omega, type_turbulent_inlet_k);
-    SimpleDynamics<fluid_dynamics::udf::kOmega_InflowTurbulentCondition_TKE<InflowTurbulentKineticEnergy>> impose_turbulent_inflow_turbulent_kenetic_energy(left_emitter, characteristic_length, relaxation_rate_turbulent_inlet, type_turbulent_inlet_omega, type_turbulent_inlet_k);
-    SimpleDynamics<fluid_dynamics::udf::kOmega_InflowTurbulentCondition_TSDR<InflowTurbulentSpecificDissipationRate>> impose_turbulent_inflow_tsdr(left_emitter, characteristic_length, relaxation_rate_turbulent_inlet, type_turbulent_inlet_omega, type_turbulent_inlet_k);
+    SimpleDynamics<fluid_dynamics::udf::kOmega_InflowTurbulentCondition_TKE<InflowTurbulentKineticEnergy>> impose_turbulent_inflow_turbulent_kenetic_energy(left_emitter, relaxation_rate_turbulent_inlet);
+    SimpleDynamics<fluid_dynamics::udf::kOmega_InflowTurbulentCondition_TSDR<InflowTurbulentSpecificDissipationRate>> impose_turbulent_inflow_tsdr(left_emitter, relaxation_rate_turbulent_inlet);
 
     //----------------------------------------------------------------------
     // Right/Outlet buffer
