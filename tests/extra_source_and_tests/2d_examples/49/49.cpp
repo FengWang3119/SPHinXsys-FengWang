@@ -223,7 +223,9 @@ int main(int ac, char *av[])
     SimpleDynamics<fluid_dynamics::InflowVelocityCondition<InflowVelocity>> inflow_velocity_condition(left_emitter);
 
     /** Turbulent kEpsilon_InflowTurbulentCondition.It needs characteristic Length to calculate turbulent length  */
-    SimpleDynamics<fluid_dynamics::udf::kOmega_InflowTurbulentCondition> impose_turbulent_inflow_condition(left_emitter, characteristic_length, relaxation_rate_turbulent_inlet, type_turbulent_inlet_omega, type_turbulent_inlet_k);
+    //SimpleDynamics<fluid_dynamics::udf::kOmega_InflowTurbulentCondition> impose_turbulent_inflow_condition(left_emitter, characteristic_length, relaxation_rate_turbulent_inlet, type_turbulent_inlet_omega, type_turbulent_inlet_k);
+    SimpleDynamics<fluid_dynamics::udf::kOmega_InflowTurbulentCondition_TKE<InflowTurbulentKineticEnergy>> impose_turbulent_inflow_turbulent_kenetic_energy(left_emitter, characteristic_length, relaxation_rate_turbulent_inlet, type_turbulent_inlet_omega, type_turbulent_inlet_k);
+    SimpleDynamics<fluid_dynamics::udf::kOmega_InflowTurbulentCondition_TSDR<InflowTurbulentSpecificDissipationRate>> impose_turbulent_inflow_tsdr(left_emitter, characteristic_length, relaxation_rate_turbulent_inlet, type_turbulent_inlet_omega, type_turbulent_inlet_k);
 
     //----------------------------------------------------------------------
     // Right/Outlet buffer
@@ -434,7 +436,9 @@ int main(int ac, char *av[])
 
                 if (physical_time > turbulent_module_activate_time) //** A temporary treatment *
                 {
-                    impose_turbulent_inflow_condition.exec();
+                    //impose_turbulent_inflow_condition.exec();
+                    impose_turbulent_inflow_turbulent_kenetic_energy.exec();
+                    impose_turbulent_inflow_tsdr.exec();
                 }
 
                 density_relaxation.exec(dt);

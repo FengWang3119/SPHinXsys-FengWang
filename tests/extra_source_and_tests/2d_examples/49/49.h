@@ -24,8 +24,10 @@ Real time_gradually_increase_vel = 2.0;
 Real characteristic_length = DH; /**<It needs characteristic Length to calculate turbulent length and the inflow turbulent epsilon>*/
 //** For K and Epsilon/Omega, type of the turbulent inlet, 0 is freestream, 1 is from interpolation from PY21, 2 is from PY2-11 *
 int type_turbulent_inlet_omega = 2;
+std::string turbulent_inlet_omega_profile_source = "PY2-11";
 //** For K and Epsilon/Omega, type of the turbulent inlet, 0 is freestream, 1 is from interpolation from PY21, 2 is from PY2-11*
 int type_turbulent_inlet_k = 2;
+std::string turbulent_inlet_k_profile_source = "PY2-11";
 // ** 0 is freestream, 1 is from interpolation from PY21, 2 is from OF6-28, 3 is from PY2-11 *
 int type_velocity_inlet = 3;
 
@@ -339,6 +341,22 @@ class WallBoundary : public ComplexShape
     }
 };
 
+inline Real polyEval(const std::vector<Real>& a, Real x)
+{
+    const int n = static_cast<int>(a.size());
+    if (n == 0)
+    {
+        std::cout << "size of coefficient = 0 " << '\n'
+            << "=================\n";
+        std::cin.get();
+    }
+    Real result = a[n - 1];
+    for (int i = n - 2; i >= 0; --i)
+    {
+        result = result * x + a[i];
+    }
+    return result;
+}
 //----------------------------------------------------------------------
 //	Inflow velocity
 //----------------------------------------------------------------------
@@ -481,22 +499,6 @@ struct InflowVelocity
         target_velocity[1] = 0.0;
         return target_velocity;
     }
-    Real polyEval(const std::vector<Real>& a, Real x)
-    {
-        const int n = static_cast<int>(a.size());
-        if (n == 0)
-        {
-            std::cout << "size of coefficient = 0 " << '\n'
-                << "=================\n";
-            std::cin.get();
-        }
-        Real result = a[n - 1];
-        for (int i = n - 2; i >= 0; --i)
-        {
-            result = result * x + a[i];
-        }
-        return result;
-    }
     Real inletProfileChebyshev(Real Y)
     {
         const Real Y_min = 3.81517410e-03;
@@ -571,6 +573,171 @@ struct InflowVelocity
         Real w = s - Real(i);
 
         return (1.0 - w) * table[i] + w * table[i + 1];
+    }
+};
+
+//----------------------------------------------------------------------
+//	Inflow tke
+//----------------------------------------------------------------------
+struct InflowTurbulentKineticEnergy
+{
+    Real u_ref_, t_ref_;
+    AlignedBox& aligned_box_;
+    Vecd halfsize_;
+    Real udf_turbulent_intensity_for_k_inlet_ = 0.05;
+
+    template <class BoundaryConditionType>
+    InflowTurbulentKineticEnergy(BoundaryConditionType& boundary_condition)
+        : u_ref_(U_inlet), t_ref_(time_gradually_increase_vel),
+        aligned_box_(boundary_condition.getAlignedBox()),
+        halfsize_(aligned_box_.HalfSize()) {
+    }
+
+    Real getTKE_polynomial(Vecd& position)
+    {
+        Real half_channel_height = DH / 2.0;
+        Real disntance_to_centerline_with_sign = position[yAxis];
+        //** Calculate the distance to wall, Y, because the fitting curve is placed based on Y *
+        Real Y = 0.0;
+        if (disntance_to_centerline_with_sign < 0.0)
+        {
+            Y = half_channel_height + disntance_to_centerline_with_sign;
+        }
+        else
+        {
+            Y = half_channel_height - disntance_to_centerline_with_sign;
+        }
+        
+        //** 2 segments *
+        const Real y1 = 0.2;
+
+        Real polynomial_value = 0.0;
+        if (Y > 0.0 && Y <= y1)
+        {
+            static const std::vector<Real> coeff1 = {
+            2.372066e-03, -2.184474e-03, -5.428215e-02,
+            2.932582e+00, -9.519733e+01, 2.027762e+03,
+            -2.936207e+04, 2.936498e+05, -2.027765e+06,
+            9.488074e+06, -2.870793e+07, 5.066263e+07,
+            -3.959145e+07,
+            };
+            polynomial_value = polyEval(coeff1, Y);
+            //if (Y < 0.05)
+            //    std::cout << "polynomial_value=" << polynomial_value << " Y=" << Y << "========1=========\n";
+        }
+        else
+        {
+            static const std::vector<Real> coeff2 = {
+            2.373419e-03, -2.741400e-03, 1.415229e-03,
+            -3.237809e-03, 7.040568e-03, -9.918119e-03,
+            8.545716e-03, -1.622058e-05, -8.788399e-03,
+            9.634837e-03, -4.033092e-03, -2.133763e-05,
+            3.376056e-04,
+            };
+            polynomial_value = polyEval(coeff2, Y);
+            //std::cout << "polynomial_value=" << polynomial_value << " Y=" << Y << "========3=========\n";
+        }
+        return polynomial_value;
+    }
+
+    Real operator()(Vecd& position, Vecd& velocity, Real current_tke, Real current_time)
+    {
+        Real target_inflow_turbu_k = 0.0;
+        if (type_turbulent_inlet_k == 2)
+        {
+            if (turbulent_inlet_k_profile_source != "PY2-11")
+            {
+                std::cout << "Error: polynomial turbulent inlet k profile is fitted from PY2-11 data, " << "but the provided data source is: " << turbulent_inlet_k_profile_source << std::endl;
+                std::cin.get();
+                exit(1);
+            }
+            target_inflow_turbu_k = getTKE_polynomial(position);
+        }
+        else
+        {
+            std::cout << "type_turbulent_inlet_k: Type wrongly defined! Stop here." << std::endl;
+            std::cin.get();
+        }
+        return target_inflow_turbu_k;
+    }
+};
+
+
+//----------------------------------------------------------------------
+//	Inflow tsdr
+//----------------------------------------------------------------------
+struct InflowTurbulentSpecificDissipationRate
+{
+    Real u_ref_, t_ref_;
+    AlignedBox& aligned_box_;
+    Vecd halfsize_;
+
+    template <class BoundaryConditionType>
+    InflowTurbulentSpecificDissipationRate(BoundaryConditionType& boundary_condition)
+        : u_ref_(U_inlet), t_ref_(time_gradually_increase_vel),
+        aligned_box_(boundary_condition.getAlignedBox()),
+        halfsize_(aligned_box_.HalfSize()) {
+    }
+
+    Real getTSDR_polynomial(Vecd& position, Real& turbu_omega)
+    {
+        Real half_channel_height = DH / 2.0;
+        Real disntance_to_centerline_with_sign = position[yAxis];
+        //** Calculate the distance to wall, Y, because the fitting curve is placed based on Y *
+        Real Y = 0.0;
+        if (disntance_to_centerline_with_sign < 0.0)
+        {
+            Y = half_channel_height + disntance_to_centerline_with_sign;
+        }
+        else
+        {
+            Y = half_channel_height - disntance_to_centerline_with_sign;
+        }
+
+        //** 2 segments *
+        const Real y1 = 0.2;
+
+        Real polynomial_value = 0.0;
+        if (Y > 0.0 && Y <= y1)
+        {
+            polynomial_value = 2.2337739892e-01 / (Y + -9.5734226803e-07) + 4.9871467182e-02;
+            //if (Y < 0.180 && Y > 0.177)
+            //    std::cout << "polynomial_value=" << polynomial_value << " Y=" << Y << "========1=========\n";
+        }
+        else
+        {
+            static const std::vector<Real> coeff2 = {
+              5.610110e+00, -5.994682e+01, 3.670464e+02,
+              -1.398382e+03, 3.311412e+03, -4.223060e+03,
+              -9.007083e+01, 1.109756e+04, -2.188842e+04,
+              2.287992e+04, -1.420357e+04, 4.953297e+03,
+              -7.511954e+02,
+            };
+            polynomial_value = polyEval(coeff2, Y);
+            //std::cout << "polynomial_value=" << polynomial_value << " Y=" << Y << "========3=========\n";
+        }
+        return polynomial_value;
+    }
+
+    Real operator()(Vecd& position, Vecd& velocity, Real current_tsdr, Real current_time)
+    {
+        Real target_inflow_turbu_omega = 0.0;
+        if (type_turbulent_inlet_omega == 2)
+        {
+            if (turbulent_inlet_omega_profile_source != "PY2-11")
+            {
+                std::cout << "Error: polynomial turbulent inlet omega profile is fitted from PY2-11 data, " << "but the provided data source is: " << turbulent_inlet_omega_profile_source << std::endl;
+                std::cin.get();
+                exit(1);
+            }
+            target_inflow_turbu_omega = getTSDR_polynomial(position, current_tsdr);
+        }
+        else
+        {
+            std::cout << "type_turbulent_inlet_omega: Type wrongly defined! Stop here." << std::endl;
+            std::cin.get();
+        }
+        return target_inflow_turbu_omega;
     }
 };
 
