@@ -74,7 +74,8 @@ namespace udf
         }
     }
 //=================================================================================================//
-    P_refinement::
+    template <int Ny, int TypeTDMA>
+    P_refinement<Ny, TypeTDMA>::
         P_refinement(SPHBody& sph_body, Real constant_y_p)
         : LocalDynamics(sph_body),
         num_sub_node_(ny), // ** Needs tobe modified in sublayer function, as well *
@@ -129,7 +130,8 @@ namespace udf
         particles_->addVariableToWrite<Real>("half_flow_rate_over_P_");
     }
     //=================================================================================================//
-    void P_refinement::update(size_t index_i, Real dt)
+    template <int Ny, int TypeTDMA>
+    void P_refinement<Ny, TypeTDMA>::update(size_t index_i, Real dt)
     {
         Real vel_nodeO_i_prior = 0.0;
         if (is_near_wall_P1_[index_i] == 1)
@@ -296,7 +298,8 @@ namespace udf
         }
     }
     //=================================================================================================//
-    P_refinement::SublayerResult P_refinement::solve_1D_sublayer_Dirichlet(double kinematic_viscosity, double u_p_outer, double k_p_outer,
+    template <int Ny, int TypeTDMA>
+    typename P_refinement<Ny, TypeTDMA>::SublayerResult P_refinement<Ny, TypeTDMA>::solve_1D_sublayer_Dirichlet(double kinematic_viscosity, double u_p_outer, double k_p_outer,
         double w_p_outer, double vel_grad_p_outer, double nut_p_outer, double h_sublayer, double utau_outer,
         double Q_target, double k_grad_p_outer, double w_grad_p_outer, double& vel_nodeO, double& vel_nodeUM)
     {
@@ -811,7 +814,8 @@ namespace udf
     // ================= TDMA =================
     // Solve a tridiagonal system: a[i]*x[i-1] + b[i]*x[i] + c[i]*x[i+1] = d[i]
     // a[0] must be 0, c[n-1] will be ignored
-    void P_refinement::tdma(int N, const double* a, const double* b, const double* c, const double* d, double* x)
+    template <int Ny, int TypeTDMA>
+    void P_refinement<Ny, TypeTDMA>::tdma(int N, const double* a, const double* b, const double* c, const double* d, double* x)
     {
         std::vector<double> cp(N, 0.0);
         std::vector<double> dp(N, 0.0);
@@ -843,7 +847,8 @@ namespace udf
     // Solve a tridiagonal system of size 5:
     // a[i]*x[i-1] + b[i]*x[i] + c[i]*x[i+1] = d[i]
     // a[0] must be 0, c[4] will be ignored
-    void P_refinement::tdma5(const double a[5], const double b[5], const double c[5], const double d[5], double x[5])
+    template <int Ny, int TypeTDMA>
+    void P_refinement<Ny, TypeTDMA>::tdma5(const double a[5], const double b[5], const double c[5], const double d[5], double x[5])
     {
         if (num_sub_node_ != 5)
         {
@@ -903,7 +908,8 @@ namespace udf
     // Solve a tridiagonal system of size 10:
     // a[i]*x[i-1] + b[i]*x[i] + c[i]*x[i+1] = d[i]
     // a[0] must be 0, c[9] will be ignored
-    void P_refinement::tdma10(const double a[10], const double b[10], const double c[10], const double d[10], double x[10])
+    template <int Ny, int TypeTDMA>
+    void P_refinement<Ny, TypeTDMA>::tdma10(const double a[10], const double b[10], const double c[10], const double d[10], double x[10])
     {
         if (num_sub_node_ != 10)
         {
@@ -1004,59 +1010,6 @@ namespace udf
         x[1] = dp[1] - cp[1] * x[2];
         x[0] = dp[0] - cp[0] * x[1];
     }
-
-    void P_refinement:: solve5_eigen(const double a[5],
-        const double b[5],
-        const double c[5],
-        const double d[5],
-        double x[5])
-    {
-        Eigen::Matrix<double, 5, 5> A = Eigen::Matrix<double, 5, 5>::Zero();
-        Eigen::Matrix<double, 5, 1> rhs;
-        for (int i = 0; i < 5; ++i)
-        {
-            A(i, i) = b[i];
-            rhs(i) = d[i];
-
-            if (i > 0)
-                A(i, i - 1) = a[i];
-
-            if (i < 4)
-                A(i, i + 1) = c[i];
-        }
-        Eigen::Matrix<double, 5, 1> sol = A.colPivHouseholderQr().solve(rhs);
-        for (int i = 0; i < 5; ++i)
-            x[i] = sol(i);
-    }
-    void P_refinement::solve5_eigen_with_additonal_coefficient(const double a[5],
-        const double b[5],
-        const double c[5],
-        const double e[5], 
-        const double d[5],
-        double x[5])
-    {
-        Eigen::Matrix<double, 5, 5> A = Eigen::Matrix<double, 5, 5>::Zero();
-        Eigen::Matrix<double, 5, 1> rhs;
-        for (int i = 0; i < 5; ++i)
-        {
-            rhs(i) = d[i];
-            A(i, i) = b[i];
-            if (i > 0) 
-                A(i, i - 1) = a[i];
-            if (i < 4)
-                A(i, i + 1) = c[i];
-            if (i > 0) //** the first node i=0 uses replace method, no need to add e *
-            {
-                if (i == 4)
-                    A(i, i) += e[i];   
-                else
-                    A(i, 4) += e[i];
-            }
-        }
-        Eigen::Matrix<double, 5, 1> sol = A.colPivHouseholderQr().solve(rhs);
-        for (int i = 0; i < 5; ++i)
-            x[i] = sol(i);
-    }
     //=============================================================================================//
     void BodyStatesRecordingToVtpIncludeNode::writeWithFileName(const std::string& sequence)
     {
@@ -1141,7 +1094,8 @@ namespace udf
             body->setNotNewlyUpdated();
         }
     }
-    void P_refinement::test_sublayer_model_half_channel_height()
+    template <int Ny, int TypeTDMA>
+    void P_refinement<Ny, TypeTDMA>::test_sublayer_model_half_channel_height()
     {
         std::cout << "** Start testing Sublayer model! * " << std::endl;
         
@@ -1210,7 +1164,8 @@ namespace udf
         std::cout << "** Finish testing Sublayer model! Stop here. * " << std::endl;
         std::cin.get();
     }
-    void P_refinement::test_sublayer_model_specific_channel_height()
+    template <int Ny, int TypeTDMA>
+    void P_refinement<Ny, TypeTDMA>::test_sublayer_model_specific_channel_height()
     {
         std::cout << "** Start testing Sublayer model! * " << std::endl;
 
@@ -1282,6 +1237,11 @@ namespace udf
         std::cout << "** Finish testing Sublayer model! Stop here. * " << std::endl;
         std::cin.get();
     }
+    
+    template class P_refinement<5, 5>;
+    template class P_refinement<10, 10>;
+    template class P_refinement<5, 0>;
+    template class P_refinement<10, 0>;
 } // namespace udf
 //=================================================================================================//
 } // namespace fluid_dynamics

@@ -43,6 +43,11 @@ bool is_constrain_normal_velocity_in_P_region = false;
 //Real weight_vel_grad_sub_nearwall = 0.1;
 //** Tag for Source Term Linearisation *
 bool is_source_term_linearisation = false;
+
+//** Tag for Sublayer Model *
+static constexpr int num_node_sublayer_model = 10;
+static constexpr int type_tdma_sublayer_model = 10;
+
 //** Empirical parameter for initial stability*
 Real turbulent_module_activate_time = 2.0;
 //** Initial values for K, Omega and Mu_t *
