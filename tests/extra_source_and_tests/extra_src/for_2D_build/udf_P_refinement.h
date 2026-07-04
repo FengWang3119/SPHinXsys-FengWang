@@ -73,7 +73,7 @@ namespace udf
     class P_refinement : public LocalDynamics, public kOmega_BaseTurbuClosureCoeff, public WallFunctionCoefficient
     {
     public:
-        explicit P_refinement(SPHBody& sph_body, Real constant_y_p);
+        explicit P_refinement(SPHBody& sph_body, Real constant_y_p, Real constant_y_p_node = 0.0);
         virtual ~P_refinement(){};
 
         void update(size_t index_i, Real dt = 0.0);
@@ -107,11 +107,18 @@ namespace udf
                 num_skip_output_ = 0;
             }
         }
-        inline void construct_node_distribution(Real constant_y_p)
+        inline void construct_node_distribution(Real constant_y_p, Real constant_y_p_node)
         {
             sublayer_height_contant_ = constant_y_p;
-            //sublayer_y_p_constant_ = sublayer_height_contant_ / (Real(ny) + 0.5) / 2.0;  //** Initial TRY *
-            sublayer_y_p_constant_ = 2.0e-6; //** Locally effective, mannually set y_p_constant in sublayer *
+            
+            if (constant_y_p_node < TinyReal) //** if not explicity input, uniform distribution *
+            {
+                sublayer_y_p_constant_ = sublayer_height_contant_ / (Real(ny) + 0.5) / 2.0;  
+            }
+            else
+            {
+                sublayer_y_p_constant_ = constant_y_p_node; //** Locally effective, mannually set y_p_constant in sublayer *
+            }
             
             sublayer_node_uniform_distance_ = (sublayer_height_contant_ - sublayer_y_p_constant_) / Real(ny);
             

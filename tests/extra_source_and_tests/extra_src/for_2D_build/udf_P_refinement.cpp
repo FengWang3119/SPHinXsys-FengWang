@@ -76,7 +76,7 @@ namespace udf
 //=================================================================================================//
     template <int Ny, int TypeTDMA>
     P_refinement<Ny, TypeTDMA>::
-        P_refinement(SPHBody& sph_body, Real constant_y_p)
+        P_refinement(SPHBody& sph_body, Real constant_y_p, Real constant_y_p_node)
         : LocalDynamics(sph_body),
         num_sub_node_(ny), // ** Needs tobe modified in sublayer function, as well *
         friction_velocity_from_sublayer_(particles_->registerStateVariableData<Real>("FrictionVelocityFromSublayer")),
@@ -120,7 +120,7 @@ namespace udf
         particles_->addVariableToWrite<Vec6d>("NodeValue");
         particles_->addVariableToWrite<Vec6d>("NodeValueTKE");
         check_num_node_consistency();
-        construct_node_distribution(constant_y_p);
+        construct_node_distribution(constant_y_p, constant_y_p_node);
         output_node_distribution();
         particles_->addVariableToWrite<Real>("dUdnFromSublayerMagnitude");
         particles_->addVariableToWrite<Matd>("dUdnFromSublayer");

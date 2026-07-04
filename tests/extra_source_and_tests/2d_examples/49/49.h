@@ -47,6 +47,7 @@ bool is_source_term_linearisation = false;
 //** Tag for Sublayer Model *
 static constexpr int num_node_sublayer_model = 10;
 static constexpr int type_tdma_sublayer_model = 10;
+Real y_p_constant_sublayer = 2.0e-6;
 
 //** Empirical parameter for initial stability*
 Real turbulent_module_activate_time = 2.0;
@@ -646,7 +647,7 @@ struct InflowTurbulentSpecificDissipationRate
         return polynomial_value;
     }
 
-    Real operator()(Vecd& position, Vecd& velocity, Real current_tsdr, Real current_time)
+    Real operator()(Vecd& position, Vecd& velocity, Real current_tsdr, Real current_time, Real current_tke)
     {
         Real target_inflow_turbu_omega = 0.0;
         if (type_turbulent_inlet_omega == 2)

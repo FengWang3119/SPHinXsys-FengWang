@@ -185,10 +185,10 @@ int main(int ac, char *av[])
 
     SimpleDynamics<fluid_dynamics::udf::ConstrainNormalVelocityInRegionP> constrain_normal_velocity_in_P_region(water_block);
 
-    //InteractionWithUpdate<fluid_dynamics::udf::P_refinement_GetVelocityGradientInner> get_velocity_gradient_inner_only_for_P(water_block_inner); //** Note that the B should change *
-    InteractionWithUpdate<fluid_dynamics::udf::P_refinement_GetVelocityGradientComplex> get_velocity_gradient_inner_only_for_P(water_block_inner, water_wall_contact); //** Note that the B should change *
+    InteractionWithUpdate<fluid_dynamics::udf::P_refinement_GetVelocityGradientInner> get_velocity_gradient_inner_only_for_P(water_block_inner); //** Note that the B should change *
+    //InteractionWithUpdate<fluid_dynamics::udf::P_refinement_GetVelocityGradientComplex> get_velocity_gradient_inner_only_for_P(water_block_inner, water_wall_contact); //** Note that the B should change *
 
-    SimpleDynamics<fluid_dynamics::udf::P_refinement> get_friction_velocity_from_sublayer(water_block);
+    SimpleDynamics<fluid_dynamics::udf::P_refinement<num_node_sublayer_model, type_tdma_sublayer_model>> get_friction_velocity_from_sublayer(water_block, y_p_constant);
 
     /** Choose one, ordinary or turbulent. Computing viscous force, */
     InteractionWithUpdate<fluid_dynamics::udf::TurbulentViscousForceWithWall> turbulent_viscous_force(water_block_inner, water_wall_contact);
@@ -221,7 +221,9 @@ int main(int ac, char *av[])
     SimpleDynamics<fluid_dynamics::InflowVelocityCondition<InflowVelocity>> inflow_velocity_condition(left_emitter);
 
     /** Turbulent kEpsilon_InflowTurbulentCondition.It needs characteristic Length to calculate turbulent length  */
-    SimpleDynamics<fluid_dynamics::udf::kOmega_InflowTurbulentCondition> impose_turbulent_inflow_condition(left_emitter, characteristic_length, relaxation_rate_turbulent_inlet, type_turbulent_inlet);
+    //SimpleDynamics<fluid_dynamics::udf::kOmega_InflowTurbulentCondition> impose_turbulent_inflow_condition(left_emitter, characteristic_length, relaxation_rate_turbulent_inlet, type_turbulent_inlet, 1);
+    SimpleDynamics<fluid_dynamics::udf::kOmega_InflowTurbulentCondition_TKE<InflowTurbulentKineticEnergy>> impose_turbulent_inflow_turbulent_kenetic_energy(left_emitter, relaxation_rate_turbulent_inlet);
+    SimpleDynamics<fluid_dynamics::udf::kOmega_InflowTurbulentCondition_TSDR<InflowTurbulentSpecificDissipationRate>> impose_turbulent_inflow_tsdr(left_emitter, relaxation_rate_turbulent_inlet);
 
     //----------------------------------------------------------------------
     // Right/Outlet buffer
@@ -285,6 +287,7 @@ int main(int ac, char *av[])
     //** Temporary treatment *
     ObservedQuantityRecording<Vec6d> write_recorded_water_node_velocity("NodeValue", node_observer_contact);
     ObservedQuantityRecording<Vec6d> write_recorded_water_node_k("NodeValueTKE", node_observer_contact);
+    ObservedQuantityRecording<Real> write_recorded_water_node_utau("FrictionVelocityFromSublayer", node_observer_contact);
     /**
      * @brief Setup geometry and initial conditions.
      */
@@ -430,7 +433,9 @@ int main(int ac, char *av[])
 
                 if (physical_time > turbulent_module_activate_time) //** A temporary treatment *
                 {
-                    impose_turbulent_inflow_condition.exec();
+                    //impose_turbulent_inflow_condition.exec();
+                    impose_turbulent_inflow_turbulent_kenetic_energy.exec();
+                    impose_turbulent_inflow_tsdr.exec();
                 }
 
                 density_relaxation.exec(dt);
@@ -486,6 +491,7 @@ int main(int ac, char *av[])
                 //** Temporary treatment *
                 write_recorded_water_node_velocity.writeToFile(number_of_iterations);
                 write_recorded_water_node_k.writeToFile(number_of_iterations);
+                write_recorded_water_node_utau.writeToFile(number_of_iterations);
             }
 
             /** Update cell linked list and configuration. */
