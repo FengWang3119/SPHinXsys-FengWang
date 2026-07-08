@@ -111,12 +111,21 @@ namespace udf
         {
             sublayer_height_contant_ = constant_y_p;
             
-            if (constant_y_p_node < TinyReal) //** if not explicity input, uniform distribution *
+            if (constant_y_p_node < TinyReal) //** if not explicity input, uniform distribution, here we use unified expression *
             {
+                //wall                                                  P_outer
+                // |                                                       |
+                // |--0.5hy--nodeP--hy--nodeS--hy--node-- ... --nodeU--hy--|
+                //** Actually consists of 2 steps: 
+                //** first: hy=sublayer_height_contant_ / (Real(ny) + 0.5), based on node distribution method *
+                //** second: sublayer_y_p_constant_ = 0.5 * hy *
                 sublayer_y_p_constant_ = sublayer_height_contant_ / (Real(ny) + 0.5) / 2.0;  
             }
             else
             {
+                //wall                                                             P_outer
+                // |                                                                   |
+                // |--constant_y_p_node--nodeP--hy--nodeS--hy--node-- ... --nodeU--hy--|
                 sublayer_y_p_constant_ = constant_y_p_node; //** Locally effective, mannually set y_p_constant in sublayer *
             }
             
