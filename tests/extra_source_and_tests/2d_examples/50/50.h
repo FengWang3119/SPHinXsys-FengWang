@@ -8,6 +8,7 @@
 #include "pressure_boundary.h"
 #include "udf_P_refinement.h"
 #include "sphinxsys.h"
+#include "py2_20_profile.h"
 using namespace SPH;
 
 //----------------------------------------------------------------------
@@ -397,66 +398,15 @@ struct InflowVelocity
         Real Y = half_channel_height - std::abs(position[1]);
         return inletProfileTable(Y);
     }
-    Real inletProfileChebyshev(Real Y)
-    {
-        const Real Y_min = 3.81517410e-03;
-        const Real Y_max = 9.99451160e-01;
-
-        Y = SMAX(Y_min, SMIN(Y, Y_max));
-
-        //** X_min = std::log(Y_min), X_max = std::log(Y_max) *
-        const Real xmin = -5.5687689796382367e+00;
-        const Real xmax = -5.4899066780366194e-04;
-        const Real inv_range = 1.0 / (xmax - xmin);
-
-        const Real X = std::log(Y);
-        const Real x = (2.0 * X - xmin - xmax) * inv_range;
-
-        const Real c[] = {
-            8.7874536325444819e-01,
-            1.8682245615059126e-01,
-            -1.8117146154221684e-03,
-            -3.1827710521799830e-03,
-            -2.5781840831446594e-03,
-            -9.6544247521810548e-04,
-            -1.2917847312668713e-03,
-        };
-
-        const int n = sizeof(c) / sizeof(c[0]);
-
-        Real b1 = 0.0;
-        Real b2 = 0.0;
-
-        for (int k = n - 1; k >= 1; --k)
-        {
-            Real b0 = 2.0 * x * b1 - b2 + c[k];
-            b2 = b1;
-            b1 = b0;
-        }
-
-        return x * b1 - b2 + c[0];
-    }
+    
     Real inletProfileTable(Real Y)
     {
-        const Real Y_min = 3.81517410e-03;
-        const Real Y_max = 9.99451160e-01;
+        const Real Y_min = PY2_20_VelocityProfile::Y_min;
+        const Real Y_max = PY2_20_VelocityProfile::Y_max;
+        const Real inv_dY = PY2_20_VelocityProfile::inv_dY;
 
-        constexpr int N = 2000;
-        const Real inv_dY = Real(N - 1) / (Y_max - Y_min);
-
-        static bool initialized = false;
-        static std::array<Real, N> table;
-
-        if (!initialized)
-        {
-            for (int i = 0; i < N; ++i)
-            {
-                Real Yi = Y_min + Real(i) / inv_dY;
-                table[i] = inletProfileChebyshev(Yi);
-            }
-
-            initialized = true;
-        }
+        constexpr int N =
+            static_cast<int>(PY2_20_VelocityProfile::N);
 
         Y = SMAX(Y_min, SMIN(Y, Y_max));
 
@@ -470,7 +420,8 @@ struct InflowVelocity
 
         Real w = s - Real(i);
 
-        return (1.0 - w) * table[i] + w * table[i + 1];
+        return (1.0 - w) * PY2_20_VelocityProfile::U[i]
+            + w * PY2_20_VelocityProfile::U[i + 1];
     }
 
     Vecd operator()(Vecd &position, Vecd &velocity, Real current_time)
@@ -521,51 +472,34 @@ struct InflowTurbulentKineticEnergy
         halfsize_(aligned_box_.HalfSize()) {
     }
 
-    Real getTKE_polynomial(Vecd& position)
+    Real getTKE_table(Vecd& position)
     {
         Real half_channel_height = DH / 2.0;
-        Real disntance_to_centerline_with_sign = position[yAxis];
-        //** Calculate the distance to wall, Y, because the fitting curve is placed based on Y *
-        Real Y = 0.0;
-        if (disntance_to_centerline_with_sign < 0.0)
-        {
-            Y = half_channel_height + disntance_to_centerline_with_sign;
-        }
-        else
-        {
-            Y = half_channel_height - disntance_to_centerline_with_sign;
-        }
-        
-        //** 2 segments *
-        const Real y1 = 0.2;
 
-        Real polynomial_value = 0.0;
-        if (Y > 0.0 && Y <= y1)
-        {
-            static const std::vector<Real> coeff1 = {
-            2.372066e-03, -2.184474e-03, -5.428215e-02,
-            2.932582e+00, -9.519733e+01, 2.027762e+03,
-            -2.936207e+04, 2.936498e+05, -2.027765e+06,
-            9.488074e+06, -2.870793e+07, 5.066263e+07,
-            -3.959145e+07,
-            };
-            polynomial_value = polyEval(coeff1, Y);
-            //if (Y < 0.05)
-            //    std::cout << "polynomial_value=" << polynomial_value << " Y=" << Y << "========1=========\n";
-        }
-        else
-        {
-            static const std::vector<Real> coeff2 = {
-            2.373419e-03, -2.741400e-03, 1.415229e-03,
-            -3.237809e-03, 7.040568e-03, -9.918119e-03,
-            8.545716e-03, -1.622058e-05, -8.788399e-03,
-            9.634837e-03, -4.033092e-03, -2.133763e-05,
-            3.376056e-04,
-            };
-            polynomial_value = polyEval(coeff2, Y);
-            //std::cout << "polynomial_value=" << polynomial_value << " Y=" << Y << "========3=========\n";
-        }
-        return polynomial_value;
+        //** Calculate the distance to wall, Y. */
+        Real Y = half_channel_height - std::abs(position[yAxis]);
+
+        const Real Y_min = PY2_20_TKEProfile::Y_min;
+        const Real Y_max = PY2_20_TKEProfile::Y_max;
+        const Real inv_dY = PY2_20_TKEProfile::inv_dY;
+
+        constexpr int N =
+            static_cast<int>(PY2_20_TKEProfile::N);
+
+        Y = SMAX(Y_min, SMIN(Y, Y_max));
+
+        Real s = (Y - Y_min) * inv_dY;
+        int i = static_cast<int>(s);
+
+        if (i >= N - 1)
+            i = N - 2;
+        if (i < 0)
+            i = 0;
+
+        Real w = s - Real(i);
+
+        return (1.0 - w) * PY2_20_TKEProfile::K[i]
+            + w * PY2_20_TKEProfile::K[i + 1];
     }
 
     Real operator()(Vecd& position, Vecd& velocity, Real current_tke, Real current_time)
@@ -579,7 +513,7 @@ struct InflowTurbulentKineticEnergy
                 std::cin.get();
                 exit(1);
             }
-            target_inflow_turbu_k = getTKE_polynomial(position);
+            target_inflow_turbu_k = getTKE_table(position);
         }
         else
         {
@@ -607,44 +541,34 @@ struct InflowTurbulentSpecificDissipationRate
         halfsize_(aligned_box_.HalfSize()) {
     }
 
-    Real getTSDR_polynomial(Vecd& position, Real& turbu_omega)
+    Real getTSDR_table(Vecd& position, Real& turbu_omega)
     {
         Real half_channel_height = DH / 2.0;
-        Real disntance_to_centerline_with_sign = position[yAxis];
-        //** Calculate the distance to wall, Y, because the fitting curve is placed based on Y *
-        Real Y = 0.0;
-        if (disntance_to_centerline_with_sign < 0.0)
-        {
-            Y = half_channel_height + disntance_to_centerline_with_sign;
-        }
-        else
-        {
-            Y = half_channel_height - disntance_to_centerline_with_sign;
-        }
 
-        //** 2 segments *
-        const Real y1 = 0.2;
+        //** Calculate the distance to wall, Y. */
+        Real Y = half_channel_height - std::abs(position[yAxis]);
 
-        Real polynomial_value = 0.0;
-        if (Y > 0.0 && Y <= y1)
-        {
-            polynomial_value = 2.2337739892e-01 / (Y + -9.5734226803e-07) + 4.9871467182e-02;
-            //if (Y < 0.180 && Y > 0.177)
-            //    std::cout << "polynomial_value=" << polynomial_value << " Y=" << Y << "========1=========\n";
-        }
-        else
-        {
-            static const std::vector<Real> coeff2 = {
-              5.610110e+00, -5.994682e+01, 3.670464e+02,
-              -1.398382e+03, 3.311412e+03, -4.223060e+03,
-              -9.007083e+01, 1.109756e+04, -2.188842e+04,
-              2.287992e+04, -1.420357e+04, 4.953297e+03,
-              -7.511954e+02,
-            };
-            polynomial_value = polyEval(coeff2, Y);
-            //std::cout << "polynomial_value=" << polynomial_value << " Y=" << Y << "========3=========\n";
-        }
-        return polynomial_value;
+        const Real Y_min = PY2_20_OmegaProfile::Y_min;
+        const Real Y_max = PY2_20_OmegaProfile::Y_max;
+        const Real inv_dY = PY2_20_OmegaProfile::inv_dY;
+
+        constexpr int N =
+            static_cast<int>(PY2_20_OmegaProfile::N);
+
+        Y = SMAX(Y_min, SMIN(Y, Y_max));
+
+        Real s = (Y - Y_min) * inv_dY;
+        int i = static_cast<int>(s);
+
+        if (i >= N - 1)
+            i = N - 2;
+        if (i < 0)
+            i = 0;
+
+        Real w = s - Real(i);
+
+        return (1.0 - w) * PY2_20_OmegaProfile::Omega[i]
+            + w * PY2_20_OmegaProfile::Omega[i + 1];
     }
 
     Real operator()(Vecd& position, Vecd& velocity, Real current_tsdr, Real current_time, Real current_tke)
@@ -658,7 +582,7 @@ struct InflowTurbulentSpecificDissipationRate
                 std::cin.get();
                 exit(1);
             }
-            target_inflow_turbu_omega = getTSDR_polynomial(position, current_tsdr);
+            target_inflow_turbu_omega = getTSDR_table(position, current_tsdr);
         }
         else
         {
