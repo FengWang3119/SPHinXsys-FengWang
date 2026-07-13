@@ -24,15 +24,15 @@ Real time_gradually_increase_vel = 2.0;
 //----------------------------------------------------------------------
 Real characteristic_length = DH; /**<It needs characteristic Length to calculate turbulent length and the inflow turbulent epsilon>*/
 
-//** For K and Epsilon/Omega, type of the turbulent inlet, 2 is by polynomial *
+//** For K and Epsilon/Omega, type of the turbulent inlet, 2 is by table *
 int type_turbulent_inlet_omega = 2;
-std::string turbulent_inlet_omega_profile_source = "PY2-11";
-//** For K and Epsilon/Omega, type of the turbulent inlet, 2 is by polynomial *
+std::string turbulent_inlet_omega_profile_source = "PY2-20";
+//** For K and Epsilon/Omega, type of the turbulent inlet, 2 is by table *
 int type_turbulent_inlet_k = 2;
-std::string turbulent_inlet_k_profile_source = "PY2-11";
+std::string turbulent_inlet_k_profile_source = "PY2-20";
 // ** 3 is using the table method *
 int type_velocity_inlet = 3;
-std::string inlet_vel_profile_source = "PY2-11";
+std::string inlet_vel_profile_source = "PY2-20";
 
 Real relaxation_rate_turbulent_inlet = 0.8;
 //** Tag for wall treatment *
@@ -46,9 +46,8 @@ bool is_constrain_normal_velocity_in_P_region = false;
 bool is_source_term_linearisation = false;
 
 //** Tag for Sublayer Model *
-static constexpr int num_node_sublayer_model = 10;
-static constexpr int type_tdma_sublayer_model = 10;
-Real y_p_constant_sublayer = 2.0e-6;
+static constexpr int num_node_sublayer_model = 5;
+static constexpr int type_tdma_sublayer_model = 5;
 
 //** Empirical parameter for initial stability*
 Real turbulent_module_activate_time = 2.0;
@@ -82,8 +81,7 @@ Real U_max = 1.5 * U_inlet; //** An estimated value, generally 1.5 U_inlet *
 Real c_f = 10.0 * U_max;
 Real rho0_f = 1.0; /**< Density. */
 
-//Real Re = 5714.0;
-Real Re = 8.0e7;
+Real Re = 40000.0;
 
 Real Outlet_pressure = 0.0;
 
@@ -430,7 +428,7 @@ struct InflowVelocity
 
         if (type_velocity_inlet == 3)
         {
-            if (inlet_vel_profile_source != "PY2-11")
+            if (inlet_vel_profile_source != "PY2-20")
             {
                 std::cout << "Error: inlet velocity profile for table method" << std::endl;
                 std::cin.get();
@@ -507,9 +505,9 @@ struct InflowTurbulentKineticEnergy
         Real target_inflow_turbu_k = 0.0;
         if (type_turbulent_inlet_k == 2)
         {
-            if (turbulent_inlet_k_profile_source != "PY2-11")
+            if (turbulent_inlet_k_profile_source != "PY2-20")
             {
-                std::cout << "Error: polynomial turbulent inlet k profile is fitted from PY2-11 data, " << "but the provided data source is: " << turbulent_inlet_k_profile_source << std::endl;
+                std::cout << "Error: polynomial turbulent inlet k profile, " << "but the provided data source is: " << turbulent_inlet_k_profile_source << std::endl;
                 std::cin.get();
                 exit(1);
             }
@@ -576,9 +574,9 @@ struct InflowTurbulentSpecificDissipationRate
         Real target_inflow_turbu_omega = 0.0;
         if (type_turbulent_inlet_omega == 2)
         {
-            if (turbulent_inlet_omega_profile_source != "PY2-11")
+            if (turbulent_inlet_omega_profile_source != "PY2-20")
             {
-                std::cout << "Error: polynomial turbulent inlet omega profile is fitted from PY2-11 data, " << "but the provided data source is: " << turbulent_inlet_omega_profile_source << std::endl;
+                std::cout << "Error: polynomial turbulent inlet omega profile, " << "but the provided data source is: " << turbulent_inlet_omega_profile_source << std::endl;
                 std::cin.get();
                 exit(1);
             }
