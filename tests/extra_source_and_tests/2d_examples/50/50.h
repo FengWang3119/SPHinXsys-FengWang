@@ -46,8 +46,8 @@ bool is_constrain_normal_velocity_in_P_region = false;
 bool is_source_term_linearisation = false;
 
 //** Tag for Sublayer Model *
-static constexpr int num_node_sublayer_model = 5;
-static constexpr int type_tdma_sublayer_model = 5;
+static constexpr int num_node_sublayer_model = 10;
+static constexpr int type_tdma_sublayer_model = 10;
 
 Real y_p_constant_sublayer = 0.0005;
 
