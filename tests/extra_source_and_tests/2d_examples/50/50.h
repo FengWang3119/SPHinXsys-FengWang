@@ -16,7 +16,7 @@ using namespace SPH;
 //----------------------------------------------------------------------
 Real DH = 2.0;  /**< Channel height. */
 Real DL = 30.0; /**< Channel length. */
-Real num_fluid_cross_section = 160.0;
+Real num_fluid_cross_section = 200.0;
 
 Real time_gradually_increase_vel = 2.0;
 //----------------------------------------------------------------------
@@ -46,8 +46,8 @@ bool is_constrain_normal_velocity_in_P_region = false;
 bool is_source_term_linearisation = false;
 
 //** Tag for Sublayer Model *
-static constexpr int num_node_sublayer_model = 10;
-static constexpr int type_tdma_sublayer_model = 10;
+static constexpr int num_node_sublayer_model = 5;
+static constexpr int type_tdma_sublayer_model = 5;
 
 Real y_p_constant_sublayer = 0.0005;
 
