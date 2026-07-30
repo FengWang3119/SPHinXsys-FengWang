@@ -16,7 +16,7 @@ using namespace SPH;
 //----------------------------------------------------------------------
 Real DH = 2.0;  /**< Channel height. */
 Real DL = 30.0; /**< Channel length. */
-Real num_fluid_cross_section = 200.0;
+Real num_fluid_cross_section = 40.0;
 
 Real time_gradually_increase_vel = 2.0;
 //----------------------------------------------------------------------
