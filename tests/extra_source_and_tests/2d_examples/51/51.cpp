@@ -21,7 +21,7 @@ int main(int ac, char *av[])
     Real magnify_ratio_avergae_contour = 10.0;
 
     /** Tag for run particle relaxation for the initial body fitted distribution. */
-    sph_system.setRunParticleRelaxation(false);
+    sph_system.setRunParticleRelaxation(true);
     /** Tag for computation start with relaxed body fitted particles distribution. */
     sph_system.setReloadParticles(true);
 
@@ -34,10 +34,9 @@ int main(int ac, char *av[])
     FluidBody water_block(sph_system, makeShared<WaterBlock>("WaterBody"));
     water_block.defineBodyLevelSetShape();
     water_block.defineClosure<WeaklyCompressibleFluid, Viscosity>(ConstructArgs(rho0_f, c_f), mu_f);
-    ParticleBuffer<ReserveSizeFactor> inlet_particle_buffer(0.5);
     (!sph_system.RunParticleRelaxation() && sph_system.ReloadParticles())
-        ? water_block.generateParticlesWithReserve<BaseParticles, Reload>(inlet_particle_buffer, water_block.getName())
-        : water_block.generateParticlesWithReserve<BaseParticles, Lattice>(inlet_particle_buffer);
+        ? water_block.generateParticles<BaseParticles, Reload>(water_block.getName())
+        : water_block.generateParticles<BaseParticles, Lattice>();
     /**
      * @brief 	Particle and body creation of wall boundary.
      */

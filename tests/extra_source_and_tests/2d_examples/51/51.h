@@ -8,15 +8,18 @@
 #include "pressure_boundary.h"
 #include "udf_P_refinement.h"
 #include "sphinxsys.h"
-#include "py2_20_profile.h"
 using namespace SPH;
 
 //----------------------------------------------------------------------
 //	Basic geometry parameters and numerical setup.
 //----------------------------------------------------------------------
-Real DH = 2.0;  /**< Channel height. */
-Real DL = 30.0; /**< Channel length. */
+Real DH = 1.0;  /**< Channel height. */
+Real DL = 1.0; /**< Channel length. */
 Real num_fluid_cross_section = 40.0;
+
+constexpr Real wave_amplitude = 0.1;
+constexpr Real wave_length = 1.0;
+constexpr Real pi = 3.14159265358979323846;
 
 Vecd external_acc = Vecd(0.00258, 0.0);
 Real external_acc_gradually_impose_t = 2.0;
@@ -55,12 +58,10 @@ Real resolution_ref = DH / num_fluid_cross_section;
 Real offset_distance = 0.0;                        
 
 Real BW = resolution_ref * 4; /**< Reference size of the emitter. */
-Real DL_sponge = resolution_ref * 20;
-Real half_channel_height = DH / 2.0;
 //----------------------------------------------------------------------
 //	Domain bounds of the system.
 //----------------------------------------------------------------------
-BoundingBoxd system_domain_bounds(Vec2d(-DL_sponge - 2.0 * BW, -BW), Vec2d(DL + 2.0 * BW, DH + 2.0 * BW));
+BoundingBoxd system_domain_bounds(Vecd(-2.0 * BW, -wave_amplitude - BW), Vecd(DL + 2.0 * BW, DH + BW));
 
 //----------------------------------------------------------------------
 //	Material properties of the fluid.
@@ -79,21 +80,12 @@ Real mu_f = rho0_f * U_f * DH / Re;
 
 Real Re_calculated = U_f * DH * rho0_f / mu_f;
 
-Real DH_C = DH - 2.0 * offset_distance;
-//----------------------------------------------------------------------
-//	The emitter block with offset model.
-//----------------------------------------------------------------------
-Vec2d left_buffer_halfsize = Vec2d(0.5 * BW, 0.5 * DH_C + BW);
-Vec2d left_buffer_translation = Vec2d(-DL_sponge, 0.0) + left_buffer_halfsize + Vecd(0.0, offset_distance - BW);
-
-Vec2d right_buffer_halfsize = Vec2d(0.5 * BW, 0.75 * DH);
-Vec2d right_buffer_translation = Vec2d(DL, DH + 0.25 * DH) - right_buffer_halfsize;
 //----------------------------------------------------------------------
 // Observation with offset model.
 //----------------------------------------------------------------------
 Real x_observe_start = 0.99 * DL;
-int num_observer_points = std::round(DH_C / resolution_ref); //**Every particle is regarded as a cell monitor*
-Real observe_spacing = DH_C / num_observer_points;
+int num_observer_points = std::round(DH / resolution_ref); //**Every particle is regarded as a cell monitor*
+Real observe_spacing = DH / num_observer_points;
 
 // By kernel weight.
 StdVec<Vecd> observation_location;
@@ -276,65 +268,143 @@ namespace observe_node_cross_section
         outfile.close();
     }
 } // namespace observe_node_cross_section
+
 //----------------------------------------------------------------------
-//	Cases-dependent geometries
+//  Case-dependent geometry: periodic wavy channel
 //----------------------------------------------------------------------
-std::vector<Vecd> createWaterBlockShape()
+/**
+ * @brief Lower sinusoidal wall.
+ *
+ * x = 0.00 lambda: y =  0
+ * x = 0.25 lambda: y = -A, wave trough
+ * x = 0.75 lambda: y =  A, wave crest
+ * x = 1.00 lambda: y =  0
+ */
+Real lowerWallHeight(Real x)
 {
-    std::vector<Vecd> water_block_shape;
-    water_block_shape.push_back(Vecd(-DL_sponge - offset_distance, 0.0));
-    water_block_shape.push_back(Vecd(-DL_sponge - offset_distance, DH));
-    water_block_shape.push_back(Vecd(DL + offset_distance, DH));
-    water_block_shape.push_back(Vecd(DL + offset_distance, 0.0));
-    water_block_shape.push_back(Vecd(-DL_sponge - offset_distance, 0.0));
-    return water_block_shape;
-}
-class WaterBlock : public ComplexShape
-{
-  public:
-    explicit WaterBlock(const std::string &shape_name) : ComplexShape(shape_name)
-    {
-        MultiPolygon computational_domain(createWaterBlockShape());
-        add<ExtrudeShape<MultiPolygonShape>>(-offset_distance, computational_domain, "ComputationalDomain");
-    }
-};
-
-std::vector<Vecd> createOuterWallShape()
-{
-    std::vector<Vecd> water_block_shape;
-    water_block_shape.push_back(Vecd(-DL_sponge - BW, 0.0));
-    water_block_shape.push_back(Vecd(-DL_sponge - BW, DH));
-    water_block_shape.push_back(Vecd(DL + BW, DH));
-    water_block_shape.push_back(Vecd(DL + BW, 0.0));
-    water_block_shape.push_back(Vecd(-DL_sponge - BW, 0.0));
-
-    return water_block_shape;
-}
-std::vector<Vecd> createInnerWallShape()
-{
-    std::vector<Vecd> water_block_shape;
-    water_block_shape.push_back(Vecd(-DL_sponge - 2.0 * BW, 0.0));
-    water_block_shape.push_back(Vecd(-DL_sponge - 2.0 * BW, DH));
-    water_block_shape.push_back(Vecd(DL + 2.0 * BW, DH));
-    water_block_shape.push_back(Vecd(DL + 2.0 * BW, 0.0));
-    water_block_shape.push_back(Vecd(-DL_sponge - 2.0 * BW, 0.0));
-
-    return water_block_shape;
+    return -wave_amplitude *
+        std::sin(2.0 * pi * x / wave_length);
 }
 
 /**
- * @brief 	Wall boundary body definition.
+ * @brief Fluid domain bounded by a flat upper wall and a wavy lower wall.
+ */
+std::vector<Vecd> createWaterBlockShape()
+{
+    std::vector<Vecd> water_block_shape;
+
+    // Number of straight segments used to approximate the sinusoidal wall.
+    constexpr size_t number_of_segments = 200;
+
+    // Left and upper boundaries.
+    water_block_shape.push_back(Vecd(0.0, lowerWallHeight(0.0)));
+    water_block_shape.push_back(Vecd(0.0, DH));
+    water_block_shape.push_back(Vecd(DL, DH));
+
+    // Lower wavy boundary, traversed from right to left.
+    for (size_t i = 0; i <= number_of_segments; ++i)
+    {
+        Real x = DL *
+            static_cast<Real>(number_of_segments - i) /
+            static_cast<Real>(number_of_segments);
+
+        water_block_shape.push_back(Vecd(x, lowerWallHeight(x)));
+    }
+
+    return water_block_shape;
+}
+
+class WaterBlock : public ComplexShape
+{
+public:
+    explicit WaterBlock(const std::string& shape_name)
+        : ComplexShape(shape_name)
+    {
+        MultiPolygon computational_domain(createWaterBlockShape());
+        add<MultiPolygonShape>(
+            computational_domain, "ComputationalDomain");
+    }
+};
+
+/**
+ * @brief Flat upper wall.
+ *
+ * The wall is extended in the streamwise direction to provide
+ * sufficient wall particles near the periodic boundaries.
+ */
+std::vector<Vecd> createUpperWallShape()
+{
+    Real wall_x_min = -2.0 * BW;
+    Real wall_x_max = DL + 2.0 * BW;
+
+    std::vector<Vecd> upper_wall_shape;
+
+    upper_wall_shape.push_back(Vecd(wall_x_min, DH));
+    upper_wall_shape.push_back(Vecd(wall_x_min, DH + BW));
+    upper_wall_shape.push_back(Vecd(wall_x_max, DH + BW));
+    upper_wall_shape.push_back(Vecd(wall_x_max, DH));
+    upper_wall_shape.push_back(Vecd(wall_x_min, DH));
+
+    return upper_wall_shape;
+}
+
+/**
+ * @brief Sinusoidal lower wall.
+ */
+std::vector<Vecd> createLowerWallShape()
+{
+    std::vector<Vecd> lower_wall_shape;
+
+    Real wall_x_min = -2.0 * BW;
+    Real wall_x_max = DL + 2.0 * BW;
+
+    constexpr size_t number_of_segments = 240;
+
+    // Fluid-facing surface, from left to right.
+    for (size_t i = 0; i <= number_of_segments; ++i)
+    {
+        Real x = wall_x_min +
+            (wall_x_max - wall_x_min) *
+            static_cast<Real>(i) /
+            static_cast<Real>(number_of_segments);
+
+        lower_wall_shape.push_back(
+            Vecd(x, lowerWallHeight(x)));
+    }
+
+    // Outer surface, from right to left.
+    for (size_t i = 0; i <= number_of_segments; ++i)
+    {
+        Real x = wall_x_max -
+            (wall_x_max - wall_x_min) *
+            static_cast<Real>(i) /
+            static_cast<Real>(number_of_segments);
+
+        lower_wall_shape.push_back(
+            Vecd(x, lowerWallHeight(x) - BW));
+    }
+
+    // Explicitly close the polygon.
+    lower_wall_shape.push_back(
+        Vecd(wall_x_min, lowerWallHeight(wall_x_min)));
+
+    return lower_wall_shape;
+}
+
+/**
+ * @brief Wall boundary body definition.
  */
 class WallBoundary : public ComplexShape
 {
-  public:
-    explicit WallBoundary(const std::string &shape_name) : ComplexShape(shape_name)
+public:
+    explicit WallBoundary(const std::string& shape_name)
+        : ComplexShape(shape_name)
     {
-        MultiPolygon outer_dummy_boundary(createOuterWallShape());
-        add<ExtrudeShape<MultiPolygonShape>>(-offset_distance + BW, outer_dummy_boundary, "OuterDummyBoundary");
+        MultiPolygon upper_wall(createUpperWallShape());
+        add<MultiPolygonShape>(upper_wall, "UpperWall");
 
-        MultiPolygon inner_dummy_boundary(createInnerWallShape());
-        subtract<ExtrudeShape<MultiPolygonShape>>(-offset_distance, inner_dummy_boundary, "InnerDummyBoundary");
+        MultiPolygon lower_wall(createLowerWallShape());
+        add<MultiPolygonShape>(lower_wall, "LowerWavyWall");
     }
 };
 
