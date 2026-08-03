@@ -21,7 +21,7 @@ int main(int ac, char *av[])
     Real magnify_ratio_avergae_contour = 10.0;
 
     /** Tag for run particle relaxation for the initial body fitted distribution. */
-    sph_system.setRunParticleRelaxation(true);
+    sph_system.setRunParticleRelaxation(false);
     /** Tag for computation start with relaxed body fitted particles distribution. */
     sph_system.setReloadParticles(true);
 
@@ -187,7 +187,7 @@ int main(int ac, char *av[])
     InteractionWithUpdate<fluid_dynamics::udf::P_refinement_GetVelocityGradientInner> get_velocity_gradient_inner_only_for_P(water_block_inner); //** Note that the B should change *
     //InteractionWithUpdate<fluid_dynamics::udf::P_refinement_GetVelocityGradientComplex> get_velocity_gradient_inner_only_for_P(water_block_inner, water_wall_contact); //** Note that the B should change *
 
-    SimpleDynamics<fluid_dynamics::udf::P_refinement<num_node_sublayer_model,type_tdma_sublayer_model>> get_friction_velocity_from_sublayer(water_block, y_p_constant, y_p_constant_sublayer);
+    SimpleDynamics<fluid_dynamics::udf::P_refinement<num_node_sublayer_model,type_tdma_sublayer_model>> get_friction_velocity_from_sublayer(water_block, y_p_constant);
     //get_friction_velocity_from_sublayer.test_sublayer_model_half_channel_height();
     //get_friction_velocity_from_sublayer.test_sublayer_model_specific_channel_height();
 

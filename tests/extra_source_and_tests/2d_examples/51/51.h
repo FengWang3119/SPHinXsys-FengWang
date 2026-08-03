@@ -21,7 +21,7 @@ constexpr Real wave_amplitude = 0.1;
 constexpr Real wave_length = 1.0;
 constexpr Real pi = 3.14159265358979323846;
 
-Vecd external_acc = Vecd(0.00258, 0.0);
+Vecd external_acc = Vecd(0.01687141, 0.0);
 Real external_acc_gradually_impose_t = 2.0;
 //----------------------------------------------------------------------
 //	Unique parameters for turbulence.
@@ -40,7 +40,7 @@ bool is_source_term_linearisation = false;
 static constexpr int num_node_sublayer_model = 5;
 static constexpr int type_tdma_sublayer_model = 5;
 
-Real y_p_constant_sublayer = 0.0005;
+//Real y_p_constant_sublayer = 0.0005;
 
 //** Empirical parameter for initial stability*
 Real turbulent_module_activate_time = 2.0;
@@ -54,8 +54,7 @@ StdVec<Real> initial_turbu_values = {0.01, 2.056, 0.02};
 
 // ** If not use BOT *
 Real y_p_constant = DH / 2.0 / num_fluid_cross_section;            
-Real resolution_ref = DH / num_fluid_cross_section;
-Real offset_distance = 0.0;                        
+Real resolution_ref = DH / num_fluid_cross_section;                    
 
 Real BW = resolution_ref * 4; /**< Reference size of the emitter. */
 //----------------------------------------------------------------------
@@ -66,17 +65,13 @@ BoundingBoxd system_domain_bounds(Vecd(-2.0 * BW, -wave_amplitude - BW), Vecd(DL
 //----------------------------------------------------------------------
 //	Material properties of the fluid.
 //----------------------------------------------------------------------
-Real U_inlet = 1.0;
+Real U_inlet = 0.816;
 Real U_f = U_inlet;         //*Characteristic velocity
 Real U_max = 1.5 * U_inlet; //** An estimated value, generally 1.5 U_inlet *
 Real c_f = 10.0 * U_max;
 Real rho0_f = 1.0; /**< Density. */
 
-Real Re = 40000.0;
-
-Real Outlet_pressure = 0.0;
-
-Real mu_f = rho0_f * U_f * DH / Re;
+Real mu_f = 1.0e-4;
 
 Real Re_calculated = U_f * DH * rho0_f / mu_f;
 
@@ -90,7 +85,7 @@ Real observe_spacing = DH / num_observer_points;
 // By kernel weight.
 StdVec<Vecd> observation_location;
 StdVec<Vecd> observation_theoretical_locations;
-Vecd pos_observe_start = Vecd(x_observe_start, resolution_ref / 2.0 + offset_distance);
+Vecd pos_observe_start = Vecd(x_observe_start, resolution_ref / 2.0);
 Vecd unit_direction_observe = Vecd(0.0, 1.0);
 Real observer_offset_distance = 2.0 * resolution_ref;
 
@@ -114,7 +109,6 @@ void get_observation_locations()
 }
 void output_observer_theoretical_y()
 {
-    std::cout << "offset_distance=" << offset_distance << std::endl;
     std::string filename = "../bin/output/observer_theoretical_y.dat";
     std::ofstream outfile(filename);
     if (!outfile.is_open())
