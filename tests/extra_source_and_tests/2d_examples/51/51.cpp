@@ -50,23 +50,26 @@ int main(int ac, char *av[])
     ObserverBody observer_center_point(sph_system, "ObserverCenterPoint");
     observer_center_point.generateParticles<ObserverParticles>(observer_location_center_point);
 
-    get_observation_locations();
-    output_observer_theoretical_y();
+    observe_cross_sections::getObservationLocations();
+    observe_cross_sections::outputObservePositions();
+    observe_cross_sections::outputTheoreticalY();
+    observe_cross_sections::outputNumberOfObserverPoints();
     ObserverBody fluid_observer(sph_system, "FluidObserver");
-    fluid_observer.generateParticles<ObserverParticles>(observation_location);
+    fluid_observer.generateParticles<ObserverParticles>(observe_cross_sections::observation_locations);
     
-    observe_node_cross_section::get_observation_locations();
-    observe_node_cross_section::output_observer_theoretical_y();
+    observe_node_cross_sections::getObservationLocations();
+    observe_node_cross_sections::outputObservePositions();
+    observe_node_cross_sections::outputTheoreticalPositions();
     ObserverBody node_observer(sph_system, "NodeObserver");
-    node_observer.generateParticles<ObserverParticles>(observe_node_cross_section::observation_location);
+    node_observer.generateParticles<ObserverParticles>(observe_node_cross_sections::observation_locations);
 
-    observe_nearwall::getObservingLineLengthAndEndPoints();
-    observe_nearwall::getPositionsOfMultipleObserveLines();
-    observe_nearwall::output_observe_positions();
-    observe_nearwall::output_observe_theoretical_x();
-    observe_nearwall::output_number_observe_points_on_lines();
-    ObserverBody friction_velocity_observer(sph_system, "NearwallFrictionVelocityObserver");
-    friction_velocity_observer.generateParticles<ObserverParticles>(observe_nearwall::observation_locations);
+    //observe_nearwall::getObservingLineLengthAndEndPoints();
+    //observe_nearwall::getPositionsOfMultipleObserveLines();
+    //observe_nearwall::output_observe_positions();
+    //observe_nearwall::output_observe_theoretical_x();
+    //observe_nearwall::output_number_observe_points_on_lines();
+    //ObserverBody friction_velocity_observer(sph_system, "NearwallFrictionVelocityObserver");
+    //friction_velocity_observer.generateParticles<ObserverParticles>(observe_nearwall::observation_locations);
 
     ObserverBody observer_body_pressure_contour(sph_system, makeShared<WaterBlock>("ObserverBody")); //% Average
     observer_body_pressure_contour.generateParticles<BaseParticles, Lattice>();
@@ -77,7 +80,7 @@ int main(int ac, char *av[])
     ContactRelation fluid_observer_contact(fluid_observer, {&water_block});
     ContactRelation node_observer_contact(node_observer, { &water_block });
     ContactRelation observer_centerpoint_contact(observer_center_point, {&water_block});
-    ContactRelation friction_velocity_observer_contact(friction_velocity_observer, {&water_block});
+    //ContactRelation friction_velocity_observer_contact(friction_velocity_observer, {&water_block});
     ContactRelation fluid_pressure_contour_observer_contact(observer_body_pressure_contour, {&water_block}); //% Average
     //----------------------------------------------------------------------
     // Combined relations built from basic relations
@@ -255,8 +258,8 @@ int main(int ac, char *av[])
     ObservedQuantityRecording<Real> write_recorded_water_mut("TurbulentViscosity", fluid_observer_contact);
     ObservedQuantityRecording<Real> write_recorded_water_omega("TurbulentSpecificDissipation", fluid_observer_contact);
     //RegressionTestDynamicTimeWarping<ObservedQuantityRecording<Real>> write_centerpoint_quantity("TurbulentViscosity", observer_centerpoint_contact);
-    ObservedQuantityRecording<Real> write_nearwall_friction_velocity("WallShearStress", friction_velocity_observer_contact);
-    ObservedQuantityRecording<Real> write_nearwall_friction_velocity_sublayer("FrictionVelocityFromSublayer", friction_velocity_observer_contact);
+    //ObservedQuantityRecording<Real> write_nearwall_friction_velocity("WallShearStress", friction_velocity_observer_contact);
+    //ObservedQuantityRecording<Real> write_nearwall_friction_velocity_sublayer("FrictionVelocityFromSublayer", friction_velocity_observer_contact);
     body_states_recording.addToWrite<Vecd>(wall_boundary, "NormalDirection");
 
     BodyStatesRecordingToVtp write_observation_states_pressure_contour(observer_body_pressure_contour);     //% Average
@@ -290,7 +293,7 @@ int main(int ac, char *av[])
         observer_centerpoint_contact.updateConfiguration();
         fluid_observer_contact.updateConfiguration();
         node_observer_contact.updateConfiguration();
-        friction_velocity_observer_contact.updateConfiguration();
+        //friction_velocity_observer_contact.updateConfiguration();
         fluid_pressure_contour_observer_contact.updateConfiguration(); //** Average *
     }
     size_t number_of_iterations = sph_system.RestartStep();
@@ -300,7 +303,7 @@ int main(int ac, char *av[])
 
     int num_output_contour_average_file = 0;  //** Average *
 
-    Real end_time = 1000.0;                      /**< End time. */
+    Real end_time = 300.0;                      /**< End time. */
     Real cutoff_ratio = 0.9;                    //** cutoff_time should be a integral and the same as the PY script */
     Real cutoff_time = end_time * cutoff_ratio; //** cutoff_time should be a integral and the same as the PY script */
     
@@ -472,7 +475,7 @@ int main(int ac, char *av[])
             water_block_complex.updateConfiguration();
             fluid_observer_contact.updateConfiguration();
             node_observer_contact.updateConfiguration();
-            friction_velocity_observer_contact.updateConfiguration();
+            //friction_velocity_observer_contact.updateConfiguration();
 
             /** Tag truncated inlet/outlet particles*/
             inlet_outlet_surface_particle_indicator.exec();
@@ -483,8 +486,8 @@ int main(int ac, char *av[])
                 write_recorded_water_k.writeToFile(number_of_iterations);
                 write_recorded_water_mut.writeToFile(number_of_iterations);
                 write_recorded_water_omega.writeToFile(number_of_iterations);
-                write_nearwall_friction_velocity.writeToFile(number_of_iterations);
-                write_nearwall_friction_velocity_sublayer.writeToFile(number_of_iterations);
+                //write_nearwall_friction_velocity.writeToFile(number_of_iterations);
+                //write_nearwall_friction_velocity_sublayer.writeToFile(number_of_iterations);
             }
             //if (GlobalStaticVariables::physical_time_ > end_time * 0.5)
             //body_states_recording.writeToFile();

@@ -20,6 +20,19 @@ Real num_fluid_cross_section = 40.0;
 constexpr Real wave_amplitude = 0.1;
 constexpr Real wave_length = 1.0;
 constexpr Real pi = 3.14159265358979323846;
+/**
+ * @brief Lower sinusoidal wall.
+ *
+ * x = 0.00 lambda: y =  0
+ * x = 0.25 lambda: y = -A, wave trough
+ * x = 0.75 lambda: y =  A, wave crest
+ * x = 1.00 lambda: y =  0
+ */
+Real lowerWallHeight(Real x)
+{
+    return -wave_amplitude *
+        std::sin(2.0 * pi * x / wave_length);
+}
 
 Vecd external_acc = Vecd(0.01687141, 0.0);
 Real external_acc_gradually_impose_t = 2.0;
@@ -76,210 +89,384 @@ Real mu_f = 1.0e-4;
 Real Re_calculated = U_f * DH * rho0_f / mu_f;
 
 //----------------------------------------------------------------------
-// Observation with offset model.
+//  Center-point observer
 //----------------------------------------------------------------------
-Real x_observe_start = 0.99 * DL;
-int num_observer_points = std::round(DH / resolution_ref); //**Every particle is regarded as a cell monitor*
-Real observe_spacing = DH / num_observer_points;
 
-// By kernel weight.
-StdVec<Vecd> observation_location;
-StdVec<Vecd> observation_theoretical_locations;
-Vecd pos_observe_start = Vecd(x_observe_start, resolution_ref / 2.0);
-Vecd unit_direction_observe = Vecd(0.0, 1.0);
-Real observer_offset_distance = 2.0 * resolution_ref;
+Real x_observe_center = 0.5 * DL;
+Real y_observe_center =
+0.5 * (DH + lowerWallHeight(x_observe_center));
 
-void get_observation_locations()
-{
-    for (int i = 0; i < num_observer_points; ++i)
-    {
-        Vecd pos_observer_i = pos_observe_start + i * observe_spacing * unit_direction_observe;
-        Vecd pos_observer_i_no_offset = pos_observe_start + i * observe_spacing * unit_direction_observe;
-        if (i == 0)
-        {
-            pos_observer_i -= observer_offset_distance * unit_direction_observe;
-        }
-        if (i == num_observer_points - 1)
-        {
-            pos_observer_i += observer_offset_distance * unit_direction_observe;
-        }
-        observation_location.push_back(pos_observer_i);
-        observation_theoretical_locations.push_back(pos_observer_i_no_offset);
-    }
-}
-void output_observer_theoretical_y()
-{
-    std::string filename = "../bin/output/observer_theoretical_y.dat";
-    std::ofstream outfile(filename);
-    if (!outfile.is_open())
-    {
-        std::cerr << "Error: Unable to open file " << filename << " for writing." << std::endl;
-        return;
-    }
-    for (const Vecd &position : observation_theoretical_locations)
-    {
-        outfile << position[1] << "\n";
-    }
-    outfile.close();
-}
-//** For regression test *
-StdVec<Vecd> observer_location_center_point = {Vecd(0.5 * DL, 0.5 * DH)};
+StdVec<Vecd> observer_location_center_point = {
+    Vecd(x_observe_center, y_observe_center) };
 
-//** For getting near wall friction velocity or wall shear stress *
-namespace observe_nearwall
+//----------------------------------------------------------------------
+//  Cross-section observers at the wave trough and crest
+//----------------------------------------------------------------------
+namespace observe_cross_sections
 {
-constexpr const char *namespace_prefix = "nearwall";
-const int number_observe_line = 1;
-Real sparse_ratio = 2.0;
-Real observer_offset_distance = 0.0 * resolution_ref; //** Offset the first and last observing point *
-Real observer_offset_distance_whole_line = 2.0 * resolution_ref;
-Vec2d unit_direction_observe(1.0, 0.0);
-// ** Determine the observing start point of the each line. *
-Real observe_start_x[number_observe_line] = {0.0};
-Real observe_start_y[number_observe_line] = {0.5 * resolution_ref - observer_offset_distance_whole_line};
-// ** Determine the length of the observing line and other information. *
-Real observe_line_length[number_observe_line] = {0.0};
-int num_observer_points[number_observe_line] = {0};
-void getObservingLineLengthAndEndPoints()
-{
-    for (int i = 0; i < number_observe_line; ++i)
-    {
-        observe_line_length[i] = DL;
-        num_observer_points[i] = std::round(observe_line_length[i] / resolution_ref / sparse_ratio);
-    }
-}
+    constexpr const char* namespace_prefix = "CrossSection_";
+    constexpr int number_of_cross_sections = 2;
 
-StdVec<Vecd> observation_locations;
-StdVec<Vecd> observation_theoretical_locations;
-void getPositionsOfMultipleObserveLines()
-{
-    getObservingLineLengthAndEndPoints();
-    for (int k = 0; k < number_observe_line; ++k)
-    {
-        Vecd pos_observe_start(observe_start_x[k], observe_start_y[k]);
-        int num_observer_point = num_observer_points[k];
-        Real observe_spacing = observe_line_length[k] / num_observer_point;
-        for (int i = 0; i < num_observer_point; ++i)
-        {
-            Real offset = 0.0;
-            offset = (i == 0 ? -observer_offset_distance : (i == num_observer_point - 1 ? observer_offset_distance : 0.0));
-            Vecd pos_observer_i = pos_observe_start + (i * observe_spacing + offset) * unit_direction_observe;
-            Vecd pos_observer_i_no_offset = pos_observe_start + i * observe_spacing * unit_direction_observe;
-            observation_locations.push_back(pos_observer_i);
-            observation_theoretical_locations.push_back(pos_observer_i_no_offset);
-        }
-    }
-}
-void output_observe_positions()
-{
-    std::string filename = "../bin/output/" + std::string(namespace_prefix) + "observer_positions.dat";
-    std::ofstream outfile(filename);
-    if (!outfile.is_open())
-    {
-        std::cerr << "Error: Unable to open file " << filename << " for writing." << std::endl;
-        return;
-    }
-    for (const Vecd &position : observation_locations)
-    {
-        outfile << position[0] << " " << position[1] << "\n";
-    }
-    outfile.close();
-}
-void output_observe_theoretical_x()
-{
-    std::string filename = "../bin/output/" + std::string(namespace_prefix) + "observer_theoretical_x.dat";
-    std::ofstream outfile(filename);
-    if (!outfile.is_open())
-    {
-        std::cerr << "Error: Unable to open file " << filename << " for writing." << std::endl;
-        return;
-    }
-    for (const Vecd &position : observation_theoretical_locations)
-    {
-        outfile << position[0] << "\n";
-    }
-    outfile.close();
-}
-void output_number_observe_points_on_lines()
-{
-    std::string filename = "../bin/output/" + std::string(namespace_prefix) + "observer_num_points_on_lines.dat";
-    std::ofstream outfile(filename);
-    if (!outfile.is_open())
-    {
-        std::cerr << "Error: Unable to open file " << filename << " for writing." << std::endl;
-        return;
-    }
-    for (const int &number : num_observer_points)
-    {
-        outfile << number << "\n";
-    }
-    outfile.close();
-}
-} // namespace observe_nearwall
+    // Based on:
+    // y_w(x) = -A sin(2 pi x / lambda)
+    //
+    // x = 0.25 lambda: trough
+    // x = 0.75 lambda: crest
+    Real observe_x[number_of_cross_sections] = {
+        0.25 * wave_length,
+        0.75 * wave_length };
 
-namespace observe_node_cross_section
-{
-    Real x_observe_node = x_observe_start;
-    // By kernel weight.
-    StdVec<Vecd> observation_location;
+    const char* section_name[number_of_cross_sections] = {
+        "trough",
+        "crest" };
+
+    // Preserve the original offset-observer treatment.
+    // Set this value to zero if the offset is no longer needed.
+    Real observer_offset_distance = 2.0 * resolution_ref;
+
+    int num_observer_points[number_of_cross_sections] = { 0, 0 };
+    Real observe_spacing[number_of_cross_sections] = { 0.0, 0.0 };
+
+    StdVec<Vecd> observation_locations;
     StdVec<Vecd> observation_theoretical_locations;
-    void get_observation_locations()
+
+    /**
+     * @brief Generate observers at the trough and crest cross-sections.
+     */
+    void getObservationLocations()
     {
-        observation_location.push_back(Vec2d(x_observe_node, resolution_ref / 2.0 - observer_offset_distance));
-        observation_location.push_back(Vec2d(x_observe_node, (DH - resolution_ref / 2.0) + observer_offset_distance));
-        observation_theoretical_locations.push_back(Vec2d(x_observe_node, resolution_ref / 2.0));
-        observation_theoretical_locations.push_back(Vec2d(x_observe_node, DH - resolution_ref / 2.0));
+        observation_locations.clear();
+        observation_theoretical_locations.clear();
+
+        for (int k = 0; k < number_of_cross_sections; ++k)
+        {
+            Real x = observe_x[k];
+            Real y_bottom = lowerWallHeight(x);
+            Real local_channel_height = DH - y_bottom;
+
+            num_observer_points[k] = std::max(1, static_cast<int>(std::round(local_channel_height / resolution_ref)));
+
+            observe_spacing[k] = local_channel_height / static_cast<Real>(num_observer_points[k]);
+
+            for (int i = 0; i < num_observer_points[k]; ++i)
+            {
+                // Cell-centered theoretical observation position.
+                Real y_theoretical =
+                    y_bottom +
+                    (static_cast<Real>(i) + 0.5) *
+                    observe_spacing[k];
+
+                Vecd theoretical_position(x, y_theoretical);
+                Vecd actual_position = theoretical_position;
+
+                // Preserve the original offset treatment:
+                // move the first point into the lower wall and
+                // the last point into the upper wall.
+                if (i == 0)
+                {
+                    actual_position[1] -= observer_offset_distance;
+                }
+                else if (i == num_observer_points[k] - 1)
+                {
+                    actual_position[1] += observer_offset_distance;
+                }
+
+                observation_locations.push_back(actual_position);
+                observation_theoretical_locations.push_back(
+                    theoretical_position);
+            }
+        }
     }
+
+    /**
+     * @brief Output actual observer positions.
+     *
+     * Columns:
+     * section index, x, y
+     */
+    void outputObservePositions()
+    {
+        std::string filename =
+            "../bin/output/" +
+            std::string(namespace_prefix) +
+            "observer_positions.dat";
+
+        std::ofstream outfile(filename);
+
+        if (!outfile.is_open())
+        {
+            std::cerr
+                << "Error: Unable to open file "
+                << filename
+                << " for writing."
+                << std::endl;
+            return;
+        }
+
+        size_t global_index = 0;
+
+        for (int k = 0; k < number_of_cross_sections; ++k)
+        {
+            for (int i = 0; i < num_observer_points[k]; ++i)
+            {
+                const Vecd& position =
+                    observation_locations[global_index];
+
+                outfile
+                    << k << " "
+                    << position[0] << " "
+                    << position[1] << "\n";
+
+                ++global_index;
+            }
+        }
+    }
+
+    /**
+     * @brief Output theoretical y-coordinates separately
+     *        for the trough and crest.
+     */
+    void outputTheoreticalY()
+    {
+        size_t global_index = 0;
+
+        for (int k = 0; k < number_of_cross_sections; ++k)
+        {
+            std::string filename =
+                "../bin/output/" +
+                std::string(namespace_prefix) +
+                section_name[k] +
+                "_theoretical_y.dat";
+
+            std::ofstream outfile(filename);
+
+            if (!outfile.is_open())
+            {
+                std::cerr
+                    << "Error: Unable to open file "
+                    << filename
+                    << " for writing."
+                    << std::endl;
+                return;
+            }
+
+            for (int i = 0; i < num_observer_points[k]; ++i)
+            {
+                outfile
+                    << observation_theoretical_locations
+                    [global_index][1]
+                    << "\n";
+
+                ++global_index;
+            }
+        }
+    }
+
+    /**
+     * @brief Output the number of observers
+     *        on each cross-section.
+     */
+    void outputNumberOfObserverPoints()
+    {
+        std::string filename =
+            "../bin/output/" +
+            std::string(namespace_prefix) +
+            "num_points.dat";
+
+        std::ofstream outfile(filename);
+
+        if (!outfile.is_open())
+        {
+            std::cerr
+                << "Error: Unable to open file "
+                << filename
+                << " for writing."
+                << std::endl;
+            return;
+        }
+
+        for (int k = 0; k < number_of_cross_sections; ++k)
+        {
+            outfile
+                << section_name[k] << " "
+                << num_observer_points[k] << "\n";
+        }
+    }
+
+} // namespace observe_cross_sections
+
+//----------------------------------------------------------------------
+//  Closest SPH-node observers at the trough and crest
+//----------------------------------------------------------------------
+namespace observe_node_cross_sections
+{
     constexpr const char* namespace_prefix = "Node_";
-    void output_observe_positions()
+    constexpr int number_of_cross_sections = 2;
+
+    // For y_w(x) = -A sin(2 pi x / lambda):
+    //
+    // x = 0.25 lambda: wave trough
+    // x = 0.75 lambda: wave crest
+    Real observe_x[number_of_cross_sections] = {
+        0.25 * wave_length,
+        0.75 * wave_length };
+
+    const char* section_name[number_of_cross_sections] = {
+        "trough",
+        "crest" };
+
+    // Same offset treatment as in the original straight-channel case.
+    Real observer_offset_distance =
+        2.0 * resolution_ref;
+
+    StdVec<Vecd> observation_locations;
+    StdVec<Vecd> observation_theoretical_locations;
+
+    void getObservationLocations()
     {
-        std::string filename = "../bin/output/" + std::string(namespace_prefix) + "observer_positions.dat";
+        observation_locations.clear();
+        observation_theoretical_locations.clear();
+
+        for (int k = 0; k < number_of_cross_sections; ++k)
+        {
+            Real x = observe_x[k];
+            Real y_bottom = lowerWallHeight(x);
+
+            // Theoretical locations of the closest SPH points
+            // adjacent to the lower and upper walls.
+            Real lower_node_y =
+                y_bottom + 0.5 * resolution_ref;
+
+            Real upper_node_y =
+                DH - 0.5 * resolution_ref;
+
+            Vecd lower_node_theoretical(
+                x,
+                lower_node_y);
+
+            Vecd upper_node_theoretical(
+                x,
+                upper_node_y);
+
+            // Actual observer positions are shifted into the wall,
+            // following exactly the original offset treatment.
+            Vecd lower_observer_position(
+                x,
+                lower_node_y -
+                observer_offset_distance);
+
+            Vecd upper_observer_position(
+                x,
+                upper_node_y +
+                observer_offset_distance);
+
+            observation_locations.push_back(
+                lower_observer_position);
+
+            observation_locations.push_back(
+                upper_observer_position);
+
+            observation_theoretical_locations.push_back(
+                lower_node_theoretical);
+
+            observation_theoretical_locations.push_back(
+                upper_node_theoretical);
+        }
+    }
+
+    void outputObservePositions()
+    {
+        std::string filename =
+            "../bin/output/" +
+            std::string(namespace_prefix) +
+            "observer_positions.dat";
+
         std::ofstream outfile(filename);
+
         if (!outfile.is_open())
         {
-            std::cerr << "Error: Unable to open file " << filename << " for writing." << std::endl;
+            std::cerr
+                << "Error: Unable to open file "
+                << filename
+                << " for writing."
+                << std::endl;
             return;
         }
-        for (const Vecd& position : observation_location)
+
+        for (int k = 0; k < number_of_cross_sections; ++k)
         {
-            outfile << position[0] << " " << position[1] << "\n";
+            size_t lower_index =
+                static_cast<size_t>(2 * k);
+
+            size_t upper_index =
+                lower_index + 1;
+
+            outfile
+                << section_name[k] << " lower "
+                << observation_locations[lower_index][0] << " "
+                << observation_locations[lower_index][1]
+                << "\n";
+
+            outfile
+                << section_name[k] << " upper "
+                << observation_locations[upper_index][0] << " "
+                << observation_locations[upper_index][1]
+                << "\n";
         }
-        outfile.close();
     }
-    void output_observer_theoretical_y()
+
+    void outputTheoreticalPositions()
     {
-        std::string filename = "../bin/output/" + std::string(namespace_prefix) + "observer_theoretical_y.dat";
+        std::string filename =
+            "../bin/output/" +
+            std::string(namespace_prefix) +
+            "observer_theoretical_positions.dat";
+
         std::ofstream outfile(filename);
+
         if (!outfile.is_open())
         {
-            std::cerr << "Error: Unable to open file " << filename << " for writing." << std::endl;
+            std::cerr
+                << "Error: Unable to open file "
+                << filename
+                << " for writing."
+                << std::endl;
             return;
         }
-        for (const Vecd& position : observation_theoretical_locations)
+
+        for (int k = 0; k < number_of_cross_sections; ++k)
         {
-            outfile << position[1] << "\n";
+            size_t lower_index =
+                static_cast<size_t>(2 * k);
+
+            size_t upper_index =
+                lower_index + 1;
+
+            outfile
+                << section_name[k] << " lower "
+                << observation_theoretical_locations
+                [lower_index][0]
+                << " "
+                << observation_theoretical_locations
+                [lower_index][1]
+                << "\n";
+
+            outfile
+                << section_name[k] << " upper "
+                << observation_theoretical_locations
+                [upper_index][0]
+                << " "
+                << observation_theoretical_locations
+                [upper_index][1]
+                << "\n";
         }
-        outfile.close();
     }
-} // namespace observe_node_cross_section
+
+} // namespace observe_node_cross_sections
 
 //----------------------------------------------------------------------
 //  Case-dependent geometry: periodic wavy channel
 //----------------------------------------------------------------------
-/**
- * @brief Lower sinusoidal wall.
- *
- * x = 0.00 lambda: y =  0
- * x = 0.25 lambda: y = -A, wave trough
- * x = 0.75 lambda: y =  A, wave crest
- * x = 1.00 lambda: y =  0
- */
-Real lowerWallHeight(Real x)
-{
-    return -wave_amplitude *
-        std::sin(2.0 * pi * x / wave_length);
-}
-
 /**
  * @brief Fluid domain bounded by a flat upper wall and a wavy lower wall.
  */
