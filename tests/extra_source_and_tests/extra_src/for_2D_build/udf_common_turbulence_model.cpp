@@ -389,7 +389,7 @@ TurbuViscousForce<Contact<Wall>>::TurbuViscousForce(BaseContactRelation &wall_co
 void TurbuViscousForce<Contact<Wall>>::interaction(size_t index_i, Real dt)
 {
     //** Wall viscous force only affects P2 region fluid particles *
-    if (this->is_near_wall_P1_[index_i] != 1)
+    if (this->is_near_wall_P2_[index_i] != 10)
         return;
 
     Real vel_fric_mag_previous = velo_friction_[index_i].norm();
