@@ -342,6 +342,7 @@ void TurbuViscousForce<Inner<>>::interaction(size_t index_i, Real dt)
             {
                 if (is_near_wall_P1_[index_j] == 1)
                 {
+                    dUdn_P_sublayer_[index_i] = Matd::Zero();
                     Matd shear_stress_sublayer = mu_eff_i * (dUdn_P_sublayer_[index_i] + dUdn_P_sublayer_[index_i].transpose());
                     Matd correction_matrix_average = (turbu_B_[index_i] + turbu_B_[index_j]) / 2.0;
                     Vecd corrected_kernel_gradient = correction_matrix_average * (e_ij * inner_neighborhood.dW_ij_[n]);
