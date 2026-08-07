@@ -326,9 +326,14 @@ void TurbuViscousForce<Inner<>>::interaction(size_t index_i, Real dt)
             if (is_near_wall_P1_[index_i] == 1)
             {
                 Matd shear_stress_sublayer = mu_eff_i * (dUdn_P_sublayer_[index_i] + dUdn_P_sublayer_[index_i].transpose());
-                Matd correction_matrix_average = (turbu_B_[index_i] + turbu_B_[index_j]) / 2.0;
-                Vecd corrected_kernel_gradient = correction_matrix_average * (e_ij * inner_neighborhood.dW_ij_[n]);
-                force_j = 2.0 * mass_[index_i] * (shear_stress_sublayer * corrected_kernel_gradient) * this->Vol_[index_j];
+
+                //Matd correction_matrix_average = (turbu_B_[index_i] + turbu_B_[index_j]) / 2.0;
+                //Vecd corrected_kernel_gradient = correction_matrix_average * (e_ij * inner_neighborhood.dW_ij_[n]);
+
+                Vecd kernel_gradient = (e_ij * inner_neighborhood.dW_ij_[n]);
+
+                //force_j = 2.0 * mass_[index_i] * (shear_stress_sublayer * corrected_kernel_gradient) * this->Vol_[index_j];
+                force_j = 2.0 * mass_[index_i] * (shear_stress_sublayer * kernel_gradient) * this->Vol_[index_j];
 
                 //Matd shear_stress_sublayer = mu_eff_i * (dUdn_P_sublayer_[index_i] + dUdn_P_sublayer_[index_i].transpose());
                 //force_j = 2.0 * mass_[index_i] * shear_stress_sublayer * e_ij * inner_neighborhood.dW_ij_[n] * this->Vol_[index_j];
@@ -343,9 +348,14 @@ void TurbuViscousForce<Inner<>>::interaction(size_t index_i, Real dt)
                 if (is_near_wall_P1_[index_j] == 1)
                 {
                     Matd shear_stress_sublayer = mu_eff_j * (dUdn_P_sublayer_[index_j] + dUdn_P_sublayer_[index_j].transpose());
-                    Matd correction_matrix_average = (turbu_B_[index_i] + turbu_B_[index_j]) / 2.0;
-                    Vecd corrected_kernel_gradient = correction_matrix_average * (e_ij * inner_neighborhood.dW_ij_[n]);
-                    force_j = 2.0 * mass_[index_i] * (shear_stress_sublayer * corrected_kernel_gradient) * this->Vol_[index_j];
+
+                    //Matd correction_matrix_average = (turbu_B_[index_i] + turbu_B_[index_j]) / 2.0;
+                    //Vecd corrected_kernel_gradient = correction_matrix_average * (e_ij * inner_neighborhood.dW_ij_[n]);
+
+                    Vecd kernel_gradient = (e_ij * inner_neighborhood.dW_ij_[n]);
+
+                    //force_j = 2.0 * mass_[index_i] * (shear_stress_sublayer * corrected_kernel_gradient) * this->Vol_[index_j];
+                    force_j = 2.0 * mass_[index_i] * (shear_stress_sublayer * kernel_gradient) * this->Vol_[index_j];
 
                     //Matd shear_stress_sublayer = mu_eff_i * (dUdn_P_sublayer_[index_i] + dUdn_P_sublayer_[index_i].transpose());
                     //force_j = 2.0 * mass_[index_i] * shear_stress_sublayer * e_ij * inner_neighborhood.dW_ij_[n] * this->Vol_[index_j];
@@ -459,11 +469,14 @@ void TurbuViscousForce<Contact<Wall>>::interaction(size_t index_i, Real dt)
             {
                 if (is_near_wall_P1_[index_i] == 1)
                 {
-                    Matd correction_matrix_average = B_only_wall_[index_i];
+                    //Matd correction_matrix_average = B_only_wall_[index_i];
                     //Matd correction_matrix_average = (turbu_B_[index_i]);
 
-                    Vecd corrected_kernel_gradient = correction_matrix_average * (e_ij * contact_neighborhood.dW_ij_[n]);
-                    force_j = 2.0 * mass_[index_i] * (WSS_j * corrected_kernel_gradient) * this->Vol_[index_j] / rho_i;
+                    //Vecd corrected_kernel_gradient = correction_matrix_average * (e_ij * contact_neighborhood.dW_ij_[n]);
+                    Vecd kernel_gradient = (e_ij * contact_neighborhood.dW_ij_[n]);
+
+                    //force_j = 2.0 * mass_[index_i] * (WSS_j * corrected_kernel_gradient) * this->Vol_[index_j] / rho_i;
+                    force_j = 2.0 * mass_[index_i] * (WSS_j * kernel_gradient) * this->Vol_[index_j] / rho_i;
 
                     //KGI_separated_B_[index_i] -= 2.0 * B_only_wall_[index_i] * contact_neighborhood.dW_ij_[n] * this->Vol_[index_j] * contact_neighborhood.e_ij_[n];
                 }
