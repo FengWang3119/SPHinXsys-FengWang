@@ -34,7 +34,7 @@ Real lowerWallHeight(Real x)
         std::sin(2.0 * pi * x / wave_length);
 }
 
-Vecd external_acc = Vecd(0.032, 0.0);
+Vecd external_acc = Vecd(0.023, 0.0);
 Real external_acc_gradually_impose_t = 2.0;
 //----------------------------------------------------------------------
 //	Unique parameters for turbulence.
