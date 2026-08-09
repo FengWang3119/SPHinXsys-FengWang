@@ -21,7 +21,7 @@ constexpr Real wave_amplitude = 0.1;
 constexpr Real wave_length = 1.0;
 constexpr Real pi = 3.14159265358979323846;
 /**
- * @brief Lower sinusoidal wall.
+ * @brief Lower sinusoidal wall
  *
  * x = 0.00 lambda: y =  0
  * x = 0.25 lambda: y = -A, wave trough
