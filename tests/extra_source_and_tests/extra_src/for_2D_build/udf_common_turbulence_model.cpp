@@ -326,12 +326,12 @@ void TurbuViscousForce<Inner<>>::interaction(size_t index_i, Real dt)
             if (is_near_wall_P1_[index_i] == 1)
             {
                 Matd shear_stress_sublayer = mu_eff_i * (dUdn_P_sublayer_[index_i] + dUdn_P_sublayer_[index_i].transpose());
-
+                
                 //Matd correction_matrix_average = (turbu_B_[index_i] + turbu_B_[index_j]) / 2.0;
                 //Vecd corrected_kernel_gradient = correction_matrix_average * (e_ij * inner_neighborhood.dW_ij_[n]);
-
+                
                 Vecd kernel_gradient = (e_ij * inner_neighborhood.dW_ij_[n]);
-
+                
                 //force_j = 2.0 * mass_[index_i] * (shear_stress_sublayer * corrected_kernel_gradient) * this->Vol_[index_j];
                 force_j = 2.0 * mass_[index_i] * (shear_stress_sublayer * kernel_gradient) * this->Vol_[index_j];
 
@@ -348,12 +348,12 @@ void TurbuViscousForce<Inner<>>::interaction(size_t index_i, Real dt)
                 if (is_near_wall_P1_[index_j] == 1)
                 {
                     Matd shear_stress_sublayer = mu_eff_j * (dUdn_P_sublayer_[index_j] + dUdn_P_sublayer_[index_j].transpose());
-
+                    
                     //Matd correction_matrix_average = (turbu_B_[index_i] + turbu_B_[index_j]) / 2.0;
                     //Vecd corrected_kernel_gradient = correction_matrix_average * (e_ij * inner_neighborhood.dW_ij_[n]);
 
                     Vecd kernel_gradient = (e_ij * inner_neighborhood.dW_ij_[n]);
-
+                    
                     //force_j = 2.0 * mass_[index_i] * (shear_stress_sublayer * corrected_kernel_gradient) * this->Vol_[index_j];
                     force_j = 2.0 * mass_[index_i] * (shear_stress_sublayer * kernel_gradient) * this->Vol_[index_j];
 
@@ -389,7 +389,7 @@ TurbuViscousForce<Contact<Wall>>::TurbuViscousForce(BaseContactRelation &wall_co
 void TurbuViscousForce<Contact<Wall>>::interaction(size_t index_i, Real dt)
 {
     //** Wall viscous force only affects P2 region fluid particles *
-    if (this->is_near_wall_P2_[index_i] != 10)
+    if (this->is_near_wall_P1_[index_i] != 1)
         return;
 
     Real vel_fric_mag_previous = velo_friction_[index_i].norm();
