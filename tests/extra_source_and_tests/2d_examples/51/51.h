@@ -15,7 +15,7 @@ using namespace SPH;
 //----------------------------------------------------------------------
 Real DH = 1.0;  /**< Channel height. */
 Real DL = 1.0; /**< Channel length. */
-Real num_fluid_cross_section = 320.0;
+Real num_fluid_cross_section = 160.0;
 
 constexpr Real wave_amplitude = 0.1;
 constexpr Real wave_length = 1.0;
@@ -34,7 +34,7 @@ Real lowerWallHeight(Real x)
         std::sin(2.0 * pi * x / wave_length);
 }
 
-Vecd external_acc = Vecd(0.01687141, 0.0);
+Vecd external_acc = Vecd(0.010, 0.0);
 Real external_acc_gradually_impose_t = 2.0;
 //----------------------------------------------------------------------
 //	Unique parameters for turbulence.
