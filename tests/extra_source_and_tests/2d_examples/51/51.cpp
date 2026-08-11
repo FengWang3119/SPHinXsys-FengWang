@@ -303,7 +303,7 @@ int main(int ac, char *av[])
 
     int num_output_contour_average_file = 0;  //** Average *
 
-    Real end_time = 600.0;                      /**< End time. */
+    Real end_time = 300.0;                      /**< End time. */
     Real cutoff_ratio = 0.9;                    //** cutoff_time should be a integral and the same as the PY script */
     Real cutoff_time = end_time * cutoff_ratio; //** cutoff_time should be a integral and the same as the PY script */
     
