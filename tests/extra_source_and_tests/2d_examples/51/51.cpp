@@ -333,7 +333,7 @@ int main(int ac, char *av[])
     corrected_configuration_fluid_separated_inner_wall.exec();
 
     get_velocity_gradient.exec();
-    get_velocity_gradient_inner_only_for_P.exec();
+    //get_velocity_gradient_inner_only_for_P.exec();
     update_eddy_viscosity.exec();
     //----------------------------------------------------------------------
     //	First output before the main loop.
@@ -373,8 +373,8 @@ int main(int ac, char *av[])
                 update_eddy_viscosity.exec();
                 update_near_wall_status.exec();
                 standard_wall_function_correction.exec();
-                get_velocity_gradient_inner_only_for_P.exec(); //** Must make sure vel_grad_inner_P and utau-update and viscous cal. in a near-wall status *
-                get_friction_velocity_from_sublayer.exec();
+                //get_velocity_gradient_inner_only_for_P.exec(); //** Must make sure vel_grad_inner_P and utau-update and viscous cal. in a near-wall status *
+                //get_friction_velocity_from_sublayer.exec();
             }
 
             //viscous_force.exec();

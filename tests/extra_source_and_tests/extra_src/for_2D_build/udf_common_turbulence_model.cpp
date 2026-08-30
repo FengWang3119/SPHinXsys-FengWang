@@ -319,7 +319,7 @@ void TurbuViscousForce<Inner<>>::interaction(size_t index_i, Real dt)
 
         Vecd force_j = 2.0 * mass_[index_i] * shear_stress * inner_neighborhood.dW_ij_[n] * this->Vol_[index_j];
 
-        bool is_inner_SS_correction = true;
+        bool is_inner_SS_correction = false;
         if(is_inner_SS_correction)
         { 
             //** P-refinement correct inner viscous force for P *
@@ -389,7 +389,7 @@ TurbuViscousForce<Contact<Wall>>::TurbuViscousForce(BaseContactRelation &wall_co
 void TurbuViscousForce<Contact<Wall>>::interaction(size_t index_i, Real dt)
 {
     //** Wall viscous force only affects P2 region fluid particles *
-    if (this->is_near_wall_P1_[index_i] != 1)
+    if (this->is_near_wall_P2_[index_i] != 10)
         return;
 
     Real vel_fric_mag_previous = velo_friction_[index_i].norm();
@@ -443,10 +443,10 @@ void TurbuViscousForce<Contact<Wall>>::interaction(size_t index_i, Real dt)
             Real fric_vel_mag_j = sqrt(C_mu_wf_25_ * turbu_k_i_05 * vel_i_tau_mag / u_star_j);
 
             //** P-refinement for wall adjacent particle, obtain WSS from 1D sublayer solver *
-            if (is_near_wall_P1_[index_i] == 1)
-            {
-                fric_vel_mag_j = friction_velocity_from_sublayer_[index_i];
-            }
+            //if (is_near_wall_P1_[index_i] == 1)
+            //{
+            //    fric_vel_mag_j = friction_velocity_from_sublayer_[index_i];
+            //}
             //if (is_near_wall_P1_[index_i] != 1)
             //{
             //    fric_vel_mag_j = 0.0;
