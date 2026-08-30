@@ -14,8 +14,8 @@ using namespace SPH;
 //	Basic geometry parameters and numerical setup.
 //----------------------------------------------------------------------
 Real DH = 1.0;  /**< Channel height. */
-Real DL = 2.0; /**< Channel length. */
-Real num_fluid_cross_section = 80.0;
+Real DL = 1.0; /**< Channel length. */
+Real num_fluid_cross_section = 40.0;
 
 constexpr Real wave_amplitude = 0.1;
 constexpr Real wave_length = 1.0;

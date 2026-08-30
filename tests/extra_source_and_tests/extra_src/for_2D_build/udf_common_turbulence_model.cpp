@@ -463,7 +463,7 @@ void TurbuViscousForce<Contact<Wall>>::interaction(size_t index_i, Real dt)
             //** Transform local wall shear stress to global   *
             WSS_j = Q.transpose() * WSS_j_tn * Q;
             
-            bool is_add_B_only_wall_to_WSS_P1 = true;
+            bool is_add_B_only_wall_to_WSS_P1 = false;
             Vecd force_j = Vecd::Zero();
             if (is_add_B_only_wall_to_WSS_P1)
             {
