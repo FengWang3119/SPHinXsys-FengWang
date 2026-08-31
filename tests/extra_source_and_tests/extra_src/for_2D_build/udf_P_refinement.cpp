@@ -567,6 +567,10 @@ namespace udf
             {
                 tdma10(a_u, b_u, c_u, d_u, U_new);
             }
+            else if (type_tdma == 15)
+            {
+                tdma15(a_u, b_u, c_u, d_u, U_new);
+            }
             else
             {
                 std::cout << "TDMA: Type not define! Stop here." << std::endl;
@@ -624,6 +628,10 @@ namespace udf
             else if (type_tdma == 10)
             {
                 tdma10(a_k, b_k, c_k, d_k, K_new);
+            }
+            else if (type_tdma == 15)
+            {
+                tdma15(a_k, b_k, c_k, d_k, K_new);
             }
             else
             {
@@ -685,6 +693,10 @@ namespace udf
             else if (type_tdma == 10)
             {
                 tdma10(a_w, b_w, c_w, d_w, Turbu_omega_new);
+            }
+            else if (type_tdma == 15)
+            {
+                tdma15(a_w, b_w, c_w, d_w, Turbu_omega_new);
             }
             else
             {
@@ -1010,6 +1022,192 @@ namespace udf
         x[1] = dp[1] - cp[1] * x[2];
         x[0] = dp[0] - cp[0] * x[1];
     }
+    // ================= TDMA15 =================
+    // Solve a tridiagonal system of size 15:
+    // a[i]*x[i-1] + b[i]*x[i] + c[i]*x[i+1] = d[i]
+    // a[0] must be 0, c[14] will be ignored
+    template <int Ny, int TypeTDMA>
+    void P_refinement<Ny, TypeTDMA>::tdma15(
+        const double a[15],
+        const double b[15],
+        const double c[15],
+        const double d[15],
+        double x[15])
+    {
+        if (num_sub_node_ != 15)
+        {
+            std::cout << "TDMA15: Node number mismatch! Stop here." << std::endl;
+            std::cin.get();
+        }
+
+        double cp[15]{ 0.0 }; // modified upper diagonal
+        double dp[15]{ 0.0 }; // modified right-hand side
+
+        // ---------------- Step 0: first row ----------------
+        if (std::abs(b[0]) < 1e-14)
+            throw std::runtime_error("TDMA15: b[0] too small!");
+
+        cp[0] = c[0] / b[0];
+        dp[0] = d[0] / b[0];
+
+        // ---------------- Forward sweep ----------------
+        // i = 1
+        {
+            double denom = b[1] - a[1] * cp[0];
+            if (std::abs(denom) < 1e-14)
+                throw std::runtime_error("TDMA15: denom too small at row 1");
+
+            cp[1] = c[1] / denom;
+            dp[1] = (d[1] - a[1] * dp[0]) / denom;
+        }
+
+        // i = 2
+        {
+            double denom = b[2] - a[2] * cp[1];
+            if (std::abs(denom) < 1e-14)
+                throw std::runtime_error("TDMA15: denom too small at row 2");
+
+            cp[2] = c[2] / denom;
+            dp[2] = (d[2] - a[2] * dp[1]) / denom;
+        }
+
+        // i = 3
+        {
+            double denom = b[3] - a[3] * cp[2];
+            if (std::abs(denom) < 1e-14)
+                throw std::runtime_error("TDMA15: denom too small at row 3");
+
+            cp[3] = c[3] / denom;
+            dp[3] = (d[3] - a[3] * dp[2]) / denom;
+        }
+
+        // i = 4
+        {
+            double denom = b[4] - a[4] * cp[3];
+            if (std::abs(denom) < 1e-14)
+                throw std::runtime_error("TDMA15: denom too small at row 4");
+
+            cp[4] = c[4] / denom;
+            dp[4] = (d[4] - a[4] * dp[3]) / denom;
+        }
+
+        // i = 5
+        {
+            double denom = b[5] - a[5] * cp[4];
+            if (std::abs(denom) < 1e-14)
+                throw std::runtime_error("TDMA15: denom too small at row 5");
+
+            cp[5] = c[5] / denom;
+            dp[5] = (d[5] - a[5] * dp[4]) / denom;
+        }
+
+        // i = 6
+        {
+            double denom = b[6] - a[6] * cp[5];
+            if (std::abs(denom) < 1e-14)
+                throw std::runtime_error("TDMA15: denom too small at row 6");
+
+            cp[6] = c[6] / denom;
+            dp[6] = (d[6] - a[6] * dp[5]) / denom;
+        }
+
+        // i = 7
+        {
+            double denom = b[7] - a[7] * cp[6];
+            if (std::abs(denom) < 1e-14)
+                throw std::runtime_error("TDMA15: denom too small at row 7");
+
+            cp[7] = c[7] / denom;
+            dp[7] = (d[7] - a[7] * dp[6]) / denom;
+        }
+
+        // i = 8
+        {
+            double denom = b[8] - a[8] * cp[7];
+            if (std::abs(denom) < 1e-14)
+                throw std::runtime_error("TDMA15: denom too small at row 8");
+
+            cp[8] = c[8] / denom;
+            dp[8] = (d[8] - a[8] * dp[7]) / denom;
+        }
+
+        // i = 9
+        {
+            double denom = b[9] - a[9] * cp[8];
+            if (std::abs(denom) < 1e-14)
+                throw std::runtime_error("TDMA15: denom too small at row 9");
+
+            cp[9] = c[9] / denom;
+            dp[9] = (d[9] - a[9] * dp[8]) / denom;
+        }
+
+        // i = 10
+        {
+            double denom = b[10] - a[10] * cp[9];
+            if (std::abs(denom) < 1e-14)
+                throw std::runtime_error("TDMA15: denom too small at row 10");
+
+            cp[10] = c[10] / denom;
+            dp[10] = (d[10] - a[10] * dp[9]) / denom;
+        }
+
+        // i = 11
+        {
+            double denom = b[11] - a[11] * cp[10];
+            if (std::abs(denom) < 1e-14)
+                throw std::runtime_error("TDMA15: denom too small at row 11");
+
+            cp[11] = c[11] / denom;
+            dp[11] = (d[11] - a[11] * dp[10]) / denom;
+        }
+
+        // i = 12
+        {
+            double denom = b[12] - a[12] * cp[11];
+            if (std::abs(denom) < 1e-14)
+                throw std::runtime_error("TDMA15: denom too small at row 12");
+
+            cp[12] = c[12] / denom;
+            dp[12] = (d[12] - a[12] * dp[11]) / denom;
+        }
+
+        // i = 13
+        {
+            double denom = b[13] - a[13] * cp[12];
+            if (std::abs(denom) < 1e-14)
+                throw std::runtime_error("TDMA15: denom too small at row 13");
+
+            cp[13] = c[13] / denom;
+            dp[13] = (d[13] - a[13] * dp[12]) / denom;
+        }
+
+        // i = 14: last row
+        {
+            double denom = b[14] - a[14] * cp[13];
+            if (std::abs(denom) < 1e-14)
+                throw std::runtime_error("TDMA15: denom too small at row 14");
+
+            cp[14] = 0.0;
+            dp[14] = (d[14] - a[14] * dp[13]) / denom;
+        }
+
+        // ---------------- Back substitution ----------------
+        x[14] = dp[14];
+        x[13] = dp[13] - cp[13] * x[14];
+        x[12] = dp[12] - cp[12] * x[13];
+        x[11] = dp[11] - cp[11] * x[12];
+        x[10] = dp[10] - cp[10] * x[11];
+        x[9] = dp[9] - cp[9] * x[10];
+        x[8] = dp[8] - cp[8] * x[9];
+        x[7] = dp[7] - cp[7] * x[8];
+        x[6] = dp[6] - cp[6] * x[7];
+        x[5] = dp[5] - cp[5] * x[6];
+        x[4] = dp[4] - cp[4] * x[5];
+        x[3] = dp[3] - cp[3] * x[4];
+        x[2] = dp[2] - cp[2] * x[3];
+        x[1] = dp[1] - cp[1] * x[2];
+        x[0] = dp[0] - cp[0] * x[1];
+    }
     //=============================================================================================//
     void BodyStatesRecordingToVtpIncludeNode::writeWithFileName(const std::string& sequence)
     {
@@ -1240,6 +1438,7 @@ namespace udf
     
     template class P_refinement<5, 5>;
     template class P_refinement<10, 10>;
+    template class P_refinement<15, 15>;
     template class P_refinement<5, 0>;
     template class P_refinement<10, 0>;
 } // namespace udf

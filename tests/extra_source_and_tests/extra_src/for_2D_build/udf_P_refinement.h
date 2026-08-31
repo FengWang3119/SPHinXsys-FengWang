@@ -181,6 +181,7 @@ namespace udf
         void tdma(int N, const double* a, const double* b, const double* c, const double* d, double* x);
         void tdma5(const double a[5], const double b[5], const double c[5], const double d[5], double x[5]);
         void tdma10(const double a[10], const double b[10], const double c[10], const double d[10], double x[10]);
+        void tdma15(const double a[15], const double b[15], const double c[15], const double d[15], double x[15]);
         void solve5_eigen(const double a[5], const double b[5], const double c[5], const double d[5], double x[5]);
         void solve5_eigen_with_additonal_coefficient(const double a[5], const double b[5], const double c[5], const double e[5], const double d[5], double x[5]);
 
