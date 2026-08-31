@@ -42,7 +42,7 @@ Real external_acc_gradually_impose_t = 2.0;
 //** Tag for wall treatment *
 int is_blended = 0;
 //** Tag for AMRD *
-int is_AMRD = 0;
+int is_AMRD = 1;
 bool is_constrain_normal_velocity_in_P_region = false;
 //** Weight for correcting the velocity  gradient in the sub near wall region  *
 //Real weight_vel_grad_sub_nearwall = 0.1;
