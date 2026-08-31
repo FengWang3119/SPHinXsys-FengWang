@@ -15,7 +15,7 @@ using namespace SPH;
 //----------------------------------------------------------------------
 Real DH = 1.0;  /**< Channel height. */
 Real DL = 1.0; /**< Channel length. */
-Real num_fluid_cross_section = 40.0;
+Real num_fluid_cross_section = 80.0;
 
 constexpr Real wave_amplitude = 0.1;
 constexpr Real wave_length = 1.0;
