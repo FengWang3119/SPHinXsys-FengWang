@@ -457,9 +457,9 @@ int main(int ac, char *av[])
             if (physical_time > cutoff_time)
             {
                 //** Temporary treatment *
-                write_recorded_water_node_velocity.writeToFile(number_of_iterations);
-                write_recorded_water_node_k.writeToFile(number_of_iterations);
-                write_recorded_water_node_utau.writeToFile(number_of_iterations);
+                //write_recorded_water_node_velocity.writeToFile(number_of_iterations);
+                //write_recorded_water_node_k.writeToFile(number_of_iterations);
+                //write_recorded_water_node_utau.writeToFile(number_of_iterations);
             }
 
             /** Update cell linked list and configuration. */
@@ -473,8 +473,8 @@ int main(int ac, char *av[])
             periodic_condition_x.update_cell_linked_list_.exec();
 
             water_block_complex.updateConfiguration();
-            fluid_observer_contact.updateConfiguration();
-            node_observer_contact.updateConfiguration();
+            //fluid_observer_contact.updateConfiguration();
+            //node_observer_contact.updateConfiguration();
             //friction_velocity_observer_contact.updateConfiguration();
 
             /** Tag truncated inlet/outlet particles*/
@@ -482,10 +482,10 @@ int main(int ac, char *av[])
 
             if (physical_time > cutoff_time)
             {
-                write_recorded_water_velocity.writeToFile(number_of_iterations);
-                write_recorded_water_k.writeToFile(number_of_iterations);
-                write_recorded_water_mut.writeToFile(number_of_iterations);
-                write_recorded_water_omega.writeToFile(number_of_iterations);
+                //write_recorded_water_velocity.writeToFile(number_of_iterations);
+                //write_recorded_water_k.writeToFile(number_of_iterations);
+                //write_recorded_water_mut.writeToFile(number_of_iterations);
+                //write_recorded_water_omega.writeToFile(number_of_iterations);
                 //write_nearwall_friction_velocity.writeToFile(number_of_iterations);
                 //write_nearwall_friction_velocity_sublayer.writeToFile(number_of_iterations);
             }
@@ -506,9 +506,9 @@ int main(int ac, char *av[])
         //TickCount t2 = TickCount::now();
         if (!is_write_average_contour_file)  //** Average no need to comment *
         {
-            body_states_recording.writeToFile();
+            //body_states_recording.writeToFile();
         }
-        observer_centerpoint_contact.updateConfiguration();
+        //observer_centerpoint_contact.updateConfiguration();
         num_output_file++;
         //if (num_output_file == 100)
         //    system("pause");
