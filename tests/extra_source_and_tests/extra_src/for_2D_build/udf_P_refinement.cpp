@@ -288,7 +288,7 @@ namespace udf
                 Real dist_nodeU_P = sublayer_height_contant_ - sublayer_y_[index_nodeU];
                 
                 //** Calculation *
-                dUdn_P_sublayer_magnitude = std::abs(tangential_velocity_P_magnitude - tangential_velocity_node_U) / (dist_nodeU_P + TinyReal);
+                dUdn_P_sublayer_magnitude = std::max((tangential_velocity_P_magnitude - tangential_velocity_node_U), 0.0) / (dist_nodeU_P + TinyReal);
                 Matd dUdn_P_sublayer = dUdn_P_sublayer_magnitude * (tangential * normal.transpose());
 
                 //** Store *
