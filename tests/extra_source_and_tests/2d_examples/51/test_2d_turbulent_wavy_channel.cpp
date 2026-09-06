@@ -3,33 +3,11 @@ using namespace SPH;
 
 int main(int ac, char *av[])
 {
-    /**
-     * @brief Build up -- a SPHSystem --
-     */
     SPHSystem sph_system(system_domain_bounds, resolution_ref);
-
-    /** Restart. */
-    bool is_write_restart_file = false;
-    int restart_output_interval = 1000;
-    sph_system.setRestartStep(0); //% SPH
-
-    /** Average. */
-    bool is_write_average_contour_file = false;
-    Real time_start_average_data = 80.0; //% Average, make sure time span is large engouth to achieve steady 
-    Real time_output_contour_average_data = 90.0; //% Average
-    int num_output_contour_average_file_limit = 40;
-    Real magnify_ratio_avergae_contour = 10.0;
-
-    /** Tag for run particle relaxation for the initial body fitted distribution. */
+    sph_system.setRestartStep(0); 
     sph_system.setRunParticleRelaxation(false);
-    /** Tag for computation start with relaxed body fitted particles distribution. */
     sph_system.setReloadParticles(true);
-
     sph_system.handleCommandlineOptions(ac, av);
-    //IOEnvironment io_environment(sph_system);
-    /**
-     * @brief Material property, particles and body creation of fluid.
-     */
 
     FluidBody water_block(sph_system, makeShared<WaterBlock>("WaterBody"));
     water_block.defineBodyLevelSetShape();
@@ -38,9 +16,7 @@ int main(int ac, char *av[])
     (!sph_system.RunParticleRelaxation() && sph_system.ReloadParticles())
         ? water_block.generateParticles<BaseParticles, Reload>(water_block.Name())
         : water_block.generateParticles<BaseParticles, Lattice>();
-    /**
-     * @brief 	Particle and body creation of wall boundary.
-     */
+
     SolidBody wall_boundary(sph_system, makeShared<WallBoundary>("Wall"));
     wall_boundary.defineBodyLevelSetShape();
     wall_boundary.defineMatterMaterial<Solid>();
@@ -64,25 +40,11 @@ int main(int ac, char *av[])
     ObserverBody node_observer(sph_system, "NodeObserver");
     node_observer.generateParticles<ObserverParticles>(observe_node_cross_sections::observation_locations);
 
-    //observe_nearwall::getObservingLineLengthAndEndPoints();
-    //observe_nearwall::getPositionsOfMultipleObserveLines();
-    //observe_nearwall::output_observe_positions();
-    //observe_nearwall::output_observe_theoretical_x();
-    //observe_nearwall::output_number_observe_points_on_lines();
-    //ObserverBody friction_velocity_observer(sph_system, "NearwallFrictionVelocityObserver");
-    //friction_velocity_observer.generateParticles<ObserverParticles>(observe_nearwall::observation_locations);
-
-    ObserverBody observer_body_pressure_contour(sph_system, makeShared<WaterBlock>("ObserverBody")); //% Average
-    observer_body_pressure_contour.generateParticles<BaseParticles, Lattice>();
-
-    /** topology */
     InnerRelation water_block_inner(water_block);
     ContactRelation water_wall_contact(water_block, {&wall_boundary});
     ContactRelation fluid_observer_contact(fluid_observer, {&water_block});
     ContactRelation node_observer_contact(node_observer, { &water_block });
     ContactRelation observer_centerpoint_contact(observer_center_point, {&water_block});
-    //ContactRelation friction_velocity_observer_contact(friction_velocity_observer, {&water_block});
-    ContactRelation fluid_pressure_contour_observer_contact(observer_body_pressure_contour, {&water_block}); //% Average
     //----------------------------------------------------------------------
     // Combined relations built from basic relations
     // which is only used for update configuration.
@@ -107,10 +69,7 @@ int main(int ac, char *av[])
         BodyStatesRecordingToVtp write_inserted_body_to_vtp_water(water_block);
         
         /** Write the particle reload files. */
-        //ReloadParticleIO write_particle_reload_files(wall_boundary);
-        //ReloadParticleIO write_particle_reload_files_water(water_block);
-        ReloadParticleIO write_particle_reload_files(
-            SPHBodyVector{&water_block, &wall_boundary});
+        ReloadParticleIO write_particle_reload_files(SPHBodyVector{&water_block, &wall_boundary});
 
         /** A  Physics relaxation step. */
         RelaxationStepLevelSetCorrectionInner relaxation_step_inner(wall_boundary_inner);
@@ -144,181 +103,74 @@ int main(int ac, char *av[])
         std::cout << "The physics relaxation process of the water_block finish !" << std::endl;
 
         /** Output results. */
-        //write_particle_reload_files_water.writeToFile(0);
-        //write_particle_reload_files.writeToFile(0);
         write_particle_reload_files.writeToFile(0);
 
         return 0;
     }
 
     SimpleDynamics<NormalDirectionFromBodyShape> wall_boundary_normal_direction(wall_boundary);
-    /** For pressure outlet . */
     InteractionDynamics<NablaWVComplex> kernel_summation(water_block_inner, water_wall_contact);
     InteractionWithUpdate<SpatialTemporalFreeSurfaceIndicationComplex> inlet_outlet_surface_particle_indicator(water_block_inner, water_wall_contact);
-
-    /** Turbulent standard wall function needs normal vectors of wall. */
-    //NearShapeSurface near_surface(water_block, makeShared<WallBoundary>("Wall"));
-
     InteractionWithUpdate<LinearGradientCorrectionMatrixComplex> corrected_configuration_fluid(water_block_inner, water_wall_contact);
-
-    /** Turbulent.Note: When use wall function, K Epsilon calculation only consider inner */
     InteractionWithUpdate<fluid_dynamics::udf::JudgeIsNearWall> update_near_wall_status(water_block_inner, water_wall_contact, y_p_constant);
-
-    //InteractionWithUpdate<LinearGradientCorrectionMatrixInner> corrected_configuration_fluid(water_block_inner);
-    //InteractionWithUpdate<fluid_dynamics::udf::TurbulentLinearGradientCorrectionMatrixInner> corrected_configuration_fluid_only_inner(water_block_inner);
     InteractionWithUpdate<fluid_dynamics::udf::TurbulentLinearGradientCorrectionMatrixComplex> corrected_configuration_fluid_separated_inner_wall(water_block_inner, water_wall_contact);
-
-    /** Pressure relaxation algorithm with Riemann solver for viscous flows. */
-    //Dynamics1Level<fluid_dynamics::Integration1stHalfWithWallRiemann> pressure_relaxation(water_block_inner, water_wall_contact);
-    //Dynamics1Level<fluid_dynamics::Integration1stHalfCorrectionWithWallRiemann> pressure_relaxation(water_block_inner, water_wall_contact);
     Dynamics1Level<fluid_dynamics::Integration1stHalfCorrectionForOpenBoundaryFlowWithWallRiemann> pressure_relaxation(water_block_inner, water_wall_contact);
-
-    /** Density relaxation algorithm by using position verlet time stepping. */
-    // ** If not use ARD+ *
-    //Dynamics1Level<fluid_dynamics::Integration2ndHalfWithWallNoRiemann> density_relaxation(water_block_inner, water_wall_contact);
-    // ** If use ARD+ *
     Dynamics1Level<fluid_dynamics::Integration2ndHalfInnerNoRiemann> density_relaxation(water_block_inner);
     InteractionDynamics<fluid_dynamics::udf::Integration2ndHalfOnlyWallAcousticRiemannAdjusted> density_relaxation_wall(water_wall_contact);
     density_relaxation.post_processes_.push_back(&density_relaxation_wall);
-
     InteractionWithUpdate<fluid_dynamics::udf::kOmega_GetVelocityGradientComplex> get_velocity_gradient(water_block_inner, water_wall_contact);
-
-
     SimpleDynamics<fluid_dynamics::udf::kOmega_kTransportEquationInner> k_equation_relaxation(water_block_inner, initial_turbu_values, is_AMRD, is_blended);
     InteractionDynamics<fluid_dynamics::udf::kOmega_TKE_Diffusion> compute_TKE_diffusion(water_block_inner);
     SimpleDynamics<fluid_dynamics::udf::kOmega_omegaTransportEquationInner> epsilon_equation_relaxation(water_block_inner);
     InteractionDynamics<fluid_dynamics::udf::kOmega_TSDR_Diffusion_and_Gradient_Dot_Inner> compute_TSDR_diffusion_and_gradient_k_omega(water_block_inner);
-
     InteractionDynamics<fluid_dynamics::udf::TKEnergyForceComplex> turbulent_kinetic_energy_force(water_block_inner, water_wall_contact);
     InteractionDynamics<fluid_dynamics::udf::kOmega_WallFunctionCorrection> standard_wall_function_correction(water_block_inner, water_wall_contact);
-
-    SimpleDynamics<fluid_dynamics::udf::ConstrainNormalVelocityInRegionP> constrain_normal_velocity_in_P_region(water_block);
-
-    InteractionWithUpdate<fluid_dynamics::udf::P_refinement_GetVelocityGradientInner> get_velocity_gradient_inner_only_for_P(water_block_inner); //** Note that the B should change *
-    //InteractionWithUpdate<fluid_dynamics::udf::P_refinement_GetVelocityGradientComplex> get_velocity_gradient_inner_only_for_P(water_block_inner, water_wall_contact); //** Note that the B should change *
-
+    InteractionWithUpdate<fluid_dynamics::udf::P_refinement_GetVelocityGradientInner> get_velocity_gradient_inner_only_for_P(water_block_inner); 
     SimpleDynamics<fluid_dynamics::udf::P_refinement<num_node_sublayer_model,type_tdma_sublayer_model>> get_friction_velocity_from_sublayer(water_block, y_p_constant);
-    //get_friction_velocity_from_sublayer.test_sublayer_model_half_channel_height();
-    //get_friction_velocity_from_sublayer.test_sublayer_model_specific_channel_height();
-
-    /** Choose one, ordinary or turbulent. Computing viscous force, */
     InteractionWithUpdate<fluid_dynamics::udf::TurbulentViscousForceWithWall> turbulent_viscous_force(water_block_inner, water_wall_contact);
-    //InteractionWithUpdate<fluid_dynamics::ViscousForceWithWall> viscous_force(water_block_inner, water_wall_contact);
-
-    /** Impose transport velocity, with or without limiter . */
-    //InteractionWithUpdate<fluid_dynamics::TransportVelocityLimitedCorrectionComplex<BulkParticles>> transport_velocity_correction(water_block_inner, water_wall_contact);
     InteractionWithUpdate<fluid_dynamics::udf::TVC_ModifiedLimited_RKGC_OBFCorrection<BulkParticles>> transport_velocity_correction(water_block_inner, water_wall_contact);
-
-    /** A temporarily test for the limiter . */
-    SimpleDynamics<fluid_dynamics::udf::GetLimiterOfTransportVelocityCorrection> get_limiter_of_transport_velocity_correction(water_block, 1000);
-
-    /** Evaluation of density by summation approach. */
-    //InteractionWithUpdate<fluid_dynamics::DensitySummationFreeStreamComplex> update_density_by_summation(water_block_inner, water_wall_contact);
-
-    /** Initialize particle acceleration. */
     IncreaseToFullGravity time_dependent_acceleration(external_acc, external_acc_gradually_impose_t);
     SimpleDynamics<GravityForce<Gravity>> apply_gravity_force(water_block, time_dependent_acceleration);
-
     PeriodicAlongAxis periodic_along_x(water_block.getSPHBodyBounds(), xAxis);
     PeriodicConditionUsingCellLinkedList periodic_condition_x(water_block, periodic_along_x);
-
-
     InteractionWithUpdate<fluid_dynamics::DensitySummationComplex> update_fluid_density(water_block_inner, water_wall_contact);
     SimpleDynamics<UpdateVolume> update_volume(water_block);
-
-    /** Choose one, ordinary or turbulent. Time step size without considering sound wave speed. */
     ReduceDynamics<fluid_dynamics::udf::TurbulentAdvectionTimeStepSize> get_turbulent_fluid_advection_time_step_size(water_block, U_f);
-    //ReduceDynamics<fluid_dynamics::AdvectionTimeStepSize> get_fluid_advection_time_step_size(water_block, U_f);
-
-    /** Time step size with considering sound wave speed. */
     ReduceDynamics<fluid_dynamics::AcousticTimeStep> get_fluid_time_step_size(water_block);
-
-    /** Turbulent eddy viscosity calculation needs values of Wall Y start. */
     SimpleDynamics<fluid_dynamics::udf::kOmegaTurbulentEddyViscosity> update_eddy_viscosity(water_block);
     
-    ObservingAQuantity<Real> observing_pressure(fluid_pressure_contour_observer_contact, "Pressure");          //% Average pressure
-    SimpleDynamics<ParticleSnapshotAverage<Real>> average_pressure(observer_body_pressure_contour, "Pressure"); //% Average pressure
-    
-    //----------------------------------------------------------------------
-    //	Define the configuration related particles dynamics.
-    //----------------------------------------------------------------------
     ParticleSorting particle_sorting(water_block);
     
-    /** Restart. */
-    RestartIO restart_io(sph_system);
-    //----------------------------------------------------------------------
-    //	File output and regression check.
-    //----------------------------------------------------------------------
-    /** Output the body states. */
-    //BodyStatesRecordingToVtp body_states_recording(sph_system);
     fluid_dynamics::udf::BodyStatesRecordingToVtpIncludeNode body_states_recording(sph_system);
-    
-    body_states_recording.addToWrite<Matd>(water_block, "TurbulentLinearGradientCorrectionMatrix");            // output for debug
-    body_states_recording.addToWrite<Matd>(water_block, "TurbulentLinearGradientCorrectionMatrixOnlyWall");            // output for debug
     body_states_recording.addToWrite<Real>(water_block, "Pressure");            // output for debug
     body_states_recording.addToWrite<int>(water_block, "Indicator");            // output for debug
     body_states_recording.addToWrite<Real>(water_block, "Density");             // output for debug
-    //body_states_recording.addToWrite<Vecd>(water_block, "KernelGradientIntegral"); // output for debug
-    //body_states_recording.addToWrite<Vecd>(water_block, "KGI_separated_B"); // output for debug
     ObservedQuantityRecording<Vecd> write_recorded_water_velocity("Velocity", fluid_observer_contact);
     ObservedQuantityRecording<Real> write_recorded_water_k("TurbulenceKineticEnergy", fluid_observer_contact);
     ObservedQuantityRecording<Real> write_recorded_water_mut("TurbulentViscosity", fluid_observer_contact);
     ObservedQuantityRecording<Real> write_recorded_water_omega("TurbulentSpecificDissipation", fluid_observer_contact);
-    //RegressionTestDynamicTimeWarping<ObservedQuantityRecording<Real>> write_centerpoint_quantity("TurbulentViscosity", observer_centerpoint_contact);
-    //ObservedQuantityRecording<Real> write_nearwall_friction_velocity("WallShearStress", friction_velocity_observer_contact);
-    //ObservedQuantityRecording<Real> write_nearwall_friction_velocity_sublayer("FrictionVelocityFromSublayer", friction_velocity_observer_contact);
     body_states_recording.addToWrite<Vecd>(wall_boundary, "NormalDirection");
-
-    BodyStatesRecordingToVtp write_observation_states_pressure_contour(observer_body_pressure_contour);     //% Average
-    write_observation_states_pressure_contour.addToWrite<Real>(observer_body_pressure_contour, "Pressure"); //% Average pressure
 
     //** Temporary treatment *
     ObservedQuantityRecording<Vec6d> write_recorded_water_node_velocity("NodeValue", node_observer_contact);
     ObservedQuantityRecording<Vec6d> write_recorded_water_node_k("NodeValueTKE", node_observer_contact);
     ObservedQuantityRecording<Real> write_recorded_water_node_utau("FrictionVelocityFromSublayer", node_observer_contact);
-    /**
-     * @brief Setup geometry and initial conditions.
-     */
+
     sph_system.initializeSystemCellLinkedLists();
-
-    /** periodic condition applied after the mesh cell linked list build up but before the configuration build up. */
     periodic_condition_x.update_cell_linked_list_.exec();
-
     sph_system.initializeSystemConfigurations();
 
     //----------------------------------------------------------------------
     //	Setup computing and initial conditions.
     //----------------------------------------------------------------------
     Real &physical_time = *sph_system.getSystemVariableDataByName<Real>("PhysicalTime");
-
-    /** Restart. */
-    if (sph_system.RestartStep() != 0)
-    {
-        physical_time = restart_io.readRestartFiles(sph_system.RestartStep());
-        water_block.updateCellLinkedList();
-        water_block_complex.updateConfiguration();
-        observer_centerpoint_contact.updateConfiguration();
-        fluid_observer_contact.updateConfiguration();
-        node_observer_contact.updateConfiguration();
-        //friction_velocity_observer_contact.updateConfiguration();
-        fluid_pressure_contour_observer_contact.updateConfiguration(); //** Average *
-    }
     size_t number_of_iterations = sph_system.RestartStep();
-
     int screen_output_interval = 100;
-    //int observation_sample_interval = screen_output_interval * 2;
-
-    int num_output_contour_average_file = 0;  //** Average *
-
     Real end_time = 300.0;                      /**< End time. */
     Real cutoff_ratio = 0.9;                    //** cutoff_time should be a integral and the same as the PY script */
     Real cutoff_time = end_time * cutoff_ratio; //** cutoff_time should be a integral and the same as the PY script */
-    
-    Real num_output_files = 40.0 * (is_write_average_contour_file ? magnify_ratio_avergae_contour : 1.0);  //** Average but no need to comment*
-    
+    Real num_output_files = 40.0;
     Real Output_Time = end_time / num_output_files; /**< Time stamps for output of body states. */
-    Real index_check_file_fully_developed = num_output_files * cutoff_ratio;
-
     Real dt = 0.0;                      /**< Default acoustic time step sizes. */
     //----------------------------------------------------------------------
     //	Statistics for CPU time
@@ -326,19 +178,11 @@ int main(int ac, char *av[])
     TickCount t1 = TickCount::now();
     TimeInterval interval;
 
-    //----------------------------------------------------------------------
-    //	Preparation, if use restart, better to fullfill
-    //----------------------------------------------------------------------
     wall_boundary_normal_direction.exec();
-    /** Tag inlet/outlet truncated particles */
     inlet_outlet_surface_particle_indicator.exec();
-
     update_near_wall_status.exec();
     corrected_configuration_fluid.exec();
-
-    //corrected_configuration_fluid_only_inner.exec();
     corrected_configuration_fluid_separated_inner_wall.exec();
-
     get_velocity_gradient.exec();
     get_velocity_gradient_inner_only_for_P.exec();
     update_eddy_viscosity.exec();
@@ -346,222 +190,99 @@ int main(int ac, char *av[])
     //	First output before the main loop.
     //----------------------------------------------------------------------
     body_states_recording.writeToFile();
-    //write_centerpoint_quantity.writeToFile(number_of_iterations);
     //----------------------------------------------------------------------------------------------------
     //	Main loop starts here.
     //----------------------------------------------------------------------------------------------------
     int num_output_file = 0;
-    std::ofstream logfile("output/output.log");
     while (physical_time < end_time)
     {
         Real integration_time = 0.0;
-        /** Integrate time (loop) until the next output time. */
         while (integration_time < Output_Time)
         {
             apply_gravity_force.exec();
-
-            //Real Dt = get_fluid_advection_time_step_size.exec();
             Real Dt = get_turbulent_fluid_advection_time_step_size.exec();
-
-            //inlet_outlet_surface_particle_indicator.exec();
-
             update_fluid_density.exec();
-            //update_fluid_density_pressure.exec();
-
-            //** This is to address the bug in density summation *
             update_volume.exec();
-
             corrected_configuration_fluid.exec();
-            //corrected_configuration_fluid_only_inner.exec();
             corrected_configuration_fluid_separated_inner_wall.exec();
-
-            if (physical_time > turbulent_module_activate_time) //** A temporary treatment *
+            if (physical_time > turbulent_module_activate_time) 
             {
                 update_eddy_viscosity.exec();
                 update_near_wall_status.exec();
                 standard_wall_function_correction.exec();
-                get_velocity_gradient_inner_only_for_P.exec(); //** Must make sure vel_grad_inner_P and utau-update and viscous cal. in a near-wall status *
+                get_velocity_gradient_inner_only_for_P.exec(); 
                 get_friction_velocity_from_sublayer.exec();
             }
-
-            //viscous_force.exec();
             turbulent_viscous_force.exec();
-
-            if (physical_time > turbulent_module_activate_time) //** A temporary treatment *
+            if (physical_time > turbulent_module_activate_time) 
             {
                 get_velocity_gradient.exec();
                 compute_TKE_diffusion.exec();
                 compute_TSDR_diffusion_and_gradient_k_omega.exec();
             }
-
             transport_velocity_correction.exec();
-
             kernel_summation.exec();
-
-            //get_limiter_of_transport_velocity_correction.exec();
-
-            /** Dynamics including pressure relaxation. */
             Real relaxation_time = 0.0;
             int inner_itr = 0;
             while (relaxation_time < Dt)
             {
                 dt = SMIN(get_fluid_time_step_size.exec(), Dt);
-
-                if (physical_time > turbulent_module_activate_time) //** A temporary treatment *
+                if (physical_time > turbulent_module_activate_time)
                 {
                     turbulent_kinetic_energy_force.exec();
                 }
-
                 pressure_relaxation.exec(dt);
-
-                if (is_constrain_normal_velocity_in_P_region)
-                    constrain_normal_velocity_in_P_region.exec();
-
                 density_relaxation.exec(dt);
-
-                if (physical_time > turbulent_module_activate_time) //** A temporary treatment *
+                if (physical_time > turbulent_module_activate_time) 
                 {
                     k_equation_relaxation.exec(dt);
                     epsilon_equation_relaxation.exec(dt);
                 }
-
                 relaxation_time += dt;
                 integration_time += dt;
                 physical_time += dt;
                 inner_itr++;
-                //std::cout << "num_output_file=" << num_output_file << std::endl;
-                //if (GlobalStaticVariables::physical_time_ >9.3)
-                //{
-                //body_states_recording.writeToFile();
-                //}
             }
             if (number_of_iterations % screen_output_interval == 0)
             {
                 std::cout << std::fixed << std::setprecision(9) << "N=" << number_of_iterations << "	Time = "
                           << physical_time
                           << "	Dt = " << Dt << "	dt = " << dt << "\n";
-                //if (number_of_iterations % observation_sample_interval == 0 && number_of_iterations != sph_system.RestartStep())
-                //{
-                //    write_centerpoint_quantity.writeToFile(number_of_iterations);
-                //}
-                logfile << std::fixed << std::setprecision(9) << "N=" << number_of_iterations << "	Time = "
-                        << physical_time
-                        << "	Dt = " << Dt << "	dt = " << dt << std::endl;
-            }
-            /** Restart. */
-            if (is_write_restart_file)
-            {
-                if (number_of_iterations % restart_output_interval == 0)
-                {
-                    restart_io.writeToFile(number_of_iterations);
-                }
             }
             number_of_iterations++;
-
-            /** Periodic condition. */
             periodic_condition_x.bounding_.exec();
-
             if (physical_time > cutoff_time)
             {
-                //** Temporary treatment *
                 write_recorded_water_node_velocity.writeToFile(number_of_iterations);
                 write_recorded_water_node_k.writeToFile(number_of_iterations);
                 write_recorded_water_node_utau.writeToFile(number_of_iterations);
             }
-
-            /** Update cell linked list and configuration. */
             if (number_of_iterations % 100 == 0 && number_of_iterations != 1)
             {
                 particle_sorting.exec();
             }
             water_block.updateCellLinkedList();
-
-            /** Periodic condition. */
             periodic_condition_x.update_cell_linked_list_.exec();
-
             water_block_complex.updateConfiguration();
             fluid_observer_contact.updateConfiguration();
             node_observer_contact.updateConfiguration();
-            //friction_velocity_observer_contact.updateConfiguration();
-
-            /** Tag truncated inlet/outlet particles*/
             inlet_outlet_surface_particle_indicator.exec();
-
             if (physical_time > cutoff_time)
             {
                 write_recorded_water_velocity.writeToFile(number_of_iterations);
                 write_recorded_water_k.writeToFile(number_of_iterations);
                 write_recorded_water_mut.writeToFile(number_of_iterations);
                 write_recorded_water_omega.writeToFile(number_of_iterations);
-                //write_nearwall_friction_velocity.writeToFile(number_of_iterations);
-                //write_nearwall_friction_velocity_sublayer.writeToFile(number_of_iterations);
-            }
-            //if (GlobalStaticVariables::physical_time_ > end_time * 0.5)
-            //body_states_recording.writeToFile();
-            
-            if (is_write_average_contour_file) //** Average *
-            {
-                if (physical_time > time_start_average_data)
-                {
-                    fluid_pressure_contour_observer_contact.updateConfiguration(); //** Average *
-                    //% Average pressure
-                    observing_pressure.exec();
-                    average_pressure.exec();
-                }
             }
         }
-        //TickCount t2 = TickCount::now();
-        if (!is_write_average_contour_file)  //** Average no need to comment *
-        {
-            body_states_recording.writeToFile();
-        }
+        body_states_recording.writeToFile();
         observer_centerpoint_contact.updateConfiguration();
         num_output_file++;
-        //if (num_output_file == 100)
-        //    system("pause");
-        //TickCount t3 = TickCount::now();
-
-        if (is_write_average_contour_file) //** Average *
-        {
-            if (physical_time > time_output_contour_average_data)
-            {
-                if (num_output_contour_average_file < num_output_contour_average_file_limit)
-                {
-                    fluid_pressure_contour_observer_contact.updateConfiguration(); //% Average
-                    //% Average pressure
-                    observing_pressure.exec();
-                    average_pressure.exec();
-                    write_observation_states_pressure_contour.writeToFile(); //% Average
-                    num_output_contour_average_file++;
-                    if (num_output_contour_average_file == num_output_contour_average_file_limit)
-                    {
-                        std::cout << "Finish outputing average contour files " << std::endl;
-                        system("pause");
-                    }
-                }
-            }
-        }
-
     }
     TickCount t4 = TickCount::now();
-
     TimeInterval tt;
     tt = t4 - t1 - interval;
     std::cout << "Total wall time for computation: " << tt.seconds()
               << " seconds." << std::endl;
-    std::cout << "Cutoff_time: " << cutoff_time
-              << " seconds." << std::endl;
-    std::cout << "For checking fully-developed or not, index of the cutoff output file =  " << index_check_file_fully_developed << std::endl;
-    logfile << "Total wall time for computation: " << tt.seconds()
-            << " seconds." << std::endl;
-    logfile.close();
-    //if (sph_system.GenerateRegressionData())
-    //{
-    //    write_centerpoint_quantity.generateDataBase(1.0e-3);
-    //}
-    //else
-    //{
-    //    write_centerpoint_quantity.testResult();
-    //}
     return 0;
 }
