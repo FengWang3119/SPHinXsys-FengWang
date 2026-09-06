@@ -17,13 +17,12 @@ class kOmega_BaseTurbuClosureCoeff
     virtual ~kOmega_BaseTurbuClosureCoeff(){};
 
   protected:
-    //** Closure coefficients for Omega *
-    Real std_kw_beta_star_; //** This is Cmu in OpenFoam v12 */
+    Real std_kw_beta_star_; 
     Real std_kw_sigma_star_;
     Real std_kw_alpha_;
     Real std_kw_sigma_;
     Real std_kw_beta_;
-    Real std_kw_f_beta_; //** Temporarily treat for 2d */
+    Real std_kw_f_beta_; 
     Real std_kw_beta_0_;
     Real std_kw_sigma_do_;
     Real std_kw_sigma_d_;
@@ -56,10 +55,8 @@ class kOmega_GetVelocityGradient<DataDelegationType>
     int *is_near_wall_P2_;
 
     Matd *velocity_gradient_;
-    //**For test*
     Matd *velocity_gradient_wall;
 };
-//** Inner part *
 template <>
 class kOmega_GetVelocityGradient<Inner<>> : public kOmega_GetVelocityGradient<DataDelegateInner>
 {
@@ -79,7 +76,6 @@ class kOmega_GetVelocityGradient<Inner<>> : public kOmega_GetVelocityGradient<Da
 };
 using kOmega_GetVelocityGradientInner = kOmega_GetVelocityGradient<Inner<>>;
 
-//** Wall part *
 template <>
 class kOmega_GetVelocityGradient<Contact<Wall>> : public InteractionWithWall<kOmega_GetVelocityGradient>
 {
@@ -91,8 +87,6 @@ class kOmega_GetVelocityGradient<Contact<Wall>> : public InteractionWithWall<kOm
   protected:
     Matd *velocity_gradient_;
 };
-
-//** Interface part *
 using kOmega_GetVelocityGradientComplex = ComplexInteraction<kOmega_GetVelocityGradient<Inner<>, Contact<Wall>>>;
 //=================================================================================================//
 template <typename... T>
@@ -121,8 +115,6 @@ class kOmega_kTransportEquationInner : public kOmega_BaseTurbulentModel<Base, Da
   public:
     explicit kOmega_kTransportEquationInner(BaseInnerRelation &inner_relation, const StdVec<Real> &initial_values, int is_extr_visc_dissipa, int is_blended = 0);
     virtual ~kOmega_kTransportEquationInner(){};
-
-    //inline void interaction(size_t index_i, Real dt = 0.0);
     void update(size_t index_i, Real dt = 0.0);
 
   protected:
@@ -138,7 +130,7 @@ class kOmega_kTransportEquationInner : public kOmega_BaseTurbulentModel<Base, Da
     Real *k_diffusion_;
 
     Matd *turbu_strain_rate_;
-    int *is_near_wall_P1_; //** This is used to specially treat near wall region  *
+    int *is_near_wall_P1_; 
     Matd *velocity_gradient_;
 };
 //=================================================================================================//
@@ -161,8 +153,6 @@ class kOmega_omegaTransportEquationInner : public kOmega_BaseTurbulentModel<Base
   public:
     explicit kOmega_omegaTransportEquationInner(BaseInnerRelation &inner_relation);
     virtual ~kOmega_omegaTransportEquationInner(){};
-
-    //inline void interaction(size_t index_i, Real dt = 0.0);
     void update(size_t index_i, Real dt = 0.0);
 
   protected:
@@ -230,7 +220,6 @@ class kOmega_WallFunctionCorrection : public LocalDynamics,
     inline void interaction(size_t index_i, Real dt = 0.0);
 
   protected:
-    //Real offset_dist_;
     Real *y_p_;
     Real *wall_Y_plus_;
     Real *wall_Y_star_;
