@@ -23,7 +23,6 @@ kOmega_BaseTurbulentModel<Base, DataDelegationType>::kOmega_BaseTurbulentModel(B
       Vol_(this->particles_->template getVariableDataByName<Real>("VolumetricMeasure")),
       vel_(this->particles_->template getVariableDataByName<Vecd>("Velocity")),
       dimension_(2) {}
-//A temporarily treatment for dimension
 //=================================================================================================//
 template <class DataDelegationType>
 template <class BaseRelationType>
