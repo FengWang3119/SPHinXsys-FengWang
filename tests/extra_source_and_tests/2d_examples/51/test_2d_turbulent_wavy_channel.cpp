@@ -1,4 +1,4 @@
-#include "51.h"
+#include "test_2d_turbulent_wavy_channel.h"
 using namespace SPH;
 
 int main(int ac, char *av[])
