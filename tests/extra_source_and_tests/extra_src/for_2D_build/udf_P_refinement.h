@@ -37,7 +37,6 @@ namespace udf
         Real* turbu_omega_;
     };
 
-    //** Inner part *
     template <>
     class P_refinement_GetVelocityGradient<Inner<>> : public P_refinement_GetVelocityGradient<DataDelegateInner>
     {
@@ -53,7 +52,6 @@ namespace udf
     };
     using P_refinement_GetVelocityGradientInner = P_refinement_GetVelocityGradient<Inner<>>;
 
-    //** Wall part *
     template <>
     class P_refinement_GetVelocityGradient<Contact<Wall>> : public InteractionWithWall<P_refinement_GetVelocityGradient>
     {
@@ -66,7 +64,6 @@ namespace udf
 
     };
 
-    //** Interface part *
     using P_refinement_GetVelocityGradientComplex = ComplexInteraction<P_refinement_GetVelocityGradient<Inner<>, Contact<Wall>>>;
 //=================================================================================================//
     template <int Ny = 5, int TypeTDMA = 0>
@@ -81,9 +78,8 @@ namespace udf
         void test_sublayer_model_half_channel_height();
         void test_sublayer_model_specific_channel_height();
         
-        //** Locally effective, mannually set number of node *
-        static constexpr int ny = Ny; //** Currently only Vec6d can be used, so ny should <=5, other space will be zero *
-        static constexpr int type_tdma_ = TypeTDMA; //** 0: general TMDA, other numbers refer to corresponding unrolled version  *
+        static constexpr int ny = Ny; 
+        static constexpr int type_tdma_ = TypeTDMA; 
 
         using Vec_ny_d = Eigen::Matrix<Real, ny, 1>;
         inline void check_num_node_consistency()
@@ -111,26 +107,15 @@ namespace udf
         {
             sublayer_height_contant_ = constant_y_p;
             
-            if (constant_y_p_node < TinyReal) //** if not explicity input, uniform distribution, here we use unified expression *
+            if (constant_y_p_node < TinyReal)
             {
-                //wall                                                  P_outer
-                // |                                                       |
-                // |--0.5hy--nodeP--hy--nodeS--hy--node-- ... --nodeU--hy--|
-                //** Actually consists of 2 steps: 
-                //** first: hy=sublayer_height_contant_ / (Real(ny) + 0.5), based on node distribution method *
-                //** second: sublayer_y_p_constant_ = 0.5 * hy *
                 sublayer_y_p_constant_ = sublayer_height_contant_ / (Real(ny) + 0.5) / 2.0;  
             }
             else
             {
-                //wall                                                             P_outer
-                // |                                                                   |
-                // |--constant_y_p_node--nodeP--hy--nodeS--hy--node-- ... --nodeU--hy--|
-                sublayer_y_p_constant_ = constant_y_p_node; //** Locally effective, mannually set y_p_constant in sublayer *
+                sublayer_y_p_constant_ = constant_y_p_node; 
             }
-            
             sublayer_node_uniform_distance_ = (sublayer_height_contant_ - sublayer_y_p_constant_) / Real(ny);
-            
             for (int i = 0; i < ny; ++i)
             {
                 sublayer_y_[i] = sublayer_y_p_constant_ + i * sublayer_node_uniform_distance_;
@@ -181,8 +166,6 @@ namespace udf
         void tdma(int N, const double* a, const double* b, const double* c, const double* d, double* x);
         void tdma5(const double a[5], const double b[5], const double c[5], const double d[5], double x[5]);
         void tdma10(const double a[10], const double b[10], const double c[10], const double d[10], double x[10]);
-        void solve5_eigen(const double a[5], const double b[5], const double c[5], const double d[5], double x[5]);
-        void solve5_eigen_with_additonal_coefficient(const double a[5], const double b[5], const double c[5], const double e[5], const double d[5], double x[5]);
 
         inline Real get_loacal_flow_rate(Real average_flow_rate_over_particle_P, Real SPH_vel_grad_P, Real nodeO_U, Real dp)
         {
@@ -368,7 +351,6 @@ namespace udf
 
     protected:
         int num_sub_node_, node_dim_output_limit_, num_skip_output_;
-        //bool is_node_distribution_constructed_ = false;
         Real sublayer_height_contant_;
         Vec_ny_d sublayer_y_;
         Real sublayer_y_p_constant_;
@@ -380,19 +362,14 @@ namespace udf
         Real* vel_ps_magnitude_;
         Real* dudn_for_local_flow_rate_;
         Real* utau_node_;
-        
-        // ** Temporary treatment, only valid for 5-node configuration, first is utau, then 5 velocity *
-        // ** This variable only communicates with SPH system, and should no participate sublayer calculation 
         Vec6d* node_value_vel_;
         Vec6d* node_value_k_;
-        
         Real* dUdn_P_sublayer_magnitude_;
         Matd* dUdn_P_sublayer_;
         Real* vel_nodeO_;
         Real* vel_nodeUM_;
         Real* global_flow_rate_over_P_;
         Real* half_flow_rate_over_P_;
-        //
         int* is_near_wall_P1_;
         Vecd* vel_;
         Real* turbu_k_;
