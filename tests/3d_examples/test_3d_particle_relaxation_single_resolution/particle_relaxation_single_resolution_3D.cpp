@@ -12,7 +12,7 @@ using namespace SPH;
 //	Setting for the first geometry.
 //	To use this, please commenting the setting for the second geometry.
 //----------------------------------------------------------------------
-// std::string full_path_to_file = "./input/SPHinXsys.stl";
+// std::string full_path_to_file = "SPHinXsys.stl";
 //----------------------------------------------------------------------
 //	Basic geometry parameters and numerical setup.
 //----------------------------------------------------------------------
@@ -25,7 +25,7 @@ Real scaling = 1.0; */
 //	Setting for the second geometry.
 //	To use this, please commenting the setting for the first geometry.
 //----------------------------------------------------------------------
-std::string full_path_to_file = "./input/triangle_prism.stl";
+std::string full_path_to_file = "triangle_prism.stl";
 //----------------------------------------------------------------------
 //	Basic geometry parameters and numerical setup.
 //----------------------------------------------------------------------
@@ -55,7 +55,7 @@ class SolidBodyFromMesh : public ComplexShape
 //	Setting for the second geometry.
 //	To use this, please commenting the setting for the first geometry.
 //----------------------------------------------------------------------
-// std::string full_path_to_file = "./input/fluid.stl";
+// std::string full_path_to_file = "fluid.stl";
 //----------------------------------------------------------------------
 //	Basic geometry parameters and numerical setup.
 //----------------------------------------------------------------------
@@ -95,7 +95,7 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     RealBody imported_model(sph_system, makeShared<SolidBodyFromMesh>("SolidBodyFromMesh"));
     // level set shape is used for particle relaxation
-    imported_model.defineBodyLevelSetShape()->correctLevelSetSign()->writeLevelSet();
+    imported_model.defineBodyLevelSetShape().correctLevelSetSign().writeLevelSet();
     imported_model.generateParticles<BaseParticles, Lattice>();
     //----------------------------------------------------------------------
     //	Define simple file input and outputs functions.
@@ -124,7 +124,7 @@ int main(int ac, char *av[])
     relaxation_step_inner.SurfaceBounding().exec();
     write_imported_model_to_vtp.writeToFile(0.0);
     imported_model.updateCellLinkedList();
-     //----------------------------------------------------------------------
+    //----------------------------------------------------------------------
     //	Particle relaxation time stepping start here.
     //----------------------------------------------------------------------
     int ite_p = 0;

@@ -30,10 +30,11 @@
 #ifndef SIMPLE_ALGORITHMS_CK_H
 #define SIMPLE_ALGORITHMS_CK_H
 
-#include "base_local_dynamics.h"
-#include "base_particle_dynamics.h"
-#include "io_log.h"
+#include "base_dynamics.h"
 #include "particle_iterators_ck.h"
+
+#include <string>
+#include <utility>
 
 namespace SPH
 {
@@ -69,7 +70,7 @@ class StateDynamics : public UpdateType, public BaseDynamics<void>
         this->logger_->debug(
             "StateDynamics::exec() for {} at {}",
             type_name<UpdateType>(),
-            this->sph_body_->getName());
+            this->sph_body_->Name());
     };
 };
 
@@ -113,7 +114,7 @@ class ReduceDynamicsCK : public ReduceType,
         this->logger_->debug(
             "ReduceDynamicsCK::exec() for {} at {}",
             type_name<ReduceType>(),
-            this->sph_body_->getName());
+            this->sph_body_->Name());
 
         return finish_dynamics_.Result(reduced_value_);
     };

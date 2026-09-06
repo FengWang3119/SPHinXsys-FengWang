@@ -18,6 +18,7 @@ auto &InteractionDynamicsCK<ExecutionPolicy, InteractionType<AlgorithmType>>::
             contact_relation, std::forward<Args>(args)...));
     return *this;
 }
+//=================================================================================================//
 template <class ExecutionPolicy, typename AlgorithmType, template <typename...> class InteractionType>
 auto &InteractionDynamicsCK<ExecutionPolicy, InteractionType<AlgorithmType>>::
     addPostContactInteraction(BaseDynamics<void> &contact_interaction)
@@ -25,6 +26,7 @@ auto &InteractionDynamicsCK<ExecutionPolicy, InteractionType<AlgorithmType>>::
     this->post_processes_.push_back(&contact_interaction);
     return *this;
 }
+//=================================================================================================//
 template <class ExecutionPolicy, typename AlgorithmType, template <typename...> class InteractionType>
 auto &InteractionDynamicsCK<ExecutionPolicy, InteractionType<AlgorithmType>>::
     addPreContactInteraction(BaseDynamics<void> &contact_interaction)
@@ -106,7 +108,7 @@ void InteractionDynamicsCK<ExecutionPolicy, Base, InteractionType<Inner<Paramete
     this->logger_->debug(
         "InteractionDynamicsCK::runInteraction() for {} at {}",
         type_name<InteractionType<Inner<Parameters...>>>(),
-        this->sph_body_->getName());
+        this->sph_body_->Name());
 }
 //=================================================================================================//
 template <class ExecutionPolicy, template <typename...> class InteractionType, typename... Parameters>
@@ -115,35 +117,26 @@ InteractionDynamicsCK<ExecutionPolicy, Base, InteractionType<Contact<Parameters.
     InteractionDynamicsCK(Args &&...args)
     : InteractionType<Contact<Parameters...>>(std::forward<Args>(args)...)
 {
-    for (size_t k = 0; k != this->contact_bodies_.size(); ++k)
-    {
-        contact_kernel_implementation_.push_back(
-            contact_kernel_implementation_ptrs_
-                .template createPtr<KernelImplementation>(*this));
-        this->registerComputingKernel(contact_kernel_implementation_.back(), k);
-    }
+    contact_kernel_implementation_ =
+        contact_kernel_implementation_ptr_.template createPtr<KernelImplementation>(*this);
+    this->registerComputingKernel(contact_kernel_implementation_);
 }
 //=================================================================================================//
 template <class ExecutionPolicy, template <typename...> class InteractionType, typename... Parameters>
 void InteractionDynamicsCK<ExecutionPolicy, Base, InteractionType<Contact<Parameters...>>>::
     runInteraction(Real dt)
 {
-    for (size_t k = 0; k != this->contact_bodies_.size(); ++k)
-    {
-        InteractKernel *interact_kernel =
-            contact_kernel_implementation_[k]->getComputingKernel(k);
+    InteractKernel *interact_kernel = contact_kernel_implementation_->getComputingKernel();
+    particle_for(LoopRangeCK<ExecutionPolicy, RangeIdentifier>(*this->identifier_),
+                 [=](size_t i)
+                 {
+                     interact_kernel->interact(i, dt);
+                 });
 
-        particle_for(LoopRangeCK<ExecutionPolicy, RangeIdentifier>(*this->identifier_),
-                     [=](size_t i)
-                     {  if(interact_kernel->hasNeighor(i)) {
-                            interact_kernel->interact(i, dt);
-                        } });
-
-        this->logger_->debug(
-            "InteractionDynamicsCK::runInteraction() for {} at {}",
-            type_name<InteractionType<Contact<Parameters...>>>(),
-            this->sph_body_->getName());
-    }
+    this->logger_->debug(
+        "InteractionDynamicsCK::runInteraction() for {} at {}",
+        type_name<InteractionType<Contact<Parameters...>>>(),
+        this->sph_body_->Name());
 }
 //=================================================================================================//
 template <class ExecutionPolicy, template <typename...> class InteractionType,
@@ -222,7 +215,7 @@ void InteractionDynamicsCK<ExecutionPolicy, InteractionType<RelationType<WithUpd
     this->logger_->debug(
         "InteractionDynamicsCK::runUpdateStep() for {} at {}",
         type_name<InteractionType<RelationType<WithUpdate, OtherParameters...>>>(),
-        this->sph_body_->getName());
+        this->sph_body_->Name());
 }
 //=================================================================================================//
 template <class ExecutionPolicy, template <typename...> class InteractionType,
@@ -277,7 +270,7 @@ void InteractionDynamicsCK<ExecutionPolicy, InteractionType<RelationType<OneLeve
     this->logger_->debug(
         "InteractionDynamicsCK::runInitializationStep() for {} at {}",
         type_name<InteractionType<RelationType<OneLevel, OtherParameters...>>>(),
-        this->sph_body_->getName());
+        this->sph_body_->Name());
 }
 //=================================================================================================//
 template <class ExecutionPolicy, template <typename...> class InteractionType,
@@ -293,7 +286,7 @@ void InteractionDynamicsCK<ExecutionPolicy, InteractionType<RelationType<OneLeve
     this->logger_->debug(
         "InteractionDynamicsCK::runUpdateStep() for {} at {}",
         type_name<InteractionType<RelationType<OneLevel, OtherParameters...>>>(),
-        this->sph_body_->getName());
+        this->sph_body_->Name());
 }
 //=================================================================================================//
 template <class ExecutionPolicy, template <typename...> class InteractionType,

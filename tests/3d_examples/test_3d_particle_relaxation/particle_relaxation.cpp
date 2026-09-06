@@ -10,9 +10,9 @@
 using namespace SPH;
 
 //----------------------------------------------------------------------
-//	Set the file path to the data file.
+//	Set the file name to the data file.
 //----------------------------------------------------------------------
-std::string full_path_to_file = "./input/teapot.stl";
+std::string full_path_to_file = "teapot.stl";
 //----------------------------------------------------------------------
 //	Basic geometry parameters and numerical setup.
 //----------------------------------------------------------------------
@@ -49,9 +49,9 @@ int main(int ac, char *av[])
     RealBody imported_model(sph_system, makeShared<SolidBodyFromMesh>("SolidBodyFromMesh"));
     imported_model.defineAdaptation<AdaptiveNearSurface>(1.15, 1.0, 3);
     imported_model.defineBodyLevelSetShape()
-        ->correctLevelSetSign()
-        ->addPackageVariableToWrite<int>("NearInterfaceID")
-        ->writeLevelSet();
+        .correctLevelSetSign()
+        .addPackageVariableToWrite<int>("NearInterfaceID")
+        .writeLevelSet();
     imported_model.generateParticles<BaseParticles, Lattice>();
     //----------------------------------------------------------------------
     //	Define simple file input and outputs functions.

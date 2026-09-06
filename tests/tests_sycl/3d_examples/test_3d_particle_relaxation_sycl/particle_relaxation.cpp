@@ -10,9 +10,9 @@
 using namespace SPH;
 
 //----------------------------------------------------------------------
-//	Set the file path to the data file.
+//	Set the file name to the data file.
 //----------------------------------------------------------------------
-std::string full_path_to_file = "./input/teapot.stl";
+std::string full_path_to_file = "teapot.stl";
 //----------------------------------------------------------------------
 //	Basic geometry parameters and numerical setup.
 //----------------------------------------------------------------------
@@ -48,8 +48,8 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     auto &imported_model = sph_system.addAdaptiveBody<RealBody>(
         AdaptiveNearSurface(global_resolution, 1.15, 1.0, 3), makeShared<SolidBodyFromMesh>("SolidBodyFromMesh"));
-    LevelSetShape *level_set_shape =
-        imported_model.defineBodyLevelSetShape()->correctLevelSetSign()->cleanLevelSet()->writeLevelSet();
+    LevelSetShape &level_set_shape =
+        imported_model.defineBodyLevelSetShape().correctLevelSetSign().cleanLevelSet().writeLevelSet();
     imported_model.generateParticles<BaseParticles, Lattice>();
     auto &near_body_surface = imported_model.addBodyPart<NearShapeSurface>();
     //----------------------------------------------------------------------
@@ -66,8 +66,8 @@ int main(int ac, char *av[])
     // Generally, the host methods should be able to run immediately.
     //----------------------------------------------------------------------
     SPHSolver sph_solver(sph_system);
-    auto &main_methods = sph_solver.addParticleMethodContainer(par_ck);
-    auto &host_methods = sph_solver.addParticleMethodContainer(par_host);
+    auto &main_methods = sph_solver.getMainMethodContainer();
+    auto &host_methods = sph_solver.getHostMethodContainer();
     //----------------------------------------------------------------------
     // Define the numerical methods used in the simulation.
     // Note that there may be data dependence on the sequence of constructions.
@@ -85,11 +85,11 @@ int main(int ac, char *av[])
 
     auto &relaxation_residual =
         main_methods.addInteractionDynamics<KernelGradientIntegral, NoKernelCorrectionCK>(imported_model_inner)
-            .addPostStateDynamics<LevelsetKernelGradientIntegral>(imported_model, *level_set_shape);
+            .addPostStateDynamics<LevelsetKernelGradientIntegral>(imported_model, level_set_shape);
 
     auto &update_particle_position = main_methods.addStateDynamics<PositionRelaxationCK>(imported_model);
     auto &level_set_bounding = main_methods.addStateDynamics<LevelsetBounding>(near_body_surface);
-    auto &update_smoothing_length_ratio = main_methods.addStateDynamics<UpdateSmoothingLengthRatio>(imported_model, *level_set_shape);
+    auto &update_smoothing_length_ratio = main_methods.addStateDynamics<UpdateSmoothingLengthRatio>(imported_model, level_set_shape);
 
     auto &relaxation_scaling = main_methods.addReduceDynamics<RelaxationScalingCK>(imported_model);
     //----------------------------------------------------------------------

@@ -12,7 +12,7 @@ using namespace SPH;
 //	Setting for the first geometry.
 //	To use this, please commenting the setting for the second geometry.
 //----------------------------------------------------------------------
-// std::string full_path_to_file = "./input/SPHinXsys.stl";
+// std::string full_path_to_file = "SPHinXsys.stl";
 //----------------------------------------------------------------------
 //	Basic geometry parameters and numerical setup.
 //----------------------------------------------------------------------
@@ -25,7 +25,7 @@ Real scaling = 1.0; */
 //	Setting for the second geometry.
 //	To use this, please commenting the setting for the first geometry.
 //----------------------------------------------------------------------
-std::string full_path_to_file = "./input/triangle_prism.stl";
+std::string full_path_to_file = "triangle_prism.stl";
 //----------------------------------------------------------------------
 //	Basic geometry parameters and numerical setup.
 //----------------------------------------------------------------------
@@ -55,7 +55,7 @@ class SolidBodyFromMesh : public ComplexShape
 //	Setting for the second geometry.
 //	To use this, please commenting the setting for the first geometry.
 //----------------------------------------------------------------------
-// std::string full_path_to_file = "./input/fluid.stl";
+// std::string full_path_to_file = "fluid.stl";
 //----------------------------------------------------------------------
 //	Basic geometry parameters and numerical setup.
 //----------------------------------------------------------------------
@@ -95,9 +95,9 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     RealBody input_body(sph_system, makeShared<SolidBodyFromMesh>("SolidBodyFromMesh"));
     // level set shape is used for particle relaxation
-    LevelSetShape *level_set_shape = input_body.defineBodyLevelSetShape(par_ck)
-                                         ->correctLevelSetSign()
-                                         ->writeLevelSet();
+    LevelSetShape &level_set_shape = input_body.defineBodyLevelSetShape(par_ck)
+                                         .correctLevelSetSign()
+                                         .writeLevelSet();
     input_body.generateParticles<BaseParticles, Lattice>();
     //----------------------------------------------------------------------
     //	Creating body parts.
@@ -116,8 +116,8 @@ int main(int ac, char *av[])
     //	Methods used for particle relaxation.
     //----------------------------------------------------------------------
     SPHSolver sph_solver(sph_system);
-    auto &main_methods = sph_solver.addParticleMethodContainer(par_ck);
-    auto &host_methods = sph_solver.addParticleMethodContainer(par_host);
+    auto &main_methods = sph_solver.getMainMethodContainer();
+    auto &host_methods = sph_solver.getHostMethodContainer();
     //----------------------------------------------------------------------
     // Define the numerical methods used in the simulation.
     // Note that there may be data dependence on the sequence of constructions.
@@ -134,7 +134,7 @@ int main(int ac, char *av[])
     auto &random_input_body_particles = host_methods.addStateDynamics<RandomizeParticlePositionCK>(input_body);
     auto &relaxation_residual =
         main_methods.addInteractionDynamics<KernelGradientIntegral, NoKernelCorrectionCK>(input_body_inner)
-            .addPostStateDynamics<LevelsetKernelGradientIntegral>(input_body, *level_set_shape);
+            .addPostStateDynamics<LevelsetKernelGradientIntegral>(input_body, level_set_shape);
     auto &relaxation_scaling = main_methods.addReduceDynamics<RelaxationScalingCK>(input_body);
     auto &update_particle_position =
         main_methods.addStateDynamics<PositionRelaxationCK>(input_body);

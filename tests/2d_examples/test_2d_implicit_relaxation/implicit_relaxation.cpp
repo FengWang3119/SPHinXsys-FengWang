@@ -6,9 +6,9 @@
 #include "sphinxsys.h"
 using namespace SPH;
 //----------------------------------------------------------------------
-//	Set the file path to the data file
+//	Set the file name to the data file
 //----------------------------------------------------------------------
-std::string input_body = "./input/TurbineBlade.dat";
+std::string input_body = "TurbineBlade.dat";
 //----------------------------------------------------------------------
 //	Basic geometry parameters and numerical setup.
 //----------------------------------------------------------------------
@@ -26,7 +26,7 @@ class InputBody : public ComplexShape
     explicit InputBody(const std::string &shape_name) : ComplexShape(shape_name)
     {
         MultiPolygon turbine_blade;
-        turbine_blade.addAPolygonFromFile(input_body, ShapeBooleanOps::add);
+        turbine_blade.addPolygonFromFile(input_body, GeometricOps::add);
         add<MultiPolygonShape>(turbine_blade);
     }
 };
@@ -42,7 +42,7 @@ int main(int ac, char *av[])
     //	Creating body, materials and particles.
     //----------------------------------------------------------------------
     FluidBody insert_body(sph_system, makeShared<InputBody>("Body"));
-    insert_body.defineBodyLevelSetShape()->writeLevelSet();
+    insert_body.defineBodyLevelSetShape().writeLevelSet();
     insert_body.generateParticles<BaseParticles, Lattice>();
     //----------------------------------------------------------------------
     //	Define body relation map used for particle relaxation.

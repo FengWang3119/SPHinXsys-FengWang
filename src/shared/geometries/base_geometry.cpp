@@ -1,11 +1,11 @@
 #include "base_geometry.h"
 
-#include "io_log.h"
+#include "io_environment.h"
 namespace SPH
 {
 //=================================================================================================//
 Shape::Shape(const std::string &shape_name)
-    : name_(shape_name), is_bounds_found_(false), logger_(Log::init()) {}
+    : name_(shape_name), is_bounds_found_(false), logger_(IO::initLogger()) {}
 //=================================================================================================//
 BoundingBoxd Shape::getBounds()
 {
@@ -89,16 +89,16 @@ bool BinaryShapes::checkContain(const Vecd &pnt, bool BOUNDARY_INCLUDED)
     for (auto &sub_shape_and_op : sub_shapes_and_ops_)
     {
         Shape *geometry = sub_shape_and_op.first;
-        ShapeBooleanOps operation_string = sub_shape_and_op.second;
+        GeometricOps operation_string = sub_shape_and_op.second;
         switch (operation_string)
         {
-        case ShapeBooleanOps::add:
+        case GeometricOps::add:
         {
             inside = geometry->checkContain(pnt);
             exist = exist || inside;
             break;
         }
-        case ShapeBooleanOps::sub:
+        case GeometricOps::sub:
         {
             inside = geometry->checkContain(pnt);
             exist = exist && (!inside);
@@ -144,7 +144,7 @@ SubShapeAndOp *BinaryShapes::getSubShapeAndOpByName(const std::string &name)
     for (auto &sub_shape_and_op : sub_shapes_and_ops_)
     {
         Shape *shape = sub_shape_and_op.first;
-        if (shape->getName() == name)
+        if (shape->Name() == name)
             return &sub_shape_and_op;
     }
     std::cout << "\n FAILURE: the shape " << name << " has not been created!" << std::endl;
@@ -162,7 +162,7 @@ size_t BinaryShapes::getSubShapeIndexByName(const std::string &name)
 {
     for (size_t index = 0; index != sub_shapes_and_ops_.size(); ++index)
     {
-        if (sub_shapes_and_ops_[index].first->getName() == name)
+        if (sub_shapes_and_ops_[index].first->Name() == name)
         {
             return index;
         }

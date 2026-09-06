@@ -15,7 +15,7 @@ Real WH = 2.0;                   /**< Water block height. */
 Real L = 1.0;                    /**< Base of the floating body. */
 Real particle_spacing_ref = L / 20;
 Real BW = particle_spacing_ref * 4.0; /**< Extending width for BCs. */
-BoundingBoxd system_domain_bounds(Vec2d(-DL - BW, -DH - BW), Vec2d(DL + BW, DH + BW));
+BoundingBoxd system_domain_bounds(Vec2d(-DL, -DH), Vec2d(DL, DH));
 //----------------------------------------------------------------------
 //	Material properties of the fluid.
 //----------------------------------------------------------------------
@@ -115,16 +115,17 @@ int main(int ac, char *av[])
     //	Creating body, materials and particles.
     //----------------------------------------------------------------------
     FluidBody water_block(sph_system, makeShared<WaterBlock>("WaterBody"));
-    water_block.defineClosure<WeaklyCompressibleFluid, Viscosity>(ConstructArgs(rho0_f, c_f), mu_f);
+    water_block.defineMatterMaterial<WeaklyCompressibleFluid>(rho0_f, c_f);
+    water_block.addMaterialProperty<Viscosity>(mu_f);
     water_block.generateParticles<BaseParticles, Lattice>();
 
     SolidBody wall_boundary(sph_system, makeShared<WallBoundary>("WallBoundary"));
-    wall_boundary.defineMaterial<Solid>();
+    wall_boundary.defineMatterMaterial<Solid>();
     wall_boundary.generateParticles<BaseParticles, Lattice>();
 
     GeometricShapeBox structure_shape(Transform(structure_translation), structure_halfsize, "Structure");
     SolidBody structure(sph_system, structure_shape);
-    structure.defineMaterial<Solid>(rho_s);
+    structure.defineMatterMaterial<Solid>(rho_s);
     structure.generateParticles<BaseParticles, Lattice>();
 
     ObserverBody observer(sph_system, "Observer");
@@ -142,15 +143,16 @@ int main(int ac, char *av[])
     //  Generally, we first define all the inner relations, then the contact relations.
     //----------------------------------------------------------------------
     Inner<> water_block_inner(water_block);
-    Contact<> water_block_contact(water_block, {&wall_boundary, &structure});
-    Contact<> structure_contact(structure, {&water_block});
-    Contact<> observer_contact(observer, {&structure}, ConfigType::Lagrangian);
+    Contact<> fluid_wall_contact(water_block, wall_boundary);
+    Contact<> fluid_structure_contact(water_block, structure);
+    Contact<> structure_contact(structure, water_block);
+    Contact<> observer_contact(observer, structure, ConfigType::Lagrangian);
     //----------------------------------------------------------------------
     // Define SPH solver with particle methods and execution policies.
     //----------------------------------------------------------------------
     SPHSolver sph_solver(sph_system);
-    auto &main_methods = sph_solver.addParticleMethodContainer(par_ck);
-    auto &host_methods = sph_solver.addParticleMethodContainer(par_host);
+    auto &main_methods = sph_solver.getMainMethodContainer();
+    auto &host_methods = sph_solver.getHostMethodContainer();
     //----------------------------------------------------------------------
     // Define the numerical methods used in the simulation.
     // Note that there may be data dependence on the sequence of constructions.
@@ -168,7 +170,7 @@ int main(int ac, char *av[])
     auto &water_cell_linked_list = main_methods.addCellLinkedListDynamics(water_block);
     auto &wall_cell_linked_list = main_methods.addCellLinkedListDynamics(wall_boundary);
     auto &structure_cell_linked_list = main_methods.addCellLinkedListDynamics(structure);
-    auto &water_block_update_complex_relation = main_methods.addRelationDynamics(water_block_inner, water_block_contact);
+    auto &water_block_update_complex_relation = main_methods.addRelationDynamics(water_block_inner, fluid_wall_contact, fluid_structure_contact);
     auto &structure_update_contact_relation = main_methods.addRelationDynamics(structure_contact);
     auto &observer_update_contact_relation = main_methods.addRelationDynamics(observer_contact);
     auto &particle_sort = main_methods.addSortDynamics(water_block);
@@ -181,43 +183,54 @@ int main(int ac, char *av[])
     auto &fluid_acoustic_step_1st_half =
         main_methods.addInteractionDynamicsOneLevel<
                         fluid_dynamics::AcousticStep1stHalf, AcousticRiemannSolverCK, NoKernelCorrectionCK>(water_block_inner)
-            .addPostContactInteraction<Wall, AcousticRiemannSolverCK, NoKernelCorrectionCK>(water_block_contact);
+            .addPostContactInteraction<Wall, AcousticRiemannSolverCK, NoKernelCorrectionCK>(fluid_wall_contact)
+            .addPostContactInteraction<Wall, AcousticRiemannSolverCK, NoKernelCorrectionCK>(fluid_structure_contact);
 
     auto &fluid_acoustic_step_2nd_half =
         main_methods.addInteractionDynamicsOneLevel<
             fluid_dynamics::AcousticStep2ndHalf, AcousticRiemannSolverCK, NoKernelCorrectionCK>(water_block_inner);
     auto &fluid_acoustic_step_2nd_half_with_wall =
         main_methods.addInteractionDynamics<
-            fluid_dynamics::AcousticStep2ndHalf, Wall, AcousticRiemannSolverCK, NoKernelCorrectionCK>(water_block_contact);
-    fluid_acoustic_step_2nd_half.addPostContactInteraction(fluid_acoustic_step_2nd_half_with_wall);
+            fluid_dynamics::AcousticStep2ndHalf, Wall, AcousticRiemannSolverCK, NoKernelCorrectionCK>(fluid_wall_contact);
+    auto &fluid_acoustic_step_2nd_half_with_structure =
+        main_methods.addInteractionDynamics<
+            fluid_dynamics::AcousticStep2ndHalf, Wall, AcousticRiemannSolverCK, NoKernelCorrectionCK>(fluid_structure_contact);
+
+    fluid_acoustic_step_2nd_half.addPostContactInteraction(fluid_acoustic_step_2nd_half_with_wall)
+        .addPostContactInteraction(fluid_acoustic_step_2nd_half_with_structure);
 
     auto &fluid_density_regularization =
-        main_methods.addInteractionDynamics<fluid_dynamics::DensitySummationCK>(water_block_inner)
-            .addPostContactInteraction(water_block_contact)
-            .addPostStateDynamics<fluid_dynamics::DensityRegularization, FreeSurface>(water_block);
+        main_methods.addInteractionDynamics<fluid_dynamics::CompressionSummation>(water_block_inner)
+            .addPostContactInteraction(fluid_wall_contact)
+            .addPostContactInteraction(fluid_structure_contact)
+            .addPostStateDynamics<fluid_dynamics::DensityRegularization, WeaklyCompressibleFluid, FreeSurface>(water_block);
 
     auto &fluid_advection_time_step = main_methods.addReduceDynamics<fluid_dynamics::AdvectionTimeStepCK>(water_block, U_f);
-    auto &fluid_acoustic_time_step = main_methods.addReduceDynamics<fluid_dynamics::AcousticTimeStepCK<>>(water_block);
+    auto &fluid_acoustic_time_step = main_methods.addReduceDynamics<fluid_dynamics::AcousticTimeStepCK<WeaklyCompressibleFluid>>(water_block);
 
     auto &fluid_viscous_force = main_methods.addInteractionDynamicsWithUpdate<
         fluid_dynamics::ViscousForceCK, Viscosity, NoKernelCorrectionCK>(water_block_inner);
     auto &fluid_viscous_force_from_wall =
-        main_methods.addInteractionDynamics<fluid_dynamics::ViscousForceCK, Wall, Viscosity, NoKernelCorrectionCK>(water_block_contact);
-    fluid_viscous_force.addPostContactInteraction(fluid_viscous_force_from_wall);
+        main_methods.addInteractionDynamics<fluid_dynamics::ViscousForceCK, Wall, Viscosity, NoKernelCorrectionCK>(fluid_wall_contact);
+    auto &fluid_viscous_force_from_structure =
+        main_methods.addInteractionDynamics<fluid_dynamics::ViscousForceCK, Wall, Viscosity, NoKernelCorrectionCK>(fluid_structure_contact);
+
+    fluid_viscous_force.addPostContactInteraction(fluid_viscous_force_from_wall)
+        .addPostContactInteraction(fluid_viscous_force_from_structure);
 
     auto &viscous_force_on_structure =
         main_methods.addInteractionDynamicsWithUpdate<
             FSI::ViscousForceFromFluid, std::remove_reference_t<decltype(fluid_viscous_force_from_wall)>>(structure_contact);
     auto &pressure_force_on_structure =
         main_methods.addInteractionDynamicsWithUpdate<
-            FSI::PressureForceFromFluid, std::remove_reference_t<decltype(fluid_acoustic_step_2nd_half_with_wall)>>(structure_contact);
+            FSI::PressureForceFromFluid, std::remove_reference_t<decltype(fluid_acoustic_step_2nd_half_with_structure)>>(structure_contact);
     //----------------------------------------------------------------------
     //	Define the multi-body system
     //----------------------------------------------------------------------
     SimTK::MultibodySystem MBsystem;
-    SimTK::SimbodyMatterSubsystem matter(MBsystem);                // the bodies or matter of the system
-    SimTK::GeneralForceSubsystem forces(MBsystem);                 // the forces of the system
-    SimbodyStateEngine simbody_state_engine(sph_system, MBsystem); // the state engine of the system
+    SimTK::SimbodyMatterSubsystem matter(MBsystem);    // the bodies or matter of the system
+    SimTK::GeneralForceSubsystem forces(MBsystem);     // the forces of the system
+    SimbodyStateEngine simbody_state_engine(MBsystem); // the state engine of the system
 
     StructureSystemForSimbody structure_multibody(structure, structure_shape);
     /** Mass properties of the constrained spot.
@@ -281,10 +294,10 @@ int main(int ac, char *av[])
     auto &wave_gauge = main_methods.addReduceRegression<
         RegressionTestDynamicTimeWarping, UpperFrontInAxisDirectionCK>(wave_probe_buffer, "FreeSurfaceHeight");
     auto &write_structure_position = main_methods.addObserveRegression<
-        RegressionTestDynamicTimeWarping, Vecd>("Position", observer_contact);
+        RegressionTestDynamicTimeWarping, Vecd>(observer_contact, "Position");
 
-    SingularVariable<SimTK::SpatialVec> sv_action_on_structure("ActionOnStructure", SimTK::SpatialVec(0));
-    SingularVariableRecording<SimTK::SpatialVec> action_on_structure_recording(sph_system, &sv_action_on_structure);
+    SingleVariable<SimTK::SpatialVec> sv_action_on_structure("ActionOnStructure", SimTK::SpatialVec(0));
+    SingleVariableRecording<SimTK::SpatialVec> action_on_structure_recording(sph_system, &sv_action_on_structure);
     //----------------------------------------------------------------------
     //	Prepare the simulation with cell linked list, configuration
     //	and case specified initial condition if necessary.
@@ -302,14 +315,25 @@ int main(int ac, char *av[])
     structure_cell_linked_list.exec();
     observer_update_contact_relation.exec();
     //----------------------------------------------------------------------
+    //	Define time stepper with end and start time.
+    //----------------------------------------------------------------------
+    TimeStepper &time_stepper = sph_solver.getTimeStepper();
+    auto &advection_step = time_stepper.addTriggerByInterval(fluid_advection_time_step.exec());
+    auto &trigger_FSI = time_stepper.addTriggerByPhysicalTime(1.0);
+    size_t advection_steps = 0;
+    int screening_interval = 100;
+    int restart_interval = 1000;
+    int observation_interval = screening_interval / 2;
+    auto &state_recording = time_stepper.addTriggerByInterval(total_physical_time / 100.0);
+    //----------------------------------------------------------------------
     //	Load restart file if necessary.
     //----------------------------------------------------------------------
-    Real restart_time = 0.0;
     size_t restart_step = sph_system.RestartStep();
     if (restart_step != 0)
     {
-        restart_time = restart_io.readRestartFiles(restart_step);
+        Real restart_time = restart_io.readRestartFiles(restart_step);
         structure_cell_linked_list.exec();
+        advection_steps = restart_step;
 
         simbody_state_engine.readStateFromXml(restart_step, simbody_state);
         simbody_state.setTime(Real(restart_time));
@@ -317,17 +341,6 @@ int main(int ac, char *av[])
     integ.setAccuracy(1e-3);
     integ.setAllowInterpolation(false);
     integ.initialize(simbody_state);
-    //----------------------------------------------------------------------
-    //	Define time stepper with end and start time.
-    //----------------------------------------------------------------------
-    TimeStepper time_stepper(sph_system, total_physical_time, restart_time);
-    auto &advection_step = time_stepper.addTriggerByInterval(fluid_advection_time_step.exec());
-    auto &trigger_FSI = time_stepper.addTriggerByPhysicalTime(1.0);
-    size_t advection_steps = restart_step;
-    int screening_interval = 100;
-    int restart_interval = 1000;
-    int observation_interval = screening_interval / 2;
-    auto &state_recording = time_stepper.addTriggerByInterval(total_physical_time / 100.0);
     //----------------------------------------------------------------------
     //	Prepare the simulation with cell linked list, configuration
     //	and case specified initial condition if necessary.
@@ -353,7 +366,7 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     //	Main loop of time stepping starts here.
     //----------------------------------------------------------------------
-    while (!time_stepper.isEndTime())
+    while (!time_stepper.isEndTime(total_physical_time))
     {
         //----------------------------------------------------------------------
         //	the fastest and most frequent acostic time stepping.

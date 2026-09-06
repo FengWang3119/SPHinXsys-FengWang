@@ -21,7 +21,7 @@ BaseCellLinkedList::BaseCellLinkedList(
 //=================================================================================================//
 void BaseCellLinkedList::clearCellLists()
 {
-    parallel_for(
+    tbb::parallel_for(
         IndexRange(0, total_number_of_cells_),
         [&](const IndexRange &r)
         {
@@ -36,7 +36,7 @@ void BaseCellLinkedList::clearCellLists()
 void BaseCellLinkedList::UpdateCellListData(BaseParticles &base_particles)
 {
     Vecd *pos = base_particles.ParticlePositions();
-    parallel_for(
+    tbb::parallel_for(
         IndexRange(0, total_number_of_cells_),
         [&](const IndexRange &r)
         {
@@ -86,7 +86,7 @@ void BaseCellLinkedList::UpdateCellLists(BaseParticles &base_particles)
     clearCellLists();
     Vecd *pos_n = base_particles.ParticlePositions();
     UnsignedInt total_real_particles = base_particles.TotalRealParticles();
-    parallel_for(
+    tbb::parallel_for(
         IndexRange(0, total_real_particles),
         [&](const IndexRange &r)
         {
@@ -167,12 +167,16 @@ void BaseCellLinkedList::tagBoundingCells(StdVec<CellLists> &cell_data_lists,
 CellLinkedList<SPHAdaptation>::CellLinkedList(BoundingBoxd tentative_bounds, Real grid_spacing,
                                               BaseParticles &base_particles, SPHAdaptation &sph_adaptation)
     : BaseCellLinkedList(base_particles, sph_adaptation, tentative_bounds, grid_spacing, 1),
-      mesh_(&getCoarsestMesh()), cell_linked_list_mesh_(getCoarsestMesh())
+      mesh_(&getCoarsestMesh())
 {
     UnsignedInt index_list_size = SMAX(base_particles.ParticlesBound(), total_number_of_cells_);
-    dv_particle_index_ = createUniqueEnity<UnsignedInt, DiscreteVariable>("ParticleIndex", index_list_size);
-    dv_cell_offset_ = createUniqueEnity<UnsignedInt, DiscreteVariable>("CellOffset", total_number_of_cells_ + 1);
+    dv_particle_index_ = createUniqueQuantity<UnsignedInt, DiscreteVariable>("ParticleIndex", index_list_size);
+    dv_cell_offset_ = createUniqueQuantity<UnsignedInt, DiscreteVariable>("CellOffset", total_number_of_cells_ + 1);
 }
+//=================================================================================================//
+CellLinkedList<SPHAdaptation>::CellLinkedListMesh::CellLinkedListMesh(
+    CellLinkedList<SPHAdaptation> &cell_linked_list)
+    : Mesh(cell_linked_list.getCoarsestMesh()) {}
 //=================================================================================================//
 void CellLinkedList<SPHAdaptation>::insertParticleIndex(
     UnsignedInt particle_index, const Vecd &particle_position)
@@ -191,7 +195,7 @@ void CellLinkedList<SPHAdaptation>::InsertListDataEntry(
 void CellLinkedList<SPHAdaptation>::tagBodyPartByCellCK(
     ConcurrentIndexVector &cell_indexes, std::function<bool(Vecd, Real)> &check_included)
 {
-    Mesh &mesh = getCellLinkedListMesh();
+    CellLinkedListMesh mesh(*this);
     mesh_parallel_for(
         MeshRange(Arrayi::Zero(), mesh.AllCells()),
         [&](const Arrayi &cell_index)
@@ -219,13 +223,13 @@ CellLinkedList<AdaptiveSmoothingLength>::CellLinkedList(
     BoundingBoxd tentative_bounds, Real reference_grid_spacing, UnsignedInt total_levels,
     BaseParticles &base_particles, SPHAdaptation &sph_adaptation)
     : BaseCellLinkedList(base_particles, sph_adaptation, tentative_bounds, reference_grid_spacing, total_levels),
-      h_ratio_(DynamicCast<AdaptiveSmoothingLength>(this, &sph_adaptation)->dvSmoothingLengthRatio()->Data()),
-      h_level_(DynamicCast<AdaptiveSmoothingLength>(this, &sph_adaptation)->dvSmoothingLengthLevel()->Data()),
-      cell_linked_list_mesh_(*this)
+      adaptation_(DynamicCast<AdaptiveSmoothingLength>(this, sph_adaptation)),
+      h_ratio_(adaptation_.dvSmoothingLengthRatio()->Data()),
+      h_level_(adaptation_.dvSmoothingLengthLevel()->Data())
 {
     UnsignedInt index_list_size = SMAX(base_particles.ParticlesBound(), total_number_of_cells_);
-    dv_particle_index_ = createUniqueEnity<UnsignedInt, DiscreteVariable>("ParticleIndex", index_list_size);
-    dv_cell_offset_ = createUniqueEnity<UnsignedInt, DiscreteVariable>("CellOffset", total_number_of_cells_ + 1);
+    dv_particle_index_ = createUniqueQuantity<UnsignedInt, DiscreteVariable>("ParticleIndex", index_list_size);
+    dv_cell_offset_ = createUniqueQuantity<UnsignedInt, DiscreteVariable>("CellOffset", total_number_of_cells_ + 1);
 }
 //=================================================================================================//
 UnsignedInt CellLinkedList<AdaptiveSmoothingLength>::getMeshLevel(Real particle_cutoff_radius)
@@ -261,9 +265,9 @@ void CellLinkedList<AdaptiveSmoothingLength>::InsertListDataEntry(
 }
 //=================================================================================================//
 CellLinkedList<AdaptiveSmoothingLength>::CellLinkedListMesh::CellLinkedListMesh(
-    BaseCellLinkedList &base_cell_linked_list)
-    : Mesh(base_cell_linked_list.getFinestMesh()),
-      coarsest_grid_spacing_(base_cell_linked_list.getCoarsestMesh().GridSpacing())
+    CellLinkedList<AdaptiveSmoothingLength> &cell_linked_list)
+    : Mesh(cell_linked_list.getFinestMesh()),
+      max_cut_off_(cell_linked_list.adaptation_.MaxCutOffRadius())
 {
     setLinearCellIndexOffset(0);
 }
@@ -271,7 +275,7 @@ CellLinkedList<AdaptiveSmoothingLength>::CellLinkedListMesh::CellLinkedListMesh(
 void CellLinkedList<AdaptiveSmoothingLength>::tagBodyPartByCellCK(
     ConcurrentIndexVector &cell_indexes, std::function<bool(Vecd, Real)> &check_included)
 {
-    CellLinkedListMesh &mesh = getCellLinkedListMesh();
+    CellLinkedListMesh mesh(*this);
     mesh_parallel_for(
         MeshRange(Arrayi::Zero(), mesh.AllCells()),
         [&](const Arrayi &cell_index)

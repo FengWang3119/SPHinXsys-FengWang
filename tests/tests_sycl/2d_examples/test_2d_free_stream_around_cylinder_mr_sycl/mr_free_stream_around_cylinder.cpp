@@ -11,7 +11,7 @@ using namespace SPH;
 //	Define basic geometry parameters and numerical setup.
 //----------------------------------------------------------------------
 Real total_physical_time = 200.0;                /**< TOTAL SIMULATION TIME*/
-Real start_up_time = total_physical_time / 10.0; /**< explicity startup time*/
+Real start_up_time = total_physical_time / 10.0; /**< explicit startup time*/
 Real DL = 30.0;                                  /**< Domain length. */
 Real DH = 16.0;                                  /**< Domain height. */
 Real particle_spacing_ref = 0.4;                 /**< Initial reference particle spacing. */
@@ -32,19 +32,21 @@ Real U_f = 1.0;                                               /**< Characteristi
 Real c_f = 10.0 * U_f;                                        /**< Speed of sound. */
 Real Re = 100.0;                                              /**< Reynolds number. */
 Real mu_f = rho0_f * U_f * (2.0 * insert_circle_radius) / Re; /**< Dynamics viscosity. */
+StartupToConstantInflowSpeed free_stream_speed(U_f, start_up_time);
+StartupAcceleration free_stream_acceleration(Vec2d(U_f, 0.0), start_up_time);
 //----------------------------------------------------------------------
 //	Define geometries
 //----------------------------------------------------------------------
 GeometricShapeBox outer_boundary(BoundingBoxd(Vecd(-DL_sponge, 0.0), Vecd(DL, DH)), "OuterBoundary");
 GeometricShapeBall cylinder_shape(insert_circle_center, insert_circle_radius, "Cylinder");
 
-Vec2d emitter_halfsize = Vec2d(0.5 * BW, 0.5 * DH);
+Vec2d emitter_halfsize = Vec2d(BW, 0.5 * DH);
 Vec2d emitter_translation = Vec2d(-DL_sponge, 0.0) + emitter_halfsize;
-AlignedBox emitter_box(xAxis, Transform(Vec2d(emitter_translation)), emitter_halfsize);
+OrientedBox emitter_box(xAxis, Transform(Vec2d(emitter_translation)), emitter_halfsize);
 
 Vec2d disposer_halfsize = Vec2d(0.5 * BW, 0.75 * DH);
 Vec2d disposer_translation = Vec2d(DL, -0.25 * DH) + disposer_halfsize;
-AlignedBox disposer_box(xAxis, Transform(Vec2d(disposer_translation)), disposer_halfsize);
+OrientedBox disposer_box(xAxis, Transform(Vec2d(disposer_translation)), disposer_halfsize);
 //----------------------------------------------------------------------
 //	Define adaptation
 //----------------------------------------------------------------------
@@ -54,19 +56,6 @@ GeometricShapeBox refinement_region(
     BoundingBoxd(Vecd(-DL_sponge - BW, 0.5 * DH - 0.1 * DL), Vecd(DL + BW, 0.5 * DH + 0.1 * DL)),
     "RefinementRegion");
 AdaptiveNearSurface cylinder_adaptation(particle_spacing_ref, 1.3, 1.0, 2);
-//----------------------------------------------------------------------
-//	Free-stream velocity
-//----------------------------------------------------------------------
-struct FreeStreamVelocity
-{
-    Real u_ref_, t_ref_;
-
-    FreeStreamVelocity() : u_ref_(U_f), t_ref_(start_up_time) {};
-    Real getAxisVelocity(const Vecd &input_position, const Real &input_axis_velocity, Real time)
-    {
-        return time < t_ref_ ? 0.5 * u_ref_ * (1.0 - cos(Pi * time / t_ref_)) : u_ref_;
-    };
-};
 //----------------------------------------------------------------------
 //	Main program starts here.
 //----------------------------------------------------------------------
@@ -84,32 +73,33 @@ int main(int ac, char *av[])
     /** handle command line arguments. */
     sph_system.handleCommandlineOptions(ac, av);
     //----------------------------------------------------------------------
-    //	Creating body, materials and particles.
+    //	Setup geometry first.
     //----------------------------------------------------------------------
     auto &water_body_shape = sph_system.addShape<ComplexShape>("WaterBody");
     water_body_shape.add(&outer_boundary);
     water_body_shape.subtract(&cylinder_shape);
-    auto &water_body = sph_system.addAdaptiveBody<FluidBody>(water_body_adaptation, water_body_shape);
-    LevelSetShape *outer_boundary_level_set_shape =
-        water_body.defineComponentLevelSetShape("OuterBoundary")->writeLevelSet();
-    LevelSetShape *refinement_region_level_set_shape =
-        sph_system.addShape<LevelSetShape>(water_body, refinement_region).writeLevelSet();
-
-    auto &cylinder = sph_system.addAdaptiveBody<SolidBody>(cylinder_adaptation, cylinder_shape);
-    LevelSetShape *cylinder_level_set_shape = cylinder.defineBodyLevelSetShape()->writeLevelSet();
-
-    StdVec<RealBody *> real_bodies = {&water_body, &cylinder};
     //----------------------------------------------------------------------
     //	Run particle relaxation for body-fitted distribution if chosen.
     //----------------------------------------------------------------------
     if (sph_system.RunParticleRelaxation())
     {
-        water_body.generateParticles<BaseParticles, Lattice>(*refinement_region_level_set_shape);
+        // setup a sub-system for particle relaxation and delete it after particle relaxation.
+        RelaxationSystem relaxation_system(system_domain_bounds, particle_spacing_ref);
+        auto &water_body = relaxation_system.addAdaptiveBody<FluidBody>(water_body_adaptation, water_body_shape);
+        LevelSetShape &outer_boundary_level_set_shape =
+            water_body.defineComponentLevelSetShape("OuterBoundary").writeLevelSet();
+        LevelSetShape &refinement_region_level_set_shape =
+            relaxation_system.addShape<LevelSetShape>(water_body, refinement_region).writeLevelSet();
+        water_body.generateParticles<BaseParticles, Lattice>(refinement_region_level_set_shape);
+
+        auto &cylinder = relaxation_system.addAdaptiveBody<SolidBody>(cylinder_adaptation, cylinder_shape);
+        LevelSetShape &cylinder_level_set_shape = cylinder.defineBodyLevelSetShape().writeLevelSet();
         cylinder.generateParticles<BaseParticles, Lattice>();
 
-        auto &near_water_body_surface = water_body.addBodyPart<NearShapeSurface>(*outer_boundary_level_set_shape);
+        auto &near_water_body_surface = water_body.addBodyPart<NearShapeSurface>(outer_boundary_level_set_shape);
         auto &near_cylinder_surface = cylinder.addBodyPart<NearShapeSurface>();
         StdVec<NearShapeSurface *> near_body_surfaces = {&near_water_body_surface, &near_cylinder_surface};
+        StdVec<RealBody *> real_bodies = {&water_body, &cylinder};
         //----------------------------------------------------------------------
         //	Define body relation map.
         //	The contact map gives the topological connections between the bodies.
@@ -118,14 +108,14 @@ int main(int ac, char *av[])
         //  At last, we define the complex relaxations by combining previous defined
         //  inner and contact relations.
         //----------------------------------------------------------------------
-        auto &water_body_inner = sph_system.addInnerRelation(water_body);
-        auto &cylinder_inner = sph_system.addInnerRelation(cylinder);
-        auto &water_body_contact = sph_system.addContactRelation(water_body, cylinder);
+        auto &water_body_inner = relaxation_system.addInnerRelation(water_body);
+        auto &cylinder_inner = relaxation_system.addInnerRelation(cylinder);
+        auto &water_body_contact = relaxation_system.addContactRelation(water_body, cylinder);
         //----------------------------------------------------------------------
         // Define SPH solver with particle methods and execution policies.
         // Generally, the host methods should be able to run immediately.
         //----------------------------------------------------------------------
-        SPHSolver sph_solver(sph_system);
+        SPHSolver sph_solver(relaxation_system);
         //----------------------------------------------------------------------
         // Define the numerical methods used in the simulation.
         // Note that there may be data dependence on the sequence of constructions.
@@ -137,12 +127,12 @@ int main(int ac, char *av[])
         // Finally, the auxiliary models such as time step estimator, initial condition,
         // boundary condition and other constraints should be defined.
         //----------------------------------------------------------------------
-        auto &host_methods = sph_solver.addParticleMethodContainer(par_host);
+        auto &host_methods = sph_solver.getHostMethodContainer();
         host_methods.addStateDynamics<RandomizeParticlePositionCK>(real_bodies).exec(); // host method able to run immediately
         //----------------------------------------------------------------------
         //	Define simple file input and outputs functions.
         //----------------------------------------------------------------------
-        auto &main_methods = sph_solver.addParticleMethodContainer(par_ck);
+        auto &main_methods = sph_solver.getMainMethodContainer();
         ParticleDynamicsGroup update_cell_linked_list;
         update_cell_linked_list.add(&main_methods.addCellLinkedListDynamics(water_body));
         update_cell_linked_list.add(&main_methods.addCellLinkedListDynamics(cylinder));
@@ -154,18 +144,18 @@ int main(int ac, char *av[])
         ParticleDynamicsGroup relaxation_residual;
         relaxation_residual.add(&main_methods.addInteractionDynamics<KernelGradientIntegral, NoKernelCorrectionCK>(water_body_inner)
                                      .addPostContactInteraction<Boundary, NoKernelCorrectionCK>(water_body_contact)
-                                     .addPostStateDynamics<LevelsetKernelGradientIntegral>(water_body, *outer_boundary_level_set_shape));
+                                     .addPostStateDynamics<LevelsetKernelGradientIntegral>(water_body, outer_boundary_level_set_shape));
         relaxation_residual.add(&main_methods.addInteractionDynamics<KernelGradientIntegral, NoKernelCorrectionCK>(cylinder_inner)
-                                     .addPostStateDynamics<LevelsetKernelGradientIntegral>(cylinder, *cylinder_level_set_shape));
+                                     .addPostStateDynamics<LevelsetKernelGradientIntegral>(cylinder, cylinder_level_set_shape));
 
-        ReduceDynamicsGroup relaxation_scaling = main_methods.addReduceDynamics<ReduceMin, RelaxationScalingCK>(real_bodies);
+        ReduceDynamicsGroup relaxation_scaling = main_methods.addReduceDynamics<ReduceMin<Real>, RelaxationScalingCK>(real_bodies);
         ParticleDynamicsGroup update_particle_position = main_methods.addStateDynamics<PositionRelaxationCK>(real_bodies);
         ParticleDynamicsGroup level_set_bounding = main_methods.addStateDynamics<LevelsetBounding>(near_body_surfaces);
-        auto &update_smoothing_length_ratio = main_methods.addStateDynamics<UpdateSmoothingLengthRatio>(water_body, *refinement_region_level_set_shape);
+        auto &update_smoothing_length_ratio = main_methods.addStateDynamics<UpdateSmoothingLengthRatio>(water_body, refinement_region_level_set_shape);
         //----------------------------------------------------------------------
         //	Define simple file input and outputs functions.
         //----------------------------------------------------------------------
-        auto &body_state_recorder = main_methods.addBodyStateRecorder<BodyStatesRecordingToVtpCK>(sph_system);
+        auto &body_state_recorder = main_methods.addBodyStateRecorder<BodyStatesRecordingToVtpCK>(relaxation_system);
         body_state_recorder.addToWrite<Real>(water_body, "SmoothingLengthRatio");
         auto &write_particle_reload_files = main_methods.addIODynamics<ReloadParticleIOCK>(StdVec<SPHBody *>{&water_body, &cylinder});
         //----------------------------------------------------------------------
@@ -199,23 +189,38 @@ int main(int ac, char *av[])
         write_particle_reload_files.addToReload<Vecd>(cylinder, "NormalDirection");
         write_particle_reload_files.addToReload<Real>(water_body, "SmoothingLengthRatio");
         write_particle_reload_files.writeToFile();
-
         std::cout << "The physics relaxation process finish !" << std::endl;
-        return 0;
+
+        if (!sph_system.ReloadParticles())
+        {
+            return 0;
+        }
+        else
+        {
+            std::cout << "To reload particles and start the main simulation." << std::endl;
+        }
     }
-    water_body.defineClosure<WeaklyCompressibleFluid, Viscosity>(ConstructArgs(rho0_f, c_f), mu_f);
+    auto &water_body = sph_system.addAdaptiveBody<FluidBody>(water_body_adaptation, water_body_shape);
+    water_body.defineComponentLevelSetShape("OuterBoundary").writeLevelSet();
+    sph_system.addShape<LevelSetShape>(water_body, refinement_region).writeLevelSet();
+    water_body.defineMatterMaterial<WeaklyCompressibleFluid>(rho0_f, c_f);
+    water_body.addMaterialProperty<Viscosity>(mu_f);
     ParticleBuffer<ReserveSizeFactor> inlet_particle_buffer(0.5);
-    water_body.generateParticlesWithReserve<BaseParticles, Reload>(inlet_particle_buffer, water_body.getName())
-        ->reloadExtraVariable<Real>("SmoothingLengthRatio");
+    water_body.generateParticlesWithReserve<BaseParticles, Reload>(inlet_particle_buffer, water_body.Name())
+        .reloadExtraVariable<Real>("SmoothingLengthRatio");
     // //----------------------------------------------------------------------
     // //	Creating body parts.
     // //----------------------------------------------------------------------
-    auto &emitter = water_body.addBodyPart<AlignedBoxByParticle>(emitter_box);
-    auto &disposer = water_body.addBodyPart<AlignedBoxByCell>(disposer_box);
+    auto &emitter = water_body.addBodyPart<OrientedBoxByParticle>(emitter_box);
+    emitter.writeOrientedBoxToVtp();
+    auto &disposer = water_body.addBodyPart<OrientedBoxByCell>(disposer_box);
+    disposer.writeOrientedBoxToVtp();
 
-    cylinder.defineMaterial<Solid>();
-    cylinder.generateParticles<BaseParticles, Reload>(cylinder.getName())
-        ->reloadExtraVariable<Vecd>("NormalDirection");
+    auto &cylinder = sph_system.addAdaptiveBody<SolidBody>(cylinder_adaptation, cylinder_shape);
+    cylinder.defineBodyLevelSetShape().writeLevelSet();
+    cylinder.defineMatterMaterial<Solid>();
+    cylinder.generateParticles<BaseParticles, Reload>(cylinder.Name())
+        .reloadExtraVariable<Vecd>("NormalDirection");
 
     ObserverBody fluid_observer(sph_system, "FluidObserver");
     fluid_observer.generateParticles<ObserverParticles>(observation_locations);
@@ -235,7 +240,7 @@ int main(int ac, char *av[])
     // Generally, the host methods should be able to run immediately.
     //----------------------------------------------------------------------
     SPHSolver sph_solver(sph_system);
-    auto &main_methods = sph_solver.addParticleMethodContainer(par_ck);
+    auto &main_methods = sph_solver.getMainMethodContainer();
     //----------------------------------------------------------------------
     // Define the numerical methods used in the simulation.
     // Note that there may be data dependence on the sequence of constructions.
@@ -254,7 +259,7 @@ int main(int ac, char *av[])
     auto &update_observer_relation = main_methods.addRelationDynamics(fluid_observer_contact);
     auto &particle_sort = main_methods.addSortDynamics(water_body);
 
-    auto &time_dependent_gravity = main_methods.addStateDynamics<GravityForceCK<StartupAcceleration>>(water_body, Vec2d(U_f, 0.0), start_up_time);
+    auto &time_dependent_gravity = main_methods.addStateDynamics<GravityForceCK<StartupAcceleration>>(water_body, free_stream_acceleration);
     auto &water_advection_step_setup = main_methods.addStateDynamics<fluid_dynamics::AdvectionStepSetup>(water_body);
     auto &water_update_particle_position = main_methods.addStateDynamics<fluid_dynamics::UpdateParticlePosition>(water_body);
 
@@ -262,20 +267,19 @@ int main(int ac, char *av[])
         main_methods.addInteractionDynamicsWithUpdate<fluid_dynamics::FreeSurfaceIndicationCK>(water_body_inner)
             .addPostContactInteraction(water_body_contact);
 
-    auto &fluid_density_regularization =
-        main_methods.addInteractionDynamics<fluid_dynamics::DensitySummationCK>(water_body_inner)
-            .addPostContactInteraction(water_body_contact)
-            .addPostStateDynamics<fluid_dynamics::DensityRegularization, FreeStream>(water_body);
-
     auto &fluid_acoustic_step_1st_half =
         main_methods.addInteractionDynamicsOneLevel<
                         fluid_dynamics::AcousticStep1stHalf, AcousticRiemannSolverCK, NoKernelCorrectionCK>(water_body_inner)
-            .addPostContactInteraction<Wall, AcousticRiemannSolverCK, NoKernelCorrectionCK>(water_body_contact)
-            .addPostStateDynamics<fluid_dynamics::FreeStreamCondition<FreeStreamVelocity>>(water_body);
+            .addPostContactInteraction<Wall, AcousticRiemannSolverCK, NoKernelCorrectionCK>(water_body_contact);
     auto &fluid_acoustic_step_2nd_half =
         main_methods.addInteractionDynamicsOneLevel<
                         fluid_dynamics::AcousticStep2ndHalf, AcousticRiemannSolverCK, NoKernelCorrectionCK>(water_body_inner)
             .addPostContactInteraction<Wall, AcousticRiemannSolverCK, NoKernelCorrectionCK>(water_body_contact);
+
+    auto &fluid_density_regularization =
+        main_methods.addInteractionDynamics<fluid_dynamics::CompressionSummation>(water_body_inner)
+            .addPostContactInteraction(water_body_contact)
+            .addPostStateDynamics<fluid_dynamics::DensityRegularization, WeaklyCompressibleFluid, FreeStream>(water_body);
 
     auto &transport_correction =
         main_methods.addInteractionDynamics<KernelGradientIntegral, NoKernelCorrectionCK>(water_body_inner)
@@ -284,31 +288,34 @@ int main(int ac, char *av[])
             .addPostStateDynamics<ConstantConstraintCK, Vecd>(emitter, "Displacement", Vecd::Zero());
 
     auto &fluid_advection_time_step = main_methods.addReduceDynamics<fluid_dynamics::AdvectionTimeStepCK>(water_body, U_f);
-    auto &fluid_acoustic_time_step = main_methods.addReduceDynamics<fluid_dynamics::AcousticTimeStepCK<>>(water_body);
+    auto &fluid_acoustic_time_step = main_methods.addReduceDynamics<fluid_dynamics::AcousticTimeStepCK<WeaklyCompressibleFluid>>(water_body);
 
     auto &fluid_viscous_force =
         main_methods.addInteractionDynamicsWithUpdate<
                         fluid_dynamics::ViscousForceCK, Viscosity, NoKernelCorrectionCK>(water_body_inner)
             .addPostContactInteraction<Wall, Viscosity, NoKernelCorrectionCK>(water_body_contact);
 
-    auto &emitter_injection = main_methods.addStateDynamics<fluid_dynamics::EmitterInflowInjectionCK>(emitter, inlet_particle_buffer);
-    auto &inflow_condition = main_methods.addStateDynamics<fluid_dynamics::EmitterInflowConditionCK, FreeStreamVelocity>(emitter);
+    auto &emitter_injection = main_methods.addStateDynamics<fluid_dynamics::EmitterInflowInjectionCK>(emitter);
+    auto &inflow_condition = main_methods.addStateDynamics<
+        fluid_dynamics::EmitterInflowConditionCK, StartupToConstantInflowSpeed>(emitter, free_stream_speed);
+    auto &free_stream_condition = main_methods.addStateDynamics<
+        fluid_dynamics::FreeStreamCondition<StartupToConstantInflowSpeed>>(water_body, free_stream_speed);
     auto &disposer_indication = main_methods.addStateDynamics<fluid_dynamics::WithinDisposerIndication>(disposer);
     auto &particle_deletion = main_methods.addStateDynamics<fluid_dynamics::OutflowParticleDeletion>(water_body);
     //----------------------------------------------------------------------
     //	Define the methods for I/O operations and observations of the simulation.
     //----------------------------------------------------------------------
     auto &write_real_body_states = main_methods.addBodyStateRecorder<BodyStatesRecordingToVtpCK>(sph_system);
-    write_real_body_states.addToWrite<Real>(water_body, "Density");
+    write_real_body_states.addToWrite<int>(water_body, "PreviousSurfaceIndicator");
     write_real_body_states.addToWrite<Real>(water_body, "SmoothingLengthRatio");
     write_real_body_states.addToWrite<int>(water_body, "Indicator");
     write_real_body_states.addToWrite<Vecd>(cylinder, "NormalDirection");
     auto &fluid_observer_pressure = main_methods.addObserveRegression<
-        RegressionTestDynamicTimeWarping, Vecd>("Velocity", fluid_observer_contact);
+        RegressionTestDynamicTimeWarping, Vecd>(fluid_observer_contact, "Velocity");
     //----------------------------------------------------------------------
     //	Define time stepper with end and start time.
     //----------------------------------------------------------------------
-    TimeStepper time_stepper(sph_system, total_physical_time);
+    TimeStepper &time_stepper = sph_solver.getTimeStepper();
     auto &advection_step = time_stepper.addTriggerByInterval(fluid_advection_time_step.exec());
     size_t advection_steps = 0;
     int screening_interval = 100;
@@ -340,7 +347,7 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     //	Main loop of time stepping starts here.
     //----------------------------------------------------------------------
-    while (!time_stepper.isEndTime())
+    while (!time_stepper.isEndTime(total_physical_time))
     {
         //----------------------------------------------------------------------
         //	the fastest and most frequent acostic time stepping.
@@ -349,6 +356,7 @@ int main(int ac, char *av[])
         Real acoustic_dt = time_stepper.incrementPhysicalTime(fluid_acoustic_time_step);
         fluid_acoustic_step_1st_half.exec(acoustic_dt);
         inflow_condition.exec();
+        free_stream_condition.exec();
         fluid_acoustic_step_2nd_half.exec(acoustic_dt);
         interval_acoustic_step += TickCount::now() - time_instance;
         //----------------------------------------------------------------------

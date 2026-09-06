@@ -29,7 +29,9 @@
 #ifndef REDUCE_FUNCTORS_H
 #define REDUCE_FUNCTORS_H
 
-#include "base_data_type_package.h"
+#include "data_type.h"
+
+#include <utility>
 
 namespace SPH
 {
@@ -52,9 +54,12 @@ struct ReduceReference<ReduceSum<DataType>>
 };
 
 template <typename DataType>
-struct ReduceSum<std::pair<DataType, Real>> : ReturnFunction<std::pair<DataType, Real>>
+using Sample = std::pair<DataType, Real>;
+
+template <typename DataType>
+struct ReduceSum<Sample<DataType>> : ReturnFunction<Sample<DataType>>
 {
-    using PairType = std::pair<DataType, Real>;
+    using PairType = Sample<DataType>;
     PairType operator()(const PairType &x, const PairType &y) const
     {
         return PairType(x.first + y.first, x.second + y.second);
@@ -62,33 +67,91 @@ struct ReduceSum<std::pair<DataType, Real>> : ReturnFunction<std::pair<DataType,
 };
 
 template <typename DataType>
-struct ReduceReference<ReduceSum<std::pair<DataType, Real>>>
+struct ReduceReference<ReduceSum<Sample<DataType>>>
 {
-    using PairType = std::pair<DataType, Real>;
+    using PairType = Sample<DataType>;
     static inline const PairType value = ZeroData<PairType>::value;
 };
 
-struct ReduceMax : ReturnFunction<Real>
+template <typename DataType>
+struct ReduceMax : ReturnFunction<DataType>
 {
-    Real operator()(Real x, Real y) const { return SMAX(x, y); };
+    DataType operator()(DataType x, DataType y) const { return SMAX(x, y); };
 };
 
 template <>
-struct ReduceReference<ReduceMax>
+struct ReduceReference<ReduceMax<Real>>
 {
     static inline const Real value = MinReal;
 };
 
-struct ReduceMin : ReturnFunction<Real>
+template <>
+struct ReduceReference<ReduceMax<int>>
 {
-    Real operator()(Real x, Real y) const { return SMIN(x, y); };
+    static inline const int value = MinInt;
+};
+
+template <typename DataType>
+using Indexed = std::pair<DataType, UnsignedInt>;
+
+struct IndexedMax : ReturnFunction<Indexed<Real>>
+{
+    using PairType = Indexed<Real>;
+    PairType operator()(const PairType &x, const PairType &y) const
+    {
+        if (std::isnan(x.first))
+            return x;
+        if (std::isnan(y.first))
+            return y;
+        return x.first > y.first ? x : y;
+    };
 };
 
 template <>
-struct ReduceReference<ReduceMin>
+struct ReduceReference<IndexedMax>
+{
+    using PairType = Indexed<Real>;
+    static inline const PairType value = Indexed<Real>(MinReal, MaxUnsignedInt);
+};
+
+struct IndexedMin : ReturnFunction<Indexed<Real>>
+{
+    using PairType = Indexed<Real>;
+    PairType operator()(const PairType &x, const PairType &y) const
+    {
+        if (std::isnan(x.first))
+            return x;
+        if (std::isnan(y.first))
+            return y;
+        return x.first < y.first ? x : y;
+    };
+};
+
+template <>
+struct ReduceReference<IndexedMin>
+{
+    using PairType = Indexed<Real>;
+    static inline const PairType value = Indexed<Real>(MaxReal, MaxUnsignedInt);
+};
+
+template <typename DataType>
+struct ReduceMin : ReturnFunction<DataType>
+{
+    DataType operator()(DataType x, DataType y) const { return SMIN(x, y); };
+};
+
+template <>
+struct ReduceReference<ReduceMin<Real>>
 {
     static inline const Real value = MaxReal;
 };
+
+template <>
+struct ReduceReference<ReduceMin<int>>
+{
+    static inline const int value = MaxInt;
+};
+
 struct ReduceOR : ReturnFunction<bool>
 {
     bool operator()(bool x, bool y) const { return x || y; };

@@ -1,8 +1,7 @@
 #ifndef SURFACE_INDICATION_CK_H
 #define SURFACE_INDICATION_CK_H
 
-#include "base_fluid_dynamics.h"
-#include "base_general_dynamics.h"
+#include "base_local_dynamics.h"
 #include "interaction_ck.hpp"
 
 namespace SPH
@@ -46,10 +45,8 @@ class FreeSurfaceIndicationCK<Base, RelationType<Parameters...>>
     class InteractKernel : public Interaction<RelationType<Parameters...>>::InteractKernel
     {
       public:
-        template <class ExecutionPolicy, typename... Args>
-        InteractKernel(const ExecutionPolicy &ex_policy,
-                       FreeSurfaceIndicationCK<Base, RelationType<Parameters...>> &encloser,
-                       Args &&...args);
+        template <class ExecutionPolicy, class EncloserType>
+        InteractKernel(const ExecutionPolicy &ex_policy, EncloserType &encloser);
 
         void interact(size_t index_i, Real dt = 0.0);
 
@@ -81,7 +78,8 @@ class FreeSurfaceIndicationCK<Inner<WithUpdate, Parameters...>>
     : public FreeSurfaceIndicationCK<Base, Inner<Parameters...>>
 {
   public:
-    explicit FreeSurfaceIndicationCK(Inner<Parameters...> &inner_relation);
+    template <class DynamicsIdentifier>
+    explicit FreeSurfaceIndicationCK(DynamicsIdentifier &identifier);
     virtual ~FreeSurfaceIndicationCK() {}
 
     //------------------------------------------------------------------------------------------//
@@ -93,14 +91,14 @@ class FreeSurfaceIndicationCK<Inner<WithUpdate, Parameters...>>
         : public FreeSurfaceIndicationCK<Base, Inner<Parameters...>>::InteractKernel
     {
       public:
-        template <class ExecutionPolicy>
-        InteractKernel(const ExecutionPolicy &ex_policy,
-                       FreeSurfaceIndicationCK<Inner<WithUpdate, Parameters...>> &encloser);
+        template <class ExecutionPolicy, class EncloserType>
+        InteractKernel(const ExecutionPolicy &ex_policy, EncloserType &encloser);
 
         void interact(size_t index_i, Real dt = 0.0);
 
-        /// Pointer to the previously stored surface indicator.
+      protected:
         int *previous_surface_indicator_;
+        bool isNearPreviousFreeSurface(size_t index_i);
     };
 
     //------------------------------------------------------------------------------------------//
@@ -113,15 +111,14 @@ class FreeSurfaceIndicationCK<Inner<WithUpdate, Parameters...>>
         : public FreeSurfaceIndicationCK<Base, Inner<Parameters...>>::InteractKernel
     {
       public:
-        template <class ExecutionPolicy>
-        UpdateKernel(const ExecutionPolicy &ex_policy,
-                     FreeSurfaceIndicationCK<Inner<WithUpdate, Parameters...>> &encloser);
+        template <class ExecutionPolicy, class EncloserType>
+        UpdateKernel(const ExecutionPolicy &ex_policy, EncloserType &encloser);
 
         void update(size_t index_i, Real dt = 0.0);
 
       protected:
         int *previous_surface_indicator_;
-        FreeSurfaceIndicationCK<Inner<WithUpdate, Parameters...>> *outer_;
+        bool isVeryNearFreeSurface(size_t index_i);
     };
 
   protected:
@@ -139,7 +136,8 @@ class FreeSurfaceIndicationCK<Contact<Parameters...>>
     : public FreeSurfaceIndicationCK<Base, Contact<Parameters...>>
 {
   public:
-    explicit FreeSurfaceIndicationCK(Contact<Parameters...> &contact_relation);
+    template <class DynamicsIdentifier>
+    explicit FreeSurfaceIndicationCK(DynamicsIdentifier &identifier);
     virtual ~FreeSurfaceIndicationCK() {}
 
     //------------------------------------------------------------------------------------------//
@@ -151,10 +149,8 @@ class FreeSurfaceIndicationCK<Contact<Parameters...>>
         : public FreeSurfaceIndicationCK<Base, Contact<Parameters...>>::InteractKernel
     {
       public:
-        template <class ExecutionPolicy>
-        InteractKernel(const ExecutionPolicy &ex_policy,
-                       FreeSurfaceIndicationCK<Contact<Parameters...>> &encloser,
-                       size_t contact_index);
+        template <class ExecutionPolicy, class EncloserType>
+        InteractKernel(const ExecutionPolicy &ex_policy, EncloserType &encloser);
 
         void interact(size_t index_i, Real dt = 0.0);
 

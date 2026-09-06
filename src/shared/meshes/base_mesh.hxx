@@ -134,19 +134,15 @@ DiscreteVariable<DataType> *MultiResolutionMeshField<MeshType>::getCellVariable(
 {
     DiscreteVariable<DataType> *variable =
         findVariableByName<DataType, DiscreteVariable>(all_cell_variables_, variable_name);
-    if (variable == nullptr)
-    {
-        std::cout << "\n Error: the cell variable '" << variable_name << "' is not exist!" << std::endl;
-        exit(1);
-    }
+    checkPointer(variable, variable_name, "cell variable");
     return variable;
 }
 //=============================================================================================//
 template <class MeshType>
-template <typename DataType, template <typename> class EntityType, typename... Args>
-EntityType<DataType> *MultiResolutionMeshField<MeshType>::createUniqueEnity(Args &&...args)
+template <typename DataType, template <typename> class QuantityType, typename... Args>
+QuantityType<DataType> *MultiResolutionMeshField<MeshType>::createUniqueQuantity(Args &&...args)
 {
-    return unique_entity_ptrs_.template createPtr<EntityType<DataType>>(std::forward<Args>(args)...);
+    return unique_entity_ptrs_.template createPtr<QuantityType<DataType>>(std::forward<Args>(args)...);
 }
 //=============================================================================================//
 template <class MeshType>

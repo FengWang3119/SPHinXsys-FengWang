@@ -30,6 +30,7 @@
 #define STRUCTURE_DYNAMICS_H
 
 #include "elastic_solid.h"
+#include "force_prior_ck.h"
 #include "interaction_ck.hpp"
 
 namespace SPH
@@ -37,11 +38,11 @@ namespace SPH
 namespace solid_dynamics
 {
 
-class AcousticTimeStepCK : public LocalDynamicsReduce<ReduceMax>
+class AcousticTimeStepCK : public LocalDynamicsReduce<ReduceMax<Real>>
 {
   public:
     explicit AcousticTimeStepCK(SPHBody &sph_body, Real acousticCFL = 0.6);
-    virtual ~AcousticTimeStepCK() {};
+    virtual ~AcousticTimeStepCK(){};
 
     class FinishDynamics
     {
@@ -73,17 +74,39 @@ class AcousticTimeStepCK : public LocalDynamicsReduce<ReduceMax>
     DiscreteVariable<Vecd> *dv_vel_, *dv_force_, *dv_force_prior_;
 };
 
-class StructureIntegrationVariables
+class StructureDynamicsVariables
 {
   public:
-    explicit StructureIntegrationVariables(BaseParticles *particles);
-    virtual ~StructureIntegrationVariables() {};
+    explicit StructureDynamicsVariables(BaseParticles *particles);
+    virtual ~StructureDynamicsVariables(){};
 
   protected:
     DiscreteVariable<Real> *dv_rho_, *dv_mass_;
-    DiscreteVariable<Vecd> *dv_pos_, *dv_vel_, *dv_force_, *dv_force_prior_;
+    DiscreteVariable<Vecd> *dv_pos_, *dv_vel_, *dv_force_;
     DiscreteVariable<Matd> *dv_B_, *dv_F_, *dv_dF_dt_, *dv_inverse_F_, *dv_stress_on_particle_,
         *dv_scaling_matrix_;
+};
+
+class BaseStructureIntegration1stHalf : public StructureDynamicsVariables
+{
+  public:
+    explicit BaseStructureIntegration1stHalf(BaseParticles *particles);
+    virtual ~BaseStructureIntegration1stHalf(){};
+
+    class UpdateKernel
+    {
+      public:
+        template <class ExecutionPolicy, class EncloserType>
+        UpdateKernel(const ExecutionPolicy &ex_policy, EncloserType &encloser);
+        void update(size_t index_i, Real dt = 0.0);
+
+      protected:
+        Real *mass_;
+        Vecd *vel_, *force_, *force_prior_;
+    };
+
+  protected:
+    DiscreteVariable<Vecd> *dv_force_prior_;
 };
 
 template <typename...>
@@ -91,7 +114,7 @@ class StructureIntegration1stHalf;
 
 template <class MaterialType, typename KernelCorrectionType, typename... Parameters>
 class StructureIntegration1stHalf<Inner<OneLevel, MaterialType, KernelCorrectionType, Parameters...>>
-    : public Interaction<Inner<Parameters...>>, public StructureIntegrationVariables
+    : public Interaction<Inner<Parameters...>>, public BaseStructureIntegration1stHalf
 {
     using BaseInteraction = Interaction<Inner<Parameters...>>;
     using Adaptation = typename Inner<Parameters...>::SourceType::Adaptation;
@@ -100,8 +123,9 @@ class StructureIntegration1stHalf<Inner<OneLevel, MaterialType, KernelCorrection
     using CorrectionKernel = typename KernelCorrectionType::ComputingKernel;
 
   public:
-    explicit StructureIntegration1stHalf(Inner<Parameters...> &inner_relation, Real numerical_damping_factor = 0.125);
-    virtual ~StructureIntegration1stHalf() {};
+    template <class DynamicsIdentifier>
+    explicit StructureIntegration1stHalf(DynamicsIdentifier &identifier, Real numerical_damping_factor = 0.125);
+    virtual ~StructureIntegration1stHalf(){};
 
     class InitializeKernel
     {
@@ -128,22 +152,9 @@ class StructureIntegration1stHalf<Inner<OneLevel, MaterialType, KernelCorrection
         void interact(size_t index_i, Real dt = 0.0);
 
       protected:
-        Real G_;
         Real *Vol0_;
         Vecd *pos_, *force_;
         Matd *scaling_matrix_, *inverse_F_, *stress_on_particle_;
-    };
-
-    class UpdateKernel
-    {
-      public:
-        template <class ExecutionPolicy, class EncloserType>
-        UpdateKernel(const ExecutionPolicy &ex_policy, EncloserType &encloser);
-        void update(size_t index_i, Real dt = 0.0);
-
-      protected:
-        Real *mass_;
-        Vecd *vel_, *force_, *force_prior_;
     };
 
   protected:
@@ -154,17 +165,68 @@ class StructureIntegration1stHalf<Inner<OneLevel, MaterialType, KernelCorrection
 };
 
 template <typename...>
+class StructureIntegration1stHalfPK2;
+
+template <class MaterialType, typename... Parameters>
+class StructureIntegration1stHalfPK2<Inner<OneLevel, MaterialType, Parameters...>>
+    : public Interaction<Inner<Parameters...>>, public BaseStructureIntegration1stHalf
+{
+    using BaseInteraction = Interaction<Inner<Parameters...>>;
+    using Adaptation = typename Inner<Parameters...>::SourceType::Adaptation;
+    using SmoothingLengthRatioType = typename Adaptation::SmoothingLengthRatioType;
+    using ConstituteKernel = typename MaterialType::ConstituteKernel;
+
+  public:
+    template <class DynamicsIdentifier>
+    explicit StructureIntegration1stHalfPK2(DynamicsIdentifier &identifier);
+    virtual ~StructureIntegration1stHalfPK2(){};
+
+    class InitializeKernel
+    {
+      public:
+        template <class ExecutionPolicy, class EncloserType>
+        InitializeKernel(const ExecutionPolicy &ex_policy, EncloserType &encloser);
+        void initialize(size_t index_i, Real dt = 0.0);
+
+      protected:
+        ConstituteKernel constitute_;
+        Real rho0_;
+        Real *rho_;
+        Vecd *pos_, *vel_;
+        Matd *B_, *F_, *dF_dt_, *stress_on_particle_;
+    };
+
+    class InteractKernel : public BaseInteraction::InteractKernel
+    {
+      public:
+        template <class ExecutionPolicy, class EncloserType>
+        InteractKernel(const ExecutionPolicy &ex_policy, EncloserType &encloser);
+        void interact(size_t index_i, Real dt = 0.0);
+
+      protected:
+        Real *Vol0_;
+        Vecd *force_;
+        Matd *stress_on_particle_;
+    };
+
+  protected:
+    MaterialType &material_;
+    Adaptation &adaptation_;
+};
+
+template <typename...>
 class StructureIntegration2ndHalf;
 
 template <typename... Parameters>
 class StructureIntegration2ndHalf<Inner<OneLevel, Parameters...>>
-    : public Interaction<Inner<Parameters...>>, public StructureIntegrationVariables
+    : public Interaction<Inner<Parameters...>>, public StructureDynamicsVariables
 {
     using BaseInteraction = Interaction<Inner<Parameters...>>;
 
   public:
-    explicit StructureIntegration2ndHalf(Inner<Parameters...> &inner_relation);
-    virtual ~StructureIntegration2ndHalf() {};
+    template <class DynamicsIdentifier>
+    explicit StructureIntegration2ndHalf(DynamicsIdentifier &identifier);
+    virtual ~StructureIntegration2ndHalf(){};
 
     class InitializeKernel
     {
@@ -200,6 +262,97 @@ class StructureIntegration2ndHalf<Inner<OneLevel, Parameters...>>
       protected:
         Matd *F_, *dF_dt_;
     };
+};
+
+template <typename...>
+class StructureNumericalDamping;
+
+template <class MaterialType, typename... Parameters>
+class StructureNumericalDamping<Inner<WithUpdate, MaterialType, Parameters...>>
+    : public Interaction<Inner<Parameters...>>,
+      public StructureDynamicsVariables,
+      public ForcePriorCK
+{
+    using BaseInteraction = Interaction<Inner<Parameters...>>;
+    using Adaptation = typename Inner<Parameters...>::SourceType::Adaptation;
+    using SmoothingLengthRatioType = typename Adaptation::SmoothingLengthRatioType;
+    using ConstituteKernel = typename MaterialType::ConstituteKernel;
+
+  public:
+    template <class DynamicsIdentifier>
+    explicit StructureNumericalDamping(DynamicsIdentifier &identifier, Real numerical_damping_factor = 0.25);
+    virtual ~StructureNumericalDamping(){};
+
+    class InteractKernel : public BaseInteraction::InteractKernel
+    {
+      public:
+        template <class ExecutionPolicy, class EncloserType>
+        InteractKernel(const ExecutionPolicy &ex_policy, EncloserType &encloser);
+        void interact(size_t index_i, Real dt = 0.0);
+
+      protected:
+        ConstituteKernel constitute_;
+        SmoothingLengthRatioType h_ratio_;
+        Vecd zero_;
+        Real h_ref_, numerical_damping_factor_;
+        Real *Vol0_;
+        Vecd *pos_, *vel_, *numerical_damping_force_;
+        Matd *F_;
+    };
+
+  protected:
+    MaterialType &material_;
+    Adaptation &adaptation_;
+    Real h_ref_, numerical_damping_factor_;
+    DiscreteVariable<Vecd> *dv_numerical_damping_force_;
+};
+
+class UpdateElasticNormalDirectionCK : public LocalDynamics
+{
+  public:
+    explicit UpdateElasticNormalDirectionCK(SPHBody &sph_body);
+    virtual ~UpdateElasticNormalDirectionCK(){};
+    class UpdateKernel
+    {
+      public:
+        template <class ExecutionPolicy, class EncloserType>
+        UpdateKernel(const ExecutionPolicy &ex_policy, EncloserType &encloser);
+        void update(size_t index_i, Real dt = 0.0);
+
+      protected:
+        Vecd *n_, *n0_;
+        Real *phi_, *phi0_;
+        Matd *F_;
+    };
+
+  protected:
+    DiscreteVariable<Vecd> *dv_n_, *dv_n0_;
+    DiscreteVariable<Real> *dv_phi_, *dv_phi0_;
+    DiscreteVariable<Matd> *dv_F_;
+};
+
+class UpdateAnisotropicMeasure : public LocalDynamics
+{
+  public:
+    explicit UpdateAnisotropicMeasure(SPHBody &sph_body);
+    virtual ~UpdateAnisotropicMeasure(){};
+    class UpdateKernel
+    {
+      public:
+        template <class ExecutionPolicy, class EncloserType>
+        UpdateKernel(const ExecutionPolicy &ex_policy, EncloserType &encloser);
+        void update(size_t index_i, Real dt = 0.0);
+
+      protected:
+        Vecd *scaling_, *scaling0_;
+        Vecd *orientation_, *orientation0_;
+        Matd *F_;
+    };
+
+  protected:
+    DiscreteVariable<Vecd> *dv_scaling_, *dv_scaling0_;
+    DiscreteVariable<Vecd> *dv_orientation_, *dv_orientation0_;
+    DiscreteVariable<Matd> *dv_F_;
 };
 } // namespace solid_dynamics
 } // namespace SPH

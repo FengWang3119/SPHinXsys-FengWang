@@ -134,15 +134,16 @@ int main(int ac, char *av[])
     //	Creating body, materials and particles.
     //----------------------------------------------------------------------
     FluidBody water_block(sph_system, makeShared<WaterBlock>("WaterBody"));
-    water_block.defineClosure<WeaklyCompressibleFluid, Viscosity>(ConstructArgs(rho0_f, c_f), mu_f);
+    water_block.defineMatterMaterial<WeaklyCompressibleFluid>(rho0_f, c_f);
+    water_block.addMaterialProperty<Viscosity>(mu_f);
     water_block.generateParticles<BaseParticles, Lattice>();
 
     SolidBody wall_boundary(sph_system, makeShared<WallBoundary>("WallBoundary"));
-    wall_boundary.defineMaterial<Solid>();
+    wall_boundary.defineMatterMaterial<Solid>();
     wall_boundary.generateParticles<BaseParticles, Lattice>();
 
     SolidBody structure(sph_system, makeShared<FloatingStructure>("Structure"));
-    structure.defineMaterial<Solid>(rho_s);
+    structure.defineMatterMaterial<Solid>(rho_s);
     structure.generateParticles<BaseParticles, Lattice>();
 
     ObserverBody observer(sph_system, "Observer");
@@ -168,11 +169,12 @@ int main(int ac, char *av[])
     //  inner and contact relations.
     //----------------------------------------------------------------------
     Inner<> water_block_inner(water_block);
-    Contact<> water_block_contact(water_block, {&wall_boundary, &structure});
-    Contact<> structure_contact(structure, {&water_block});
-    Contact<> observer_contact(observer, {&structure}, ConfigType::Lagrangian);
+    Contact<> fluid_wall_contact(water_block, wall_boundary);
+    Contact<> fluid_structure_contact(water_block, structure);
+    Contact<> structure_contact(structure, water_block);
+    Contact<> observer_contact(observer, structure, ConfigType::Lagrangian);
     Contact<Relation<SPHBody, BodyPartByParticle>> structure_proxy_contact(
-        structure_proxy, {&structure_surface}, ConfigType::Lagrangian);
+        structure_proxy, structure_surface, ConfigType::Lagrangian);
     //----------------------------------------------------------------------
     // Define the numerical methods used in the simulation.
     // Note that there may be data dependence on the sequence of constructions.
@@ -188,8 +190,8 @@ int main(int ac, char *av[])
     UpdateCellLinkedList<MainExecutionPolicy, RealBody> wall_cell_linked_list(wall_boundary);
     UpdateCellLinkedList<MainExecutionPolicy, RealBody> structure_cell_linked_list(structure);
 
-    UpdateRelation<MainExecutionPolicy, Inner<>, Contact<>>
-        water_block_update_complex_relation(water_block_inner, water_block_contact);
+    UpdateRelation<MainExecutionPolicy, Inner<>, Contact<>, Contact<>>
+        water_block_update_complex_relation(water_block_inner, fluid_wall_contact, fluid_structure_contact);
     UpdateRelation<MainExecutionPolicy, Contact<>>
         structure_update_contact_relation(structure_contact);
     UpdateRelation<MainExecutionPolicy, Contact<>>
@@ -205,25 +207,37 @@ int main(int ac, char *av[])
     StateDynamics<MainExecutionPolicy, fluid_dynamics::AdvectionStepSetup> water_advection_step_setup(water_block);
     StateDynamics<MainExecutionPolicy, fluid_dynamics::UpdateParticlePosition> water_update_particle_position(water_block);
 
-    InteractionDynamicsCK<MainExecutionPolicy, fluid_dynamics::AcousticStep1stHalfWithWallRiemannCK>
-        fluid_acoustic_step_1st_half(water_block_inner, water_block_contact);
+    InteractionDynamicsCK<MainExecutionPolicy, fluid_dynamics::AcousticStep1stHalf<Inner<OneLevel, AcousticRiemannSolverCK, NoKernelCorrectionCK>>>
+        fluid_acoustic_step_1st_half(water_block_inner);
+    InteractionDynamicsCK<MainExecutionPolicy, fluid_dynamics::AcousticStep1stHalf<Contact<Wall, AcousticRiemannSolverCK, NoKernelCorrectionCK>>>
+        fluid_acoustic_step_1st_half_with_wall(fluid_wall_contact);
+    InteractionDynamicsCK<MainExecutionPolicy, fluid_dynamics::AcousticStep1stHalf<Contact<Wall, AcousticRiemannSolverCK, NoKernelCorrectionCK>>>
+        fluid_acoustic_step_1st_half_with_structure(fluid_structure_contact);
+    fluid_acoustic_step_1st_half.addPostContactInteraction(fluid_acoustic_step_1st_half_with_wall)
+        .addPostContactInteraction(fluid_acoustic_step_1st_half_with_structure);        
 
     InteractionDynamicsCK<MainExecutionPolicy, fluid_dynamics::AcousticStep2ndHalf<Inner<OneLevel, AcousticRiemannSolverCK, NoKernelCorrectionCK>>>
         fluid_acoustic_step_2nd_half(water_block_inner);
     InteractionDynamicsCK<MainExecutionPolicy, fluid_dynamics::AcousticStep2ndHalf<Contact<Wall, AcousticRiemannSolverCK, NoKernelCorrectionCK>>>
-        fluid_acoustic_step_2nd_half_with_wall(water_block_contact);
-    fluid_acoustic_step_2nd_half.addPostContactInteraction(fluid_acoustic_step_2nd_half_with_wall);
+        fluid_acoustic_step_2nd_half_with_wall(fluid_wall_contact);
+    InteractionDynamicsCK<MainExecutionPolicy, fluid_dynamics::AcousticStep2ndHalf<Contact<Wall, AcousticRiemannSolverCK, NoKernelCorrectionCK>>>
+        fluid_acoustic_step_2nd_half_with_structure(fluid_structure_contact);
+    fluid_acoustic_step_2nd_half.addPostContactInteraction(fluid_acoustic_step_2nd_half_with_wall)
+        .addPostContactInteraction(fluid_acoustic_step_2nd_half_with_structure);
 
-    InteractionDynamicsCK<MainExecutionPolicy, fluid_dynamics::DensitySummationCK<Inner<>, Contact<>>>
-        fluid_density_summation(water_block_inner, water_block_contact);
-    StateDynamics<MainExecutionPolicy, fluid_dynamics::DensityRegularization<SPHBody, FreeSurface>>
+    InteractionDynamicsCK<MainExecutionPolicy, fluid_dynamics::CompressionSummation<Inner<>, Contact<>, Contact<>>>
+        fluid_density_summation(water_block_inner, fluid_wall_contact, fluid_structure_contact);
+    StateDynamics<MainExecutionPolicy, fluid_dynamics::DensityRegularization<SPHBody, WeaklyCompressibleFluid, FreeSurface>>
         fluid_density_regularization(water_block);
 
     InteractionDynamicsCK<MainExecutionPolicy, fluid_dynamics::ViscousForceCK<Inner<WithUpdate, Viscosity, NoKernelCorrectionCK>>>
         fluid_viscous_force(water_block_inner);
     InteractionDynamicsCK<MainExecutionPolicy, fluid_dynamics::ViscousForceCK<Contact<Wall, Viscosity, NoKernelCorrectionCK>>>
-        fluid_viscous_force_from_wall(water_block_contact);
-    fluid_viscous_force.addPostContactInteraction(fluid_viscous_force_from_wall);
+        fluid_viscous_force_from_wall(fluid_wall_contact);
+    InteractionDynamicsCK<MainExecutionPolicy, fluid_dynamics::ViscousForceCK<Contact<Wall, Viscosity, NoKernelCorrectionCK>>>
+        fluid_viscous_force_from_structure(fluid_structure_contact);
+    fluid_viscous_force.addPostContactInteraction(fluid_viscous_force_from_wall)
+        .addPostContactInteraction(fluid_viscous_force_from_structure);
 
     InteractionDynamicsCK<MainExecutionPolicy, FSI::ViscousForceOnStructure<decltype(fluid_viscous_force_from_wall)>>
         viscous_force_on_structure(structure_contact);
@@ -231,18 +245,18 @@ int main(int ac, char *av[])
         pressure_force_on_structure(structure_contact);
 
     ReduceDynamicsCK<MainExecutionPolicy, fluid_dynamics::AdvectionTimeStepCK> fluid_advection_time_step(water_block, U_f);
-    ReduceDynamicsCK<MainExecutionPolicy, fluid_dynamics::AcousticTimeStepCK<>> fluid_acoustic_time_step(water_block);
+    ReduceDynamicsCK<MainExecutionPolicy, fluid_dynamics::AcousticTimeStepCK<WeaklyCompressibleFluid>> fluid_acoustic_time_step(water_block);
 
-    ArbitraryDynamicsSequence <
+    ArbitraryDynamicsSequence<
         StateDynamics<MainExecutionPolicy, solid_dynamics::UpdateDisplacementFromPosition>,
         InteractionDynamicsCK<MainExecutionPolicy, Interpolation<Contact<Vecd, Relation<SPHBody, BodyPartByParticle>>>>,
         InteractionDynamicsCK<MainExecutionPolicy, Interpolation<Contact<Vecd, Relation<SPHBody, BodyPartByParticle>>>>,
-                              StateDynamics<MainExecutionPolicy, solid_dynamics::UpdatePositionFromDisplacement>>
-            update_structure_proxy_states(
-                structure,
-                DynamicsArgs(structure_proxy_contact, std::string("Velocity")),
-                DynamicsArgs(structure_proxy_contact, std::string("Displacement")),
-                structure_proxy);
+        StateDynamics<MainExecutionPolicy, solid_dynamics::UpdatePositionFromDisplacement>>
+        update_structure_proxy_states(
+            structure,
+            DynamicsArgs(structure_proxy_contact, std::string("Velocity")),
+            DynamicsArgs(structure_proxy_contact, std::string("Displacement")),
+            structure_proxy);
     //----------------------------------------------------------------------
     //	Define the multi-body system
     //----------------------------------------------------------------------
@@ -321,7 +335,7 @@ int main(int ac, char *av[])
         MainExecutionPolicy, UpperFrontInAxisDirectionCK<BodyRegionByCell>>>
         wave_gauge(wave_probe_buffer, "FreeSurfaceHeight");
     RegressionTestDynamicTimeWarping<ObservedQuantityRecording<MainExecutionPolicy, Vecd>>
-        write_structure_position("Position", observer_contact);
+        write_structure_position(observer_contact, "Position");
     //----------------------------------------------------------------------
     //	Prepare the simulation with cell linked list, configuration
     //	and case specified initial condition if necessary.
@@ -341,7 +355,7 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     //	Basic control parameters for time stepping.
     //----------------------------------------------------------------------
-    SingularVariable<Real> *sv_physical_time = sph_system.getSystemVariableByName<Real>("PhysicalTime");
+    SingleVariable<Real> *sv_physical_time = sph_system.getSystemVariableByName<Real>("PhysicalTime");
     int number_of_iterations = 0;
     int screen_output_interval = 1000;
     Real end_time = total_physical_time;

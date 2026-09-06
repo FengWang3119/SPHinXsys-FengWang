@@ -64,7 +64,7 @@ int main(int ac, char *av[])
         auto &column = relaxation_system.addBody<RealBody>(column_shape);
         auto &wall = relaxation_system.addBody<SolidBody>(wall_shape);
 
-        LevelSetShape *level_set_shape = column.defineBodyLevelSetShape(par_ck, 2.0)->writeLevelSet();
+        LevelSetShape &level_set_shape = column.defineBodyLevelSetShape(par_ck, 2.0).writeLevelSet();
         column.generateParticles<BaseParticles, Lattice>();
         wall.generateParticles<BaseParticles, Lattice>();
         NearShapeSurface near_body_surface(column);
@@ -73,15 +73,15 @@ int main(int ac, char *av[])
         //	Methods used for particle relaxation.
         //----------------------------------------------------------------------
         SPHSolver sph_solver(relaxation_system);
-        auto &main_methods = sph_solver.addParticleMethodContainer(par_ck);
-        auto &host_methods = sph_solver.addParticleMethodContainer(par_host);
+        auto &main_methods = sph_solver.getMainMethodContainer();
+        auto &host_methods = sph_solver.getHostMethodContainer();
 
         auto &input_body_cell_linked_list = main_methods.addCellLinkedListDynamics(column);
         auto &input_body_update_inner_relation = main_methods.addRelationDynamics(column_inner);
         auto &random_input_body_particles = host_methods.addStateDynamics<RandomizeParticlePositionCK>(column);
         auto &relaxation_residual =
             main_methods.addInteractionDynamics<KernelGradientIntegral, NoKernelCorrectionCK>(column_inner)
-                .addPostStateDynamics<LevelsetKernelGradientIntegral>(column, *level_set_shape);
+                .addPostStateDynamics<LevelsetKernelGradientIntegral>(column, level_set_shape);
         auto &relaxation_scaling = main_methods.addReduceDynamics<RelaxationScalingCK>(column);
         auto &update_particle_position = main_methods.addStateDynamics<PositionRelaxationCK>(column);
         auto &level_set_bounding = main_methods.addStateDynamics<LevelsetBounding>(near_body_surface);
@@ -143,14 +143,14 @@ int main(int ac, char *av[])
     //	Simulation setup continues to define bodies.
     //----------------------------------------------------------------------
     auto &column = sph_system.addBody<RealBody>(column_shape);
-    column.defineMaterial<HardeningPlasticSolid>(
+    column.defineMatterMaterial<HardeningPlasticSolid>(
         rho0_s, Youngs_modulus, poisson, yield_stress, hardening_modulus);
-    column.generateParticles<BaseParticles, Reload>(column.getName());
+    column.generateParticles<BaseParticles, Reload>(column.Name());
 
     auto &wall = sph_system.addBody<RealBody>(wall_shape);
-    wall.defineMaterial<Solid>();
-    wall.generateParticles<BaseParticles, Reload>(wall.getName())
-        ->reloadExtraVariable<Vecd>("NormalDirection");
+    wall.defineMatterMaterial<Solid>();
+    wall.generateParticles<BaseParticles, Reload>(wall.Name())
+        .reloadExtraVariable<Vecd>("NormalDirection");
 
     auto &my_observer = sph_system.addBody<ObserverBody>("MyObserver");
     my_observer.generateParticles<ObserverParticles>(observation_location);
@@ -176,10 +176,8 @@ int main(int ac, char *av[])
     // Finally, the auxiliary models such as time step estimator, initial condition,
     // boundary condition and other constraints should be defined.
     //----------------------------------------------------------------------
-    auto &host_methods = sph_solver.addParticleMethodContainer(par_host);
-    host_methods.addStateDynamics<VariableAssignment, ConstantValue<Vecd>>(column, "Velocity", Vec3d(0, 0, -impact_speed)).exec();
-
-    auto &main_methods = sph_solver.addParticleMethodContainer(par_ck);
+    auto &host_methods = sph_solver.getHostMethodContainer();
+    auto &main_methods = sph_solver.getMainMethodContainer();
     auto &wall_cell_linked_list = main_methods.addCellLinkedListDynamics(wall);
     ParticleDynamicsGroup update_conact_configuration;
     update_conact_configuration.add(&main_methods.addCellLinkedListDynamics(column));
@@ -188,26 +186,26 @@ int main(int ac, char *av[])
     auto &my_observer_contact_relation = main_methods.addRelationDynamics(my_observer_contact);
 
     auto &column_linear_correction_matrix = main_methods.addInteractionDynamicsWithUpdate<LinearCorrectionMatrix>(column_inner);
-    auto &column_wall_contact_factor = main_methods.addInteractionDynamics<solid_dynamics::RepulsionFactor>(column_wall_contact);
-    auto &column_wall_contact_force = main_methods.addInteractionDynamicsWithUpdate<solid_dynamics::RepulsionForceCK, Wall>(column_wall_contact);
-
     auto &column_acoustic_step_1st_half = main_methods.addInteractionDynamicsOneLevel<
         solid_dynamics::StructureIntegration1stHalf, HardeningPlasticSolid, NoKernelCorrectionCK>(column_inner);
     auto &column_acoustic_step_2nd_half = main_methods.addInteractionDynamicsOneLevel<
         solid_dynamics::StructureIntegration2ndHalf>(column_inner);
+    auto &column_wall_contact_factor = main_methods.addInteractionDynamics<solid_dynamics::RepulsionFactor>(column_wall_contact);
+    auto &column_wall_contact_force = main_methods.addInteractionDynamicsWithUpdate<solid_dynamics::RepulsionForceCK, Wall>(column_wall_contact);
 
     auto &column_acoustic_time_step = main_methods.addReduceDynamics<solid_dynamics::AcousticTimeStepCK>(column, 0.2);
+    host_methods.addStateDynamics<VariableAssignment, ConstantValue<Vecd>>(column, "Velocity", Vec3d(0, 0, -impact_speed)).exec();
     //----------------------------------------------------------------------
     //	Define the methods for I/O operations, observations
     //	and regression tests of the simulation.
     //----------------------------------------------------------------------
     auto &body_state_recorder = main_methods.addBodyStateRecorder<BodyStatesRecordingToVtpCK>(sph_system);
     auto &write_displacement = main_methods.addObserveRegression<
-        RegressionTestDynamicTimeWarping, Vecd>("Position", my_observer_contact);
+        RegressionTestDynamicTimeWarping, Vecd>(my_observer_contact, "Position");
     //----------------------------------------------------------------------
     //	Define time stepper with end and start time.
     //----------------------------------------------------------------------
-    TimeStepper &time_stepper = sph_solver.defineTimeStepper(total_physical_time);
+    TimeStepper &time_stepper = sph_solver.getTimeStepper();
     //----------------------------------------------------------------------
     //	Setup for advection-step based time-stepping control
     //----------------------------------------------------------------------
@@ -238,7 +236,7 @@ int main(int ac, char *av[])
     //	Single time stepping loop is used for multi-time stepping.
     //----------------------------------------------------------------------
     TickCount t0 = TickCount::now();
-    while (!time_stepper.isEndTime())
+    while (!time_stepper.isEndTime(total_physical_time))
     {
         //----------------------------------------------------------------------
         //	the fastest and most frequent acostic time stepping.

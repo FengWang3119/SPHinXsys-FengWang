@@ -32,6 +32,8 @@
 
 #include "interaction_ck.hpp"
 
+#include <string>
+
 namespace SPH
 {
 namespace solid_dynamics
@@ -48,7 +50,7 @@ class RepulsionFactor<Base, Contact<Parameters...>> : public Interaction<Contact
   public:
     template <class DynamicsIdentifier>
     explicit RepulsionFactor(DynamicsIdentifier &identifier, const std::string &factor_name);
-    virtual ~RepulsionFactor() {};
+    virtual ~RepulsionFactor(){};
 
   protected:
     DiscreteVariable<Real> *dv_repulsion_factor_;
@@ -61,14 +63,15 @@ class RepulsionFactor<Contact<Parameters...>>
     using BaseInteractionType = RepulsionFactor<Base, Contact<Parameters...>>;
 
   public:
-    explicit RepulsionFactor(Contact<Parameters...> &contact_relation);
-    virtual ~RepulsionFactor() {};
+    template <class DynamicsIdentifier>
+    explicit RepulsionFactor(DynamicsIdentifier &identifier);
+    virtual ~RepulsionFactor(){};
 
     class InteractKernel : public BaseInteractionType::InteractKernel
     {
       public:
         template <class ExecutionPolicy, class EncloserType>
-        InteractKernel(const ExecutionPolicy &ex_policy, EncloserType &encloser, size_t contact_index);
+        InteractKernel(const ExecutionPolicy &ex_policy, EncloserType &encloser);
         void interact(size_t index_i, Real dt = 0.0);
 
       protected:
@@ -78,8 +81,8 @@ class RepulsionFactor<Contact<Parameters...>>
     };
 
   protected:
-    StdVec<Real> contact_inv_rho0_;
-    StdVec<DiscreteVariable<Real> *> dv_contact_mass_;
+    Real contact_inv_rho0_;
+    DiscreteVariable<Real> *dv_contact_mass_;
 };
 } // namespace solid_dynamics
 } // namespace SPH
