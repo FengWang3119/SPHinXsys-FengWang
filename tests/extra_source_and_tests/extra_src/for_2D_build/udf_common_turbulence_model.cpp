@@ -20,15 +20,6 @@ WallFunctionCoefficient::WallFunctionCoefficient()
 //=================================================================================================//
 Real WallFunction::get_distance_from_P_to_wall(Real y_p_constant)
 {
-    //** Check the distance. *
-    //if (y_p_constant < 0.05 * dp_wall)
-    //{
-    //	std::cout << "y_p_j < 0.05 * wall_particle_spacing_" << std::endl;
-    //	std::cin.get();
-    //}
-    //y_p_j = abs(e_j_n.dot(r_ij * e_ij)) - 0.5 * wall_particle_spacing_;
-
-    //** Use the constant y_p strategy. *
     return y_p_constant;
 }
 //=================================================================================================//
@@ -63,13 +54,7 @@ Real WallFunction::get_dimensionless_velocity(Real y_star, Real time, Real u_sta
     {
         std::cout << "u_star=" << dimensionless_velocity << std::endl;
         std::cout << "y_star=" << y_star << std::endl;
-        //std::cin.get();
     }
-    //if (dimensionless_velocity<0.0)
-    //{
-    //	std::cout << "dimensionless_velocity<0.0" << dimensionless_velocity << std::endl;
-    //	std::cin.get();
-    //}
 
     return dimensionless_velocity;
 }
@@ -82,7 +67,6 @@ Real WallFunction::get_near_wall_velocity_gradient_magnitude(Real y_star, Real v
 //=================================================================================================//
 Real WallFunction::log_law_wall_function(Real y_star)
 {
-    //** u_star should larger than 0 *
     Real u_star = abs(log(turbu_const_E_ * y_star) / Karman_);
     return u_star;
 }
@@ -99,10 +83,8 @@ Real WallFunction::Spalding_wall_function(Real y_star, Real u_star_guess)
     {
         std::cout << "u_star_guess > 500.0 || u_star_guess <= TinyReal, please check." << std::endl;
         std::cout << "u_star_guess=" << u_star_guess << std::endl;
-        //std::cin.get();
     }
-    //** Use Newton method */
-    Real u_star = u_star_guess; //** initial guess */
+    Real u_star = u_star_guess; 
     int max_iter = 10;
     Real tolerance = 0.01;
     for (int iter = 0; iter < max_iter; ++iter)
@@ -110,9 +92,7 @@ Real WallFunction::Spalding_wall_function(Real y_star, Real u_star_guess)
         Real Karman_u_star = SMIN(Karman_ * u_star, 50.0);
         Real f = u_star + inv_turbu_E_ * (std::exp(Karman_u_star) - 1.0 - Karman_u_star - 0.5 * pow(Karman_u_star, 2) - 1.0 / 6.0 * pow(Karman_u_star, 3)) - y_star;
         Real df = 1.0 + inv_turbu_E_ * (Karman_ * std::exp(Karman_u_star) - Karman_ - Karman_ * Karman_u_star - 0.5 * Karman_ * pow(Karman_u_star, 2));
-        //** update */
         u_star -= f / df;
-        //** judge */
         Real residue = std::abs(f / df);
         if (residue <= tolerance)
             break;
@@ -121,7 +101,6 @@ Real WallFunction::Spalding_wall_function(Real y_star, Real u_star_guess)
     {
         std::cout << "u+ is larger than 500, please check." << std::endl;
         std::cout << "u_star=" << u_star << std::endl;
-        //std::cin.get();
     }
     return u_star;
 }
@@ -143,13 +122,11 @@ kEpsilon_GetVelocityGradient<Inner<>>::kEpsilon_GetVelocityGradient(BaseInnerRel
       turbu_B_(particles_->getVariableDataByName<Matd>("TurbulentLinearGradientCorrectionMatrix")),
       weight_sub_nearwall_(weight_sub)
 {
-    //this->particles_->addEvolvingVariable<Matd>("TurbulentVelocityGradient");
     this->particles_->addVariableToWrite<Matd>("TurbulentVelocityGradient");
 }
 //=================================================================================================//
 void kEpsilon_GetVelocityGradient<Inner<>>::interaction(size_t index_i, Real dt)
 {
-    //** The near wall velo grad is updated in wall function part *
     if (is_near_wall_P1_[index_i] != 1)
     {
         velocity_gradient_[index_i] = Matd::Zero();
@@ -181,9 +158,7 @@ void kEpsilon_GetVelocityGradient<Inner<>>::update(size_t index_i, Real dt)
 {
     if (is_near_wall_P1_[index_i] != 1)
     {
-        //velocity_gradient_[index_i] *= B_[index_i];
         velocity_gradient_[index_i] *= turbu_B_[index_i];
-        // velocity_gradient_[index_i] = turbu_B_[index_i] * velocity_gradient_[index_i];
     }
 }
 //=================================================================================================//
@@ -202,17 +177,10 @@ void TKEnergyForce<Inner<>>::interaction(size_t index_i, Real dt)
     {
         size_t index_j = inner_neighborhood.j_[n];
         Vecd nablaW_ijV_j = inner_neighborhood.dW_ij_[n] * this->Vol_[index_j] * inner_neighborhood.e_ij_[n];
-        //** strong form *
-        //k_gradient += -1.0*(turbu_k_i - turbu_k_[index_j]) * nablaW_ijV_j;
-        //** weak form *
         k_gradient += (turbu_k_i + turbu_k_[index_j]) * nablaW_ijV_j;
-        //** If use RKGC *
-        //k_gradient += (turbu_k_i * B_[index_j] + turbu_k_[index_j] * B_[index_i]) * nablaW_ijV_j;
     }
     force = -1.0 * (2.0 / 3.0) * k_gradient * mass_[index_i];
     force_[index_i] += force;
-
-    //** for test *
     test_k_grad_rslt_[index_i] = k_gradient;
 }
 //=================================================================================================//
@@ -233,16 +201,11 @@ void TKEnergyForce<Contact<>>::interaction(size_t index_i, Real dt)
         {
             size_t index_j = contact_neighborhood.j_[n];
             Vecd nablaW_ijV_j = contact_neighborhood.dW_ij_[n] * this->Vol_[index_j] * contact_neighborhood.e_ij_[n];
-            //** weak form *
             k_gradient += (turbu_k_i + turbu_k_i) * nablaW_ijV_j;
-            //** If use RKGC *
-            //k_gradient +=  (turbu_k_i + turbu_k_i)* B_[index_i] * nablaW_ijV_j;
         }
     }
     force = -1.0 * (2.0 / 3.0) * k_gradient * mass_[index_i];
     force_[index_i] += force;
-
-    //** for test *
     test_k_grad_rslt_[index_i] += k_gradient;
 }
 //=================================================================================================//
@@ -258,8 +221,6 @@ TurbuViscousForce<Inner<>>::TurbuViscousForce(BaseInnerRelation &inner_relation)
 //=================================================================================================//
 void TurbuViscousForce<Inner<>>::interaction(size_t index_i, Real dt)
 {
-    //KGI_separated_B_[index_i] = Vecd::Zero();
-
     turbu_indicator_[index_i] = 0;
 
     Real mu_eff_i = turbu_mu_[index_i] + molecular_viscosity_;
@@ -283,38 +244,16 @@ void TurbuViscousForce<Inner<>>::interaction(size_t index_i, Real dt)
 
         Real dissipation = rho_[index_i] * smoothing_length_ * SMIN(Real(3.0) * SMAX(u_jump, Real(0)), c0_);
         Real dissipation_judge = dissipation;
-
-        //** Introduce dissipation *
         Vecd shear_stress_eij_corrected = shear_stress_eij;
         if (mu_harmo < dissipation_judge && is_extra_viscous_dissipation_[index_i] == 1)
         {
             shear_stress_eij_corrected = ((dissipation * vel_derivative).dot(e_ij)) * e_ij;
-            turbu_indicator_[index_i]++; //** For test *
+            turbu_indicator_[index_i]++; 
         }
-
-        //** P-refinement for wall adjacent particle, not using ARD *
-        //if (is_near_wall_P1_[index_i] == 1)
-        //{
-        //    shear_stress_eij_corrected = shear_stress_eij;
-        //}
-        //** P-refinement for S particle, not using ARD *
-        //if (this->is_near_wall_P2_[index_i] == 10 && is_near_wall_P1_[index_i] != 1)
-        //{
-        //    shear_stress_eij_corrected = shear_stress_eij;
-        //}
-        //** P-refinement for S and P particle, not using ARD *
         if (this->is_near_wall_P2_[index_i] == 10)
         {
             shear_stress_eij_corrected = shear_stress_eij;
         }
-
-        //** P-refinement for S and P particle, not using ARD, and impose SS from sublayer *
-        //if (is_near_wall_P1_[index_i] == 1 || is_near_wall_P1_[index_j] == 1)
-        //{
-        //    Matd shear_stress_sublayer = mu_eff_i * (dUdn_P_sublayer_[index_i] + dUdn_P_sublayer_[index_i].transpose());
-        //    shear_stress_eij_corrected = shear_stress_sublayer * e_ij;
-        //}
-
         shear_stress = (shear_stress - shear_stress_eij) + shear_stress_eij_corrected;
 
         Vecd force_j = 2.0 * mass_[index_i] * shear_stress * inner_neighborhood.dW_ij_[n] * this->Vol_[index_j];
@@ -322,54 +261,22 @@ void TurbuViscousForce<Inner<>>::interaction(size_t index_i, Real dt)
         bool is_inner_SS_correction = true;
         if(is_inner_SS_correction)
         { 
-            //** P-refinement correct inner viscous force for P *
             if (is_near_wall_P1_[index_i] == 1)
             {
                 Matd shear_stress_sublayer = mu_eff_i * (dUdn_P_sublayer_[index_i] + dUdn_P_sublayer_[index_i].transpose());
-                
-                //Matd correction_matrix_average = (turbu_B_[index_i] + turbu_B_[index_j]) / 2.0;
-                //Vecd corrected_kernel_gradient = correction_matrix_average * (e_ij * inner_neighborhood.dW_ij_[n]);
-                
                 Vecd kernel_gradient = (e_ij * inner_neighborhood.dW_ij_[n]);
-                
-                //force_j = 2.0 * mass_[index_i] * (shear_stress_sublayer * corrected_kernel_gradient) * this->Vol_[index_j];
                 force_j = 2.0 * mass_[index_i] * (shear_stress_sublayer * kernel_gradient) * this->Vol_[index_j];
-
-                //Matd shear_stress_sublayer = mu_eff_i * (dUdn_P_sublayer_[index_i] + dUdn_P_sublayer_[index_i].transpose());
-                //force_j = 2.0 * mass_[index_i] * shear_stress_sublayer * e_ij * inner_neighborhood.dW_ij_[n] * this->Vol_[index_j];
-
-                //KGI_separated_B_[index_i] -= (turbu_B_[index_i] + turbu_B_[index_j]) * inner_neighborhood.dW_ij_[n] * Vol_[index_j] * inner_neighborhood.e_ij_[n];
-
             }
-
-            //** P-refinement for S particle, when pairing with P particle, use SS from sublayer *
             if (is_near_wall_P2_[index_i] == 10 && is_near_wall_P1_[index_i] != 1)
             {
                 if (is_near_wall_P1_[index_j] == 1)
                 {
                     Matd shear_stress_sublayer = mu_eff_j * (dUdn_P_sublayer_[index_j] + dUdn_P_sublayer_[index_j].transpose());
-                    
-                    //Matd correction_matrix_average = (turbu_B_[index_i] + turbu_B_[index_j]) / 2.0;
-                    //Vecd corrected_kernel_gradient = correction_matrix_average * (e_ij * inner_neighborhood.dW_ij_[n]);
-
                     Vecd kernel_gradient = (e_ij * inner_neighborhood.dW_ij_[n]);
-                    
-                    //force_j = 2.0 * mass_[index_i] * (shear_stress_sublayer * corrected_kernel_gradient) * this->Vol_[index_j];
                     force_j = 2.0 * mass_[index_i] * (shear_stress_sublayer * kernel_gradient) * this->Vol_[index_j];
-
-                    //Matd shear_stress_sublayer = mu_eff_i * (dUdn_P_sublayer_[index_i] + dUdn_P_sublayer_[index_i].transpose());
-                    //force_j = 2.0 * mass_[index_i] * shear_stress_sublayer * e_ij * inner_neighborhood.dW_ij_[n] * this->Vol_[index_j];
                 }
             }
         }
-
-        //** P-refinement for P and whose neighbour is P particle, not using ARD, and impose SS from sublayer *
-        //if (is_near_wall_P1_[index_i] == 1 || is_near_wall_P1_[index_j] == 1)
-        //{
-        //    Matd shear_stress_sublayer = mu_eff_i * (dUdn_P_sublayer_[index_i] + dUdn_P_sublayer_[index_i].transpose());
-        //    force_j = 2.0 * mass_[index_i] * shear_stress_sublayer * e_ij * inner_neighborhood.dW_ij_[n] * Vol_[index_j];
-        //}
-
         force += force_j;
     }
     viscous_force_[index_i] = force / rho_[index_i];
@@ -388,7 +295,6 @@ TurbuViscousForce<Contact<Wall>>::TurbuViscousForce(BaseContactRelation &wall_co
 //=================================================================================================//
 void TurbuViscousForce<Contact<Wall>>::interaction(size_t index_i, Real dt)
 {
-    //** Wall viscous force only affects P2 region fluid particles *
     if (this->is_near_wall_P1_[index_i] != 1)
         return;
 
@@ -404,8 +310,8 @@ void TurbuViscousForce<Contact<Wall>>::interaction(size_t index_i, Real dt)
     Vecd force = Vecd::Zero();
     Vecd e_j_n = Vecd::Zero();
     Vecd e_j_tau = Vecd::Zero();
-    Matd WSS_j_tn = Matd::Zero(); //** Wall shear stress of wall particle j on t-n plane *
-    Matd WSS_j = Matd::Zero();    //** Wall shear stress of wall particle j on x-y plane *
+    Matd WSS_j_tn = Matd::Zero(); 
+    Matd WSS_j = Matd::Zero();    
     Matd Q = Matd::Zero();
     for (size_t k = 0; k < contact_configuration_.size(); ++k)
     {
@@ -418,49 +324,30 @@ void TurbuViscousForce<Contact<Wall>>::interaction(size_t index_i, Real dt)
 
             e_j_n = n_k[index_j];
             Q = getTransformationMatrix(e_j_n);
-
-            //** Get tangential unit vector, temporarily only suitable for 2D*
             e_j_tau[0] = e_j_n[1];
             e_j_tau[1] = e_j_n[0] * (-1.0);
-
-            //** Calculate the local friction velocity *
             Real vel_i_tau_mag = abs(vel_i.dot(e_j_tau));
 
             Real u_star_previous = vel_i_tau_mag / vel_fric_mag_previous;
             if ((u_star_previous > 100.0 || u_star_previous <= TinyReal) && current_time > start_time_laminar_)
             {
-                // std::cout << "u_star_previous > 100.0 || u_star_previous <= TinyReal, please check." << std::endl;
-                // std::cout << "u_star_previous=" << u_star_previous << std::endl;
-                // std::cout << "vel_i_tau_mag=" << vel_i_tau_mag << std::endl;
-                // std::cout << "vel_fric_mag_previous=" << vel_fric_mag_previous << std::endl;
-                u_star_previous = wall_Y_star_[index_i] + 10.0 * TinyReal; //** If too small initially, use y_star as initial guess */
-                //std::cin.get();
+                u_star_previous = wall_Y_star_[index_i] + 10.0 * TinyReal; 
             }
 
             Real y_p_j = get_distance_from_P_to_wall(y_p_constant_i);
             Real y_star_j = rho_i * C_mu_wf_25_ * turbu_k_i_05 * y_p_j / molecular_viscosity_;
             Real u_star_j = get_dimensionless_velocity(y_star_j, current_time, u_star_previous, is_blended_[index_i]);
             Real fric_vel_mag_j = sqrt(C_mu_wf_25_ * turbu_k_i_05 * vel_i_tau_mag / u_star_j);
-
-            //** P-refinement for wall adjacent particle, obtain WSS from 1D sublayer solver *
             if (is_near_wall_P1_[index_i] == 1)
             {
                 fric_vel_mag_j = friction_velocity_from_sublayer_[index_i];
             }
-            //if (is_near_wall_P1_[index_i] != 1)
-            //{
-            //    fric_vel_mag_j = 0.0;
-            //}
-
-            //** Construct local wall shear stress, if this is on each wall particle j   *
             Real WSS_tn_mag_j = rho_i * fric_vel_mag_j * fric_vel_mag_j * boost::qvm::sign(vel_i.dot(e_j_tau));
 
             WSS_j_tn(0, 0) = 0.0;
             WSS_j_tn(0, 1) = WSS_tn_mag_j;
             WSS_j_tn(1, 0) = 0.0;
             WSS_j_tn(1, 1) = 0.0;
-
-            //** Transform local wall shear stress to global   *
             WSS_j = Q.transpose() * WSS_j_tn * Q;
             
             bool is_add_B_only_wall_to_WSS_P1 = false;
@@ -469,16 +356,8 @@ void TurbuViscousForce<Contact<Wall>>::interaction(size_t index_i, Real dt)
             {
                 if (is_near_wall_P1_[index_i] == 1)
                 {
-                    //Matd correction_matrix_average = B_only_wall_[index_i];
-                    //Matd correction_matrix_average = (turbu_B_[index_i]);
-
-                    //Vecd corrected_kernel_gradient = correction_matrix_average * (e_ij * contact_neighborhood.dW_ij_[n]);
                     Vecd kernel_gradient = (e_ij * contact_neighborhood.dW_ij_[n]);
-
-                    //force_j = 2.0 * mass_[index_i] * (WSS_j * corrected_kernel_gradient) * this->Vol_[index_j] / rho_i;
                     force_j = 2.0 * mass_[index_i] * (WSS_j * kernel_gradient) * this->Vol_[index_j] / rho_i;
-
-                    //KGI_separated_B_[index_i] -= 2.0 * B_only_wall_[index_i] * contact_neighborhood.dW_ij_[n] * this->Vol_[index_j] * contact_neighborhood.e_ij_[n];
                 }
                 else
                 {
@@ -548,30 +427,12 @@ JudgeIsNearWall::
         contact_n_.push_back(contact_particles_[k]->getVariableDataByName<Vecd>("NormalDirection"));
         contact_Vol_.push_back(contact_particles_[k]->getVariableDataByName<Real>("VolumetricMeasure"));
     }
-
-    //particles_->addEvolvingVariable<Real>("DistanceToDummyInterfaceUpAver");
-    //particles_->addVariableToWrite<Real>("DistanceToDummyInterfaceUpAver");
-
-    //particles_->addEvolvingVariable<Real>("DistanceToDummyInterface");
-    //particles_->addVariableToWrite<Real>("DistanceToDummyInterface");
-
-    //particles_->addEvolvingVariable<int>("NearestIndex");
-    //particles_->addVariableToWrite<int>("NearestIndex");
-
-    //particles_->addEvolvingVariable<int>("IsNearWallP1");
     particles_->addVariableToWrite<int>("IsNearWallP1");
-
-    //particles_->addEvolvingVariable<int>("IsNearWallP2");
     particles_->addVariableToWrite<int>("IsNearWallP2");
-
-    //particles_->addEvolvingVariable<Vecd>("WallNearestTangentialUnitVector");
-
-    //particles_->addEvolvingVariable<Vecd>("WallNearestNormalUnitVector");
 };
 //=================================================================================================//
 void JudgeIsNearWall::interaction(size_t index_i, Real dt)
 {
-    //** If not clear the values completely, particles that leave P2 region will still carry the values. *
     is_near_wall_P2_[index_i] = 0;
     index_nearest_[index_i] = 0;
     distance_to_dummy_interface_[index_i] = 0.0;
@@ -589,8 +450,6 @@ void JudgeIsNearWall::interaction(size_t index_i, Real dt)
     Real r_dmy_itfc_n_sum(0);
     int count_average(0);
     int is_near_contact = 0;
-
-    //** Calculate nearest info. *
     for (size_t k = 0; k < contact_configuration_.size(); ++k)
     {
         Real *Vol_k = (contact_Vol_[k]);
@@ -607,31 +466,22 @@ void JudgeIsNearWall::interaction(size_t index_i, Real dt)
             Real r_ij = contact_neighborhood.r_ij_[n];
             Vecd &e_ij = contact_neighborhood.e_ij_[n];
             Vecd &n_k_j = n_k[index_j];
-
-            //** The distance to dummy interface is 0.5 dp smaller than the r_ij_normal *
             r_dummy_normal_j = abs(n_k_j.dot(r_ij * e_ij)) - 0.5 * wall_particle_spacing_;
-
-            /** Get the minimum distance, the distance to wall should not be negative*/
             if (r_ij < r_min && r_dummy_normal_j > 0.0 + TinyReal)
             {
-                r_min = r_ij; //** Find the nearest wall particle *
-                //**If use level-set,this would not activate.*
+                r_min = r_ij; 
                 r_dummy_normal = r_dummy_normal_j;
                 e_i_nearest_n = n_k[index_j];
                 id_nearest_j = index_j;
             }
-            //** Only average the bigger value or itself*
             if (r_dummy_normal_j - r_dummy_normal > (-1.0 * TinyReal))
             {
                 count_average++;
-                //** Sum the projection distances according to the kernel approx. *
                 r_dmy_itfc_n_sum += weight_j * r_dummy_normal_j;
                 ttl_weight += weight_j;
             }
         }
     }
-    //** This is a temporary treatment, particles in inlet region is not corrected by wall function *
-    //if (is_near_contact > 0 && pos_[index_i][0] > 0.0)
     if (is_near_contact > 0)
     {
         is_near_wall_P2_[index_i] = 10; //** Particles that have contact are defined as in region P2 *
@@ -666,10 +516,7 @@ void JudgeIsNearWall::update(size_t index_i, Real dt)
     if (is_near_wall_P2_[index_i] == 10)
     {
         y_p_[index_i] = constant_y_p_ + fluid_particle_spacing_ / 2.0;
-        //** Choose one kind of the distance to classify *
         Real distance = distance_to_dummy_interface_[index_i];
-
-        //** Classify the wall-nearest particles *
         if (distance < 1.0 * fluid_particle_spacing_)
         {
             is_near_wall_P1_[index_i] = 1;
@@ -764,10 +611,7 @@ GetLimiterOfTransportVelocityCorrection::
       h_ref_(sph_body.getSPHAdaptation().ReferenceSmoothingLength()),
       zero_gradient_residue_(particles_->getVariableDataByName<Vecd>("KernelGradientIntegral")),
       slope_(slope),
-      limiter_tvc_(particles_->registerStateVariableData<Real>("LimiterOfTVC"))
-{
-    //particles_->addVariableToWrite<Real>("LimiterOfTVC");
-}
+      limiter_tvc_(particles_->registerStateVariableData<Real>("LimiterOfTVC")){}
 //=================================================================================================//
 void GetLimiterOfTransportVelocityCorrection::update(size_t index_i, Real dt)
 {
@@ -787,8 +631,6 @@ NonDimensionalisePressure::
 //=================================================================================================//
 void NonDimensionalisePressure::update(size_t index_i, Real dt)
 {
-    //p_dimensionless_[index_i] = p_[index_i] / rho_[index_i]; //% actually is P/rho U * U, U=1 neglect
-    //p_dimensionless_[index_i] = p_[index_i] / (rho_[index_i] * 20.0);
     p_dimensionless_[index_i] = p_[index_i] / ((rho_[index_i] - 1.0));
 }
 //=================================================================================================//

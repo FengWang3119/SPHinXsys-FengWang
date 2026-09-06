@@ -21,8 +21,6 @@ class WallFunctionCoefficient
     Real Karman_;
     Real turbu_const_E_, inv_turbu_E_;
     Real C_mu_wf_, C_mu_wf_25_, C_mu_wf_75_;
-
-    //** Start time for laminar law *
     Real start_time_laminar_;
     Real y_star_threshold_laminar_;
 };
