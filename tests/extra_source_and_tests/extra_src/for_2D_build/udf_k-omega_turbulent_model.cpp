@@ -27,11 +27,7 @@ kOmega_GetVelocityGradient<Inner<>>::kOmega_GetVelocityGradient(BaseInnerRelatio
       turbu_B_(particles_->getVariableDataByName<Matd>("TurbulentLinearGradientCorrectionMatrix")),
       turbu_strain_rate_(particles_->registerStateVariableData<Matd>("TurbulentStrainRate")),
       turbu_strain_rate_magnitude_(particles_->registerStateVariableData<Real>("TurbulentStrainRateMagnitude")),
-      turbu_strain_rate_traceless_magnitude_(particles_->registerStateVariableData<Real>("TurbulentStrainRateTracelessMagnitude"))
-{
-    //this->particles_->addEvolvingVariable<Matd>("TurbulentVelocityGradient");
-    //this->particles_->addVariableToWrite<Matd>("TurbulentVelocityGradient");
-}
+      turbu_strain_rate_traceless_magnitude_(particles_->registerStateVariableData<Real>("TurbulentStrainRateTracelessMagnitude")){}
 //=================================================================================================//
 void kOmega_GetVelocityGradient<Inner<>>::interaction(size_t index_i, Real dt)
 {
@@ -42,21 +38,6 @@ void kOmega_GetVelocityGradient<Inner<>>::interaction(size_t index_i, Real dt)
     {
         size_t index_j = inner_neighborhood.j_[n];
         Vecd nablaW_ijV_j = inner_neighborhood.dW_ij_[n] * this->Vol_[index_j] * inner_neighborhood.e_ij_[n];
-
-        //** If use sub near wall weighting scheme *
-        // if (is_near_wall_P2_[index_i] == 10 && is_near_wall_P1_[index_j] == 1)
-        //{
-        //    Matd P1 = -(vel_i - vel_[index_j]) * nablaW_ijV_j.transpose();
-        //    Vecd vel_diff = velocity_gradient_[index_j] * r_ij * e_ij;
-        //    Matd P2 = -vel_diff * nablaW_ijV_j.transpose();
-        //    velocity_gradient_[index_i] += (1 - weight_sub_nearwall_) * P1 + weight_sub_nearwall_ * P2;
-        //}
-        // else
-        //{
-        //    velocity_gradient_[index_i] += -(vel_i - vel_[index_j]) * nablaW_ijV_j.transpose();
-        //}
-
-        //** If not use sub near wall weighting scheme *
         velocity_gradient_[index_i] += -(vel_i - vel_[index_j]) * nablaW_ijV_j.transpose();
     }
 }
@@ -64,9 +45,6 @@ void kOmega_GetVelocityGradient<Inner<>>::interaction(size_t index_i, Real dt)
 void kOmega_GetVelocityGradient<Inner<>>::update(size_t index_i, Real dt)
 {
     velocity_gradient_[index_i] *= B_[index_i];
-    // velocity_gradient_[index_i] *= turbu_B_[index_i];
-    // velocity_gradient_[index_i] = turbu_B_[index_i] * velocity_gradient_[index_i];
-
     turbu_strain_rate_[index_i] = 0.5 * (velocity_gradient_[index_i].transpose() + velocity_gradient_[index_i]);
     Real strain_rate_trace = turbu_strain_rate_[index_i].trace();
     Matd strain_rate_traceless = turbu_strain_rate_[index_i] - (1.0 / Dimensions) * strain_rate_trace * Matd::Identity(); //** For [2008 wilcox AIAA] *
@@ -79,10 +57,7 @@ void kOmega_GetVelocityGradient<Inner<>>::update(size_t index_i, Real dt)
 //=================================================================================================//
 kOmega_GetVelocityGradient<Contact<Wall>>::kOmega_GetVelocityGradient(BaseContactRelation &contact_relation)
     : InteractionWithWall<kOmega_GetVelocityGradient>(contact_relation),
-      velocity_gradient_(particles_->getVariableDataByName<Matd>("TurbulentVelocityGradient"))
-{
-    //this->particles_->addEvolvingVariable<Matd>("Velocity_Gradient_Wall");
-}
+      velocity_gradient_(particles_->getVariableDataByName<Matd>("TurbulentVelocityGradient")) {}
 //=================================================================================================//
 void kOmega_GetVelocityGradient<Contact<Wall>>::interaction(size_t index_i, Real dt)
 {
@@ -97,12 +72,10 @@ void kOmega_GetVelocityGradient<Contact<Wall>>::interaction(size_t index_i, Real
         {
             size_t index_j = contact_neighborhood.j_[n];
             Vecd nablaW_ijV_j = contact_neighborhood.dW_ij_[n] * Vol_k[index_j] * contact_neighborhood.e_ij_[n];
-            //vel_grad += -1.0 * (vel_i - vel_ave_k[index_j]) * nablaW_ijV_j.transpose();
             vel_grad += -1.0 * 2.0 * (vel_[index_i] - vel_ave_k[index_j]) * nablaW_ijV_j.transpose();
         }
     }
     velocity_gradient_[index_i] += vel_grad;
-
 }
 //=================================================================================================//
 kOmegaTurbulentEddyViscosity::
@@ -160,29 +133,11 @@ kOmega_WallFunctionCorrection::
         contact_n_.push_back(contact_particles_[k]->getVariableDataByName<Vecd>("NormalDirection"));
         contact_Vol_.push_back(contact_particles_[k]->getVariableDataByName<Real>("VolumetricMeasure"));
     }
-
-    //particles_->addEvolvingVariable<Real>("Y_P");  // % Updated in JudgeIsNearWall
     particles_->addVariableToWrite<Real>("Y_P");
-
-    //** Fixed y_p_ as a constant distance *
-    //std::fill(y_p_.begin(), y_p_.end(), y_p_constant);
-
-    //particles_->addEvolvingVariable<Real>("WallYplus");
     particles_->addVariableToWrite<Real>("WallYplus");
-
-    //** Initial value is important, especially when use log law *
-    //particles_->addEvolvingVariable<Real>("WallYstar");
     particles_->addVariableToWrite<Real>("WallYstar");
-
-    //particles_->addEvolvingVariable<Real>("TangentialVelocity");
-    //particles_->addVariableToWrite<Real>("TangentialVelocity");
-
-    //particles_->addEvolvingVariable<Vecd>("FrictionVelocity");
     particles_->addVariableToWrite<Vecd>("FrictionVelocity");
-    //particles_->addEvolvingVariable<Real>("WallShearStress");
     particles_->addVariableToWrite<Real>("WallShearStress");
-
-    //particles_->addEvolvingVariable<Real>("LaminarFractionForBlend");
     particles_->addVariableToWrite<Real>("LaminarFractionForBlend");
 };
 //=================================================================================================//
@@ -196,37 +151,20 @@ void kOmega_WallFunctionCorrection::interaction(size_t index_i, Real dt)
     Real current_time = *physical_time_;
 
     wall_shear_stress_[index_i] = 0.0;
-
-    //** For test *
     laminar_fraction_for_blend_[index_i] = 0.0;
-
-    //** If use level-set to get distance from P to wall, activate this *
-    //y_p_[index_i]= distance_to_dummy_interface_levelset_[index_i];
-
     if (is_near_wall_P2_[index_i] == 10)
     {
         Real y_p_constant_i = y_p_[index_i];
         Real turbu_k_i = turbu_k_[index_i];
         Real turbu_k_i_05 = pow(turbu_k_i, 0.5);
-        //Real turbu_k_i_15 = pow(turbu_k_[index_i], 1.5);
-
-        //** Choose one kind of the distance to calculate the wall-nearest values *
-        //Real r_dummy_normal = distance_to_dummy_interface_up_average_[index_i];
-        //Real r_dummy_normal = distance_to_dummy_interface_[index_i];
-        //Real r_dummy_normal = distance_to_dummy_interface_levelset_[index_i];
-
         Vecd e_i_nearest_tau = e_nearest_tau_[index_i];
         Vecd e_i_nearest_n = e_nearest_normal_[index_i];
         const Vecd &vel_i = vel_[index_i];
         Real rho_i = rho_[index_i];
         Real nu_i = molecular_viscosity_ / rho_i;
-
-        //** Calculate Y_star, note the current code is based on Y_star *
         wall_Y_star_[index_i] = y_p_constant_i * C_mu_wf_25_ * turbu_k_i_05 / nu_i;
-
-        //** Calculate friction velocity, including P2 region. *
         Real velo_fric_mag = 0.0;
-        Real velo_tan_mag = 0.0; //** tangential velo magnitude for fluid particle i *
+        Real velo_tan_mag = 0.0; 
 
         velo_tan_mag = abs(e_i_nearest_tau.dot(vel_i));
         velo_tan_[index_i] = velo_tan_mag;
@@ -234,12 +172,7 @@ void kOmega_WallFunctionCorrection::interaction(size_t index_i, Real dt)
         Real u_star_previous = velo_tan_mag / vel_fric_mag_previous;
         if ((u_star_previous > 100.0 || u_star_previous <= TinyReal) && current_time > start_time_laminar_)
         {
-            // std::cout << "u_star_previous > 100.0 || u_star_previous <= TinyReal, please check." << std::endl;
-            // std::cout << "u_star_previous=" << u_star_previous << std::endl;
-            // std::cout << "velo_tan_mag=" << velo_tan_mag << std::endl;
-            // std::cout << "vel_fric_mag_previous=" << vel_fric_mag_previous << std::endl;
-            u_star_previous = wall_Y_star_[index_i] + 10.0 * TinyReal; //** If too small initially, use y_star as initial guess */
-            //std::cin.get();
+            u_star_previous = wall_Y_star_[index_i] + 10.0 * TinyReal; 
         }
 
         if (wall_Y_star_[index_i] != static_cast<Real>(wall_Y_star_[index_i]))
@@ -271,22 +204,15 @@ void kOmega_WallFunctionCorrection::interaction(size_t index_i, Real dt)
             std::cin.get();
         }
 
-        //** friction velocity have the same direction of vel_i, if not, change its direction *
         velo_friction_[index_i] = velo_fric_mag * e_i_nearest_tau;
         if (vel_i.dot(velo_friction_[index_i]) < 0.0)
             velo_friction_[index_i] = -1.0 * velo_friction_[index_i];
-
-
-        //** Calculate Y_plus  *
         wall_Y_plus_[index_i] = y_p_constant_i * velo_fric_mag / nu_i;
-
-        // ** Correct the near wall values, only for P1 region *
         if (is_near_wall_P1_[index_i] == 1)
         {
-            //** Calculate wall shear stress*
             wall_shear_stress_[index_i] = rho_i * velo_fric_mag * velo_fric_mag;
 
-            Matd vel_grad_i_tn = Matd::Zero(); //** velocity gradient of wall-nearest fluid particle i on t-n plane *
+            Matd vel_grad_i_tn = Matd::Zero(); 
             Matd Q = Matd::Zero();
             Real total_weight = 0.0;
 
@@ -312,8 +238,6 @@ void kOmega_WallFunctionCorrection::interaction(size_t index_i, Real dt)
 
                     size_t index_j = contact_neighborhood.j_[n];
                     Vecd e_j_n = n_k[index_j];
-
-                    //** Get tangential unit vector, temporarily only suitable for 2D*
                     e_j_tau[0] = e_j_n[1];
                     e_j_tau[1] = e_j_n[0] * (-1.0);
 
@@ -338,7 +262,6 @@ void kOmega_WallFunctionCorrection::interaction(size_t index_i, Real dt)
                         Real local_Re = y_p_j * turbu_k_i_05 / nu_i;
                         Real lam_frac = std::exp(-1.0 * local_Re / 11.0);
                         Real turbu_frac = 1.0 - lam_frac;
-                        //** This is to be consistent with openfoam v12, I don't know why need to introduce u_tau_temp  */
                         Real u_tau_temp_square_laminar = nu_i * vel_i_tau_mag / y_p_j;
                         Real u_tau_temp_square_turbulent = std_kw_beta_star_5_ * turbu_k_i;
                         Real u_tau_temp = sqrt(lam_frac * u_tau_temp_square_laminar + turbu_frac * u_tau_temp_square_turbulent);
@@ -351,7 +274,6 @@ void kOmega_WallFunctionCorrection::interaction(size_t index_i, Real dt)
                         Real G_lam_k_p = turbu_mu_[index_i] / rho_i * turbu_strain_rate_magnitude_[index_i] * turbu_strain_rate_magnitude_[index_i];
 
                         omega_p_j = lam_frac * omega_p_j_lam + turbu_frac * omega_p_j_turbu;
-                        //G_k_p_j = turbu_frac * G_k_p_j_turbu;
                         G_k_p_j = lam_frac * G_lam_k_p + turbu_frac * G_k_p_j_turbu;
                     }
                     else
@@ -363,13 +285,9 @@ void kOmega_WallFunctionCorrection::interaction(size_t index_i, Real dt)
                         }
                         else
                         {
-                            //** This is to be consistent with openfoam v12, I don't know why need to so complicated  */
                             Real u_tau_temp = C_mu_wf_25_ * turbu_k_i_05;
                             G_k_p_j = (u_tau_temp * vel_i_tau_mag / u_star_j) * (u_tau_temp * vel_i_tau_mag / u_star_j) / (nu_i * Karman_ * y_star_j);
                             omega_p_j = u_tau_temp / (std_kw_beta_star_5_ * Karman_ * y_p_j);
-
-                            //G_k_p_j = rho_i * fric_vel_mag_j * fric_vel_mag_j * dudn_p_mag_j;
-                            //omega_p_j = turbu_k_i_05 / (std_kw_beta_star_25_ * Karman_ * y_p_j);
                         }
                     }
                     G_k_p_weighted_sum += weight_j * G_k_p_j;
@@ -377,19 +295,12 @@ void kOmega_WallFunctionCorrection::interaction(size_t index_i, Real dt)
                 }
             }
             turbu_omega_[index_i] = omega_p_weighted_sum / total_weight;
-
             vel_grad_i_tn(0, 0) = 0.0;
             vel_grad_i_tn(0, 1) = dudn_p_weighted_sum / total_weight;
             vel_grad_i_tn(1, 0) = 0.0;
             vel_grad_i_tn(1, 1) = 0.0;
-
             Q = getTransformationMatrix(e_i_nearest_n);
-
-            //velocity_gradient_[index_i] = Q.transpose() * vel_grad_i_tn * Q;
-
             k_production_[index_i] = G_k_p_weighted_sum / total_weight;
-
-            //** For test *
             laminar_fraction_for_blend_[index_i] = std::exp(-1.0 * y_p_constant_i * turbu_k_i_05 / nu_i / 11.0);
         }
     }
@@ -411,39 +322,12 @@ kOmega_kTransportEquationInner::kOmega_kTransportEquationInner(BaseInnerRelation
       is_near_wall_P1_(particles_->getVariableDataByName<int>("IsNearWallP1")),
       velocity_gradient_(particles_->getVariableDataByName<Matd>("TurbulentVelocityGradient"))
 {
-    //particles_->addEvolvingVariable<Real>("ChangeRateOfTKE");
-    //particles_->addEvolvingVariable<Real>("ChangeRateOfTKEWithoutDissipation");
-
-    //particles_->addEvolvingVariable<Real>("K_Production");
-    //particles_->addVariableToWrite<Real>("K_Production");
-
     particles_->addEvolvingVariable<Real>("TurbulenceKineticEnergy");
     particles_->addVariableToWrite<Real>("TurbulenceKineticEnergy");
-
     particles_->addEvolvingVariable<Real>("TurbulentSpecificDissipation");
     particles_->addVariableToWrite<Real>("TurbulentSpecificDissipation");
-
-    //particles_->addEvolvingVariable<Real>("TurbulentViscosity");
     particles_->addVariableToWrite<Real>("TurbulentViscosity");
-
-    //particles_->addEvolvingVariable<Matd>("TurbulentStrainRate");
-    //particles_->addVariableToWrite<Matd>("TurbulentStrainRate");
-
-    //** Obtain Initial values for transport equations *
-    // std::fill(turbu_k_.begin(), turbu_k_.end(), initial_values[0]);
-    // std::fill(turbu_omega_.begin(), turbu_omega_.end(), initial_values[1]);
-    // std::fill(turbu_mu_.begin(), turbu_mu_.end(), initial_values[2]);
-
-    //** for test */
-    //particles_->addEvolvingVariable<Real>("K_Diffusion");
-    //particles_->addVariableToWrite<Real>("K_Diffusion");
-
-    //particles_->addVariableToWrite<Real>("ChangeRateOfTKE");
-
-    //particles_->addEvolvingVariable<int>("TurbulentIndicator");
     particles_->addVariableToWrite<int>("TurbulentIndicator");
-
-    //std::fill(is_extra_viscous_dissipation_.begin(), is_extra_viscous_dissipation_.end(), is_extr_visc_dissipa);
 }
 //=================================================================================================//
 void kOmega_kTransportEquationInner::update(size_t index_i, Real dt)
@@ -464,11 +348,7 @@ void kOmega_kTransportEquationInner::update(size_t index_i, Real dt)
     Matd Re_stress = Matd::Zero();
 
     Re_stress = 2.0 * strain_rate * turbu_mu_i / rho_i - (2.0 / 3.0) * turbu_k_i * Matd::Identity();
-    //Re_stress = 2.0 * strain_rate * turbu_mu_i / rho_i;
-
     Matd k_production_matrix = Re_stress.array() * velocity_gradient_[index_i].array();
-    //** The near wall k production is updated in wall function part *
-    //** So this k_production variable should not be initialised *
     if (is_near_wall_P1_[index_i] != 1)
         k_production_[index_i] = k_production_matrix.sum();
 
@@ -521,23 +401,7 @@ kOmega_omegaTransportEquationInner::kOmega_omegaTransportEquationInner(BaseInner
       turbu_k_(particles_->getVariableDataByName<Real>("TurbulenceKineticEnergy")),
       turbu_omega_(particles_->getVariableDataByName<Real>("TurbulentSpecificDissipation")),
       k_production_(particles_->getVariableDataByName<Real>("K_Production")),
-      is_near_wall_P1_(particles_->getVariableDataByName<int>("IsNearWallP1"))
-{
-    //particles_->addEvolvingVariable<Real>("ChangeRateOfTDR");
-    //particles_->addVariableToWrite<Real>("ChangeRateOfTDR");
-
-    //particles_->addEvolvingVariable<Real>("omega_Production");
-    //particles_->addVariableToWrite<Real>("omega_Production");
-
-    //particles_->addEvolvingVariable<Real>("omega_Dissipation");
-    //particles_->addVariableToWrite<Real>("omega_Dissipation");
-
-    //particles_->addEvolvingVariable<Real>("omega_Diffusion");
-    //particles_->addVariableToWrite<Real>("omega_Diffusion");
-
-    //particles_->addEvolvingVariable<Real>("omega_Cross_Diffusion");
-    //particles_->addVariableToWrite<Real>("omega_Cross_Diffusion");
-}
+      is_near_wall_P1_(particles_->getVariableDataByName<int>("IsNearWallP1")){}
 //=================================================================================================//
 void kOmega_omegaTransportEquationInner::update(size_t index_i, Real dt)
 {
@@ -561,14 +425,10 @@ void kOmega_omegaTransportEquationInner::update(size_t index_i, Real dt)
 
     domega_dt_[index_i] = omega_production - omega_dissipation + omega_diffusion + omega_cross_diffusion;
     domega_dt_without_dissipation_[index_i] = omega_production + omega_diffusion + omega_cross_diffusion;
-
-    //** The near wall omega value is updated in wall function part *
     if (is_near_wall_P1_[index_i] != 1)
     {
         turbu_omega_[index_i] += domega_dt_[index_i] * dt;
     }
-
-    //** for test */
     omega_production_[index_i] = omega_production;
     omega_dissipation_[index_i] = omega_dissipation;
     omega_cross_diffusion_[index_i] = omega_cross_diffusion;
@@ -598,23 +458,14 @@ void kOmega_TSDR_Diffusion_and_Gradient_Dot_Inner::interaction(size_t index_i, R
     for (size_t n = 0; n != inner_neighborhood.current_size_; ++n)
     {
         size_t index_j = inner_neighborhood.j_[n];
-
-        Real mu_eff_j = mu_ + std_kw_sigma_ * rho_i * turbu_k_[index_j] / turbu_omega_[index_j]; //% Involve limiter
-        //Real mu_eff_j = mu_ + std_kw_sigma_ * turbu_mu_[index_j];  //% Not involve limiter
-
+        Real mu_eff_j = mu_ + std_kw_sigma_ * rho_i * turbu_k_[index_j] / turbu_omega_[index_j];
         Real mu_harmo = 2 * mu_eff_i * mu_eff_j / (mu_eff_i + mu_eff_j);
         omega_derivative = (turbu_omega_i - turbu_omega_[index_j]) / (inner_neighborhood.r_ij_[n] + 0.01 * smoothing_length_);
         omega_lap += 2.0 * mu_harmo * omega_derivative * inner_neighborhood.dW_ij_[n] * this->Vol_[index_j];
-
         Vecd nablaW_ijV_j = inner_neighborhood.dW_ij_[n] * this->Vol_[index_j] * inner_neighborhood.e_ij_[n];
-        //** non-conservative form *
         k_gradient += -1.0 * (turbu_k_i - turbu_k_[index_j]) * nablaW_ijV_j;
         omega_gradient += -1.0 * (turbu_omega_i - turbu_omega_[index_j]) * nablaW_ijV_j;
-        //** non-conservative form, with correction *
-        //k_gradient += -1.0 * (turbu_k_i - turbu_k_[index_j]) * (B_[index_i] * nablaW_ijV_j);
-        //omega_gradient += -1.0 * (turbu_omega_i - turbu_omega_[index_j]) * (B_[index_i] * nablaW_ijV_j);
     }
-    //** If correction outside *
     k_gradient = B_[index_i] * k_gradient;
     omega_gradient = B_[index_i] * omega_gradient;
     
@@ -640,15 +491,12 @@ void kOmega_InflowTurbulentCondition::update(size_t index_i, Real dt)
     if (type_turbu_inlet_omega_ == 1 || type_turbu_inlet_omega_ == 0)
     {
         Real target_inflow_temp_turbu_E = getTurbulentInflowTemporaryEpsilon(pos_[index_i], turbu_k_[index_i], 0.0);
-        //** Calculate inlet omega from k and epsilon */
         Real inflow_turbu_omega_temp = target_inflow_temp_turbu_E / std_kw_beta_star_ / target_inflow_turbu_k;
-        //** Also has a temporary treatment because I don't know how to set frame transfer */
         Real target_inflow_turbu_omega = (pos_[index_i][0] < 0.0) ? inflow_turbu_omega_temp : turbu_omega_[index_i];
         turbu_omega_[index_i] += relaxation_rate_ * (target_inflow_turbu_omega - turbu_omega_[index_i]);
     }
     else if (type_turbu_inlet_omega_ == 2)
     {
-        //** Calculate inlet omega from its function */
         Real target_inflow_turbu_omega = getTurbulentInflowOmega(pos_[index_i], vel_[index_i], turbu_k_[index_i]);;
         turbu_omega_[index_i] += relaxation_rate_ * (target_inflow_turbu_omega - turbu_omega_[index_i]);
     }
@@ -661,15 +509,11 @@ Real kOmega_InflowTurbulentCondition::getTurbulentInflowK(Vecd &position, Vecd &
     Real turbu_k_original = turbu_k;
     if (type_turbu_inlet_k_ == 1)
     {
-        Real channel_height = CharacteristicLength_; //** Temporarily treatment *
-
-        //** Impose fully-developed K from PYTHON result */
-        //** Calculate the distance to wall, Y. position here is the actual postion in x-y coordinate, no transformation*/
+        Real channel_height = CharacteristicLength_; 
         Real Y = (position[1] < channel_height / 2.0) ? position[1] : channel_height - position[1];
 
         int polynomial_order = 8;
         int num_coefficient = polynomial_order + 1;
-        //** Coefficient of the polynomial, 8th-order, from py21 dp=0.1 */
         Real coeff[] = {
             1.159981e-02, -4.662944e-02, 2.837400e-01,
             -1.193955e+00, 3.034851e+00, -4.766077e+00,
@@ -694,13 +538,8 @@ Real kOmega_InflowTurbulentCondition::getTurbulentInflowK(Vecd &position, Vecd &
     }
     if (type_turbu_inlet_k_ == 2)// %From PY2-11
     {
-        const Real channel_height = CharacteristicLength_; //** Temporarily treatment *
-
-        //** Impose fully-developed K from PYTHON result */
-        //** Calculate the distance to wall, Y. position here is the actual postion in x-y coordinate, no transformation*/
+        const Real channel_height = CharacteristicLength_; 
         Real Y = (position[1] < channel_height / 2.0) ? position[1] : channel_height - position[1];
-
-        //** 2 segments *
         const Real y1 = 0.2;
 
         Real polynomial_value = 0.0;
@@ -714,9 +553,6 @@ Real kOmega_InflowTurbulentCondition::getTurbulentInflowK(Vecd &position, Vecd &
             -3.959145e+07,
             };
             polynomial_value = polyEval(coeff1, Y);
-            //if (Y < 0.05)
-            //    std::cout << "polynomial_value=" << polynomial_value << " Y=" << Y << "========1=========\n";
-            
         }
         else
         {
@@ -728,7 +564,6 @@ Real kOmega_InflowTurbulentCondition::getTurbulentInflowK(Vecd &position, Vecd &
             3.376056e-04,
             };
             polynomial_value = polyEval(coeff2, Y);
-            //std::cout << "polynomial_value=" << polynomial_value << " Y=" << Y << "========3=========\n";
         }
 
         if (Y > channel_height / 2.0 || Y < 0.0)
@@ -743,7 +578,7 @@ Real kOmega_InflowTurbulentCondition::getTurbulentInflowK(Vecd &position, Vecd &
 
         temp_in_turbu_k = polynomial_value;
     }
-    return (position[0] < 0.0) ? temp_in_turbu_k : turbu_k_original; //** Temporarily treatment *
+    return (position[0] < 0.0) ? temp_in_turbu_k : turbu_k_original; 
 }
 //=================================================================================================//
 Real kOmega_InflowTurbulentCondition::getTurbulentInflowTemporaryEpsilon(Vecd &position, Real &turbu_k, Real turbu_E)
@@ -752,15 +587,11 @@ Real kOmega_InflowTurbulentCondition::getTurbulentInflowTemporaryEpsilon(Vecd &p
     Real turbu_E_original = turbu_E;
     if (type_turbu_inlet_omega_ == 1)
     {
-        Real channel_height = CharacteristicLength_; //** Temporarily treatment *
-
-        //** Impose fully-developed K from PYTHON result */
-        //** Calculate the distance to wall, Y. position here is the actual postion in x-y coordinate, no transformation*/
+        Real channel_height = CharacteristicLength_; 
         Real Y = (position[1] < channel_height / 2.0) ? position[1] : channel_height - position[1];
 
         int polynomial_order = 8;
         int num_coefficient = polynomial_order + 1;
-        //** Coefficient of the polynomial, 8th-order, from py21 dp=0.1 */
         Real coeff[] = {
             1.428191e-02, -1.766636e-01, 1.153107e+00,
             -4.515606e+00, 1.103752e+01, -1.694146e+01,
@@ -774,51 +605,36 @@ Real kOmega_InflowTurbulentCondition::getTurbulentInflowTemporaryEpsilon(Vecd &p
         temp_in_turbu_E = polynomial_value;
     }
 
-    return (position[0] < 0.0) ? temp_in_turbu_E : turbu_E_original; //** Temporarily treatment *
+    return (position[0] < 0.0) ? temp_in_turbu_E : turbu_E_original;
 }
 //=================================================================================================//
 Real kOmega_InflowTurbulentCondition::getTurbulentInflowOmega(Vecd& position, Vecd& velocity, Real& turbu_omega)
 {
     Real temp_in_turbu_omega = 0.0;
     Real turbu_omega_original = turbu_omega;
-    if (type_turbu_inlet_omega_ == 2) // %From PY2-11
+    if (type_turbu_inlet_omega_ == 2) 
     {
-        const Real channel_height = CharacteristicLength_; //** Temporarily treatment *
-
-        //** Calculate the distance to wall, Y. position here is the actual postion in x-y coordinate, no transformation*/
+        const Real channel_height = CharacteristicLength_; 
         Real Y = (position[1] <= channel_height * 0.5)
             ? position[1]
             : channel_height - position[1];
-
-        //** 2 segments *
         const Real y1 = 0.2;
 
         Real polynomial_value = 0.0;
         if (Y > 0.0 && Y <= y1)
-        {
-            //static const std::vector<Real> coeff1 = {
-            // 1.169192e+02, -2.150606e+04, 1.940452e+06,
-            // -1.000778e+08, 3.223235e+09, -6.843456e+10,
-            // 9.889939e+11, -9.876862e+12, 6.812652e+13,
-            //-3.184688e+14, 9.628054e+14, -1.697913e+15,
-            // 1.326035e+15,
-            //};
-            //polynomial_value = polyEval(coeff1, Y);
+        {;
             polynomial_value = 2.2337739892e-01 / (Y + -9.5734226803e-07) + 4.9871467182e-02;
-            //if (Y < 0.180 && Y > 0.177)
-            //    std::cout << "polynomial_value=" << polynomial_value << " Y=" << Y << "========1=========\n";
         }
         else
         {
             static const std::vector<Real> coeff2 = {
-    5.610110e+00, -5.994682e+01, 3.670464e+02,
-    -1.398382e+03, 3.311412e+03, -4.223060e+03,
-    -9.007083e+01, 1.109756e+04, -2.188842e+04,
-    2.287992e+04, -1.420357e+04, 4.953297e+03,
-    -7.511954e+02,
+             5.610110e+00, -5.994682e+01, 3.670464e+02,
+    -        1.398382e+03, 3.311412e+03, -4.223060e+03,
+             -9.007083e+01, 1.109756e+04, -2.188842e+04,
+             2.287992e+04, -1.420357e+04, 4.953297e+03,
+             -7.511954e+02,
             };
             polynomial_value = polyEval(coeff2, Y);
-            //std::cout << "polynomial_value=" << polynomial_value << " Y=" << Y << "========3=========\n";
         }
 
         if (Y < 0.0 || Y > channel_height * 0.5)
@@ -832,7 +648,7 @@ Real kOmega_InflowTurbulentCondition::getTurbulentInflowOmega(Vecd& position, Ve
 
         temp_in_turbu_omega = polynomial_value;
     }
-    return (position[0] < 0.0) ? temp_in_turbu_omega : turbu_omega_original; //** Temporarily treatment *
+    return (position[0] < 0.0) ? temp_in_turbu_omega : turbu_omega_original; 
 }
 //=================================================================================================//
 Real kOmega_InflowTurbulentCondition::polyEval(const std::vector<Real>& a, Real x)
