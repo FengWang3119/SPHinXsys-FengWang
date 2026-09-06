@@ -98,7 +98,7 @@ namespace udf
         turbu_k_(particles_->getVariableDataByName<Real>("TurbulenceKineticEnergy")),
         turbu_omega_(particles_->getVariableDataByName<Real>("TurbulentSpecificDissipation")),
         rho_(particles_->getVariableDataByName<Real>("Density")),
-        viscosity_(DynamicCast<Viscosity>(this, particles_->getBaseMaterial())), 
+        viscosity_(sph_body_->getMaterialProperty<Viscosity>()), 
         mu_(viscosity_.ReferenceViscosity()),
         velocity_gradient_only_P_(particles_->getVariableDataByName<Matd>("VelocityGradientInnerOnlyP")),
         turbu_mu_(particles_->getVariableDataByName<Real>("TurbulentViscosity")),
@@ -1021,7 +1021,7 @@ namespace udf
 
                 if (state_recording_)
                 {
-                    std::string filefullpath = io_environment_.OutputFolder() + "/" + body->getName() + "_" + sequence + ".vtp";
+                    std::string filefullpath = io_environment_.OutputFolder() + "/" + body->Name() + "_" + sequence + ".vtp";
                     if (fs::exists(filefullpath))
                     {
                         fs::remove(filefullpath);
@@ -1043,7 +1043,7 @@ namespace udf
                     }
 
                     size_t total_real_particles = base_particles.TotalRealParticles();
-                    out_file << "  <Piece Name =\"" << body->getName() << "\" NumberOfPoints=\"" << total_real_particles
+                    out_file << "  <Piece Name =\"" << body->Name() << "\" NumberOfPoints=\"" << total_real_particles
                         << "\" NumberOfVerts=\"" << total_real_particles << "\">\n";
 
                     // write current/final particle positions first

@@ -291,20 +291,20 @@ class kOmega_InflowTurbulentCondition_TKE : public BaseFlowBoundaryCondition,
     public kOmega_BaseTurbuClosureCoeff
 {
 public:
-    explicit kOmega_InflowTurbulentCondition_TKE(AlignedBoxByCell& aligned_box_part, Real relaxation_rate)
+    explicit kOmega_InflowTurbulentCondition_TKE(OrientedBoxByCell& aligned_box_part, Real relaxation_rate)
         : BaseFlowBoundaryCondition(aligned_box_part), 
         relaxation_rate_(relaxation_rate),
         turbu_k_(particles_->getVariableDataByName<Real>("TurbulenceKineticEnergy")),
-        aligned_box_(aligned_box_part.getAlignedBox()),
-        transform_(aligned_box_.getTransform()), halfsize_(aligned_box_.HalfSize()),
+        oriented_box_(aligned_box_part.getOrientedBox()),
+        transform_(oriented_box_.getTransform()), halfsize_(oriented_box_.HalfSize()),
         target_tke(*this),
         physical_time_(sph_system_->getSystemVariableDataByName<Real>("PhysicalTime")) {}
 
     virtual ~kOmega_InflowTurbulentCondition_TKE() {};
-    AlignedBox& getAlignedBox() { return aligned_box_; };
+    OrientedBox& getOrientedBox() { return oriented_box_; };
     void update(size_t index_i, Real dt = 0.0)
     {
-        if (aligned_box_.checkContain(pos_[index_i]))
+        if (oriented_box_.checkContain(pos_[index_i]))
         {
             Real current_k = turbu_k_[index_i];
             Vecd frame_position = transform_.shiftBaseStationToFrame(pos_[index_i]);
@@ -317,7 +317,7 @@ public:
 protected:
     Real relaxation_rate_;
     Real* turbu_k_;
-    AlignedBox& aligned_box_;
+    OrientedBox& oriented_box_;
     Transform& transform_;
     Vecd halfsize_;
     TargetTKE target_tke;
@@ -329,22 +329,22 @@ class kOmega_InflowTurbulentCondition_TSDR : public BaseFlowBoundaryCondition,
     public kOmega_BaseTurbuClosureCoeff
 {
 public:
-    explicit kOmega_InflowTurbulentCondition_TSDR(AlignedBoxByCell& aligned_box_part, Real relaxation_rate)
+    explicit kOmega_InflowTurbulentCondition_TSDR(OrientedBoxByCell& aligned_box_part, Real relaxation_rate)
         : BaseFlowBoundaryCondition(aligned_box_part),
         relaxation_rate_(relaxation_rate),
         turbu_k_(particles_->getVariableDataByName<Real>("TurbulenceKineticEnergy")),
         turbu_omega_(particles_->getVariableDataByName<Real>("TurbulentSpecificDissipation")),
-        aligned_box_(aligned_box_part.getAlignedBox()),
-        transform_(aligned_box_.getTransform()), halfsize_(aligned_box_.HalfSize()),
+        oriented_box_(aligned_box_part.getOrientedBox()),
+        transform_(oriented_box_.getTransform()), halfsize_(oriented_box_.HalfSize()),
         target_tsdr(*this),
         physical_time_(sph_system_->getSystemVariableDataByName<Real>("PhysicalTime")) {
     }
 
     virtual ~kOmega_InflowTurbulentCondition_TSDR() {};
-    AlignedBox& getAlignedBox() { return aligned_box_; };
+    OrientedBox& getOrientedBox() { return oriented_box_; };
     void update(size_t index_i, Real dt = 0.0)
     {
-        if (aligned_box_.checkContain(pos_[index_i]))
+        if (oriented_box_.checkContain(pos_[index_i]))
         {
             Real current_k = turbu_k_[index_i];
             Real current_omega = turbu_omega_[index_i];
@@ -359,7 +359,7 @@ protected:
     Real relaxation_rate_;
     Real* turbu_k_;
     Real* turbu_omega_;
-    AlignedBox& aligned_box_;
+    OrientedBox& oriented_box_;
     Transform& transform_;
     Vecd halfsize_;
     TargetTSDR target_tsdr;

@@ -26,25 +26,26 @@ int main(int ac, char *av[])
     sph_system.setReloadParticles(true);
 
     sph_system.handleCommandlineOptions(ac, av);
-    IOEnvironment io_environment(sph_system);
+    //IOEnvironment io_environment(sph_system);
     /**
      * @brief Material property, particles and body creation of fluid.
      */
 
     FluidBody water_block(sph_system, makeShared<WaterBlock>("WaterBody"));
     water_block.defineBodyLevelSetShape();
-    water_block.defineClosure<WeaklyCompressibleFluid, Viscosity>(ConstructArgs(rho0_f, c_f), mu_f);
+    water_block.defineMatterMaterial<WeaklyCompressibleFluid>(rho0_f, c_f);
+    water_block.addMaterialProperty<Viscosity>(mu_f);
     (!sph_system.RunParticleRelaxation() && sph_system.ReloadParticles())
-        ? water_block.generateParticles<BaseParticles, Reload>(water_block.getName())
+        ? water_block.generateParticles<BaseParticles, Reload>(water_block.Name())
         : water_block.generateParticles<BaseParticles, Lattice>();
     /**
      * @brief 	Particle and body creation of wall boundary.
      */
     SolidBody wall_boundary(sph_system, makeShared<WallBoundary>("Wall"));
     wall_boundary.defineBodyLevelSetShape();
-    wall_boundary.defineMaterial<Solid>();
+    wall_boundary.defineMatterMaterial<Solid>();
     (!sph_system.RunParticleRelaxation() && sph_system.ReloadParticles())
-        ? wall_boundary.generateParticles<BaseParticles, Reload>(wall_boundary.getName())
+        ? wall_boundary.generateParticles<BaseParticles, Reload>(wall_boundary.Name())
         : wall_boundary.generateParticles<BaseParticles, Lattice>();
 
     ObserverBody observer_center_point(sph_system, "ObserverCenterPoint");
@@ -104,9 +105,13 @@ int main(int ac, char *av[])
         /** Write the body state to Vtp file. */
         BodyStatesRecordingToVtp write_inserted_body_to_vtp(wall_boundary);
         BodyStatesRecordingToVtp write_inserted_body_to_vtp_water(water_block);
+        
         /** Write the particle reload files. */
-        ReloadParticleIO write_particle_reload_files(wall_boundary);
-        ReloadParticleIO write_particle_reload_files_water(water_block);
+        //ReloadParticleIO write_particle_reload_files(wall_boundary);
+        //ReloadParticleIO write_particle_reload_files_water(water_block);
+        ReloadParticleIO write_particle_reload_files(
+            SPHBodyVector{&water_block, &wall_boundary});
+
         /** A  Physics relaxation step. */
         RelaxationStepLevelSetCorrectionInner relaxation_step_inner(wall_boundary_inner);
         RelaxationStepLevelSetCorrectionInner relaxation_step_inner_water(water_block_inner);
@@ -139,8 +144,10 @@ int main(int ac, char *av[])
         std::cout << "The physics relaxation process of the water_block finish !" << std::endl;
 
         /** Output results. */
+        //write_particle_reload_files_water.writeToFile(0);
+        //write_particle_reload_files.writeToFile(0);
         write_particle_reload_files.writeToFile(0);
-        write_particle_reload_files_water.writeToFile(0);
+
         return 0;
     }
 

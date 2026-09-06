@@ -426,7 +426,7 @@ namespace udf
         void writeParticlesToVtk(OutStreamType& output_stream, BaseParticles& particles)
         {
             size_t total_real_particles = particles.TotalRealParticles();
-            ParticleVariables& variables_to_write = particles.VariablesToWrite();
+            DiscreteVariables &variables_to_write = particles.VariablesToWrite();
 
             // write sorted particles ID
             output_stream
@@ -527,7 +527,7 @@ namespace udf
         void writeNodeValueToVtk_Vec6d(OutStreamType& output_stream, BaseParticles& particles)
         {
             size_t total_real_particles = particles.TotalRealParticles();
-            ParticleVariables& variables_to_write = particles.VariablesToWrite();
+            DiscreteVariables &variables_to_write = particles.VariablesToWrite();
 
             // write vectors
             constexpr int type_index_Vecd = DataTypeIndex<Vec6d>::value;

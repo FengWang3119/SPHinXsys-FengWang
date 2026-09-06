@@ -244,7 +244,7 @@ kEpsilon_TurbulentEddyViscosity::
       turbu_epsilon_(particles_->getVariableDataByName<Real>("TurbulentDissipation")),
       wall_Y_plus_(particles_->getVariableDataByName<Real>("WallYplus")),
       wall_Y_star_(particles_->getVariableDataByName<Real>("WallYstar")),
-      viscosity_(DynamicCast<Viscosity>(this, particles_->getBaseMaterial())),
+      viscosity_(sph_body_->getMaterialProperty<Viscosity>()),
       mu_(viscosity_.ReferenceViscosity()) {}
 //=================================================================================================//
 void kEpsilon_TurbulentEddyViscosity::update(size_t index_i, Real dt)
@@ -398,7 +398,7 @@ kEpsilon_StandardWallFunctionCorrection::
       velo_friction_(particles_->registerStateVariableData<Vecd>("FrictionVelocity")),
       y_p_(particles_->getVariableDataByName<Real>("Y_P")),
       vel_(particles_->getVariableDataByName<Vecd>("Velocity")), rho_(particles_->getVariableDataByName<Real>("Density")),
-      viscosity_(DynamicCast<Viscosity>(this, particles_->getBaseMaterial())),
+      viscosity_(sph_body_->getMaterialProperty<Viscosity>()),
       molecular_viscosity_(viscosity_.ReferenceViscosity()),
       turbu_k_(particles_->getVariableDataByName<Real>("TurbulenceKineticEnergy")),
       turbu_epsilon_(particles_->getVariableDataByName<Real>("TurbulentDissipation")),

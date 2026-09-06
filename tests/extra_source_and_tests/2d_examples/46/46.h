@@ -1,7 +1,7 @@
 #include "bidirectional_buffer.h"
 #include "udf_common_turbulence_model.cpp"
-#include "density_correciton.h"
-#include "density_correciton.hpp"
+#include "density_correction.h"
+#include "density_correction.hpp"
 #include "udf_k-omega_turbulent_model.cpp"
 #include "kernel_summation.h"
 #include "kernel_summation.hpp"
@@ -382,14 +382,14 @@ inline Real imposeByCosineRamp(Real target_value, Real current_time, Real ramp_t
 struct InflowVelocity
 {
     Real u_ref_, t_ref_;
-    AlignedBox &aligned_box_;
+    OrientedBox &oriented_box_;
     Vecd halfsize_;
 
     template <class BoundaryConditionType>
     InflowVelocity(BoundaryConditionType &boundary_condition)
         : u_ref_(U_inlet), t_ref_(time_gradually_increase_vel),
-          aligned_box_(boundary_condition.getAlignedBox()),
-          halfsize_(aligned_box_.HalfSize()) {}
+          oriented_box_(boundary_condition.getOrientedBox()),
+          halfsize_(oriented_box_.HalfSize()) {}
 
     Real getVel_polynomial(Vecd& position)
     {
@@ -466,14 +466,14 @@ struct InflowVelocity
 struct InflowTurbulentKineticEnergy
 {
     Real u_ref_, t_ref_;
-    AlignedBox& aligned_box_;
+    OrientedBox& oriented_box_;
     Vecd halfsize_;
 
     template <class BoundaryConditionType>
     InflowTurbulentKineticEnergy(BoundaryConditionType& boundary_condition)
         : u_ref_(U_inlet), t_ref_(time_gradually_increase_vel),
-        aligned_box_(boundary_condition.getAlignedBox()),
-        halfsize_(aligned_box_.HalfSize()) {
+        oriented_box_(boundary_condition.getOrientedBox()),
+        halfsize_(oriented_box_.HalfSize()) {
     }
 
     Real getTKE_polynomial(Vecd& position)
@@ -529,14 +529,14 @@ struct InflowTurbulentKineticEnergy
 struct InflowTurbulentSpecificDissipationRate
 {
     Real u_ref_, t_ref_;
-    AlignedBox& aligned_box_;
+    OrientedBox& oriented_box_;
     Vecd halfsize_;
 
     template <class BoundaryConditionType>
     InflowTurbulentSpecificDissipationRate(BoundaryConditionType& boundary_condition)
         : u_ref_(U_inlet), t_ref_(time_gradually_increase_vel),
-        aligned_box_(boundary_condition.getAlignedBox()),
-        halfsize_(aligned_box_.HalfSize()) {
+        oriented_box_(boundary_condition.getOrientedBox()),
+        halfsize_(oriented_box_.HalfSize()) {
     }
 
     Real getTSDRFromEpsilonPolynomial(Vecd& position, Real current_tke)

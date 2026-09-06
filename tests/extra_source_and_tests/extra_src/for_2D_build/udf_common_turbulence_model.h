@@ -159,7 +159,7 @@ class TurbuViscousForce<DataDelegationType> : public ViscousForce<DataDelegation
     Vecd *velo_friction_;
     Real *y_p_;
     int *is_near_wall_P2_;
-    Viscosity viscosity_;
+    Viscosity &viscosity_;
     Real molecular_viscosity_;
     Real c0_;
 };
@@ -211,7 +211,7 @@ using TurbulentViscousForceWithWall = ComplexInteraction<TurbuViscousForce<Inner
 	 * @class TurbulentAdvectionTimeStepSize
 	 * @brief Computing the turbulent advection time step size
 	 */
-class TurbulentAdvectionTimeStepSize : public LocalDynamicsReduce<ReduceMax>
+class TurbulentAdvectionTimeStepSize : public LocalDynamicsReduce<ReduceMax<Real>>
 {
   public:
     explicit TurbulentAdvectionTimeStepSize(SPHBody &sph_body, Real U_max, Real advectionCFL = 0.25);
@@ -347,15 +347,14 @@ using TVC_NoLimiter_withLinearGradientCorrection =
 //=================================================================================================//
 class ModifiedTruncatedLinear : public Limiter
 {
-    Real ref_, slope_;
+    Real slope_;
 
   public:
-    ModifiedTruncatedLinear(Real ref, Real slope = 1000.0)
-        : Limiter(), ref_(ref), slope_(slope){};
-    Real operator()(Real measure)
+    ModifiedTruncatedLinear(Real slope = 1000.0)
+        : Limiter(), slope_(slope) {};
+    Real operator()(Real dimensionless_measure)
     {
-        Real measure_scale = measure * ref_;
-        return SMIN(slope_ * measure_scale, Real(1));
+        return SMIN(slope_ * dimensionless_measure, Real(1));
     };
 };
 template <class ParticleScope>

@@ -49,9 +49,9 @@ TurbuViscousForce<DataDelegationType>::TurbuViscousForce(BaseRelationType &base_
       velo_friction_(this->particles_->template getVariableDataByName<Vecd>("FrictionVelocity")),
       y_p_(this->particles_->template getVariableDataByName<Real>("Y_P")),
       is_near_wall_P2_(this->particles_->template getVariableDataByName<int>("IsNearWallP2")),
-      viscosity_(DynamicCast<Viscosity>(this, this->particles_->getBaseMaterial())),
+      viscosity_(this->sph_body_-> template getMaterialProperty<Viscosity>()),
       molecular_viscosity_(viscosity_.ReferenceViscosity()),
-      c0_(DynamicCast<Fluid>(this, this->particles_->getBaseMaterial()).ReferenceSoundSpeed()) {}
+      c0_(DynamicCast<Fluid>(this, this->sph_body_->getMatterMaterial()).ReferenceSoundSpeed()) {}
 
 //=================================================================================================//
 template <class DataDelegationType>

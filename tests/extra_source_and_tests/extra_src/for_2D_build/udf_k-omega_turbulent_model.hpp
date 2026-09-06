@@ -15,7 +15,7 @@ template <class DataDelegationType>
 template <class BaseRelationType>
 kOmega_BaseTurbulentModel<Base, DataDelegationType>::kOmega_BaseTurbulentModel(BaseRelationType &base_relation)
     : LocalDynamics(base_relation.getSPHBody()), DataDelegationType(base_relation),
-      viscosity_(DynamicCast<Viscosity>(this, this->particles_->getBaseMaterial())),
+      viscosity_(this->sph_body_-> template getMaterialProperty<Viscosity>()),
       mu_(viscosity_.ReferenceViscosity()),
       smoothing_length_(this->getSPHAdaptation().ReferenceSmoothingLength()),
       particle_spacing_min_(base_relation.getSPHBody().getSPHAdaptation().MinimumSpacing()),

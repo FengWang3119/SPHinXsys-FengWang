@@ -498,13 +498,13 @@ void TurbuViscousForce<Contact<Wall>>::interaction(size_t index_i, Real dt)
 }
 //=================================================================================================//
 TurbulentAdvectionTimeStepSize::TurbulentAdvectionTimeStepSize(SPHBody &sph_body, Real U_max, Real advectionCFL)
-    : LocalDynamicsReduce<ReduceMax>(sph_body),
+    : LocalDynamicsReduce<ReduceMax<Real>>(sph_body),
       vel_(particles_->getVariableDataByName<Vecd>("Velocity")),
       smoothing_length_min_(sph_body.getSPHAdaptation().MinimumSmoothingLength()),
       speed_ref_turbu_(U_max), advectionCFL_(advectionCFL),
       turbu_mu_(particles_->getVariableDataByName<Real>("TurbulentViscosity")),
-      fluid_(DynamicCast<Fluid>(this, particles_->getBaseMaterial())),
-      viscosity_(DynamicCast<Viscosity>(this, particles_->getBaseMaterial()))
+      fluid_(DynamicCast<Fluid>(this, sph_body_->getMatterMaterial())),
+      viscosity_(sph_body_->getMaterialProperty<Viscosity>())
 {
     Real viscous_speed = viscosity_.ReferenceViscosity() / fluid_.ReferenceDensity() / smoothing_length_min_;
     speed_ref_turbu_ = SMAX(viscous_speed, speed_ref_turbu_);
