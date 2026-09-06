@@ -13,21 +13,13 @@ using namespace SPH;
 //----------------------------------------------------------------------
 //	Basic geometry parameters and numerical setup.
 //----------------------------------------------------------------------
-Real DH = 1.0;  /**< Channel height. */
-Real DL = 1.0; /**< Channel length. */
+Real DH = 1.0;  
+Real DL = 1.0; 
 Real num_fluid_cross_section = 40.0;
 
 constexpr Real wave_amplitude = 0.1;
 constexpr Real wave_length = 1.0;
 constexpr Real pi = 3.14159265358979323846;
-/**
- * @brief Lower sinusoidal wall
- *
- * x = 0.00 lambda: y =  0
- * x = 0.25 lambda: y = -A, wave trough
- * x = 0.75 lambda: y =  A, wave crest
- * x = 1.00 lambda: y =  0
- */
 Real lowerWallHeight(Real x)
 {
     return -wave_amplitude *
@@ -36,62 +28,35 @@ Real lowerWallHeight(Real x)
 
 Vecd external_acc = Vecd(0.01687141, 0.0);
 Real external_acc_gradually_impose_t = 2.0;
-//----------------------------------------------------------------------
-//	Unique parameters for turbulence.
-//----------------------------------------------------------------------
-//** Tag for wall treatment *
 int is_blended = 0;
-//** Tag for AMRD *
 int is_AMRD = 0;
 bool is_constrain_normal_velocity_in_P_region = false;
-//** Weight for correcting the velocity  gradient in the sub near wall region  *
-//Real weight_vel_grad_sub_nearwall = 0.1;
-//** Tag for Source Term Linearisation *
 bool is_source_term_linearisation = false;
-
-//** Tag for Sublayer Model *
 static constexpr int num_node_sublayer_model = 5;
 static constexpr int type_tdma_sublayer_model = 5;
-
-//Real y_p_constant_sublayer = 0.0005;
-
-//** Empirical parameter for initial stability*
 Real turbulent_module_activate_time = 2.0;
-//** Initial values for K, Omega and Mu_t *
 StdVec<Real> initial_turbu_values = {0.01, 2.056, 0.02};
-
-//Real y_p_constant = 0.05;
-//Real y_p_constant = DH / 2.0 / num_fluid_cross_section; //** For the first try or Not use BOT *
-//Real resolution_ref = (DH - 2.0 * y_p_constant) / (num_fluid_cross_section - 1.0); /**< Initial reference particle spacing. */
-//Real offset_distance = y_p_constant - resolution_ref / 2.0;                        //** Basically offset distance is large than or equal to 0 *
-
-// ** If not use BOT *
 Real y_p_constant = DH / 2.0 / num_fluid_cross_section;            
 Real resolution_ref = DH / num_fluid_cross_section;                    
 
-Real BW = resolution_ref * 4; /**< Reference size of the emitter. */
+Real BW = resolution_ref * 4; 
 //----------------------------------------------------------------------
 //	Domain bounds of the system.
 //----------------------------------------------------------------------
 BoundingBoxd system_domain_bounds(Vecd(-2.0 * BW, -wave_amplitude - BW), Vecd(DL + 2.0 * BW, DH + BW));
-
 //----------------------------------------------------------------------
 //	Material properties of the fluid.
 //----------------------------------------------------------------------
 Real U_inlet = 0.816;
-Real U_f = U_inlet;         //*Characteristic velocity
-Real U_max = 1.5 * U_inlet; //** An estimated value, generally 1.5 U_inlet *
+Real U_f = U_inlet;         
+Real U_max = 1.5 * U_inlet; 
 Real c_f = 10.0 * U_max;
-Real rho0_f = 1.0; /**< Density. */
-
+Real rho0_f = 1.0; 
 Real mu_f = 1.0e-4;
-
 Real Re_calculated = U_f * DH * rho0_f / mu_f;
-
 //----------------------------------------------------------------------
 //  Center-point observer
 //----------------------------------------------------------------------
-
 Real x_observe_center = 0.5 * DL;
 Real y_observe_center =
 0.5 * (DH + lowerWallHeight(x_observe_center));
@@ -467,22 +432,13 @@ namespace observe_node_cross_sections
 //----------------------------------------------------------------------
 //  Case-dependent geometry: periodic wavy channel
 //----------------------------------------------------------------------
-/**
- * @brief Fluid domain bounded by a flat upper wall and a wavy lower wall.
- */
 std::vector<Vecd> createWaterBlockShape()
 {
     std::vector<Vecd> water_block_shape;
-
-    // Number of straight segments used to approximate the sinusoidal wall.
     constexpr size_t number_of_segments = 200;
-
-    // Left and upper boundaries.
     water_block_shape.push_back(Vecd(0.0, lowerWallHeight(0.0)));
     water_block_shape.push_back(Vecd(0.0, DH));
     water_block_shape.push_back(Vecd(DL, DH));
-
-    // Lower wavy boundary, traversed from right to left.
     for (size_t i = 0; i <= number_of_segments; ++i)
     {
         Real x = DL *
@@ -491,10 +447,8 @@ std::vector<Vecd> createWaterBlockShape()
 
         water_block_shape.push_back(Vecd(x, lowerWallHeight(x)));
     }
-
     return water_block_shape;
 }
-
 class WaterBlock : public ComplexShape
 {
 public:
@@ -506,13 +460,6 @@ public:
             computational_domain, "ComputationalDomain");
     }
 };
-
-/**
- * @brief Flat upper wall.
- *
- * The wall is extended in the streamwise direction to provide
- * sufficient wall particles near the periodic boundaries.
- */
 std::vector<Vecd> createUpperWallShape()
 {
     Real wall_x_min = -2.0 * BW;
@@ -528,10 +475,6 @@ std::vector<Vecd> createUpperWallShape()
 
     return upper_wall_shape;
 }
-
-/**
- * @brief Sinusoidal lower wall.
- */
 std::vector<Vecd> createLowerWallShape()
 {
     std::vector<Vecd> lower_wall_shape;
@@ -540,8 +483,6 @@ std::vector<Vecd> createLowerWallShape()
     Real wall_x_max = DL + 2.0 * BW;
 
     constexpr size_t number_of_segments = 240;
-
-    // Fluid-facing surface, from left to right.
     for (size_t i = 0; i <= number_of_segments; ++i)
     {
         Real x = wall_x_min +
@@ -552,8 +493,6 @@ std::vector<Vecd> createLowerWallShape()
         lower_wall_shape.push_back(
             Vecd(x, lowerWallHeight(x)));
     }
-
-    // Outer surface, from right to left.
     for (size_t i = 0; i <= number_of_segments; ++i)
     {
         Real x = wall_x_max -
@@ -564,17 +503,11 @@ std::vector<Vecd> createLowerWallShape()
         lower_wall_shape.push_back(
             Vecd(x, lowerWallHeight(x) - BW));
     }
-
-    // Explicitly close the polygon.
     lower_wall_shape.push_back(
         Vecd(wall_x_min, lowerWallHeight(wall_x_min)));
 
     return lower_wall_shape;
 }
-
-/**
- * @brief Wall boundary body definition.
- */
 class WallBoundary : public ComplexShape
 {
 public:
@@ -588,7 +521,6 @@ public:
         add<MultiPolygonShape>(lower_wall, "LowerWavyWall");
     }
 };
-
 namespace SPH 
 {
 //=================================================================================================//
