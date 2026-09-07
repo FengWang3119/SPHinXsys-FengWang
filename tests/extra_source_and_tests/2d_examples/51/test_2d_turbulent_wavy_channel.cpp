@@ -125,7 +125,7 @@ int main(int ac, char *av[])
     SimpleDynamics<fluid_dynamics::udf::kOmegaTurbulentEddyViscosity> update_eddy_viscosity(water_block);
     ParticleSorting particle_sorting(water_block);
     
-    fluid_dynamics::udf::BodyStatesRecordingToVtpIncludeNode body_states_recording(sph_system);
+    BodyStatesRecordingToVtp body_states_recording(sph_system);
     body_states_recording.addToWrite<Real>(water_block, "Pressure");            // output for debug
     body_states_recording.addToWrite<int>(water_block, "Indicator");            // output for debug
     body_states_recording.addToWrite<Real>(water_block, "Density");             // output for debug
