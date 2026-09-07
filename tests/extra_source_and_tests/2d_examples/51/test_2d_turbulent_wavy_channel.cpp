@@ -117,6 +117,7 @@ int main(int ac, char *av[])
     body_states_recording.addToWrite<int>(water_block, "Indicator");
     body_states_recording.addToWrite<Real>(water_block, "Density");
     body_states_recording.addToWrite<Vecd>(wall_boundary, "NormalDirection");
+    ObservedQuantityRecording<Real> write_centerpoint_quantity("TurbulentViscosity", observer_centerpoint_contact);
 
     sph_system.initializeSystemCellLinkedLists();
     periodic_condition_x.update_cell_linked_list_.exec();
@@ -125,6 +126,7 @@ int main(int ac, char *av[])
     Real &physical_time = *sph_system.getSystemVariableDataByName<Real>("PhysicalTime");
     size_t number_of_iterations = sph_system.RestartStep();
     int screen_output_interval = 100;
+    int observation_sample_interval = screen_output_interval * 2;
     Real end_time = 150.0;
     Real num_output_files = 4.0;
     Real Output_Time = end_time / num_output_files;
@@ -143,6 +145,7 @@ int main(int ac, char *av[])
     update_eddy_viscosity.exec();
 
     body_states_recording.writeToFile();
+    write_centerpoint_quantity.writeToFile(number_of_iterations);
 
     int num_output_file = 0;
     while (physical_time < end_time)
@@ -199,7 +202,12 @@ int main(int ac, char *av[])
                 std::cout << std::fixed << std::setprecision(9) << "N=" << number_of_iterations << "	Time = "
                           << physical_time
                           << "	Dt = " << Dt << "	dt = " << dt << "\n";
+                if (number_of_iterations % observation_sample_interval == 0 && number_of_iterations != sph_system.RestartStep())
+                {
+                    write_centerpoint_quantity.writeToFile(number_of_iterations);
+                }
             }
+
             number_of_iterations++;
             periodic_condition_x.bounding_.exec();
             if (number_of_iterations % 100 == 0 && number_of_iterations != 1)
@@ -220,5 +228,13 @@ int main(int ac, char *av[])
     tt = t4 - t1 - interval;
     std::cout << "Total wall time for computation: " << tt.seconds()
               << " seconds." << std::endl;
+    // if (sph_system.GenerateRegressionData())
+    // {
+    //     write_centerpoint_quantity.generateDataBase(1.0e-3);
+    // }
+    // else
+    // {
+    //     write_centerpoint_quantity.testResult();
+    // }
     return 0;
 }
