@@ -151,7 +151,6 @@ namespace udf
         vel_nodeUM_[index_i] = 0.0;
         double U_nodeO = 0.0;
         double U_nodeUM = 0.0;
-        double velocity_gradient_nodeO = 0.0;
         if (is_near_wall_P1_[index_i] == 1)
         {
             Real dudn_outer = 0.0;
@@ -176,10 +175,7 @@ namespace udf
             dudn_outer = dudn_from_SPH;
             dkdn_outer = k_gradient_only_P_[index_i].dot(normal); 
             dwdn_outer = omega_gradient_only_P_[index_i].dot(normal);
-            Real flow_rate_local_prior = 0.0;
-            Real residue = 1.0e3;
             Real averaged_vel_over_P = u_outer;
-            int num_iter_out = 0;
             SublayerResult sublayer_result{}; 
             vel_nodeO_i_prior = u_outer;
             flow_rate_local = get_loacal_flow_rate(averaged_vel_over_P * fluid_particle_spacing_, dudn_outer, vel_nodeO_i_prior, fluid_particle_spacing_);
@@ -239,9 +235,8 @@ namespace udf
         double w_p_outer, double vel_grad_p_outer, double nut_p_outer, double h_sublayer, double utau_outer,
         double Q_target, double k_grad_p_outer, double w_grad_p_outer, double& vel_nodeO, double& vel_nodeUM)
     {
-        //------------------------------------------------¡ý Input parameters ¡ý------------------------------------------------
+        //------------------------------------------------ï¿½ï¿½ Input parameters ï¿½ï¿½------------------------------------------------
         double utau_init = utau_outer;
-        double height_sublayer = h_sublayer;
         double nu = kinematic_viscosity;
 
         double u_init = u_p_outer;
@@ -271,7 +266,6 @@ namespace udf
         
         double hy = sublayer_node_uniform_distance_;
         double y_p = sublayer_y_p_constant_;
-        double distance_from_P_to_nodeU = hy;
         double utau_min = yplus_min * nu / y_p;
         double yplus = utau * y_p / nu;
         double u_p = utau * yplus;
@@ -287,9 +281,6 @@ namespace udf
         double w_nodeUM = w_p_outer;
         double nut_nodeUM = nut_p_outer;
         double u_nodeO = u_nodeUM;
-        double k_nodeO = k_nodeUM;
-        double w_nodeO = w_nodeUM;
-        double nut_nodeO = nut_nodeUM;
         double phi_current[3 * ny];
         double phi_solved[3 * ny];
         for (int j = 0; j < ny; ++j)
@@ -303,7 +294,6 @@ namespace udf
         int num_iter_out = 0;
         int n_start = 0;
         int last = 0;
-        int first_index = 0;
         double flow_rate_current = 0.0;
         while (differ > convergence_criteria_outer)
         {
@@ -320,9 +310,6 @@ namespace udf
                 w_nodeUM = w_p_outer;
                 nut_nodeUM = nut_p_outer;
                 u_nodeO = u_nodeUM;
-                k_nodeO = k_nodeUM;
-                w_nodeO = w_nodeUM;
-                nut_nodeO = nut_nodeUM;
             }
             double dudy_discretized_central[ny]{};
             double dkdy[ny]{};
