@@ -4,13 +4,13 @@
 
 namespace SPH
 {
-//=====================================================================================================//
+
 namespace fluid_dynamics
 {
-//=================================================================================================//
+
 namespace udf
 {
-//=================================================================================================//
+
     template <class DataDelegationType>
     template <class BaseRelationType>
     P_refinement_GetVelocityGradient<DataDelegationType>::
@@ -25,10 +25,9 @@ namespace udf
         is_near_wall_P2_(this->particles_->template getVariableDataByName<int>("IsNearWallP2")),
         turbu_k_(this->particles_->template getVariableDataByName<Real>("TurbulenceKineticEnergy")),
         turbu_omega_(this->particles_->template getVariableDataByName<Real>("TurbulentSpecificDissipation")) {}
-//=================================================================================================//
-} // namespace udf
-//=================================================================================================//
-} // namespace fluid_dynamics
-//=================================================================================================//
-} // namespace SPH
-  //=================================================================================================//
+
+}
+
+}
+
+}

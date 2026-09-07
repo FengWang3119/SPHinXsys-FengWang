@@ -1,14 +1,14 @@
-//#pragma once
+
 #include "udf_k-epsilon_turbulent_model.hpp"
 namespace SPH
 {
-//=================================================================================================//
+
 namespace fluid_dynamics
 {
 namespace udf
 {
 using TurbuIntegration2ndHalfWithWallDissipativeRiemann = ComplexInteraction<Integration2ndHalf<Inner<>, Contact<Wall>>, DissipativeRiemannSolver>;
-//=================================================================================================//
+
 kEpsilon_TurbulentClosureCoefficient::kEpsilon_TurbulentClosureCoefficient()
     : Karman_(0.41), turbu_const_E_(9.8), C_mu_(0.09), turbulent_intensity_(5.0e-2),
       sigma_k_(1.0), C_l_(1.44), C_2_(1.92), sigma_E_(1.3), turbulent_length_ratio_for_epsilon_inlet_(0.07)
@@ -17,7 +17,7 @@ kEpsilon_TurbulentClosureCoefficient::kEpsilon_TurbulentClosureCoefficient()
     C_mu_25_ = pow(C_mu_, 0.25);
     C_mu_75_ = pow(C_mu_, 0.75);
 }
-//=================================================================================================//
+
 kEpsilon_kTransportEquationInner::kEpsilon_kTransportEquationInner(BaseInnerRelation &inner_relation, const StdVec<Real> &initial_values, int is_extr_visc_dissipa, bool is_STL)
     : kEpsilon_BaseTurbulentModel<Base, DataDelegateInner>(inner_relation),
       dk_dt_(particles_->registerStateVariableData<Real>("ChangeRateOfTKE")),
@@ -52,12 +52,6 @@ kEpsilon_kTransportEquationInner::kEpsilon_kTransportEquationInner(BaseInnerRela
     particles_->addEvolvingVariable<Matd>("TurbulentStrainRate");
     particles_->addVariableToWrite<Matd>("TurbulentStrainRate");
 
-    //** Obtain Initial values for transport equations *
-    // std::fill(turbu_k_.begin(), turbu_k_.end(), initial_values[0]);
-    // std::fill(turbu_epsilon_.begin(), turbu_epsilon_.end(), initial_values[1]);
-    // std::fill(turbu_mu_.begin(), turbu_mu_.end(), initial_values[2]);
-
-    //** for test */
     particles_->addEvolvingVariable<Real>("K_Diffusion");
     particles_->addVariableToWrite<Real>("K_Diffusion");
 
@@ -66,9 +60,8 @@ kEpsilon_kTransportEquationInner::kEpsilon_kTransportEquationInner(BaseInnerRela
     particles_->addEvolvingVariable<int>("TurbulentIndicator");
     particles_->addVariableToWrite<int>("TurbulentIndicator");
 
-    //std::fill(is_extra_viscous_dissipation_.begin(), is_extra_viscous_dissipation_.end(), is_extr_visc_dissipa);
 }
-//=================================================================================================//
+
 void kEpsilon_kTransportEquationInner::update(size_t index_i, Real dt)
 {
     Real rho_i = rho_[index_i];
@@ -88,7 +81,6 @@ void kEpsilon_kTransportEquationInner::update(size_t index_i, Real dt)
     strain_rate = 0.5 * (vel_grad_i.transpose() + vel_grad_i);
 
     Re_stress = 2.0 * strain_rate * turbu_mu_i / rho_i - (2.0 / 3.0) * turbu_k_i * Matd::Identity();
-    //Re_stress = 2.0 * strain_rate * turbu_mu_i / rho_i;
 
     Matd k_production_matrix = Re_stress.array() * vel_grad_i.array();
     k_production = k_production_matrix.sum();
@@ -96,7 +88,6 @@ void kEpsilon_kTransportEquationInner::update(size_t index_i, Real dt)
     dk_dt_[index_i] = k_production - k_dissipation + k_diffusion;
     dk_dt_without_dissipation_[index_i] = k_production + k_diffusion;
 
-    //** The near wall k production is updated in wall function part *
     if (is_near_wall_P1_[index_i] != 1)
         k_production_[index_i] = k_production;
 
@@ -104,7 +95,7 @@ void kEpsilon_kTransportEquationInner::update(size_t index_i, Real dt)
 
     if (is_STL_)
     {
-        //** If use source term linearisation *
+
         Real denominator = 1.0 + turbu_epsilon_[index_i] * dt / turbu_k_[index_i];
         turbu_k_[index_i] += dk_dt_without_dissipation_[index_i] * dt;
         turbu_k_[index_i] /= denominator;
@@ -114,13 +105,13 @@ void kEpsilon_kTransportEquationInner::update(size_t index_i, Real dt)
         turbu_k_[index_i] += dk_dt_[index_i] * dt;
     }
 }
-//=================================================================================================//
+
 kEpsilon_TKE_Diffusion::kEpsilon_TKE_Diffusion(BaseInnerRelation &inner_relation)
     : kEpsilon_BaseTurbulentModel<Base, DataDelegateInner>(inner_relation),
       turbu_k_(particles_->getVariableDataByName<Real>("TurbulenceKineticEnergy")),
       turbu_mu_(particles_->getVariableDataByName<Real>("TurbulentViscosity")),
       k_diffusion_(particles_->getVariableDataByName<Real>("K_Diffusion")) {}
-//=================================================================================================//
+
 void kEpsilon_TKE_Diffusion::interaction(size_t index_i, Real dt)
 {
     Real rho_i = rho_[index_i];
@@ -142,7 +133,7 @@ void kEpsilon_TKE_Diffusion::interaction(size_t index_i, Real dt)
     }
     k_diffusion_[index_i] = k_lap;
 }
-//=================================================================================================//
+
 kEpsilon_epsilonTransportEquationInner::kEpsilon_epsilonTransportEquationInner(BaseInnerRelation &inner_relation, bool is_STL)
     : kEpsilon_BaseTurbulentModel<Base, DataDelegateInner>(inner_relation),
       depsilon_dt_(particles_->registerStateVariableData<Real>("ChangeRateOfTDR")),
@@ -169,7 +160,7 @@ kEpsilon_epsilonTransportEquationInner::kEpsilon_epsilonTransportEquationInner(B
     particles_->addEvolvingVariable<Real>("Ep_Diffusion_");
     particles_->addVariableToWrite<Real>("Ep_Diffusion_");
 }
-//=================================================================================================//
+
 void kEpsilon_epsilonTransportEquationInner::update(size_t index_i, Real dt)
 {
     Real turbu_k_i = turbu_k_[index_i];
@@ -191,12 +182,11 @@ void kEpsilon_epsilonTransportEquationInner::update(size_t index_i, Real dt)
     ep_production[index_i] = epsilon_production;
     ep_dissipation_[index_i] = epsilon_dissipation;
 
-    //** The near wall epsilon value is updated in wall function part *
     if (is_near_wall_P1_[index_i] != 1)
     {
         if (is_STL_)
         {
-            //** If use source term linearisation *
+
             Real denominator = 1.0 + C_2_ * turbu_epsilon_[index_i] * dt / turbu_k_[index_i];
             turbu_epsilon_[index_i] += depsilon_dt_without_dissipation_[index_i] * dt;
             turbu_epsilon_[index_i] /= denominator;
@@ -207,13 +197,13 @@ void kEpsilon_epsilonTransportEquationInner::update(size_t index_i, Real dt)
         }
     }
 }
-//=================================================================================================//
+
 kEpsilon_TDR_Diffusion::kEpsilon_TDR_Diffusion(BaseInnerRelation &inner_relation)
     : kEpsilon_BaseTurbulentModel<Base, DataDelegateInner>(inner_relation),
       ep_diffusion_(particles_->getVariableDataByName<Real>("Ep_Diffusion_")),
       turbu_mu_(particles_->getVariableDataByName<Real>("TurbulentViscosity")),
       turbu_epsilon_(particles_->getVariableDataByName<Real>("TurbulentDissipation")) {}
-//=================================================================================================//
+
 void kEpsilon_TDR_Diffusion::interaction(size_t index_i, Real dt)
 {
     Real rho_i = rho_[index_i];
@@ -234,7 +224,7 @@ void kEpsilon_TDR_Diffusion::interaction(size_t index_i, Real dt)
     }
     ep_diffusion_[index_i] = epsilon_lap;
 }
-//=================================================================================================//
+
 kEpsilon_TurbulentEddyViscosity::
     kEpsilon_TurbulentEddyViscosity(SPHBody &sph_body)
     : LocalDynamics(sph_body),
@@ -246,12 +236,12 @@ kEpsilon_TurbulentEddyViscosity::
       wall_Y_star_(particles_->getVariableDataByName<Real>("WallYstar")),
       viscosity_(sph_body_->getMaterialProperty<Viscosity>()),
       mu_(viscosity_.ReferenceViscosity()) {}
-//=================================================================================================//
+
 void kEpsilon_TurbulentEddyViscosity::update(size_t index_i, Real dt)
 {
     turbu_mu_[index_i] = rho_[index_i] * C_mu_ * turbu_k_[index_i] * turbu_k_[index_i] / (turbu_epsilon_[index_i]);
 }
-//=================================================================================================//
+
 kEpsilon_InflowTurbulentCondition::kEpsilon_InflowTurbulentCondition(BodyPartByCell &body_part, Real CharacteristicLength, Real relaxation_rate, int type_turbu_inlet)
     : BaseFlowBoundaryCondition(body_part), type_turbu_inlet_(type_turbu_inlet),
       relaxation_rate_(relaxation_rate),
@@ -261,7 +251,7 @@ kEpsilon_InflowTurbulentCondition::kEpsilon_InflowTurbulentCondition(BodyPartByC
 {
     TurbulentLength_ = turbulent_length_ratio_for_epsilon_inlet_ * CharacteristicLength_;
 }
-//=================================================================================================//
+
 void kEpsilon_InflowTurbulentCondition::update(size_t index_i, Real dt)
 {
     Real target_in_turbu_k = getTurbulentInflowK(pos_[index_i], vel_[index_i], turbu_k_[index_i]);
@@ -269,7 +259,7 @@ void kEpsilon_InflowTurbulentCondition::update(size_t index_i, Real dt)
     Real target_in_turbu_E = getTurbulentInflowE(pos_[index_i], turbu_k_[index_i], turbu_epsilon_[index_i]);
     turbu_epsilon_[index_i] += relaxation_rate_ * (target_in_turbu_E - turbu_epsilon_[index_i]);
 }
-//=================================================================================================//
+
 Real kEpsilon_InflowTurbulentCondition::getTurbulentInflowK(Vecd &position, Vecd &velocity, Real &turbu_k)
 {
     Real u = velocity[0];
@@ -277,10 +267,8 @@ Real kEpsilon_InflowTurbulentCondition::getTurbulentInflowK(Vecd &position, Vecd
     Real turbu_k_original = turbu_k;
     if (type_turbu_inlet_ == 1)
     {
-        Real channel_height = CharacteristicLength_; //** Temporarily treatment *
+        Real channel_height = CharacteristicLength_;
 
-        //** Impose fully-developed K from PYTHON result */
-        //** Calculate the distance to wall, Y. position here is the actual postion in x-y coordinate, no transformation*/
         Real Y = 0.0;
         if (position[1] < channel_height / 2.0)
         {
@@ -293,13 +281,7 @@ Real kEpsilon_InflowTurbulentCondition::getTurbulentInflowK(Vecd &position, Vecd
 
         int polynomial_order = 8;
         int num_coefficient = polynomial_order + 1;
-        //** Coefficient of the polynomial, 8th-order, from py21 dp=0.024 */
-        // Real coeff[] = {
-        //     1.215679e-02, -6.681989e-02, 5.043783e-01,
-        //     -2.344875e+00,  6.368016e+00, -1.041386e+01,
-        //     1.009652e+01, -5.336236e+00, 1.183368e+00
-        // };
-        //** Coefficient of the polynomial, 8th-order, from py21 dp=0.1 */
+
         Real coeff[] = {
             1.159981e-02, -4.662944e-02, 2.837400e-01,
             -1.193955e+00, 3.034851e+00, -4.766077e+00,
@@ -322,23 +304,21 @@ Real kEpsilon_InflowTurbulentCondition::getTurbulentInflowK(Vecd &position, Vecd
 
         temp_in_turbu_k = polynomial_value;
     }
-    if (position[0] < 0.0) //** Temporarily treatment *
+    if (position[0] < 0.0)
     {
         turbu_k_original = temp_in_turbu_k;
     }
     return turbu_k_original;
 }
-//=================================================================================================//
+
 Real kEpsilon_InflowTurbulentCondition::getTurbulentInflowE(Vecd &position, Real &turbu_k, Real &turbu_E)
 {
     Real temp_in_turbu_E = C_mu_75_ * pow(turbu_k, 1.5) / TurbulentLength_;
     Real turbu_E_original = turbu_E;
     if (type_turbu_inlet_ == 1)
     {
-        Real channel_height = CharacteristicLength_; //** Temporarily treatment *
+        Real channel_height = CharacteristicLength_;
 
-        //** Impose fully-developed K from PYTHON result */
-        //** Calculate the distance to wall, Y. position here is the actual postion in x-y coordinate, no transformation*/
         Real Y = 0.0;
         if (position[1] < channel_height / 2.0)
         {
@@ -351,13 +331,7 @@ Real kEpsilon_InflowTurbulentCondition::getTurbulentInflowE(Vecd &position, Real
 
         int polynomial_order = 8;
         int num_coefficient = polynomial_order + 1;
-        //** Coefficient of the polynomial, 8th-order, from py21 dp=0.024 */
-        // Real coeff[] = {
-        //     1.633474e-02,  -2.488756e-01, 1.912092e+00,
-        //     -8.381386e+00,   2.205987e+01, -3.542125e+01,
-        //     3.391904e+01, -1.777442e+01, 3.918818e+00
-        // };
-        //** Coefficient of the polynomial, 8th-order, from py21 dp=0.1 */
+
         Real coeff[] = {
             1.428191e-02, -1.766636e-01, 1.153107e+00,
             -4.515606e+00, 1.103752e+01, -1.694146e+01,
@@ -381,13 +355,13 @@ Real kEpsilon_InflowTurbulentCondition::getTurbulentInflowE(Vecd &position, Real
 
         temp_in_turbu_E = polynomial_value;
     }
-    if (position[0] < 0.0) //** Temporarily treatment *
+    if (position[0] < 0.0)
     {
         turbu_E_original = temp_in_turbu_E;
     }
     return turbu_E_original;
 }
-//=================================================================================================//
+
 kEpsilon_StandardWallFunctionCorrection::
     kEpsilon_StandardWallFunctionCorrection(BaseInnerRelation &inner_relation,
                                             BaseContactRelation &contact_relation)
@@ -423,13 +397,9 @@ kEpsilon_StandardWallFunctionCorrection::
     particles_->addEvolvingVariable<Real>("Y_P");
     particles_->addVariableToWrite<Real>("Y_P");
 
-    //** Fixed y_p_ as a constant distance *
-    // std::fill(y_p_.begin(), y_p_.end(), y_p_constant);
-
     particles_->addEvolvingVariable<Real>("WallYplus");
     particles_->addVariableToWrite<Real>("WallYplus");
 
-    //** Initial value is important, especially when use log law *
     particles_->addEvolvingVariable<Real>("WallYstar");
     particles_->addVariableToWrite<Real>("WallYstar");
 
@@ -439,7 +409,7 @@ kEpsilon_StandardWallFunctionCorrection::
     particles_->addEvolvingVariable<Vecd>("FrictionVelocity");
     particles_->addVariableToWrite<Vecd>("FrictionVelocity");
 };
-//=================================================================================================//
+
 void kEpsilon_StandardWallFunctionCorrection::interaction(size_t index_i, Real dt)
 {
     velo_tan_[index_i] = 0.0;
@@ -448,9 +418,6 @@ void kEpsilon_StandardWallFunctionCorrection::interaction(size_t index_i, Real d
     wall_Y_star_[index_i] = 0.0;
     Real current_time = *physical_time_;
 
-    //** If use level-set to get distance from P to wall, activate this *
-    //y_p_[index_i]= distance_to_dummy_interface_levelset_[index_i];
-
     if (is_near_wall_P2_[index_i] == 10)
     {
         Real y_p_constant_i = y_p_[index_i];
@@ -458,28 +425,16 @@ void kEpsilon_StandardWallFunctionCorrection::interaction(size_t index_i, Real d
         Real turbu_k_i_05 = pow(turbu_k_[index_i], 0.5);
         Real turbu_k_i_15 = pow(turbu_k_[index_i], 1.5);
 
-        //** Choose one kind of the distance to calculate the wall-nearest values *
-        //Real r_dummy_normal = distance_to_dummy_interface_up_average_[index_i];
-        //Real r_dummy_normal = distance_to_dummy_interface_[index_i];
-        //Real r_dummy_normal = distance_to_dummy_interface_levelset_[index_i];
-
-        //if (r_dummy_normal <= TinyReal)
-        //{
-        //std::cout << "r_dummy_normal <= TinyReal" << std::endl;
-        //std::cin.get();
-        //}
         Vecd e_i_nearest_tau = e_nearest_tau_[index_i];
         Vecd e_i_nearest_n = e_nearest_normal_[index_i];
         const Vecd &vel_i = vel_[index_i];
         Real rho_i = rho_[index_i];
         Real nu_i = molecular_viscosity_ / rho_i;
 
-        //** Calculate Y_star, note the current code is based on Y_star *
         wall_Y_star_[index_i] = y_p_constant_i * C_mu_wf_25_ * turbu_k_i_05 / nu_i;
 
-        //** Calculate friction velocity, including P2 region. *
         Real velo_fric_mag = 0.0;
-        Real velo_tan_mag = 0.0; //** tangential velo magnitude for fluid particle i *
+        Real velo_tan_mag = 0.0;
 
         velo_tan_mag = abs(e_i_nearest_tau.dot(vel_i));
         velo_tan_[index_i] = velo_tan_mag;
@@ -513,18 +468,15 @@ void kEpsilon_StandardWallFunctionCorrection::interaction(size_t index_i, Real d
             std::cin.get();
         }
 
-        //** friction velocity have the same direction of vel_i, if not, change its direction *
         velo_friction_[index_i] = velo_fric_mag * e_i_nearest_tau;
         if (vel_i.dot(velo_friction_[index_i]) < 0.0)
             velo_friction_[index_i] = -1.0 * velo_friction_[index_i];
 
-        //** Calculate Y_plus  *
         wall_Y_plus_[index_i] = y_p_constant_i * velo_fric_mag / nu_i;
 
-        // ** Correct the near wall values, only for P1 region *
         if (is_near_wall_P1_[index_i] == 1)
         {
-            Matd vel_grad_i_tn = Matd::Zero(); //** velocity gradient of wall-nearest fluid particle i on t-n plane *
+            Matd vel_grad_i_tn = Matd::Zero();
             Matd Q = Matd::Zero();
             Real total_weight = 0.0;
 
@@ -551,7 +503,6 @@ void kEpsilon_StandardWallFunctionCorrection::interaction(size_t index_i, Real d
                     size_t index_j = contact_neighborhood.j_[n];
                     Vecd e_j_n = n_k[index_j];
 
-                    //** Get tangential unit vector, temporarily only suitable for 2D*
                     e_j_tau[0] = e_j_n[1];
                     e_j_tau[1] = e_j_n[0] * (-1.0);
 
@@ -601,10 +552,9 @@ void kEpsilon_StandardWallFunctionCorrection::interaction(size_t index_i, Real d
         }
     }
 }
-//=================================================================================================//
-} // namespace udf
-//=================================================================================================//
-} // namespace fluid_dynamics
-//=================================================================================================//
-} // namespace SPH
-  //=================================================================================================//
+
+}
+
+}
+
+}

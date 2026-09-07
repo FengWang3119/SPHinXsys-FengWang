@@ -1,20 +1,20 @@
-//#pragma once
+
 #include "udf_P_refinement.hpp"
 namespace SPH
 {
-//=================================================================================================//
+
 namespace fluid_dynamics
 {
-//=================================================================================================//
+
 namespace udf
 {
-//=================================================================================================//
+
     P_refinement_GetVelocityGradient<Inner<>>::
         P_refinement_GetVelocityGradient(BaseInnerRelation& inner_relation)
         : P_refinement_GetVelocityGradient<DataDelegateInner>(inner_relation),
         turbu_B_(particles_->getVariableDataByName<Matd>("TurbulentLinearGradientCorrectionMatrix")),
         B_(particles_->getVariableDataByName<Matd>("LinearGradientCorrectionMatrix")) {}
-    //=================================================================================================//
+
     void P_refinement_GetVelocityGradient<Inner<>>::interaction(size_t index_i, Real dt)
     {
         velocity_gradient_only_P_[index_i] = Matd::Zero();
@@ -36,7 +36,7 @@ namespace udf
             }
         }
     }
-    //=================================================================================================//
+
     void P_refinement_GetVelocityGradient<Inner<>>::update(size_t index_i, Real dt)
     {
         if (is_near_wall_P1_[index_i] == 1)
@@ -44,10 +44,10 @@ namespace udf
             velocity_gradient_only_P_[index_i] *= turbu_B_[index_i];
         }
     }
-    //=================================================================================================//
+
     P_refinement_GetVelocityGradient<Contact<Wall>>::P_refinement_GetVelocityGradient(BaseContactRelation& contact_relation)
         : InteractionWithWall<P_refinement_GetVelocityGradient>(contact_relation) {}
-    //=================================================================================================//
+
     void P_refinement_GetVelocityGradient<Contact<Wall>>::interaction(size_t index_i, Real dt)
     {
         if (is_near_wall_P1_[index_i] == 1)
@@ -68,19 +68,19 @@ namespace udf
             velocity_gradient_only_P_[index_i] += vel_grad;
         }
     }
-//=================================================================================================//
+
     template <int Ny, int TypeTDMA>
     P_refinement<Ny, TypeTDMA>::
         P_refinement(SPHBody& sph_body, Real constant_y_p, Real constant_y_p_node)
         : LocalDynamics(sph_body),
-        num_sub_node_(ny), 
+        num_sub_node_(ny),
         friction_velocity_from_sublayer_(particles_->registerStateVariableData<Real>("FrictionVelocityFromSublayer")),
         target_flow_rate_in_sublayer_(particles_->registerStateVariableData<Real>("TargetFlowRateInSublayer")),
         vel_ps_magnitude_(particles_->registerStateVariableData<Real>("VelPS")),
         dudn_for_local_flow_rate_(particles_->registerStateVariableData<Real>("dudnForLocalFlowRate")),
         utau_node_(particles_->registerStateVariableData<Real>("utauNode")),
-        node_value_vel_(particles_->registerStateVariableData<Vec6d>("NodeValue")), 
-        node_value_k_(particles_->registerStateVariableData<Vec6d>("NodeValueTKE")), 
+        node_value_vel_(particles_->registerStateVariableData<Vec6d>("NodeValue")),
+        node_value_k_(particles_->registerStateVariableData<Vec6d>("NodeValueTKE")),
         dUdn_P_sublayer_magnitude_(particles_->registerStateVariableData<Real>("dUdnFromSublayerMagnitude")),
         dUdn_P_sublayer_(particles_->registerStateVariableData<Matd>("dUdnFromSublayer")),
         vel_nodeO_(particles_->registerStateVariableData<Real>("VelNodeO")),
@@ -92,7 +92,7 @@ namespace udf
         turbu_k_(particles_->getVariableDataByName<Real>("TurbulenceKineticEnergy")),
         turbu_omega_(particles_->getVariableDataByName<Real>("TurbulentSpecificDissipation")),
         rho_(particles_->getVariableDataByName<Real>("Density")),
-        viscosity_(sph_body_->getMaterialProperty<Viscosity>()), 
+        viscosity_(sph_body_->getMaterialProperty<Viscosity>()),
         mu_(viscosity_.ReferenceViscosity()),
         velocity_gradient_only_P_(particles_->getVariableDataByName<Matd>("VelocityGradientInnerOnlyP")),
         turbu_mu_(particles_->getVariableDataByName<Real>("TurbulentViscosity")),
@@ -109,7 +109,7 @@ namespace udf
         construct_node_distribution(constant_y_p, constant_y_p_node);
         output_node_distribution();
     }
-    //=================================================================================================//
+
     template <int Ny, int TypeTDMA>
     void P_refinement<Ny, TypeTDMA>::update(size_t index_i, Real dt)
     {
@@ -156,10 +156,10 @@ namespace udf
             Vecd velocity_gradient_only_P_normal = velocity_gradient_only_P_[index_i] * normal;
             Real dudn_from_SPH = obtainTangentialComponent(velocity_gradient_only_P_normal, normal);
             dudn_outer = dudn_from_SPH;
-            dkdn_outer = k_gradient_only_P_[index_i].dot(normal); 
+            dkdn_outer = k_gradient_only_P_[index_i].dot(normal);
             dwdn_outer = omega_gradient_only_P_[index_i].dot(normal);
             Real averaged_vel_over_P = u_outer;
-            SublayerResult sublayer_result{}; 
+            SublayerResult sublayer_result{};
             vel_nodeO_i_prior = u_outer;
             flow_rate_local = get_loacal_flow_rate(averaged_vel_over_P * fluid_particle_spacing_, dudn_outer, vel_nodeO_i_prior, fluid_particle_spacing_);
             U_nodeO = 0.0;
@@ -171,13 +171,13 @@ namespace udf
             vel_nodeUM_[index_i] = U_nodeUM;
             if (is_truncated_output_)
             {
-                //** wall adjacent *
+
                 node_value_vel_[index_i][0] = sublayer_result.sublayer_vel[0];
                 node_value_k_[index_i][0] = sublayer_result.sublayer_k[0];
-                //** sub wall adjacent *
+
                 node_value_vel_[index_i][1] = sublayer_result.sublayer_vel[1];
                 node_value_k_[index_i][1] = sublayer_result.sublayer_k[1];
-                //** left, inner nodes are skipped until the node U can be output *
+
                 for (int i = 2; i < node_dim_output_limit_; ++i) {
                     node_value_vel_[index_i][i] = sublayer_result.sublayer_vel[i + num_skip_output_];
                     node_value_k_[index_i][i] = sublayer_result.sublayer_k[i + num_skip_output_];
@@ -191,7 +191,6 @@ namespace udf
                 }
             }
 
-            //** For testing *
             target_flow_rate_in_sublayer_[index_i] = flow_rate_local;
             global_flow_rate_over_P_[index_i] = averaged_vel_over_P * fluid_particle_spacing_;
             half_flow_rate_over_P_[index_i] = (U_nodeO + (U_nodeO + dudn_outer * 0.5 * fluid_particle_spacing_)) * (0.5 * fluid_particle_spacing_) / 2.0;
@@ -212,13 +211,13 @@ namespace udf
             dUdn_P_sublayer_[index_i] = dUdn_P_sublayer;
         }
     }
-    //=================================================================================================//
+
     template <int Ny, int TypeTDMA>
     typename P_refinement<Ny, TypeTDMA>::SublayerResult P_refinement<Ny, TypeTDMA>::solve_1D_sublayer_Dirichlet(double kinematic_viscosity, double u_p_outer, double k_p_outer,
         double w_p_outer, double vel_grad_p_outer, double nut_p_outer, double h_sublayer, double utau_outer,
         double Q_target, double k_grad_p_outer, double w_grad_p_outer, double& vel_nodeO, double& vel_nodeUM)
     {
-        //------------------------------------------------�� Input parameters ��------------------------------------------------
+
         double utau_init = utau_outer;
         double nu = kinematic_viscosity;
 
@@ -232,21 +231,21 @@ namespace udf
         double relax_k = 0.9;
         double relax_w = 0.6;
         double relax_utau = 0.4;
-        double yplus_min = 0.01; 
+        double yplus_min = 0.01;
 
         double flow_rate_target = Q_target;
         double utau = utau_init;
 
         int type_tdma = type_tdma_;
-        
-        double y[ny];  
+
+        double y[ny];
         double dist_node_i_to_wall[ny]{};
         for (int i = 0; i < ny; ++i)
         {
             y[i] = sublayer_y_[i];
             dist_node_i_to_wall[i] = y[i];
         }
-        
+
         double hy = sublayer_node_uniform_distance_;
         double y_p = sublayer_y_p_constant_;
         double utau_min = yplus_min * nu / y_p;
@@ -273,7 +272,7 @@ namespace udf
             phi_current[j + 2 * ny] = turbu_omega_init_value[j];
         }
         std::copy_n(phi_current, 3 * ny, phi_solved);
-        double differ = 1.0; 
+        double differ = 1.0;
         int num_iter_out = 0;
         int n_start = 0;
         int last = 0;
@@ -303,9 +302,9 @@ namespace udf
                 dkdy[i] = (k_star[i + 1] - k_star[i - 1]) / (2.0 * hy);
                 dwdy[i] = (turbu_omega_star[i + 1] - turbu_omega_star[i - 1]) / (2.0 * hy);
             }
-            dudy_discretized_central[0] = (u_star[1] + u_star[0]) / (2.0 * hy); 
-            dkdy[0] = (k_star[1] - k_star[0]) / (2.0 * hy); 
-            dwdy[0] = (turbu_omega_star[1] - turbu_omega_star[0]) / (2.0 * hy); 
+            dudy_discretized_central[0] = (u_star[1] + u_star[0]) / (2.0 * hy);
+            dkdy[0] = (k_star[1] - k_star[0]) / (2.0 * hy);
+            dwdy[0] = (turbu_omega_star[1] - turbu_omega_star[0]) / (2.0 * hy);
             dudy_discretized_central[ny - 1] = (u_nodeUM - u_star[ny - 2]) / (2.0 * hy);
             dkdy[ny - 1] = (k_nodeUM - k_star[ny - 2]) / (2.0 * hy);
             dwdy[ny - 1] = (w_nodeUM - turbu_omega_star[ny - 2]) / (2.0 * hy);
@@ -376,7 +375,7 @@ namespace udf
             d_u[0] = u_p;
             last = ny - 1;
             double nu_eff_last = nu + nut_star[last];
-            double nu_eff_last_plus = nu + nut_nodeUM; 
+            double nu_eff_last_plus = nu + nut_nodeUM;
             double nu_eff_last_minus = nu + nut_star[last - 1];
             double nu_eff_last_plus_half = 2.0 * nu_eff_last_plus * nu_eff_last / std::max((nu_eff_last_plus + nu_eff_last), tiny);
             double nu_eff_last_minus_half = 2.0 * nu_eff_last_minus * nu_eff_last / std::max((nu_eff_last_minus + nu_eff_last), tiny);
@@ -393,7 +392,7 @@ namespace udf
                 std::cin.get();
             }
             double U_new[ny]{};
-            
+
             if (type_tdma == 0)
             {
                 tdma(ny, a_u, b_u, c_u, d_u, U_new);
@@ -533,9 +532,9 @@ namespace udf
             utau = (1.0 - relax_utau) * utau + relax_utau * utau_new;
             if (!std::isfinite(utau))
             {
-                utau = utau_init; 
+                utau = utau_init;
             }
-            utau = std::max(utau, utau_min);   
+            utau = std::max(utau, utau_min);
             if (!std::isfinite(utau))
             {
                 utau = utau_init;
@@ -583,10 +582,7 @@ namespace udf
         vel_nodeUM = u_nodeUM;
         return res;
     }
-    //=================================================================================================//
-    // ================= TDMA =================
-    // Solve a tridiagonal system: a[i]*x[i-1] + b[i]*x[i] + c[i]*x[i+1] = d[i]
-    // a[0] must be 0, c[n-1] will be ignored
+
     template <int Ny, int TypeTDMA>
     void P_refinement<Ny, TypeTDMA>::tdma(int N, const double* a, const double* b, const double* c, const double* d, double* x)
     {
@@ -615,11 +611,7 @@ namespace udf
             x[i] = dp[i] - cp[i] * x[i + 1];
         }
     }
-//=================================================================================================//
-    // ================= TDMA5 =================
-    // Solve a tridiagonal system of size 5:
-    // a[i]*x[i-1] + b[i]*x[i] + c[i]*x[i+1] = d[i]
-    // a[0] must be 0, c[4] will be ignored
+
     template <int Ny, int TypeTDMA>
     void P_refinement<Ny, TypeTDMA>::tdma5(const double a[5], const double b[5], const double c[5], const double d[5], double x[5])
     {
@@ -629,16 +621,13 @@ namespace udf
             std::cin.get();
         }
 
-        double cp[5]{ 0.0 }; // modified upper diagonal
-        double dp[5]{ 0.0 }; // modified right-hand side
+        double cp[5]{ 0.0 };
+        double dp[5]{ 0.0 };
 
-        // ---------------- Step 0: first row ----------------
         if (std::abs(b[0]) < 1e-14) throw std::runtime_error("TDMA5: b[0] too small!");
         cp[0] = c[0] / b[0];
         dp[0] = d[0] / b[0];
 
-        // ---------------- Forward sweep ----------------
-        // i = 1
         {
             double denom = b[1] - a[1] * cp[0];
             if (std::abs(denom) < 1e-14) throw std::runtime_error("TDMA5: denom too small at row 1");
@@ -646,7 +635,6 @@ namespace udf
             dp[1] = (d[1] - a[1] * dp[0]) / denom;
         }
 
-        // i = 2
         {
             double denom = b[2] - a[2] * cp[1];
             if (std::abs(denom) < 1e-14) throw std::runtime_error("TDMA5: denom too small at row 2");
@@ -654,7 +642,6 @@ namespace udf
             dp[2] = (d[2] - a[2] * dp[1]) / denom;
         }
 
-        // i = 3
         {
             double denom = b[3] - a[3] * cp[2];
             if (std::abs(denom) < 1e-14) throw std::runtime_error("TDMA5: denom too small at row 3");
@@ -662,25 +649,20 @@ namespace udf
             dp[3] = (d[3] - a[3] * dp[2]) / denom;
         }
 
-        // i = 4
         {
             double denom = b[4] - a[4] * cp[3];
             if (std::abs(denom) < 1e-14) throw std::runtime_error("TDMA5: denom too small at row 4");
-            cp[4] = 0.0; // last row has no right neighbor
+            cp[4] = 0.0;
             dp[4] = (d[4] - a[4] * dp[3]) / denom;
         }
 
-        // ---------------- Back substitution ----------------
         x[4] = dp[4];
         x[3] = dp[3] - cp[3] * x[4];
         x[2] = dp[2] - cp[2] * x[3];
         x[1] = dp[1] - cp[1] * x[2];
         x[0] = dp[0] - cp[0] * x[1];
     }
-    // ================= TDMA10 =================
-    // Solve a tridiagonal system of size 10:
-    // a[i]*x[i-1] + b[i]*x[i] + c[i]*x[i+1] = d[i]
-    // a[0] must be 0, c[9] will be ignored
+
     template <int Ny, int TypeTDMA>
     void P_refinement<Ny, TypeTDMA>::tdma10(const double a[10], const double b[10], const double c[10], const double d[10], double x[10])
     {
@@ -690,16 +672,13 @@ namespace udf
             std::cin.get();
         }
 
-        double cp[10]{ 0.0 }; // modified upper diagonal
-        double dp[10]{ 0.0 }; // modified RHS
+        double cp[10]{ 0.0 };
+        double dp[10]{ 0.0 };
 
-        // ---------------- Step 0 ----------------
         if (std::abs(b[0]) < 1e-14) throw std::runtime_error("TDMA10: b[0] too small!");
         cp[0] = c[0] / b[0];
         dp[0] = d[0] / b[0];
 
-        // ---------------- Forward sweep ----------------
-        // i = 1
         {
             double denom = b[1] - a[1] * cp[0];
             if (std::abs(denom) < 1e-14) throw std::runtime_error("TDMA10: denom too small at row 1");
@@ -707,7 +686,6 @@ namespace udf
             dp[1] = (d[1] - a[1] * dp[0]) / denom;
         }
 
-        // i = 2
         {
             double denom = b[2] - a[2] * cp[1];
             if (std::abs(denom) < 1e-14) throw std::runtime_error("TDMA10: denom too small at row 2");
@@ -715,7 +693,6 @@ namespace udf
             dp[2] = (d[2] - a[2] * dp[1]) / denom;
         }
 
-        // i = 3
         {
             double denom = b[3] - a[3] * cp[2];
             if (std::abs(denom) < 1e-14) throw std::runtime_error("TDMA10: denom too small at row 3");
@@ -723,7 +700,6 @@ namespace udf
             dp[3] = (d[3] - a[3] * dp[2]) / denom;
         }
 
-        // i = 4
         {
             double denom = b[4] - a[4] * cp[3];
             if (std::abs(denom) < 1e-14) throw std::runtime_error("TDMA10: denom too small at row 4");
@@ -731,7 +707,6 @@ namespace udf
             dp[4] = (d[4] - a[4] * dp[3]) / denom;
         }
 
-        // i = 5
         {
             double denom = b[5] - a[5] * cp[4];
             if (std::abs(denom) < 1e-14) throw std::runtime_error("TDMA10: denom too small at row 5");
@@ -739,7 +714,6 @@ namespace udf
             dp[5] = (d[5] - a[5] * dp[4]) / denom;
         }
 
-        // i = 6
         {
             double denom = b[6] - a[6] * cp[5];
             if (std::abs(denom) < 1e-14) throw std::runtime_error("TDMA10: denom too small at row 6");
@@ -747,7 +721,6 @@ namespace udf
             dp[6] = (d[6] - a[6] * dp[5]) / denom;
         }
 
-        // i = 7
         {
             double denom = b[7] - a[7] * cp[6];
             if (std::abs(denom) < 1e-14) throw std::runtime_error("TDMA10: denom too small at row 7");
@@ -755,7 +728,6 @@ namespace udf
             dp[7] = (d[7] - a[7] * dp[6]) / denom;
         }
 
-        // i = 8
         {
             double denom = b[8] - a[8] * cp[7];
             if (std::abs(denom) < 1e-14) throw std::runtime_error("TDMA10: denom too small at row 8");
@@ -763,7 +735,6 @@ namespace udf
             dp[8] = (d[8] - a[8] * dp[7]) / denom;
         }
 
-        // i = 9 (last row)
         {
             double denom = b[9] - a[9] * cp[8];
             if (std::abs(denom) < 1e-14) throw std::runtime_error("TDMA10: denom too small at row 9");
@@ -771,7 +742,6 @@ namespace udf
             dp[9] = (d[9] - a[9] * dp[8]) / denom;
         }
 
-        // ---------------- Back substitution ----------------
         x[9] = dp[9];
         x[8] = dp[8] - cp[8] * x[9];
         x[7] = dp[7] - cp[7] * x[8];
@@ -788,9 +758,8 @@ namespace udf
     template class P_refinement<10, 10>;
     template class P_refinement<5, 0>;
     template class P_refinement<10, 0>;
-} // namespace udf
-//=================================================================================================//
-} // namespace fluid_dynamics
-//=================================================================================================//
-} // namespace SPH
-  //=================================================================================================//
+}
+
+}
+
+}

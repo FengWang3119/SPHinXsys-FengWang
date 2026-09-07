@@ -11,7 +11,7 @@ namespace fluid_dynamics
 {
 namespace udf
 {
-//=================================================================================================//
+
     template <typename... InteractionTypes>
     class P_refinement_GetVelocityGradient;
 
@@ -28,7 +28,7 @@ namespace udf
         Matd* velocity_gradient_only_P_;
         Vecd* k_gradient_only_P_;
         Vecd* omega_gradient_only_P_;
-        //
+
         Real* Vol_;
         Vecd* vel_;
         int* is_near_wall_P1_;
@@ -65,7 +65,7 @@ namespace udf
     };
 
     using P_refinement_GetVelocityGradientComplex = ComplexInteraction<P_refinement_GetVelocityGradient<Inner<>, Contact<Wall>>>;
-//=================================================================================================//
+
     template <int Ny = 5, int TypeTDMA = 0>
     class P_refinement : public LocalDynamics, public kOmega_BaseTurbuClosureCoeff, public WallFunctionCoefficient
     {
@@ -77,9 +77,9 @@ namespace udf
 
         void test_sublayer_model_half_channel_height();
         void test_sublayer_model_specific_channel_height();
-        
-        static constexpr int ny = Ny; 
-        static constexpr int type_tdma_ = TypeTDMA; 
+
+        static constexpr int ny = Ny;
+        static constexpr int type_tdma_ = TypeTDMA;
 
         using Vec_ny_d = Eigen::Matrix<Real, ny, 1>;
         inline void check_num_node_consistency()
@@ -106,14 +106,14 @@ namespace udf
         inline void construct_node_distribution(Real constant_y_p, Real constant_y_p_node)
         {
             sublayer_height_contant_ = constant_y_p;
-            
+
             if (constant_y_p_node < TinyReal)
             {
-                sublayer_y_p_constant_ = sublayer_height_contant_ / (Real(ny) + 0.5) / 2.0;  
+                sublayer_y_p_constant_ = sublayer_height_contant_ / (Real(ny) + 0.5) / 2.0;
             }
             else
             {
-                sublayer_y_p_constant_ = constant_y_p_node; 
+                sublayer_y_p_constant_ = constant_y_p_node;
             }
             sublayer_node_uniform_distance_ = (sublayer_height_contant_ - sublayer_y_p_constant_) / Real(ny);
             for (int i = 0; i < ny; ++i)
@@ -134,11 +134,11 @@ namespace udf
             }
             if (is_truncated_output_)
             {
-                //** wall adjacent *
+
                 outfile << sublayer_y_[0] << "\n";
-                //** sub wall adjacent *
+
                 outfile << sublayer_y_[1] << "\n";
-                //** left, inner nodes are skipped until the node U can be output *
+
                 for (int i = 2; i < node_dim_output_limit_; ++i) {
                     outfile << sublayer_y_[i + num_skip_output_] << "\n";
                 }
@@ -178,9 +178,9 @@ namespace udf
 
         inline Real obtainTangentialComponent(const Vecd& vec, const Vecd& normal)
         {
-            Real dot_un = vec.dot(normal);                  
-            Real norm_sqr = vec.dot(vec) - dot_un * dot_un;   
-            return std::sqrt(std::max(0.0, norm_sqr));          
+            Real dot_un = vec.dot(normal);
+            Real norm_sqr = vec.dot(vec) - dot_un * dot_un;
+            return std::sqrt(std::max(0.0, norm_sqr));
         }
 
     protected:
@@ -222,8 +222,8 @@ namespace udf
         Vecd* k_gradient_only_P_;
         Vecd* omega_gradient_only_P_;
     };
-//=================================================================================================//
-} // namespace udf
-} // namespace fluid_dynamics
-} // namespace SPH
-#endif // UDF_COMMON_TURBULENCE_MODEL_H
+
+}
+}
+}
+#endif

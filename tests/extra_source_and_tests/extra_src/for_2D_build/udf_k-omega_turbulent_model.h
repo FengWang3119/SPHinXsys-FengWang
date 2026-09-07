@@ -17,12 +17,12 @@ class kOmega_BaseTurbuClosureCoeff
     virtual ~kOmega_BaseTurbuClosureCoeff(){};
 
   protected:
-    Real std_kw_beta_star_; 
+    Real std_kw_beta_star_;
     Real std_kw_sigma_star_;
     Real std_kw_alpha_;
     Real std_kw_sigma_;
     Real std_kw_beta_;
-    Real std_kw_f_beta_; 
+    Real std_kw_f_beta_;
     Real std_kw_beta_0_;
     Real std_kw_sigma_do_;
     Real std_kw_sigma_d_;
@@ -35,7 +35,7 @@ class kOmega_BaseTurbuClosureCoeff
     Real turbulent_length_ratio_for_omega_inlet_;
     Real C_mu_75_for_omega_inlet_;
 };
-//=================================================================================================//
+
 template <typename... InteractionTypes>
 class kOmega_GetVelocityGradient;
 
@@ -88,7 +88,7 @@ class kOmega_GetVelocityGradient<Contact<Wall>> : public InteractionWithWall<kOm
     Matd *velocity_gradient_;
 };
 using kOmega_GetVelocityGradientComplex = ComplexInteraction<kOmega_GetVelocityGradient<Inner<>, Contact<Wall>>>;
-//=================================================================================================//
+
 template <typename... T>
 class kOmega_BaseTurbulentModel;
 
@@ -109,7 +109,7 @@ class kOmega_BaseTurbulentModel<Base, DataDelegationType>
     Vecd *vel_;
     int dimension_;
 };
-//=================================================================================================//
+
 class kOmega_kTransportEquationInner : public kOmega_BaseTurbulentModel<Base, DataDelegateInner>
 {
   public:
@@ -130,10 +130,10 @@ class kOmega_kTransportEquationInner : public kOmega_BaseTurbulentModel<Base, Da
     Real *k_diffusion_;
 
     Matd *turbu_strain_rate_;
-    int *is_near_wall_P1_; 
+    int *is_near_wall_P1_;
     Matd *velocity_gradient_;
 };
-//=================================================================================================//
+
 class kOmega_TKE_Diffusion : public kOmega_BaseTurbulentModel<Base, DataDelegateInner>
 {
   public:
@@ -147,7 +147,7 @@ class kOmega_TKE_Diffusion : public kOmega_BaseTurbulentModel<Base, DataDelegate
     Real *turbu_omega_;
     Real *k_diffusion_;
 };
-//=================================================================================================//
+
 class kOmega_omegaTransportEquationInner : public kOmega_BaseTurbulentModel<Base, DataDelegateInner>
 {
   public:
@@ -170,7 +170,7 @@ class kOmega_omegaTransportEquationInner : public kOmega_BaseTurbulentModel<Base
     Real *k_production_;
     int *is_near_wall_P1_;
 };
-//=================================================================================================//
+
 class kOmega_TSDR_Diffusion_and_Gradient_Dot_Inner : public kOmega_BaseTurbulentModel<Base, DataDelegateInner>
 {
   public:
@@ -186,7 +186,7 @@ class kOmega_TSDR_Diffusion_and_Gradient_Dot_Inner : public kOmega_BaseTurbulent
     Real *turbu_k_;
     Matd *B_;
 };
-//=================================================================================================//
+
 class kOmegaTurbulentEddyViscosity : public LocalDynamics,
                                      public kOmega_BaseTurbuClosureCoeff
 {
@@ -207,7 +207,7 @@ class kOmegaTurbulentEddyViscosity : public LocalDynamics,
     Viscosity &viscosity_;
     Real mu_;
 };
-//=================================================================================================//
+
 class kOmega_WallFunctionCorrection : public LocalDynamics,
                                       public DataDelegateContact,
                                       public WallFunction,
@@ -250,7 +250,7 @@ class kOmega_WallFunctionCorrection : public LocalDynamics,
     Real *turbu_strain_rate_magnitude_;
     Real *laminar_fraction_for_blend_;
 };
-//=================================================================================================//
+
 class kOmega_InflowTurbulentCondition : public BaseFlowBoundaryCondition,
                                         public kOmega_BaseTurbuClosureCoeff
 {
@@ -274,14 +274,14 @@ class kOmega_InflowTurbulentCondition : public BaseFlowBoundaryCondition,
 
     Real polyEval(const std::vector<Real>& a, Real x);
 };
-//=================================================================================================//
+
 template <typename TargetTKE>
 class kOmega_InflowTurbulentCondition_TKE : public BaseFlowBoundaryCondition,
     public kOmega_BaseTurbuClosureCoeff
 {
 public:
     explicit kOmega_InflowTurbulentCondition_TKE(OrientedBoxByCell& aligned_box_part, Real relaxation_rate)
-        : BaseFlowBoundaryCondition(aligned_box_part), 
+        : BaseFlowBoundaryCondition(aligned_box_part),
         relaxation_rate_(relaxation_rate),
         turbu_k_(particles_->getVariableDataByName<Real>("TurbulenceKineticEnergy")),
         oriented_box_(aligned_box_part.getOrientedBox()),
@@ -312,7 +312,7 @@ protected:
     TargetTKE target_tke;
     Real* physical_time_;
 };
-//=================================================================================================//
+
 template <typename TargetTSDR>
 class kOmega_InflowTurbulentCondition_TSDR : public BaseFlowBoundaryCondition,
     public kOmega_BaseTurbuClosureCoeff
@@ -354,8 +354,8 @@ protected:
     TargetTSDR target_tsdr;
     Real* physical_time_;
 };
-//=================================================================================================//
-} // udf
-} // namespace fluid_dynamics
-} // namespace SPH
-#endif // K_EPSILON_TURBULENT_MODEL_H
+
+}
+}
+}
+#endif

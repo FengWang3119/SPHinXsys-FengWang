@@ -4,13 +4,13 @@
 
 namespace SPH
 {
-//=====================================================================================================//
+
 namespace fluid_dynamics
 {
-//=================================================================================================//
+
 namespace udf
 {
-//=================================================================================================//
+
 template <class DataDelegationType>
 template <class BaseRelationType>
 TKEnergyForce<Base, DataDelegationType>::
@@ -23,7 +23,7 @@ TKEnergyForce<Base, DataDelegationType>::
       turbu_k_(this->particles_->template getVariableDataByName<Real>("TurbulenceKineticEnergy")),
       Vol_(this->particles_->template getVariableDataByName<Real>("VolumetricMeasure")),
       test_k_grad_rslt_(this->particles_->template registerStateVariableData<Vecd>("TkeGradResult")) {}
-//=================================================================================================//
+
 template <class DataDelegationType>
 template <class BaseRelationType>
 kEpsilon_GetVelocityGradient<DataDelegationType>::
@@ -36,12 +36,12 @@ kEpsilon_GetVelocityGradient<DataDelegationType>::
       is_near_wall_P2_(this->particles_->template getVariableDataByName<int>("IsNearWallP2")),
       velocity_gradient_(this->particles_->template registerStateVariableData<Matd>("TurbulentVelocityGradient")),
       velocity_gradient_wall(this->particles_->template registerStateVariableData<Matd>("Velocity_Gradient_Wall")) {}
-//=================================================================================================//
+
 template <class DataDelegationType>
 template <class BaseRelationType>
 TurbuViscousForce<DataDelegationType>::TurbuViscousForce(BaseRelationType &base_relation)
     : ViscousForce<DataDelegationType>(base_relation),
-      //KGI_separated_B_(this->particles_->template registerStateVariableData<Vecd>("KGI_separated_B")),
+
       turbu_k_(this->particles_->template getVariableDataByName<Real>("TurbulenceKineticEnergy")),
       turbu_mu_(this->particles_->template getVariableDataByName<Real>("TurbulentViscosity")),
       wall_Y_plus_(this->particles_->template getVariableDataByName<Real>("WallYplus")),
@@ -53,7 +53,6 @@ TurbuViscousForce<DataDelegationType>::TurbuViscousForce(BaseRelationType &base_
       molecular_viscosity_(viscosity_.ReferenceViscosity()),
       c0_(DynamicCast<Fluid>(this, this->sph_body_->getMatterMaterial()).ReferenceSoundSpeed()) {}
 
-//=================================================================================================//
 template <class DataDelegationType>
 template <class BaseRelationType>
 TurbulentLinearGradientCorrectionMatrix<DataDelegationType>::
@@ -65,18 +64,15 @@ TurbulentLinearGradientCorrectionMatrix<DataDelegationType>::
       B_only_wall_(this->particles_->template registerStateVariableData<Matd>(
           "TurbulentLinearGradientCorrectionMatrixOnlyWall", IdentityMatrix<Matd>::value))
 {
-    //this->particles_->template addVariableToWrite<Matd>("TurbulentLinearGradientCorrectionMatrix");
-    //this->particles_->template addEvolvingVariable<Matd>("TurbulentLinearGradientCorrectionMatrix");
-    //this->particles_->template addVariableToWrite<Matd>("LinearGradientCorrectionMatrix");
-    //this->particles_->template addEvolvingVariable<Matd>("LinearGradientCorrectionMatrix");
+
 }
-//=================================================================================================//
+
 template <class RiemannSolverType>
 TurbulentIntegration2ndHalf<Contact<Wall>, RiemannSolverType>::
     TurbulentIntegration2ndHalf(BaseContactRelation &wall_contact_relation)
     : BaseIntegrationWithWall(wall_contact_relation),
       riemann_solver_(this->fluid_, this->fluid_, 3.0) {}
-//=================================================================================================//
+
 template <class RiemannSolverType>
 void TurbulentIntegration2ndHalf<Contact<Wall>, RiemannSolverType>::interaction(size_t index_i, Real dt)
 {
@@ -103,10 +99,9 @@ void TurbulentIntegration2ndHalf<Contact<Wall>, RiemannSolverType>::interaction(
     drho_dt_[index_i] += density_change_rate * this->rho_[index_i];
     force_[index_i] += p_dissipation * this->Vol_[index_i];
 }
-//=================================================================================================//
-} // namespace udf
-//=================================================================================================//
-} // namespace fluid_dynamics
-//=================================================================================================//
-} // namespace SPH
-  //=================================================================================================//
+
+}
+
+}
+
+}

@@ -10,11 +10,8 @@
 #include "sphinxsys.h"
 using namespace SPH;
 
-//----------------------------------------------------------------------
-//	Basic geometry parameters and numerical setup.
-//----------------------------------------------------------------------
-Real DH = 1.0;  
-Real DL = 1.0; 
+Real DH = 1.0;
+Real DL = 1.0;
 Real num_fluid_cross_section = 40.0;
 
 constexpr Real wave_amplitude = 0.1;
@@ -36,36 +33,28 @@ static constexpr int num_node_sublayer_model = 5;
 static constexpr int type_tdma_sublayer_model = 5;
 Real turbulent_module_activate_time = 2.0;
 StdVec<Real> initial_turbu_values = {0.01, 2.056, 0.02};
-Real y_p_constant = DH / 2.0 / num_fluid_cross_section;            
-Real resolution_ref = DH / num_fluid_cross_section;                    
+Real y_p_constant = DH / 2.0 / num_fluid_cross_section;
+Real resolution_ref = DH / num_fluid_cross_section;
 
-Real BW = resolution_ref * 4; 
-//----------------------------------------------------------------------
-//	Domain bounds of the system.
-//----------------------------------------------------------------------
+Real BW = resolution_ref * 4;
+
 BoundingBoxd system_domain_bounds(Vecd(-2.0 * BW, -wave_amplitude - BW), Vecd(DL + 2.0 * BW, DH + BW));
-//----------------------------------------------------------------------
-//	Material properties of the fluid.
-//----------------------------------------------------------------------
+
 Real U_inlet = 0.816;
-Real U_f = U_inlet;         
-Real U_max = 1.5 * U_inlet; 
+Real U_f = U_inlet;
+Real U_max = 1.5 * U_inlet;
 Real c_f = 10.0 * U_max;
-Real rho0_f = 1.0; 
+Real rho0_f = 1.0;
 Real mu_f = 1.0e-4;
 Real Re_calculated = U_f * DH * rho0_f / mu_f;
-//----------------------------------------------------------------------
-//  Center-point observer
-//----------------------------------------------------------------------
+
 Real x_observe_center = 0.5 * DL;
 Real y_observe_center =
 0.5 * (DH + lowerWallHeight(x_observe_center));
 
 StdVec<Vecd> observer_location_center_point = {
     Vecd(x_observe_center, y_observe_center) };
-//----------------------------------------------------------------------
-//  Case-dependent geometry: periodic wavy channel
-//----------------------------------------------------------------------
+
 std::vector<Vecd> createWaterBlockShape()
 {
     std::vector<Vecd> water_block_shape;
@@ -155,9 +144,9 @@ public:
         add<MultiPolygonShape>(lower_wall, "LowerWavyWall");
     }
 };
-namespace SPH 
+namespace SPH
 {
-//=================================================================================================//
+
     class UpdateVolume : public LocalDynamics
     {
     public:
@@ -169,7 +158,7 @@ namespace SPH
             indicator_(particles_->getVariableDataByName<int>("Indicator")) {}
         virtual ~UpdateVolume() {};
 
-        void update(size_t index_i, Real dt = 0.0) 
+        void update(size_t index_i, Real dt = 0.0)
         {
             Vol_[index_i] = mass_[index_i] / rho_[index_i];
         };
@@ -178,5 +167,5 @@ namespace SPH
         Real* rho_, * mass_, * Vol_;
         int* indicator_;
     };
-//=================================================================================================//
+
 }
