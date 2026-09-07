@@ -27,23 +27,8 @@ int main(int ac, char *av[])
     ObserverBody observer_center_point(sph_system, "ObserverCenterPoint");
     observer_center_point.generateParticles<ObserverParticles>(observer_location_center_point);
 
-    observe_cross_sections::getObservationLocations();
-    observe_cross_sections::outputObservePositions();
-    observe_cross_sections::outputTheoreticalY();
-    observe_cross_sections::outputNumberOfObserverPoints();
-    ObserverBody fluid_observer(sph_system, "FluidObserver");
-    fluid_observer.generateParticles<ObserverParticles>(observe_cross_sections::observation_locations);
-    
-    observe_node_cross_sections::getObservationLocations();
-    observe_node_cross_sections::outputObservePositions();
-    observe_node_cross_sections::outputTheoreticalPositions();
-    ObserverBody node_observer(sph_system, "NodeObserver");
-    node_observer.generateParticles<ObserverParticles>(observe_node_cross_sections::observation_locations);
-
     InnerRelation water_block_inner(water_block);
     ContactRelation water_wall_contact(water_block, {&wall_boundary});
-    ContactRelation fluid_observer_contact(fluid_observer, {&water_block});
-    ContactRelation node_observer_contact(node_observer, { &water_block });
     ContactRelation observer_centerpoint_contact(observer_center_point, {&water_block});
     //----------------------------------------------------------------------
     // Combined relations built from basic relations
@@ -138,23 +123,13 @@ int main(int ac, char *av[])
     ReduceDynamics<fluid_dynamics::udf::TurbulentAdvectionTimeStepSize> get_turbulent_fluid_advection_time_step_size(water_block, U_f);
     ReduceDynamics<fluid_dynamics::AcousticTimeStep> get_fluid_time_step_size(water_block);
     SimpleDynamics<fluid_dynamics::udf::kOmegaTurbulentEddyViscosity> update_eddy_viscosity(water_block);
-    
     ParticleSorting particle_sorting(water_block);
     
     fluid_dynamics::udf::BodyStatesRecordingToVtpIncludeNode body_states_recording(sph_system);
     body_states_recording.addToWrite<Real>(water_block, "Pressure");            // output for debug
     body_states_recording.addToWrite<int>(water_block, "Indicator");            // output for debug
     body_states_recording.addToWrite<Real>(water_block, "Density");             // output for debug
-    ObservedQuantityRecording<Vecd> write_recorded_water_velocity("Velocity", fluid_observer_contact);
-    ObservedQuantityRecording<Real> write_recorded_water_k("TurbulenceKineticEnergy", fluid_observer_contact);
-    ObservedQuantityRecording<Real> write_recorded_water_mut("TurbulentViscosity", fluid_observer_contact);
-    ObservedQuantityRecording<Real> write_recorded_water_omega("TurbulentSpecificDissipation", fluid_observer_contact);
     body_states_recording.addToWrite<Vecd>(wall_boundary, "NormalDirection");
-
-    //** Temporary treatment *
-    ObservedQuantityRecording<Vec6d> write_recorded_water_node_velocity("NodeValue", node_observer_contact);
-    ObservedQuantityRecording<Vec6d> write_recorded_water_node_k("NodeValueTKE", node_observer_contact);
-    ObservedQuantityRecording<Real> write_recorded_water_node_utau("FrictionVelocityFromSublayer", node_observer_contact);
 
     sph_system.initializeSystemCellLinkedLists();
     periodic_condition_x.update_cell_linked_list_.exec();
@@ -167,8 +142,6 @@ int main(int ac, char *av[])
     size_t number_of_iterations = sph_system.RestartStep();
     int screen_output_interval = 100;
     Real end_time = 300.0;                      /**< End time. */
-    Real cutoff_ratio = 0.9;                    //** cutoff_time should be a integral and the same as the PY script */
-    Real cutoff_time = end_time * cutoff_ratio; //** cutoff_time should be a integral and the same as the PY script */
     Real num_output_files = 40.0;
     Real Output_Time = end_time / num_output_files; /**< Time stamps for output of body states. */
     Real dt = 0.0;                      /**< Default acoustic time step sizes. */
@@ -251,12 +224,6 @@ int main(int ac, char *av[])
             }
             number_of_iterations++;
             periodic_condition_x.bounding_.exec();
-            if (physical_time > cutoff_time)
-            {
-                write_recorded_water_node_velocity.writeToFile(number_of_iterations);
-                write_recorded_water_node_k.writeToFile(number_of_iterations);
-                write_recorded_water_node_utau.writeToFile(number_of_iterations);
-            }
             if (number_of_iterations % 100 == 0 && number_of_iterations != 1)
             {
                 particle_sorting.exec();
@@ -264,16 +231,7 @@ int main(int ac, char *av[])
             water_block.updateCellLinkedList();
             periodic_condition_x.update_cell_linked_list_.exec();
             water_block_complex.updateConfiguration();
-            fluid_observer_contact.updateConfiguration();
-            node_observer_contact.updateConfiguration();
             inlet_outlet_surface_particle_indicator.exec();
-            if (physical_time > cutoff_time)
-            {
-                write_recorded_water_velocity.writeToFile(number_of_iterations);
-                write_recorded_water_k.writeToFile(number_of_iterations);
-                write_recorded_water_mut.writeToFile(number_of_iterations);
-                write_recorded_water_omega.writeToFile(number_of_iterations);
-            }
         }
         body_states_recording.writeToFile();
         observer_centerpoint_contact.updateConfiguration();
