@@ -120,10 +120,7 @@ kEpsilon_GetVelocityGradient<Inner<>>::kEpsilon_GetVelocityGradient(BaseInnerRel
       velocity_gradient_(particles_->getVariableDataByName<Matd>("TurbulentVelocityGradient")),
       B_(particles_->getVariableDataByName<Matd>("LinearGradientCorrectionMatrix")),
       turbu_B_(particles_->getVariableDataByName<Matd>("TurbulentLinearGradientCorrectionMatrix")),
-      weight_sub_nearwall_(weight_sub)
-{
-    this->particles_->addVariableToWrite<Matd>("TurbulentVelocityGradient");
-}
+      weight_sub_nearwall_(weight_sub) {}
 //=================================================================================================//
 void kEpsilon_GetVelocityGradient<Inner<>>::interaction(size_t index_i, Real dt)
 {
@@ -427,8 +424,6 @@ JudgeIsNearWall::
         contact_n_.push_back(contact_particles_[k]->getVariableDataByName<Vecd>("NormalDirection"));
         contact_Vol_.push_back(contact_particles_[k]->getVariableDataByName<Real>("VolumetricMeasure"));
     }
-    particles_->addVariableToWrite<int>("IsNearWallP1");
-    particles_->addVariableToWrite<int>("IsNearWallP2");
 };
 //=================================================================================================//
 void JudgeIsNearWall::interaction(size_t index_i, Real dt)
@@ -624,10 +619,7 @@ NonDimensionalisePressure::
     : LocalDynamics(sph_body),
       rho_(particles_->getVariableDataByName<Real>("Density")),
       p_(particles_->getVariableDataByName<Real>("Pressure")),
-      p_dimensionless_(particles_->registerStateVariableData<Real>("PressureDimensionless"))
-{
-    particles_->addVariableToWrite<Real>("PressureDimensionless");
-}
+      p_dimensionless_(particles_->registerStateVariableData<Real>("PressureDimensionless")) {}
 //=================================================================================================//
 void NonDimensionalisePressure::update(size_t index_i, Real dt)
 {

@@ -133,12 +133,6 @@ kOmega_WallFunctionCorrection::
         contact_n_.push_back(contact_particles_[k]->getVariableDataByName<Vecd>("NormalDirection"));
         contact_Vol_.push_back(contact_particles_[k]->getVariableDataByName<Real>("VolumetricMeasure"));
     }
-    particles_->addVariableToWrite<Real>("Y_P");
-    particles_->addVariableToWrite<Real>("WallYplus");
-    particles_->addVariableToWrite<Real>("WallYstar");
-    particles_->addVariableToWrite<Vecd>("FrictionVelocity");
-    particles_->addVariableToWrite<Real>("WallShearStress");
-    particles_->addVariableToWrite<Real>("LaminarFractionForBlend");
 };
 //=================================================================================================//
 void kOmega_WallFunctionCorrection::interaction(size_t index_i, Real dt)
@@ -323,11 +317,7 @@ kOmega_kTransportEquationInner::kOmega_kTransportEquationInner(BaseInnerRelation
       velocity_gradient_(particles_->getVariableDataByName<Matd>("TurbulentVelocityGradient"))
 {
     particles_->addEvolvingVariable<Real>("TurbulenceKineticEnergy");
-    particles_->addVariableToWrite<Real>("TurbulenceKineticEnergy");
     particles_->addEvolvingVariable<Real>("TurbulentSpecificDissipation");
-    particles_->addVariableToWrite<Real>("TurbulentSpecificDissipation");
-    particles_->addVariableToWrite<Real>("TurbulentViscosity");
-    particles_->addVariableToWrite<int>("TurbulentIndicator");
 }
 //=================================================================================================//
 void kOmega_kTransportEquationInner::update(size_t index_i, Real dt)

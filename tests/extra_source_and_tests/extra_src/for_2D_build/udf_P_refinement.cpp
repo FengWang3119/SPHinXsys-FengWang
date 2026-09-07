@@ -13,10 +13,7 @@ namespace udf
         P_refinement_GetVelocityGradient(BaseInnerRelation& inner_relation)
         : P_refinement_GetVelocityGradient<DataDelegateInner>(inner_relation),
         turbu_B_(particles_->getVariableDataByName<Matd>("TurbulentLinearGradientCorrectionMatrix")),
-        B_(particles_->getVariableDataByName<Matd>("LinearGradientCorrectionMatrix"))
-    {
-        particles_->addVariableToWrite<Matd>("VelocityGradientInnerOnlyP");
-    }
+        B_(particles_->getVariableDataByName<Matd>("LinearGradientCorrectionMatrix")) {}
     //=================================================================================================//
     void P_refinement_GetVelocityGradient<Inner<>>::interaction(size_t index_i, Real dt)
     {
@@ -108,23 +105,9 @@ namespace udf
         k_gradient_only_P_(particles_->getVariableDataByName<Vecd>("TurbulentKineticEnergyGradientOnlyP")),
         omega_gradient_only_P_(particles_->getVariableDataByName<Vecd>("TurbulentSpecificDissipationGradientOnlyP"))
     {
-        particles_->addVariableToWrite<Real>("FrictionVelocityFromSublayer");
-        particles_->addVariableToWrite<Real>("TargetFlowRateInSublayer");
-        particles_->addVariableToWrite<Real>("VelPS");
-        particles_->addVariableToWrite<Real>("dudnForLocalFlowRate");
-        particles_->addVariableToWrite<Real>("utauNode");
-        particles_->addVariableToWrite<Real>("DistanceToDummyInterface");
-        particles_->addVariableToWrite<Vec6d>("NodeValue");
-        particles_->addVariableToWrite<Vec6d>("NodeValueTKE");
         check_num_node_consistency();
         construct_node_distribution(constant_y_p, constant_y_p_node);
         output_node_distribution();
-        particles_->addVariableToWrite<Real>("dUdnFromSublayerMagnitude");
-        particles_->addVariableToWrite<Matd>("dUdnFromSublayer");
-        particles_->addVariableToWrite<Real>("VelNodeO");
-        particles_->addVariableToWrite<Real>("VelNodeUM");
-        particles_->addVariableToWrite<Real>("global_flow_rate_over_P_");
-        particles_->addVariableToWrite<Real>("half_flow_rate_over_P_");
     }
     //=================================================================================================//
     template <int Ny, int TypeTDMA>
