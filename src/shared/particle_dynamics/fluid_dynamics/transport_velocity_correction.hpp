@@ -13,6 +13,7 @@ TransportVelocityCorrection<Base, DataDelegationType, KernelCorrectionType, Part
     TransportVelocityCorrection(BaseRelationType &base_relation)
     : LocalDynamics(base_relation.getSPHBody()), DataDelegationType(base_relation),
       zero_gradient_residue_(this->particles_->template registerStateVariable<Vecd>("ZeroGradientResidue")),
+      zero_gradient_residue_without_correction_(this->particles_->template registerStateVariable<Vecd>("ZeroGradientResidueWithout")),
       kernel_correction_(this->particles_), within_scope_(this->particles_)
 {
     static_assert(std::is_base_of<WithinScope, ParticleScope>::value,
@@ -40,6 +41,7 @@ void TransportVelocityCorrection<Inner<ResolutionType, LimiterType>, CommonContr
     if (this->within_scope_(index_i))
     {
         Vecd inconsistency = Vecd::Zero();
+        Vecd inconsistency_without_correction = Vecd::Zero();
         const Neighborhood &inner_neighborhood = this->inner_configuration_[index_i];
         for (size_t n = 0; n != inner_neighborhood.current_size_; ++n)
         {
@@ -47,8 +49,10 @@ void TransportVelocityCorrection<Inner<ResolutionType, LimiterType>, CommonContr
             // acceleration for transport velocity
             inconsistency -= (this->kernel_correction_(index_i) + this->kernel_correction_(index_j, index_i)) *
                              inner_neighborhood.dW_ij_[n] * this->Vol_[index_j] * inner_neighborhood.e_ij_[n];
+            inconsistency_without_correction -= (1.0 + 1.0) * inner_neighborhood.dW_ij_[n] * this->Vol_[index_j] * inner_neighborhood.e_ij_[n];
         }
         this->zero_gradient_residue_[index_i] = inconsistency;
+        this->zero_gradient_residue_without_correction_[index_i] = inconsistency_without_correction;
     }
 }
 //=================================================================================================//
@@ -83,6 +87,7 @@ void TransportVelocityCorrection<Contact<Boundary>, CommonControlTypes...>::
     if (this->within_scope_(index_i))
     {
         Vecd inconsistency = Vecd::Zero();
+        Vecd inconsistency_without_correction = Vecd::Zero();
         for (size_t k = 0; k < this->contact_configuration_.size(); ++k)
         {
             Real *wall_Vol_k = wall_Vol_[k];
@@ -93,9 +98,11 @@ void TransportVelocityCorrection<Contact<Boundary>, CommonControlTypes...>::
                 // acceleration for transport velocity
                 inconsistency -= 2.0 * this->kernel_correction_(index_i) * contact_neighborhood.dW_ij_[n] *
                                  wall_Vol_k[index_j] * contact_neighborhood.e_ij_[n];
+                inconsistency_without_correction -= 2.0 * 1.0 * contact_neighborhood.dW_ij_[n] * wall_Vol_k[index_j] * contact_neighborhood.e_ij_[n];
             }
         }
         this->zero_gradient_residue_[index_i] += inconsistency;
+        this->zero_gradient_residue_without_correction_[index_i] += inconsistency_without_correction;
     }
 }
 //=================================================================================================//

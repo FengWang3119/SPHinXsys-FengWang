@@ -55,7 +55,7 @@ class TransportVelocityCorrection<Base, DataDelegationType, KernelCorrectionType
     virtual ~TransportVelocityCorrection(){};
 
   protected:
-    Vecd *zero_gradient_residue_;
+    Vecd *zero_gradient_residue_, *zero_gradient_residue_without_correction_;
     KernelCorrectionType kernel_correction_;
     ParticleScope within_scope_;
 };

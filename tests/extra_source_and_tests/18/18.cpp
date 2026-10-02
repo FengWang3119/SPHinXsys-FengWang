@@ -206,6 +206,7 @@ int main(int ac, char *av[])
     body_states_recording.addToWrite<int>(water_block, "Indicator");            // output for debug
     body_states_recording.addToWrite<Real>(water_block, "Density");             // output for debug
     body_states_recording.addToWrite<Vecd>(water_block, "ZeroGradientResidue"); // output for debug
+    body_states_recording.addToWrite<Vecd>(water_block, "ZeroGradientResidueWithout"); // output for debug
     ObservedQuantityRecording<Vecd> write_recorded_water_velocity("Velocity", fluid_observer_contact);
     ObservedQuantityRecording<Real> write_recorded_water_centerline_pressure("Pressure", fluid_observer_contact);
     ObservedQuantityRecording<Vecd> write_recorded_water_velocity_cross_section("Velocity", fluid_observer_cross_section_contact);
