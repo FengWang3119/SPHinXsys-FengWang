@@ -131,8 +131,8 @@ int main(int ac, char *av[])
     InteractionWithUpdate<LinearGradientCorrectionMatrixComplex> corrected_configuration_fluid(water_block_inner, water_wall_contact);
 
     /** Pressure relaxation algorithm with Riemann solver for viscous flows. */
-    //Dynamics1Level<fluid_dynamics::Integration1stHalfWithWallRiemann> pressure_relaxation(water_block_inner, water_wall_contact);
-    Dynamics1Level<fluid_dynamics::Integration1stHalfWithWallRiemann_RKGC_OBC> pressure_relaxation(water_block_inner, water_wall_contact);
+    Dynamics1Level<fluid_dynamics::Integration1stHalfWithWallRiemann> pressure_relaxation(water_block_inner, water_wall_contact);
+    //Dynamics1Level<fluid_dynamics::Integration1stHalfWithWallRiemann_RKGC_OBC> pressure_relaxation(water_block_inner, water_wall_contact);
 
     /** Density relaxation algorithm by using position verlet time stepping. */
     Dynamics1Level<fluid_dynamics::Integration2ndHalfWithWallNoRiemann> density_relaxation(water_block_inner, water_wall_contact);
@@ -144,9 +144,9 @@ int main(int ac, char *av[])
 
     /** Impose transport velocity, with or without limiter . */
     //InteractionWithUpdate<fluid_dynamics::TransportVelocityLimitedCorrectionComplex<BulkParticles>> transport_velocity_correction(water_block_inner, water_wall_contact);
-    //InteractionWithUpdate<fluid_dynamics::TransportVelocityCorrectionComplex<BulkParticles>> transport_velocity_correction(water_block_inner, water_wall_contact);
+    InteractionWithUpdate<fluid_dynamics::TransportVelocityCorrectionComplex<BulkParticles>> transport_velocity_correction(water_block_inner, water_wall_contact);
     //InteractionWithUpdate<fluid_dynamics::TVC_Limited_RKGC_OBC<BulkParticles>> transport_velocity_correction(water_block_inner, water_wall_contact);
-    InteractionWithUpdate<fluid_dynamics::TVC_RKGC_OBC<BulkParticles>> transport_velocity_correction(water_block_inner, water_wall_contact);
+    //InteractionWithUpdate<fluid_dynamics::TVC_RKGC_OBC<BulkParticles>> transport_velocity_correction(water_block_inner, water_wall_contact);
 
     /** A temporarily test for the limiter . */
     SimpleDynamics<GetLimiterOfTransportVelocityCorrection> get_limiter_of_transport_velocity_correction(water_block);
@@ -154,6 +154,9 @@ int main(int ac, char *av[])
     SimpleDynamics<GetPressureGradientResidue> get_pressure_gradient_residue(water_block);
     InteractionDynamics<GetPressureGradientResidueComplex_RKGC> get_RKGC_pressure_gradient_residue(water_block_inner, water_wall_contact);
     SimpleDynamics<NonDimensionalisePressure> get_dimensionless_pressure(water_block);
+
+    ReduceDynamics<CalculateParticleInDomain> calculate_particle_in_domain(water_block, DL);
+    ReduceDynamics<CalculateAverageKGS> calculate_average_kgs(water_block, DL);
 
     /** Evaluation of density by summation approach. */
     //InteractionWithUpdate<fluid_dynamics::DensitySummationFreeStreamComplex> update_density_by_summation(water_block_inner, water_wall_contact);
@@ -169,8 +172,8 @@ int main(int ac, char *av[])
     BodyAlignedBoxByCell left_emitter(water_block, left_emitter_shape);
     fluid_dynamics::BidirectionalBuffer<LeftInflowPressure> left_bidirection_buffer(left_emitter, inlet_particle_buffer);
 
-    //SimpleDynamics<fluid_dynamics::PressureCondition<LeftInflowPressure>> left_inflow_pressure_condition(left_emitter);
-    SimpleDynamics<fluid_dynamics::PressureConditionCorrection<LeftInflowPressure>> left_inflow_pressure_condition(left_emitter);
+    SimpleDynamics<fluid_dynamics::PressureCondition<LeftInflowPressure>> left_inflow_pressure_condition(left_emitter);
+    //SimpleDynamics<fluid_dynamics::PressureConditionCorrection<LeftInflowPressure>> left_inflow_pressure_condition(left_emitter);
 
     SimpleDynamics<fluid_dynamics::InflowVelocityCondition<InflowVelocity>> inflow_velocity_condition(left_emitter);
 
@@ -181,8 +184,8 @@ int main(int ac, char *av[])
     BodyAlignedBoxByCell right_emitter(water_block, right_emitter_shape);
     fluid_dynamics::BidirectionalBuffer<RightOutflowPressure> right_bidirection_buffer(right_emitter, inlet_particle_buffer);
 
-    //SimpleDynamics<fluid_dynamics::PressureCondition<RightOutflowPressure>> right_outflow_pressure_condition(right_emitter);
-    SimpleDynamics<fluid_dynamics::PressureConditionCorrection<RightOutflowPressure>> right_outflow_pressure_condition(right_emitter);
+    SimpleDynamics<fluid_dynamics::PressureCondition<RightOutflowPressure>> right_outflow_pressure_condition(right_emitter);
+    //SimpleDynamics<fluid_dynamics::PressureConditionCorrection<RightOutflowPressure>> right_outflow_pressure_condition(right_emitter);
     //----------------------------------------------------------------------
 
     InteractionWithUpdate<fluid_dynamics::DensitySummationPressureComplex> update_fluid_density_pressure(water_block_inner, water_wall_contact);
@@ -227,13 +230,15 @@ int main(int ac, char *av[])
     left_bidirection_buffer.tag_buffer_particles.exec();
     right_bidirection_buffer.tag_buffer_particles.exec();
 
+    size_t num_particle_in_domain = calculate_particle_in_domain.exec();
+    std::cout << "initial num_particle_in_domain = "<< num_particle_in_domain << std::endl;
     //----------------------------------------------------------------------
     //	Setup computing and initial conditions.
     //----------------------------------------------------------------------
     Real &physical_time = *sph_system.getSystemVariableDataByName<Real>("PhysicalTime");
     size_t number_of_iterations = sph_system.RestartStep();
     int screen_output_interval = 100;
-    Real end_time = 130.0;                      /**< End time. */
+    Real end_time = 200.0;                      /**< End time. */
     Real cutoff_ratio = 0.92;                   //** cutoff_time should be a integral and the same as the PY script */
     Real cutoff_time = cutoff_ratio * end_time; //** cutoff_time should be a integral and the same as the PY script */
     Real num_output_files = 10.0;
@@ -346,6 +351,12 @@ int main(int ac, char *av[])
                 write_recorded_water_velocity_cross_section.writeToFile(number_of_iterations);
                 write_recorded_water_centerline_pressure.writeToFile(number_of_iterations);
             }
+            //** Caculate average KGS *
+            num_particle_in_domain = calculate_particle_in_domain.exec();
+            calculate_average_kgs.get_num_particle_in_domain(num_particle_in_domain);
+            Real average_kgs = calculate_average_kgs.exec();
+            calculate_average_kgs.output_average_kgs(physical_time, average_kgs);
+
             //if (physical_time > end_time * 0.5)
             //body_states_recording.writeToFile();
         }
