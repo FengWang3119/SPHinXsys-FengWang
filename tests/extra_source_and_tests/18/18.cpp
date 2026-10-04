@@ -130,6 +130,8 @@ int main(int ac, char *av[])
 
     InteractionWithUpdate<LinearGradientCorrectionMatrixComplex> corrected_configuration_fluid(water_block_inner, water_wall_contact);
 
+    ReduceDynamics<CalculateAverageRiemannDissipation> calculate_riemann_dissipation(water_block, DL);
+
     /** Pressure relaxation algorithm with Riemann solver for viscous flows. */
     Dynamics1Level<fluid_dynamics::Integration1stHalfWithWallRiemann> pressure_relaxation(water_block_inner, water_wall_contact);
     //Dynamics1Level<fluid_dynamics::Integration1stHalfWithWallRiemann_RKGC_OBC> pressure_relaxation(water_block_inner, water_wall_contact);
@@ -210,6 +212,7 @@ int main(int ac, char *av[])
     body_states_recording.addToWrite<Real>(water_block, "Density");             // output for debug
     body_states_recording.addToWrite<Vecd>(water_block, "ZeroGradientResidue"); // output for debug
     body_states_recording.addToWrite<Vecd>(water_block, "ZeroGradientResidueWithout"); // output for debug
+    body_states_recording.addToWrite<Real>(water_block, "RiemannDissipation"); // output for debug
     ObservedQuantityRecording<Vecd> write_recorded_water_velocity("Velocity", fluid_observer_contact);
     ObservedQuantityRecording<Real> write_recorded_water_centerline_pressure("Pressure", fluid_observer_contact);
     ObservedQuantityRecording<Vecd> write_recorded_water_velocity_cross_section("Velocity", fluid_observer_cross_section_contact);
@@ -356,6 +359,10 @@ int main(int ac, char *av[])
             calculate_average_kgs.get_num_particle_in_domain(num_particle_in_domain);
             Real average_kgs = calculate_average_kgs.exec();
             calculate_average_kgs.output_average_kgs(physical_time, average_kgs);
+            //** Caculate average riemann dissipation *
+            calculate_riemann_dissipation.get_num_particle_in_domain(num_particle_in_domain);
+            Real average_riemann_dissipation = calculate_riemann_dissipation.exec();
+            calculate_riemann_dissipation.output_average_dissipation(physical_time, average_riemann_dissipation);
 
             //if (physical_time > end_time * 0.5)
             //body_states_recording.writeToFile();

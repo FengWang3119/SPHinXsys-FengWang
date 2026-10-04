@@ -128,5 +128,28 @@ size_t CalculateParticleInDomain::outputResult(size_t reduced_value)
     return reduced_value;
 }
 //=================================================================================================//
+CalculateAverageRiemannDissipation::
+CalculateAverageRiemannDissipation(SPHBody& sph_body, Real channel_length)
+    : LocalDynamicsReduce<ReduceSum<Real>>(sph_body),
+    dissipation_riemann_(particles_->registerStateVariable<Real>("RiemannDissipation")),
+    pos_(particles_->getVariableDataByName<Vecd>("Position")),
+    channel_length_(channel_length),
+    particle_spacing_(sph_body_.sph_adaptation_->ReferenceSpacing()) {}
+//=================================================================================================//
+Real CalculateAverageRiemannDissipation::reduce(size_t index_i, Real dt)
+{
+    Real pos_i_x = pos_[index_i][xAxis];
+    if (pos_i_x > 0.0 && pos_i_x < (channel_length_ - 10.0 * particle_spacing_))
+    {
+        return dissipation_riemann_[index_i];
+    }
+    return 0.0;
+}
+//=================================================================================================//
+Real CalculateAverageRiemannDissipation::outputResult(Real reduced_value)
+{
+    return reduced_value / (Real(num_particle_in_domain_));
+}
+//=================================================================================================//
 } // namespace SPH
   //=================================================================================================//
