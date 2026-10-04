@@ -92,7 +92,7 @@ void Integration1stHalf<Inner<>, RiemannSolverType, KernelCorrectionType>::inter
     force_[index_i] += force * Vol_[index_i];
     drho_dt_[index_i] = rho_dissipation * rho_[index_i];
 
-    dissipation_riemann_[index_i] = std::abs(rho_dissipation);
+    dissipation_riemann_[index_i] = rho_dissipation;
 }
 //=================================================================================================//
 template <class RiemannSolverType, class KernelCorrectionType>
@@ -127,7 +127,7 @@ void Integration1stHalf<Contact<Wall>, RiemannSolverType, KernelCorrectionType>:
     force_[index_i] += force * Vol_[index_i];
     drho_dt_[index_i] += rho_dissipation * rho_[index_i];
 
-    dissipation_riemann_[index_i] += std::abs(rho_dissipation);
+    dissipation_riemann_[index_i] += rho_dissipation;
 }
 //=================================================================================================//
 template <class RiemannSolverType, class KernelCorrectionType>

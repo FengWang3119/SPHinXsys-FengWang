@@ -141,7 +141,7 @@ Real CalculateAverageRiemannDissipation::reduce(size_t index_i, Real dt)
     Real pos_i_x = pos_[index_i][xAxis];
     if (pos_i_x > 0.0 && pos_i_x < (channel_length_ - 10.0 * particle_spacing_))
     {
-        return dissipation_riemann_[index_i];
+        return std::abs(dissipation_riemann_[index_i]);
     }
     return 0.0;
 }
