@@ -151,7 +151,7 @@ public:
         }
         if (write_header)
         {
-            output_file << "VARIABLES = \"Time\", \"AverageKGS\"\n";
+            output_file << "#VARIABLES = \"Time\", \"AverageKGS\"\n";
         }
         output_file << std::scientific << std::setprecision(15)
             << physical_time << "\t" << average_kgs << "\n";
@@ -209,7 +209,7 @@ public:
         }
         if (write_header)
         {
-            output_file << "VARIABLES = \"Time\", \"AverageDissipation\"\n";
+            output_file << "#VARIABLES = \"Time\", \"AverageDissipation\"\n";
         }
         output_file << std::scientific << std::setprecision(15)
             << physical_time << "\t" << average_kgs << "\n";
