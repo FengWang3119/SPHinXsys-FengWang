@@ -94,7 +94,8 @@ CalculateAverageKGS(SPHBody& sph_body, Real channel_length)
 Real CalculateAverageKGS::reduce(size_t index_i, Real dt)
 {
     Real pos_i_x = pos_[index_i][xAxis];
-    if (pos_i_x > 0.0 && pos_i_x < (channel_length_ - 10.0 * particle_spacing_))
+    //if (pos_i_x > 0.0 && pos_i_x < (channel_length_ - 10.0 * particle_spacing_))
+    if (pos_i_x > 0.0 && pos_i_x < 15.0)
     {
         return zero_gradient_residue_[index_i].norm();
     }
@@ -116,7 +117,8 @@ CalculateParticleInDomain(SPHBody& sph_body, Real channel_length)
 size_t CalculateParticleInDomain::reduce(size_t index_i, Real dt)
 {
     Real pos_i_x = pos_[index_i][xAxis];
-    if (pos_i_x > 0.0 && pos_i_x < (channel_length_ - 10.0 * particle_spacing_))
+    //if (pos_i_x > 0.0 && pos_i_x < (channel_length_ - 10.0 * particle_spacing_))
+    if (pos_i_x > 0.0 && pos_i_x < 15.0)
     {
         return 1;
     }
@@ -139,7 +141,8 @@ CalculateAverageRiemannDissipation(SPHBody& sph_body, Real channel_length)
 Real CalculateAverageRiemannDissipation::reduce(size_t index_i, Real dt)
 {
     Real pos_i_x = pos_[index_i][xAxis];
-    if (pos_i_x > 0.0 && pos_i_x < (channel_length_ - 10.0 * particle_spacing_))
+    //if (pos_i_x > 0.0 && pos_i_x < (channel_length_ - 10.0 * particle_spacing_))
+    if (pos_i_x > 0.0 && pos_i_x < 15.0)
     {
         return std::abs(dissipation_riemann_[index_i]);
     }
