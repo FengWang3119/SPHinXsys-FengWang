@@ -5,6 +5,7 @@
  * The correction method is RKGC, more details referring to arXiv:2406.0257.
  */
 #include "sphinxsys.h" //SPHinXsys Library.
+#include "zeroth-order_residue.h"
 using namespace SPH;   // Namespace cite here.
 #define PI 3.1415926
 //----------------------------------------------------------------------
