@@ -60,8 +60,8 @@ void TransportVelocityCorrection<Inner<ResolutionType, LimiterType>, CommonContr
     {
         Real inv_h_ratio = 1.0 / h_ratio_(index_i);
         Real squared_norm = this->zero_gradient_residue_[index_i].squaredNorm();
-        pos_[index_i] += correction_scaling_ * limiter_(squared_norm) *
-                         this->zero_gradient_residue_[index_i] * inv_h_ratio * inv_h_ratio;
+        //pos_[index_i] += correction_scaling_ * limiter_(squared_norm) *
+        //                 this->zero_gradient_residue_[index_i] * inv_h_ratio * inv_h_ratio;
     }
 }
 //=================================================================================================//

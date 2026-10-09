@@ -20,7 +20,8 @@ BaseIntegration<DataDelegationType>::BaseIntegration(BaseRelationType &base_rela
       pos_(this->particles_->template getVariableDataByName<Vecd>("Position")),
       vel_(this->particles_->template registerStateVariable<Vecd>("Velocity")),
       force_(this->particles_->template registerStateVariable<Vecd>("Force")),
-      force_prior_(this->particles_->template registerStateVariable<Vecd>("ForcePrior")) {}
+      force_prior_(this->particles_->template registerStateVariable<Vecd>("ForcePrior")),
+      dissipation_riemann_(this->particles_->template getVariableDataByName<Real>("RiemannDissipation")) {}
 //=================================================================================================//
 template <class RiemannSolverType, class KernelCorrectionType>
 Integration1stHalf<Inner<>, RiemannSolverType, KernelCorrectionType>::
@@ -192,6 +193,7 @@ void Integration2ndHalf<Inner<>, RiemannSolverType>::interaction(size_t index_i,
 {
     Real density_change_rate(0);
     Vecd p_dissipation = Vecd::Zero();
+    dissipation_riemann_[index_i] = 0.0;
     const Neighborhood &inner_neighborhood = inner_configuration_[index_i];
     for (size_t n = 0; n != inner_neighborhood.current_size_; ++n)
     {
@@ -205,6 +207,8 @@ void Integration2ndHalf<Inner<>, RiemannSolverType>::interaction(size_t index_i,
     }
     drho_dt_[index_i] += density_change_rate * rho_[index_i];
     force_[index_i] = p_dissipation * Vol_[index_i];
+
+    dissipation_riemann_[index_i] = p_dissipation.norm();
 };
 //=================================================================================================//
 template <class RiemannSolverType>
@@ -238,6 +242,8 @@ void Integration2ndHalf<Contact<Wall>, RiemannSolverType>::interaction(size_t in
     }
     drho_dt_[index_i] += density_change_rate * this->rho_[index_i];
     force_[index_i] += p_dissipation * this->Vol_[index_i];
+
+    dissipation_riemann_[index_i] += p_dissipation.norm();
 }
 //=================================================================================================//
 template <class RiemannSolverType>

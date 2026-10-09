@@ -78,6 +78,7 @@ class BaseIntegration : public LocalDynamics, public DataDelegationType
     Fluid &fluid_;
     Real *Vol_, *rho_, *mass_, *p_, *drho_dt_;
     Vecd *pos_, *vel_, *force_, *force_prior_;
+    Real* dissipation_riemann_;
 };
 
 template <typename... InteractionTypes>

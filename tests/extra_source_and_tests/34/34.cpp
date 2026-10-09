@@ -64,7 +64,7 @@ std::vector<Vecd> createWaterBlockShape()
     std::vector<Vecd> pnts;
 
     //Real wave_amplitude = 0.1 * LH;
-    Real wave_amplitude = 0.3;
+    Real wave_amplitude = 0.1;
 
     for (int n = 0; n <= Nh; n++)
     {
@@ -160,6 +160,12 @@ int main(int ac, char *av[])
     SimpleDynamics<NormalDirectionFromBodyShape> wall_boundary_normal_direction(wall_boundary);
     InteractionWithUpdate<LinearGradientCorrectionMatrixComplex> corrected_configuration_fluid(InteractArgs(water_block_inner, 0.5), water_wall_contact);
 
+    InteractionWithUpdate<SpatialTemporalFreeSurfaceIndicationComplex> boundary_indicator(water_block_inner, water_wall_contact);
+    InteractionWithUpdate<fluid_dynamics::TransportVelocityCorrectionComplex<BulkParticles>> transport_velocity_correction_only_for_kgs(water_block_inner, water_wall_contact);
+    ReduceDynamics<CalculateParticleInDomain> calculate_particle_in_domain(water_block, DL);
+    ReduceDynamics<CalculateAverageRiemannDissipation> calculate_riemann_dissipation(water_block, DL);
+    ReduceDynamics<CalculateAverageKGS> calculate_average_kgs(water_block, DL);
+
     Dynamics1Level<fluid_dynamics::Integration1stHalfCorrectionWithWallRiemann> fluid_pressure_relaxation_correct(water_block_inner, water_wall_contact);
     //Dynamics1Level<fluid_dynamics::Integration1stHalfWithWallRiemann> fluid_pressure_relaxation_correct(water_block_inner, water_wall_contact);
 
@@ -178,6 +184,8 @@ int main(int ac, char *av[])
     BodyStatesRecordingToVtp body_states_recording(sph_system);
     body_states_recording.addToWrite<Real>(water_block, "Pressure");
     body_states_recording.addToWrite<Vecd>(wall_boundary, "NormalDirection");
+    body_states_recording.addToWrite<int>(water_block, "Indicator");
+    body_states_recording.addToWrite<Vecd>(water_block, "ZeroGradientResidue");
     RestartIO restart_io(sph_system);
     RegressionTestDynamicTimeWarping<ReducedQuantityRecording<TotalMechanicalEnergy>> write_water_mechanical_energy(water_block, gravity);
     /** WaveProbes. */
@@ -190,8 +198,13 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     sph_system.initializeSystemCellLinkedLists();
     sph_system.initializeSystemConfigurations();
+    boundary_indicator.exec();
     wall_boundary_normal_direction.exec();
     constant_gravity.exec();
+    
+    size_t num_particle_in_domain = calculate_particle_in_domain.exec();
+    std::cout << "initial num_particle_in_domain = " << num_particle_in_domain << std::endl;
+    
     //----------------------------------------------------------------------
     //	Load restart file if necessary.
     //----------------------------------------------------------------------
@@ -242,6 +255,8 @@ int main(int ac, char *av[])
             corrected_configuration_fluid.exec();
             interval_computing_time_step += TickCount::now() - time_instance;
 
+            transport_velocity_correction_only_for_kgs.exec();
+
             time_instance = TickCount::now();
             Real relaxation_time = 0.0;
             Real acoustic_dt = 0.0;
@@ -283,6 +298,17 @@ int main(int ac, char *av[])
             water_block.updateCellLinkedList();
             water_block_complex.updateConfiguration();
             interval_updating_configuration += TickCount::now() - time_instance;
+
+            boundary_indicator.exec();
+            //** Caculate average KGS *
+            num_particle_in_domain = calculate_particle_in_domain.exec();
+            calculate_average_kgs.get_num_particle_in_domain(num_particle_in_domain);
+            Real average_kgs = calculate_average_kgs.exec();
+            calculate_average_kgs.output_average_kgs(physical_time, average_kgs);
+            //** Caculate average riemann dissipation *
+            calculate_riemann_dissipation.get_num_particle_in_domain(num_particle_in_domain);
+            Real average_riemann_dissipation = calculate_riemann_dissipation.exec();
+            calculate_riemann_dissipation.output_average_dissipation(physical_time, average_riemann_dissipation);
         }
 
         body_states_recording.writeToFile();
