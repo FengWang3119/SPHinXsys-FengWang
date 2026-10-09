@@ -21,7 +21,7 @@ Real LL = 2.0; /**< Liquid column length. */
 Real LH = 1.0; /**< Liquid column height. */
 //Real LH = 2.0;
 
-Real particle_spacing_ref = 0.005;   /**< Initial reference particle spacing. */
+Real particle_spacing_ref = 0.01;   /**< Initial reference particle spacing. */
 Real BW = particle_spacing_ref * 4; /**< Extending width for boundary conditions. */
 BoundingBox system_domain_bounds(Vec2d(-BW, -BW), Vec2d(DL + BW, DH + BW));
 //----------------------------------------------------------------------
@@ -166,8 +166,8 @@ int main(int ac, char *av[])
     ReduceDynamics<CalculateAverageRiemannDissipation> calculate_riemann_dissipation(water_block, DL);
     ReduceDynamics<CalculateAverageKGS> calculate_average_kgs(water_block, DL);
 
-    Dynamics1Level<fluid_dynamics::Integration1stHalfCorrectionWithWallRiemann> fluid_pressure_relaxation_correct(water_block_inner, water_wall_contact);
-    //Dynamics1Level<fluid_dynamics::Integration1stHalfWithWallRiemann> fluid_pressure_relaxation_correct(water_block_inner, water_wall_contact);
+    //Dynamics1Level<fluid_dynamics::Integration1stHalfCorrectionWithWallRiemann> fluid_pressure_relaxation_correct(water_block_inner, water_wall_contact);
+    Dynamics1Level<fluid_dynamics::Integration1stHalfWithWallRiemann> fluid_pressure_relaxation_correct(water_block_inner, water_wall_contact);
 
     Dynamics1Level<fluid_dynamics::Integration2ndHalfWithWallRiemann> fluid_density_relaxation(water_block_inner, water_wall_contact);
     InteractionWithUpdate<fluid_dynamics::DensitySummationComplexFreeSurface> fluid_density_by_summation(water_block_inner, water_wall_contact);
