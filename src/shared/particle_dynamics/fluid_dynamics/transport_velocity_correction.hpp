@@ -37,6 +37,7 @@ template <class ResolutionType, class LimiterType, typename... CommonControlType
 void TransportVelocityCorrection<Inner<ResolutionType, LimiterType>, CommonControlTypes...>::
     interaction(size_t index_i, Real dt)
 {
+    this->zero_gradient_residue_[index_i] = Vecd::Zero();
     if (this->within_scope_(index_i))
     {
         Vecd inconsistency = Vecd::Zero();
