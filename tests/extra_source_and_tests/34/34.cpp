@@ -165,6 +165,13 @@ int main(int ac, char *av[])
     ReduceDynamics<CalculateParticleInDomain> calculate_particle_in_domain(water_block, DL);
     ReduceDynamics<CalculateAverageRiemannDissipation> calculate_riemann_dissipation(water_block, DL);
     ReduceDynamics<CalculateAverageKGS> calculate_average_kgs(water_block, DL);
+    
+    ReduceDynamics<CalculateParticleInRegion>
+        calculate_particle_in_region(water_block);
+    ReduceDynamics<CalculateAverageKGSInRegion>
+        calculate_average_kgs_in_region(water_block);
+    ReduceDynamics<CalculateAverageRiemannDissipationInRegion>
+        calculate_riemann_dissipation_in_region(water_block);
 
     //Dynamics1Level<fluid_dynamics::Integration1stHalfCorrectionWithWallRiemann> fluid_pressure_relaxation_correct(water_block_inner, water_wall_contact);
     Dynamics1Level<fluid_dynamics::Integration1stHalfWithWallRiemann> fluid_pressure_relaxation_correct(water_block_inner, water_wall_contact);
@@ -314,6 +321,27 @@ int main(int ac, char *av[])
             if ((number_of_iterations - 1) % 100 == 0)
             {
                 calculate_riemann_dissipation.output_average_dissipation(physical_time, average_riemann_dissipation);
+            }
+            if ((number_of_iterations - 1) % 100 == 0)
+            {
+                size_t num_particle_in_region = calculate_particle_in_region.exec();
+
+                calculate_average_kgs_in_region.get_num_particle_in_region(
+                    num_particle_in_region);
+
+                Real average_kgs_in_region = calculate_average_kgs_in_region.exec();
+
+                calculate_average_kgs_in_region.output_average_kgs(
+                    physical_time, average_kgs_in_region);
+
+                calculate_riemann_dissipation_in_region.get_num_particle_in_region(
+                    num_particle_in_region);
+
+                Real average_dissipation_in_region =
+                    calculate_riemann_dissipation_in_region.exec();
+
+                calculate_riemann_dissipation_in_region.output_average_dissipation(
+                    physical_time, average_dissipation_in_region);
             }
         }
 
