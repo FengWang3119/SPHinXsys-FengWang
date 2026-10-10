@@ -208,7 +208,7 @@ void Integration2ndHalf<Inner<>, RiemannSolverType>::interaction(size_t index_i,
     drho_dt_[index_i] += density_change_rate * rho_[index_i];
     force_[index_i] = p_dissipation * Vol_[index_i];
 
-    dissipation_riemann_[index_i] = p_dissipation.norm();
+    //dissipation_riemann_[index_i] = p_dissipation.norm();
 };
 //=================================================================================================//
 template <class RiemannSolverType>
@@ -243,7 +243,7 @@ void Integration2ndHalf<Contact<Wall>, RiemannSolverType>::interaction(size_t in
     drho_dt_[index_i] += density_change_rate * this->rho_[index_i];
     force_[index_i] += p_dissipation * this->Vol_[index_i];
 
-    dissipation_riemann_[index_i] += p_dissipation.norm();
+    dissipation_riemann_[index_i] = force_[index_i].norm() / this->Vol_[index_i];
 }
 //=================================================================================================//
 template <class RiemannSolverType>
