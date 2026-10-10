@@ -166,8 +166,8 @@ int main(int ac, char *av[])
     ReduceDynamics<CalculateAverageRiemannDissipation> calculate_riemann_dissipation(water_block, DL);
     ReduceDynamics<CalculateAverageKGS> calculate_average_kgs(water_block, DL);
 
-    // Dynamics1Level<fluid_dynamics::Integration1stHalfCorrectionWithWallRiemann> fluid_pressure_relaxation_correct(water_block_inner, water_wall_contact);
-    Dynamics1Level<fluid_dynamics::Integration1stHalfWithWallRiemann> fluid_pressure_relaxation_correct(water_block_inner, water_wall_contact);
+    Dynamics1Level<fluid_dynamics::Integration1stHalfCorrectionWithWallRiemann> fluid_pressure_relaxation_correct(water_block_inner, water_wall_contact);
+    //Dynamics1Level<fluid_dynamics::Integration1stHalfWithWallRiemann> fluid_pressure_relaxation_correct(water_block_inner, water_wall_contact);
 
     Dynamics1Level<fluid_dynamics::Integration2ndHalfWithWallRiemann> fluid_density_relaxation(water_block_inner, water_wall_contact);
     InteractionWithUpdate<fluid_dynamics::DensitySummationComplexFreeSurface> fluid_density_by_summation(water_block_inner, water_wall_contact);
@@ -304,11 +304,17 @@ int main(int ac, char *av[])
             num_particle_in_domain = calculate_particle_in_domain.exec();
             calculate_average_kgs.get_num_particle_in_domain(num_particle_in_domain);
             Real average_kgs = calculate_average_kgs.exec();
-            calculate_average_kgs.output_average_kgs(physical_time, average_kgs);
+            if ((number_of_iterations - 1) % 100 == 0)
+            {
+                calculate_average_kgs.output_average_kgs(physical_time, average_kgs);
+            }
             //** Caculate average riemann dissipation *
             calculate_riemann_dissipation.get_num_particle_in_domain(num_particle_in_domain);
             Real average_riemann_dissipation = calculate_riemann_dissipation.exec();
-            calculate_riemann_dissipation.output_average_dissipation(physical_time, average_riemann_dissipation);
+            if ((number_of_iterations - 1) % 100 == 0)
+            {
+                calculate_riemann_dissipation.output_average_dissipation(physical_time, average_riemann_dissipation);
+            }
         }
 
         body_states_recording.writeToFile();
