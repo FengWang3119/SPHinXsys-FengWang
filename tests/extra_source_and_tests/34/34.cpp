@@ -173,8 +173,8 @@ int main(int ac, char *av[])
     ReduceDynamics<CalculateAverageRiemannDissipationInRegion>
         calculate_riemann_dissipation_in_region(water_block);
 
-    Dynamics1Level<fluid_dynamics::Integration1stHalfCorrectionWithWallRiemann> fluid_pressure_relaxation_correct(water_block_inner, water_wall_contact);
-    // Dynamics1Level<fluid_dynamics::Integration1stHalfWithWallRiemann> fluid_pressure_relaxation_correct(water_block_inner, water_wall_contact);
+    // Dynamics1Level<fluid_dynamics::Integration1stHalfCorrectionWithWallRiemann> fluid_pressure_relaxation_correct(water_block_inner, water_wall_contact);
+    Dynamics1Level<fluid_dynamics::Integration1stHalfWithWallRiemann> fluid_pressure_relaxation_correct(water_block_inner, water_wall_contact);
 
     Dynamics1Level<fluid_dynamics::Integration2ndHalfWithWallRiemann> fluid_density_relaxation(water_block_inner, water_wall_contact);
     InteractionWithUpdate<fluid_dynamics::DensitySummationComplexFreeSurface> fluid_density_by_summation(water_block_inner, water_wall_contact);
